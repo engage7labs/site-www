@@ -2,6 +2,7 @@
 
 import { motion } from "framer-motion"
 import { ArrowRight, Lock, Zap, Smile } from "lucide-react"
+import Image from "next/image"
 import { Button } from "@/components/ui/button"
 import { MouseSpotlight } from "@/components/mouse-spotlight"
 
@@ -26,15 +27,16 @@ export default function Home() {
       <MouseSpotlight />
 
       {/* Navigation */}
-      <nav className="fixed top-0 w-full backdrop-blur-md bg-background/80 border-b border-border z-50">
+      <nav className="fixed top-0 w-full bg-white border-b border-border z-50">
         <div className="max-w-6xl mx-auto px-6 py-4 flex items-center justify-between">
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ duration: 0.5 }}
-            className="text-xl font-semibold text-foreground"
-          >
-            Engage7 Labs
+          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.5 }}>
+            <Image
+              src="https://hebbkx1anhila5yf.public.blob.vercel-storage.com/image-YWxBTZdyZPGsqtujby8t5HegkfW1hI.png"
+              alt="Engage7 Labs"
+              width={160}
+              height={50}
+              className="h-12 w-auto"
+            />
           </motion.div>
           <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.5, delay: 0.1 }}>
             <Button variant="ghost" className="text-foreground hover:bg-muted">
