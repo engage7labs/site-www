@@ -125,3 +125,10 @@
     @apply bg-background text-foreground;
   }
 }
+
+/* Add subtle spotlight glow effect styles */
+@layer utilities {
+  .spotlight-glow {
+    background: radial-gradient(circle 400px, rgba(61, 190, 115, 0.15) 0%, transparent 80%);
+  }
+}

@@ -3,6 +3,7 @@
 import { motion } from "framer-motion"
 import { ArrowRight, Lock, Zap, Smile } from "lucide-react"
 import { Button } from "@/components/ui/button"
+import { MouseSpotlight } from "@/components/mouse-spotlight"
 
 const fadeInUp = {
   initial: { opacity: 0, y: 20 },
@@ -22,6 +23,8 @@ const staggerContainer = {
 export default function Home() {
   return (
     <div className="min-h-screen bg-background">
+      <MouseSpotlight />
+
       {/* Navigation */}
       <nav className="fixed top-0 w-full backdrop-blur-md bg-background/80 border-b border-border z-50">
         <div className="max-w-6xl mx-auto px-6 py-4 flex items-center justify-between">
