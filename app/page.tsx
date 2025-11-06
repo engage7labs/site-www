@@ -45,17 +45,26 @@ export default function Home() {
       </nav>
 
       {/* Hero Section */}
-      <section className="pt-32 pb-24 px-6 min-h-screen flex items-center justify-center bg-gradient-to-b from-background via-background to-card/30">
+      <section className="pt-32 pb-24 px-6 min-h-screen flex items-center justify-center relative overflow-hidden">
+        <div
+          className="absolute inset-0 bg-cover bg-center"
+          style={{
+            backgroundImage: `url('https://hebbkx1anhila5yf.public.blob.vercel-storage.com/background-field-jDbtjx7wXc8MMdz8MSbyAkcF5uTMNF.jpg')`,
+          }}
+        />
+        {/* White overlay for text legibility */}
+        <div className="absolute inset-0 bg-white/30" />
+
         <motion.div
           variants={staggerContainer}
           initial="initial"
           animate="animate"
-          className="max-w-3xl text-center space-y-8"
+          className="max-w-3xl text-center space-y-8 relative z-10"
         >
           {/* Main Headline */}
           <motion.h1
             variants={fadeInUp}
-            className="text-5xl md:text-7xl font-semibold text-pretty text-foreground leading-tight tracking-tight"
+            className="text-5xl md:text-7xl font-semibold text-pretty text-white leading-tight tracking-tight"
           >
             Calm intelligence, <span className="text-accent">beautifully delivered</span>.
           </motion.h1>
@@ -63,7 +72,7 @@ export default function Home() {
           {/* Subheading */}
           <motion.p
             variants={fadeInUp}
-            className="text-xl md:text-2xl text-muted-foreground max-w-2xl mx-auto leading-relaxed font-light"
+            className="text-xl md:text-2xl text-white max-w-2xl mx-auto leading-relaxed font-light"
           >
             Experience AI that respects your privacy, thinks clearly, and transforms how you work.
           </motion.p>
@@ -80,7 +89,7 @@ export default function Home() {
             <Button
               size="lg"
               variant="outline"
-              className="border-border rounded-full px-8 hover:bg-muted transition-all duration-300 bg-transparent"
+              className="border-white/20 rounded-full px-8 hover:bg-white/20 transition-all duration-300 bg-white/10 text-white"
             >
               Learn More
             </Button>
