@@ -8,14 +8,15 @@
 
 import { useLocale } from "@/components/providers/locale-provider";
 import { FileUpload } from "@/components/shared/file-upload";
+import { Checkbox } from "@/components/ui/checkbox";
+import { submitAnalysisUpload } from "@/lib/api/analysis";
 import { motion } from "framer-motion";
 import {
   Activity,
   ArrowLeft,
   BarChart3,
+  CheckCircle2,
   FileCheck,
-  Lock,
-  Shield,
   TrendingUp,
   Upload,
 } from "lucide-react";
@@ -43,6 +44,7 @@ export default function AnalyzePage() {
   const router = useRouter();
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [isUploading, setIsUploading] = useState(false);
+  const [consentGiven, setConsentGiven] = useState(false);
 
   const handleFileSelect = (file: File) => {
     setSelectedFile(file);
@@ -53,13 +55,20 @@ export default function AnalyzePage() {
 
     setIsUploading(true);
 
-    // TODO: Implement API integration
-    // For now, simulate upload with a delay and redirect to a mock result page
-    setTimeout(() => {
-      // Generate a mock job ID
-      const mockJobId = `job_${Date.now()}`;
-      router.push(`/result/${mockJobId}`);
-    }, 2000);
+    try {
+      // Submit file to API
+      const result = await submitAnalysisUpload(selectedFile);
+
+      // Redirect to result page with job ID
+      router.push(`/result/${result.jobId}`);
+    } catch (error) {
+      console.error("Upload error:", error);
+      // TODO: Add proper error handling/toast notification
+      alert(
+        "Failed to upload file. Please try again or contact support if the issue persists."
+      );
+      setIsUploading(false);
+    }
   };
 
   return (
@@ -150,50 +159,91 @@ export default function AnalyzePage() {
                 <h2 className="text-xl font-semibold text-foreground">
                   {t.analyze.upload.title}
                 </h2>
+                <p className="text-sm text-muted-foreground">
+                  {t.analyze.upload.formatHint}
+                </p>
+                <p className="text-sm text-accent">
+                  ⏱️ {t.analyze.upload.expectationHint}
+                </p>
               </div>
 
               <FileUpload
                 onFileSelect={handleFileSelect}
                 onUpload={handleUpload}
                 isUploading={isUploading}
+                disabled={!consentGiven}
                 t={t}
               />
             </div>
           </motion.div>
 
-          {/* Privacy Section */}
+          {/* Consent Section */}
           <motion.div variants={fadeInUp} className="max-w-2xl mx-auto">
-            <div className="rounded-lg bg-muted/50 p-8 space-y-6">
-              <div className="flex items-center space-x-3">
-                <Shield className="h-6 w-6 text-accent" />
-                <h2 className="text-xl font-semibold text-foreground">
-                  {t.analyze.privacy.title}
+            <div className="rounded-lg border border-accent/20 bg-accent/5 p-6 space-y-4">
+              <div className="space-y-2">
+                <h2 className="text-lg font-semibold text-foreground">
+                  {t.analyze.consent.title}
                 </h2>
+                <p className="text-sm text-muted-foreground">
+                  {t.analyze.consent.description}
+                </p>
+                <p className="text-xs text-destructive font-medium">
+                  ⚠️ {t.analyze.consent.disclaimer}
+                </p>
               </div>
 
-              <ul className="space-y-3">
-                <li className="flex items-start space-x-3">
-                  <Lock className="h-5 w-5 text-accent mt-0.5 flex-shrink-0" />
+              <div className="flex items-start space-x-3 pt-2">
+                <Checkbox
+                  id="consent"
+                  checked={consentGiven}
+                  onCheckedChange={(checked) =>
+                    setConsentGiven(checked === true)
+                  }
+                />
+                <label
+                  htmlFor="consent"
+                  className="text-sm text-foreground leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 cursor-pointer"
+                >
+                  {t.analyze.consent.required}{" "}
+                  <Link
+                    href="/privacy-policy"
+                    className="text-accent hover:underline"
+                    target="_blank"
+                  >
+                    {t.analyze.consent.linkText}
+                  </Link>
+                </label>
+              </div>
+            </div>
+          </motion.div>
+
+          {/* Trust Section */}
+          <motion.div variants={fadeInUp} className="max-w-2xl mx-auto">
+            <div className="rounded-lg bg-muted/30 p-6 space-y-4">
+              <div className="flex items-center space-x-3">
+                <CheckCircle2 className="h-5 w-5 text-accent" />
+                <h3 className="text-base font-semibold text-foreground">
+                  {t.analyze.trust.title}
+                </h3>
+              </div>
+
+              <ul className="space-y-2">
+                <li className="flex items-start space-x-2">
+                  <span className="text-accent mt-1">•</span>
                   <span className="text-sm text-muted-foreground">
-                    {t.analyze.privacy.point1}
+                    {t.analyze.trust.point1}
                   </span>
                 </li>
-                <li className="flex items-start space-x-3">
-                  <TrendingUp className="h-5 w-5 text-accent mt-0.5 flex-shrink-0" />
+                <li className="flex items-start space-x-2">
+                  <span className="text-accent mt-1">•</span>
                   <span className="text-sm text-muted-foreground">
-                    {t.analyze.privacy.point2}
+                    {t.analyze.trust.point2}
                   </span>
                 </li>
-                <li className="flex items-start space-x-3">
-                  <Activity className="h-5 w-5 text-accent mt-0.5 flex-shrink-0" />
+                <li className="flex items-start space-x-2">
+                  <span className="text-accent mt-1">•</span>
                   <span className="text-sm text-muted-foreground">
-                    {t.analyze.privacy.point3}
-                  </span>
-                </li>
-                <li className="flex items-start space-x-3">
-                  <BarChart3 className="h-5 w-5 text-accent mt-0.5 flex-shrink-0" />
-                  <span className="text-sm text-muted-foreground">
-                    {t.analyze.privacy.point4}
+                    {t.analyze.trust.point3}
                   </span>
                 </li>
               </ul>

@@ -8,6 +8,11 @@
 
 import { useLocale } from "@/components/providers/locale-provider";
 import { Button } from "@/components/ui/button";
+import {
+  getAnalysisResult,
+  getAnalysisStatus,
+} from "@/lib/api/analysis";
+import type { AnalysisResult } from "@/lib/types/analysis";
 import { motion } from "framer-motion";
 import {
   AlertCircle,
@@ -36,81 +41,73 @@ const staggerContainer = {
   },
 };
 
-type AnalysisStatus = "pending" | "processing" | "completed" | "failed";
-
-interface AnalysisResult {
-  jobId: string;
-  status: AnalysisStatus;
-  summary?: {
-    datasetPeriod: string;
-    recordsAnalyzed: number;
-    insightsGenerated: number;
-  };
-  insights?: Array<{
-    id: string;
-    title: string;
-    description: string;
-    category: string;
-  }>;
-  error?: string;
-}
-
 export default function ResultPage({ params }: { params: { jobId: string } }) {
   const { t } = useLocale();
   const [result, setResult] = useState<AnalysisResult | null>(null);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    // TODO: Replace with actual API call
-    // Simulate API call to fetch result
+    let pollingInterval: NodeJS.Timeout | null = null;
+
     const fetchResult = async () => {
-      setLoading(true);
+      try {
+        setLoading(true);
+        setError(null);
 
-      // Simulate network delay
-      await new Promise((resolve) => setTimeout(resolve, 1500));
+        // Try to get the full result first
+        const analysisResult = await getAnalysisResult(params.jobId);
+        setResult(analysisResult);
+        setLoading(false);
 
-      // Mock result data
-      const mockResult: AnalysisResult = {
-        jobId: params.jobId,
-        status: "completed",
-        summary: {
-          datasetPeriod: "April 2018 - March 2026",
-          recordsAnalyzed: 2855,
-          insightsGenerated: 12,
-        },
-        insights: [
-          {
-            id: "1",
-            title: "Recovery Baseline Established",
-            description:
-              "Your physiological baseline shows consistent recovery patterns with an average HRV of 45ms.",
-            category: "Recovery",
-          },
-          {
-            id: "2",
-            title: "Sleep Duration Trend",
-            description:
-              "Sleep duration has improved by 12% over the past 6 months, averaging 7.2 hours per night.",
-            category: "Sleep",
-          },
-          {
-            id: "3",
-            title: "Activity Consistency",
-            description:
-              "Physical activity shows stable weekly patterns with consistent step counts on weekdays.",
-            category: "Activity",
-          },
-        ],
-      };
+        // If status is pending or processing, set up polling
+        if (
+          analysisResult.status === "pending" ||
+          analysisResult.status === "processing"
+        ) {
+          pollingInterval = setInterval(async () => {
+            try {
+              const status = await getAnalysisStatus(params.jobId);
 
-      setResult(mockResult);
-      setLoading(false);
+              // If completed or failed, fetch full result and stop polling
+              if (
+                status.status === "completed" ||
+                status.status === "failed"
+              ) {
+                const finalResult = await getAnalysisResult(params.jobId);
+                setResult(finalResult);
+                if (pollingInterval) {
+                  clearInterval(pollingInterval);
+                }
+              }
+            } catch (pollError) {
+              console.error("Polling error:", pollError);
+              // Don't stop polling on error, just log it
+            }
+          }, 3000); // Poll every 3 seconds
+        }
+      } catch (err) {
+        console.error("Error fetching result:", err);
+        setError(
+          err instanceof Error
+            ? err.message
+            : "Failed to load analysis result"
+        );
+        setLoading(false);
+      }
     };
 
     fetchResult();
+
+    // Cleanup polling on unmount
+    return () => {
+      if (pollingInterval) {
+        clearInterval(pollingInterval);
+      }
+    };
   }, [params.jobId]);
 
-  const getStatusIcon = (status: AnalysisStatus) => {
+  const getStatusIcon = (status: string) => {
     switch (status) {
       case "pending":
       case "processing":
@@ -124,9 +121,57 @@ export default function ResultPage({ params }: { params: { jobId: string } }) {
     }
   };
 
-  const getStatusText = (status: AnalysisStatus) => {
-    return t.result.status[status];
+  const getStatusText = (status: string) => {
+    return t.result.status[status as keyof typeof t.result.status] || status;
   };
+
+  // Error state
+  if (error) {
+    return (
+      <div className="min-h-screen bg-background">
+        <header className="border-b border-border bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 sticky top-0 z-50">
+          <div className="max-w-6xl mx-auto px-6 py-4 flex items-center justify-between">
+            <Link
+              href="/"
+              className="inline-flex items-center text-sm text-muted-foreground hover:text-foreground transition-colors"
+            >
+              <ArrowLeft className="h-4 w-4 mr-2" />
+              {t.result.backToHome}
+            </Link>
+            <Link href="/analyze">
+              <Button variant="ghost" size="sm">
+                {t.result.backToAnalyze}
+              </Button>
+            </Link>
+          </div>
+        </header>
+
+        <main className="max-w-6xl mx-auto px-6 py-16">
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="max-w-2xl mx-auto space-y-8 text-center"
+          >
+            <div className="inline-flex p-4 rounded-full bg-destructive/10">
+              <AlertCircle className="h-12 w-12 text-destructive" />
+            </div>
+            <h1 className="text-3xl font-semibold text-foreground">
+              {t.result.error.title}
+            </h1>
+            <p className="text-muted-foreground">{error}</p>
+            <div className="flex justify-center space-x-4">
+              <Link href="/analyze">
+                <Button size="lg">
+                  <RefreshCw className="h-4 w-4 mr-2" />
+                  {t.result.error.retryButton}
+                </Button>
+              </Link>
+            </div>
+          </motion.div>
+        </main>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-background">
@@ -174,7 +219,7 @@ export default function ResultPage({ params }: { params: { jobId: string } }) {
                 {t.result.error.title}
               </h1>
               <p className="text-muted-foreground">
-                {result.error || t.result.error.description}
+                {(result.error && typeof result.error === "object" ? result.error.message : result.error) || t.result.error.description}
               </p>
             </motion.div>
 

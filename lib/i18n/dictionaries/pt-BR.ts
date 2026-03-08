@@ -21,6 +21,9 @@ export const ptBR: Dictionary = {
       ctaPrimary: "Executar Análise",
       ctaSecondary: "Como Funciona",
       trustBadge: "Insights determinísticos dos seus dados",
+      trustLine1: "Sem necessidade de conta",
+      trustLine2: "Seus dados permanecem seus",
+      trustLine3: "Análise ~1 minuto",
     },
 
     // Three Pillars Section
@@ -45,6 +48,114 @@ export const ptBR: Dictionary = {
         title: "Privacidade por Design",
         description:
           "Seu conjunto de dados permanece seu. O Engage7 processa sinais sem treinar modelos de IA externos com seus dados.",
+      },
+    },
+
+    // How Engage7 Works Section
+    howItWorks: {
+      sectionTitle: "Como o Engage7 funciona",
+      sectionSubtitle:
+        "Quatro etapas dos dados brutos para insights claros e explicáveis",
+
+      step1: {
+        title: "Carregar conjunto de dados",
+        description:
+          "Forneça sua exportação do Apple Health como um arquivo .zip padrão",
+      },
+
+      step2: {
+        title: "Detectar linha de base fisiológica",
+        description:
+          "O Engage7 analisa seus padrões individuais para estabelecer suas faixas normais",
+      },
+
+      step3: {
+        title: "Aplicar regras determinísticas",
+        description:
+          "Regras de processamento transparentes identificam sinais e tendências significativos",
+      },
+
+      step4: {
+        title: "Gerar resumo de insights",
+        description:
+          "Receba um relatório claro e acionável com descobertas explicáveis",
+      },
+    },
+
+    // Example Report Section
+    exampleReport: {
+      sectionTitle: "O que esperar",
+      sectionSubtitle:
+        "Veja que tipo de insights você receberá da sua análise",
+      cardTitle: "Relatório de Análise de Exemplo",
+      cardSubtitle: "Estrutura de saída de exemplo",
+
+      sampleSummary: {
+        title: "Resumo Executivo",
+        description:
+          "Visão geral de alto nível das principais descobertas e padrões detectados no seu conjunto de dados",
+      },
+
+      sampleBaseline: {
+        title: "Janela de Linha de Base",
+        description:
+          "Suas faixas normais fisiológicas individuais para frequência cardíaca, HRV e recuperação",
+      },
+
+      sampleSignals: {
+        title: "Sinais Principais",
+        description:
+          "Padrões, anomalias ou tendências significativas identificadas em sono, atividade e recuperação",
+      },
+
+      sampleStatus: {
+        title: "Padrão Geral",
+        description:
+          "Avaliação consciente do contexto do seu estado fisiológico recente",
+      },
+
+      viewSampleCTA: "Ver relatório de exemplo",
+      learnMoreCTA: "Saiba mais sobre nossa metodologia",
+    },
+
+    // FAQ Section
+    faq: {
+      sectionTitle: "Perguntas Frequentes",
+
+      q1: {
+        question: "Quais dados posso carregar?",
+        answer:
+          "Atualmente, o Engage7 suporta exportações do Apple Health. Exporte seus dados como um arquivo .zip do aplicativo Saúde no seu iPhone e carregue-o aqui.",
+      },
+
+      q2: {
+        question: "Que tipo de insights vou receber?",
+        answer:
+          "Você receberá um relatório de análise determinística cobrindo padrões de sono, variabilidade da frequência cardíaca, tendências de atividade e sinais de recuperação. Todos os insights são explicáveis e derivados da sua linha de base fisiológica.",
+      },
+
+      q3: {
+        question: "Meus dados são usados para treinar modelos de IA?",
+        answer:
+          "Não. Seu conjunto de dados é processado usando regras determinísticas para gerar sua análise pessoal. Não treinamos modelos de IA externos com seus dados.",
+      },
+
+      q4: {
+        question: "Isso é aconselhamento médico?",
+        answer:
+          "Não. O Engage7 fornece apenas insights informativos. Os resultados não constituem aconselhamento médico e não devem substituir a consulta com profissionais de saúde qualificados.",
+      },
+
+      q5: {
+        question: "Quanto tempo leva a análise?",
+        answer:
+          "A maioria das análises é concluída em 30–90 segundos, dependendo do tamanho do seu conjunto de dados.",
+      },
+
+      q6: {
+        question: "O que acontece com meus dados após a análise?",
+        answer:
+          "Seu arquivo carregado e resultados de análise são armazenados temporariamente para gerar seu relatório. Você mantém a propriedade total dos seus dados e pode solicitar a exclusão a qualquer momento.",
       },
     },
 
@@ -97,6 +208,25 @@ export const ptBR: Dictionary = {
       buttonUpload: "Carregar e Analisar",
       buttonUploading: "Carregando...",
       buttonProcessing: "Processando...",
+      formatHint: "Formato suportado: exportação do Apple Health (.zip)",
+      expectationHint: "A análise geralmente é concluída em 30–90 segundos.",
+    },
+
+    consent: {
+      title: "Consentimento para processamento de dados",
+      description:
+        "Confirmo que este conjunto de dados me pertence e autorizo o Engage7 a processá-lo com o objetivo de gerar um relatório de análise determinístico.",
+      disclaimer:
+        "Entendo que os resultados são informativos e não constituem aconselhamento médico.",
+      linkText: "Leia nossa Política de Privacidade",
+      required: "Você deve consentir para continuar",
+    },
+
+    trust: {
+      title: "Seus dados permanecem seus",
+      point1: "Arquivo usado apenas para esta análise",
+      point2: "Sem treinamento de modelos de IA externos",
+      point3: "Regras de processamento determinísticas",
     },
 
     privacy: {
@@ -161,5 +291,91 @@ export const ptBR: Dictionary = {
     next: "Próximo",
     previous: "Anterior",
     viewDetails: "Ver Detalhes",
+  },
+
+  // Privacy Policy
+  privacyPolicy: {
+    title: "Política de Privacidade",
+    lastUpdated: "Última atualização: 8 de março de 2026",
+    intro:
+      "O Engage7 está comprometido em proteger sua privacidade. Esta política explica como lidamos com seus dados ao usar nosso serviço de análise.",
+    sections: {
+      dataCollection: {
+        title: "Coleta de Dados",
+        content:
+          "Quando você carrega um conjunto de dados para análise, processamos o arquivo para gerar insights determinísticos. Você mantém a propriedade de seus dados.",
+      },
+      dataUsage: {
+        title: "Uso de Dados",
+        content:
+          "Seu conjunto de dados é usado exclusivamente para gerar seu relatório de análise. Não treinamos modelos de IA externos com seus dados. O processamento segue regras determinísticas baseadas em linhas de base fisiológicas.",
+      },
+      dataStorage: {
+        title: "Armazenamento de Dados",
+        content:
+          "Os resultados da análise e arquivos carregados são armazenados temporariamente para gerar seu relatório. Não vendemos nem compartilhamos seus dados com terceiros.",
+      },
+      dataRights: {
+        title: "Seus Direitos",
+        content:
+          "Você mantém a propriedade total de seus dados. Pode solicitar a exclusão dos resultados de sua análise a qualquer momento entrando em contato conosco.",
+      },
+    },
+    backToHome: "Voltar para Início",
+  },
+
+  // Terms of Service
+  termsOfService: {
+    title: "Termos de Serviço",
+    lastUpdated: "Última atualização: 8 de março de 2026",
+    intro:
+      "Ao usar o Engage7, você concorda com estes termos. Por favor, leia-os com atenção.",
+    sections: {
+      serviceDescription: {
+        title: "Descrição do Serviço",
+        content:
+          "O Engage7 fornece análise determinística de dados de saúde de dispositivos vestíveis. O serviço gera insights informativos baseados em sua linha de base fisiológica.",
+      },
+      userResponsibilities: {
+        title: "Responsabilidades do Usuário",
+        content:
+          "Você é responsável por garantir que tem o direito de carregar qualquer conjunto de dados que enviar. Você deve ser o proprietário dos dados ou ter permissão para processá-los.",
+      },
+      disclaimer: {
+        title: "Aviso Médico",
+        content:
+          "Os resultados do Engage7 são informativos e não constituem aconselhamento médico. Sempre consulte profissionais de saúde qualificados para decisões médicas.",
+      },
+      serviceChanges: {
+        title: "Alterações no Serviço",
+        content:
+          "O Engage7 pode evoluir com o tempo. Reservamos o direito de modificar ou descontinuar recursos à medida que o serviço se desenvolve.",
+      },
+      limitation: {
+        title: "Limitação de Responsabilidade",
+        content:
+          "O Engage7 é fornecido como está. Não fazemos garantias sobre a precisão ou completude dos resultados da análise.",
+      },
+    },
+    backToHome: "Voltar para Início",
+  },
+
+  // Contact Page
+  contact: {
+    title: "Entre em Contato",
+    subtitle: "Tem perguntas? Adoraríamos ouvir de você.",
+    form: {
+      name: "Nome",
+      namePlaceholder: "Seu nome",
+      email: "E-mail",
+      emailPlaceholder: "seu@email.com",
+      message: "Mensagem",
+      messagePlaceholder: "Como podemos ajudá-lo?",
+      submit: "Enviar Mensagem",
+      sending: "Enviando...",
+      success: "Mensagem enviada com sucesso!",
+      error: "Falha ao enviar mensagem. Por favor, tente novamente.",
+    },
+    backToHome: "Voltar para Início",
   },
 };

@@ -44,9 +44,20 @@ export function FileUpload({
       return false;
     }
 
-    // Check file type
-    if (acceptedFileTypes && !file.name.endsWith(".zip")) {
-      setError("Only .zip files are supported");
+    // Check file extension
+    const fileName = file.name.toLowerCase();
+    if (!fileName.endsWith(".zip")) {
+      setError(
+        "Only .zip files are supported (Apple Health export format)"
+      );
+      return false;
+    }
+
+    // Check minimum file size (Apple Health exports are typically > 1KB)
+    if (file.size < 1024) {
+      setError(
+        "File appears to be too small. Please ensure it's a valid Apple Health export."
+      );
       return false;
     }
 

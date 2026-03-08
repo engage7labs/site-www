@@ -6,7 +6,16 @@ import { LocaleSwitcher } from "@/components/shared/locale-switcher";
 import { ThemeSwitcher } from "@/components/shared/theme-switcher";
 import { Button } from "@/components/ui/button";
 import { motion } from "framer-motion";
-import { Activity, ArrowRight, Shield, TrendingUp } from "lucide-react";
+import {
+  Activity,
+  ArrowRight,
+  BarChart3,
+  FileCheck,
+  FileText,
+  Shield,
+  TrendingUp,
+  Upload,
+} from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
 
@@ -41,11 +50,12 @@ export default function Home() {
             transition={{ duration: 0.5 }}
           >
             <Image
-              src="https://hebbkx1anhila5yf.public.blob.vercel-storage.com/image-YWxBTZdyZPGsqtujby8t5HegkfW1hI.png"
+              src="/logo-engage7-labs.svg"
               alt="Engage7 Labs"
               width={160}
               height={50}
               className="h-12 w-auto"
+              priority
             />
           </motion.div>
           <motion.div
@@ -120,24 +130,75 @@ export default function Home() {
               size="lg"
               variant="outline"
               className="border-white/20 rounded-full px-8 hover:bg-white/20 transition-all duration-300 bg-white/10 text-white"
+              onClick={() => {
+                document
+                  .getElementById("how-it-works")
+                  ?.scrollIntoView({ behavior: "smooth" });
+              }}
             >
               {t.home.hero.ctaSecondary}
             </Button>
           </motion.div>
 
-          {/* Decorative element */}
-          <motion.div variants={fadeInUp} className="pt-8">
-            <div className="inline-block px-4 py-2 rounded-full bg-card/50 border border-border backdrop-blur-sm">
-              <p className="text-sm text-white font-medium">
-                {t.home.hero.trustBadge}
-              </p>
-            </div>
+          {/* Trust microcopy */}
+          <motion.div
+            variants={fadeInUp}
+            className="flex flex-wrap items-center justify-center gap-6 text-sm text-white/90"
+          >
+            <span className="flex items-center gap-2">
+              <svg
+                className="h-4 w-4"
+                fill="none"
+                strokeWidth="2"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  d="M5 13l4 4L19 7"
+                />
+              </svg>
+              {t.home.hero.trustLine1}
+            </span>
+            <span className="flex items-center gap-2">
+              <svg
+                className="h-4 w-4"
+                fill="none"
+                strokeWidth="2"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  d="M5 13l4 4L19 7"
+                />
+              </svg>
+              {t.home.hero.trustLine2}
+            </span>
+            <span className="flex items-center gap-2">
+              <svg
+                className="h-4 w-4"
+                fill="none"
+                strokeWidth="2"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  d="M5 13l4 4L19 7"
+                />
+              </svg>
+              {t.home.hero.trustLine3}
+            </span>
           </motion.div>
         </motion.div>
       </section>
 
       {/* Features Section */}
-      <section className="py-24 px-6 bg-background">
+      <section id="how-it-works" className="py-24 px-6 bg-background">
         <div className="max-w-6xl mx-auto">
           <motion.div
             initial={{ opacity: 0, y: 20 }}
@@ -216,6 +277,294 @@ export default function Home() {
         </div>
       </section>
 
+      {/* How Engage7 Works Section */}
+      <section className="py-24 px-6 bg-muted/30">
+        <div className="max-w-6xl mx-auto">
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.6 }}
+            viewport={{ once: true }}
+            className="text-center mb-16"
+          >
+            <h2 className="text-4xl md:text-5xl font-semibold text-foreground mb-6">
+              {t.home.howItWorks.sectionTitle}
+            </h2>
+            <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
+              {t.home.howItWorks.sectionSubtitle}
+            </p>
+          </motion.div>
+
+          {/* 4-Step Process */}
+          <div className="grid md:grid-cols-4 gap-8 max-w-5xl mx-auto">
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.6, delay: 0.1 }}
+              viewport={{ once: true }}
+              className="text-center space-y-4"
+            >
+              <div className="mx-auto w-16 h-16 rounded-full bg-accent/10 flex items-center justify-center">
+                <Upload className="h-8 w-8 text-accent" />
+              </div>
+              <div className="space-y-2">
+                <div className="text-sm font-semibold text-accent">Step 1</div>
+                <h3 className="text-lg font-semibold text-foreground">
+                  {t.home.howItWorks.step1.title}
+                </h3>
+                <p className="text-sm text-muted-foreground">
+                  {t.home.howItWorks.step1.description}
+                </p>
+              </div>
+            </motion.div>
+
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.6, delay: 0.2 }}
+              viewport={{ once: true }}
+              className="text-center space-y-4"
+            >
+              <div className="mx-auto w-16 h-16 rounded-full bg-accent/10 flex items-center justify-center">
+                <Activity className="h-8 w-8 text-accent" />
+              </div>
+              <div className="space-y-2">
+                <div className="text-sm font-semibold text-accent">Step 2</div>
+                <h3 className="text-lg font-semibold text-foreground">
+                  {t.home.howItWorks.step2.title}
+                </h3>
+                <p className="text-sm text-muted-foreground">
+                  {t.home.howItWorks.step2.description}
+                </p>
+              </div>
+            </motion.div>
+
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.6, delay: 0.3 }}
+              viewport={{ once: true }}
+              className="text-center space-y-4"
+            >
+              <div className="mx-auto w-16 h-16 rounded-full bg-accent/10 flex items-center justify-center">
+                <BarChart3 className="h-8 w-8 text-accent" />
+              </div>
+              <div className="space-y-2">
+                <div className="text-sm font-semibold text-accent">Step 3</div>
+                <h3 className="text-lg font-semibold text-foreground">
+                  {t.home.howItWorks.step3.title}
+                </h3>
+                <p className="text-sm text-muted-foreground">
+                  {t.home.howItWorks.step3.description}
+                </p>
+              </div>
+            </motion.div>
+
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.6, delay: 0.4 }}
+              viewport={{ once: true }}
+              className="text-center space-y-4"
+            >
+              <div className="mx-auto w-16 h-16 rounded-full bg-accent/10 flex items-center justify-center">
+                <FileCheck className="h-8 w-8 text-accent" />
+              </div>
+              <div className="space-y-2">
+                <div className="text-sm font-semibold text-accent">Step 4</div>
+                <h3 className="text-lg font-semibold text-foreground">
+                  {t.home.howItWorks.step4.title}
+                </h3>
+                <p className="text-sm text-muted-foreground">
+                  {t.home.howItWorks.step4.description}
+                </p>
+              </div>
+            </motion.div>
+          </div>
+        </div>
+      </section>
+
+      {/* Example Report Section */}
+      <section className="py-24 px-6 bg-background">
+        <div className="max-w-6xl mx-auto">
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.6 }}
+            viewport={{ once: true }}
+            className="text-center mb-16"
+          >
+            <h2 className="text-4xl md:text-5xl font-semibold text-foreground mb-6">
+              {t.home.exampleReport.sectionTitle}
+            </h2>
+            <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
+              {t.home.exampleReport.sectionSubtitle}
+            </p>
+          </motion.div>
+
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.6, delay: 0.2 }}
+            viewport={{ once: true }}
+            className="max-w-4xl mx-auto"
+          >
+            <div className="rounded-2xl border border-border bg-card p-8 md:p-12 space-y-8">
+              <div className="text-center space-y-2 pb-6 border-b border-border">
+                <div className="inline-flex items-center justify-center p-3 rounded-lg bg-accent/10 mb-4">
+                  <FileText className="h-8 w-8 text-accent" />
+                </div>
+                <h3 className="text-2xl font-semibold text-foreground">
+                  {t.home.exampleReport.cardTitle}
+                </h3>
+                <p className="text-sm text-muted-foreground">
+                  {t.home.exampleReport.cardSubtitle}
+                </p>
+              </div>
+
+              <div className="grid md:grid-cols-2 gap-6">
+                <div className="space-y-3 p-4 rounded-lg bg-muted/30">
+                  <h4 className="font-semibold text-foreground flex items-center gap-2">
+                    <div className="w-2 h-2 rounded-full bg-accent" />
+                    {t.home.exampleReport.sampleSummary.title}
+                  </h4>
+                  <p className="text-sm text-muted-foreground">
+                    {t.home.exampleReport.sampleSummary.description}
+                  </p>
+                </div>
+
+                <div className="space-y-3 p-4 rounded-lg bg-muted/30">
+                  <h4 className="font-semibold text-foreground flex items-center gap-2">
+                    <div className="w-2 h-2 rounded-full bg-accent" />
+                    {t.home.exampleReport.sampleBaseline.title}
+                  </h4>
+                  <p className="text-sm text-muted-foreground">
+                    {t.home.exampleReport.sampleBaseline.description}
+                  </p>
+                </div>
+
+                <div className="space-y-3 p-4 rounded-lg bg-muted/30">
+                  <h4 className="font-semibold text-foreground flex items-center gap-2">
+                    <div className="w-2 h-2 rounded-full bg-accent" />
+                    {t.home.exampleReport.sampleSignals.title}
+                  </h4>
+                  <p className="text-sm text-muted-foreground">
+                    {t.home.exampleReport.sampleSignals.description}
+                  </p>
+                </div>
+
+                <div className="space-y-3 p-4 rounded-lg bg-muted/30">
+                  <h4 className="font-semibold text-foreground flex items-center gap-2">
+                    <div className="w-2 h-2 rounded-full bg-accent" />
+                    {t.home.exampleReport.sampleStatus.title}
+                  </h4>
+                  <p className="text-sm text-muted-foreground">
+                    {t.home.exampleReport.sampleStatus.description}
+                  </p>
+                </div>
+              </div>
+            </div>
+          </motion.div>
+        </div>
+      </section>
+
+      {/* FAQ Section */}
+      <section className="py-24 px-6 bg-muted/30">
+        <div className="max-w-4xl mx-auto">
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.6 }}
+            viewport={{ once: true }}
+            className="text-center mb-16"
+          >
+            <h2 className="text-4xl md:text-5xl font-semibold text-foreground mb-6">
+              {t.home.faq.sectionTitle}
+            </h2>
+          </motion.div>
+
+          <div className="space-y-6">
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.6, delay: 0.1 }}
+              viewport={{ once: true }}
+              className="p-6 rounded-lg bg-card border border-border"
+            >
+              <h3 className="text-lg font-semibold text-foreground mb-3">
+                {t.home.faq.q1.question}
+              </h3>
+              <p className="text-muted-foreground">{t.home.faq.q1.answer}</p>
+            </motion.div>
+
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.6, delay: 0.2 }}
+              viewport={{ once: true }}
+              className="p-6 rounded-lg bg-card border border-border"
+            >
+              <h3 className="text-lg font-semibold text-foreground mb-3">
+                {t.home.faq.q2.question}
+              </h3>
+              <p className="text-muted-foreground">{t.home.faq.q2.answer}</p>
+            </motion.div>
+
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.6, delay: 0.3 }}
+              viewport={{ once: true }}
+              className="p-6 rounded-lg bg-card border border-border"
+            >
+              <h3 className="text-lg font-semibold text-foreground mb-3">
+                {t.home.faq.q3.question}
+              </h3>
+              <p className="text-muted-foreground">{t.home.faq.q3.answer}</p>
+            </motion.div>
+
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.6, delay: 0.4 }}
+              viewport={{ once: true }}
+              className="p-6 rounded-lg bg-card border border-border"
+            >
+              <h3 className="text-lg font-semibold text-foreground mb-3">
+                {t.home.faq.q4.question}
+              </h3>
+              <p className="text-muted-foreground">{t.home.faq.q4.answer}</p>
+            </motion.div>
+
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.6, delay: 0.5 }}
+              viewport={{ once: true }}
+              className="p-6 rounded-lg bg-card border border-border"
+            >
+              <h3 className="text-lg font-semibold text-foreground mb-3">
+                {t.home.faq.q5.question}
+              </h3>
+              <p className="text-muted-foreground">{t.home.faq.q5.answer}</p>
+            </motion.div>
+
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.6, delay: 0.6 }}
+              viewport={{ once: true }}
+              className="p-6 rounded-lg bg-card border border-border"
+            >
+              <h3 className="text-lg font-semibold text-foreground mb-3">
+                {t.home.faq.q6.question}
+              </h3>
+              <p className="text-muted-foreground">{t.home.faq.q6.answer}</p>
+            </motion.div>
+          </div>
+        </div>
+      </section>
+
       {/* CTA Section */}
       <section className="py-24 px-6 bg-gradient-to-b from-background to-card/50">
         <motion.div
@@ -243,6 +592,11 @@ export default function Home() {
               size="lg"
               variant="outline"
               className="border-border rounded-full px-8 hover:bg-muted transition-all duration-300 bg-transparent"
+              onClick={() => {
+                document
+                  .getElementById("how-it-works")
+                  ?.scrollIntoView({ behavior: "smooth" });
+              }}
             >
               {t.home.cta.ctaSecondary}
             </Button>
@@ -264,24 +618,24 @@ export default function Home() {
               {t.home.footer.copyright}
             </p>
             <div className="flex gap-6 text-sm text-muted-foreground">
-              <a
-                href="#"
+              <Link
+                href="/privacy-policy"
                 className="hover:text-foreground transition-colors duration-300"
               >
                 {t.home.footer.privacy}
-              </a>
-              <a
-                href="#"
+              </Link>
+              <Link
+                href="/terms-of-service"
                 className="hover:text-foreground transition-colors duration-300"
               >
                 {t.home.footer.terms}
-              </a>
-              <a
-                href="#"
+              </Link>
+              <Link
+                href="/contact"
                 className="hover:text-foreground transition-colors duration-300"
               >
                 {t.home.footer.contact}
-              </a>
+              </Link>
             </div>
           </motion.div>
         </div>
