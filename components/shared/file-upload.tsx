@@ -47,9 +47,7 @@ export function FileUpload({
     // Check file extension
     const fileName = file.name.toLowerCase();
     if (!fileName.endsWith(".zip")) {
-      setError(
-        "Only .zip files are supported (Apple Health export format)"
-      );
+      setError("Only .zip files are supported (Apple Health export format)");
       return false;
     }
 

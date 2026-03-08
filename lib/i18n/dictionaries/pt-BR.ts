@@ -85,8 +85,7 @@ export const ptBR: Dictionary = {
     // Example Report Section
     exampleReport: {
       sectionTitle: "O que esperar",
-      sectionSubtitle:
-        "Veja que tipo de insights você receberá da sua análise",
+      sectionSubtitle: "Veja que tipo de insights você receberá da sua análise",
       cardTitle: "Relatório de Análise de Exemplo",
       cardSubtitle: "Estrutura de saída de exemplo",
 

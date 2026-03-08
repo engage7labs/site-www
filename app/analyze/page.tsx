@@ -12,12 +12,10 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { submitAnalysisUpload } from "@/lib/api/analysis";
 import { motion } from "framer-motion";
 import {
-  Activity,
   ArrowLeft,
   BarChart3,
   CheckCircle2,
   FileCheck,
-  TrendingUp,
   Upload,
 } from "lucide-react";
 import Link from "next/link";

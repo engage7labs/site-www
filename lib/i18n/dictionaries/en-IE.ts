@@ -56,8 +56,7 @@ export const enIE = {
 
       step1: {
         title: "Upload dataset",
-        description:
-          "Provide your Apple Health export as a standard .zip file",
+        description: "Provide your Apple Health export as a standard .zip file",
       },
 
       step2: {
