@@ -1,0 +1,207 @@
+/**
+ * File Upload Component
+ *
+ * Allows users to upload their Apple Health export for analysis.
+ */
+
+"use client";
+
+import { Button } from "@/components/ui/button";
+import { cn } from "@/lib/utils";
+import { File, Upload, X } from "lucide-react";
+import * as React from "react";
+import { useCallback, useState } from "react";
+
+interface FileUploadProps {
+  onFileSelect: (file: File) => void;
+  onUpload: () => void;
+  isUploading: boolean;
+  disabled?: boolean;
+  acceptedFileTypes?: string;
+  maxSizeMB?: number;
+  t: any; // Dictionary translations
+}
+
+export function FileUpload({
+  onFileSelect,
+  onUpload,
+  isUploading,
+  disabled = false,
+  acceptedFileTypes = ".zip",
+  maxSizeMB = 500,
+  t,
+}: FileUploadProps) {
+  const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const [dragActive, setDragActive] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const inputRef = React.useRef<HTMLInputElement>(null);
+
+  const validateFile = (file: File): boolean => {
+    // Check file size
+    const maxSizeBytes = maxSizeMB * 1024 * 1024;
+    if (file.size > maxSizeBytes) {
+      setError(`File size must be less than ${maxSizeMB}MB`);
+      return false;
+    }
+
+    // Check file type
+    if (acceptedFileTypes && !file.name.endsWith(".zip")) {
+      setError("Only .zip files are supported");
+      return false;
+    }
+
+    setError(null);
+    return true;
+  };
+
+  const handleFile = useCallback(
+    (file: File) => {
+      if (validateFile(file)) {
+        setSelectedFile(file);
+        onFileSelect(file);
+      }
+    },
+    [onFileSelect]
+  );
+
+  const handleDrag = useCallback((e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (e.type === "dragenter" || e.type === "dragover") {
+      setDragActive(true);
+    } else if (e.type === "dragleave") {
+      setDragActive(false);
+    }
+  }, []);
+
+  const handleDrop = useCallback(
+    (e: React.DragEvent) => {
+      e.preventDefault();
+      e.stopPropagation();
+      setDragActive(false);
+
+      if (e.dataTransfer.files && e.dataTransfer.files[0]) {
+        handleFile(e.dataTransfer.files[0]);
+      }
+    },
+    [handleFile]
+  );
+
+  const handleChange = useCallback(
+    (e: React.ChangeEvent<HTMLInputElement>) => {
+      e.preventDefault();
+      if (e.target.files && e.target.files[0]) {
+        handleFile(e.target.files[0]);
+      }
+    },
+    [handleFile]
+  );
+
+  const handleClick = () => {
+    inputRef.current?.click();
+  };
+
+  const handleRemove = () => {
+    setSelectedFile(null);
+    setError(null);
+    if (inputRef.current) {
+      inputRef.current.value = "";
+    }
+  };
+
+  const handleUploadClick = () => {
+    if (selectedFile && !isUploading) {
+      onUpload();
+    }
+  };
+
+  return (
+    <div className="w-full space-y-4">
+      {/* Upload area */}
+      <div
+        className={cn(
+          "relative border-2 border-dashed rounded-lg p-8 transition-colors",
+          dragActive && "border-accent bg-accent/5",
+          !dragActive && "border-border hover:border-accent/50",
+          disabled && "opacity-50 cursor-not-allowed",
+          error && "border-destructive"
+        )}
+        onDragEnter={handleDrag}
+        onDragLeave={handleDrag}
+        onDragOver={handleDrag}
+        onDrop={handleDrop}
+        onClick={!disabled ? handleClick : undefined}
+      >
+        <input
+          ref={inputRef}
+          type="file"
+          className="hidden"
+          accept={acceptedFileTypes}
+          onChange={handleChange}
+          disabled={disabled}
+        />
+
+        {!selectedFile ? (
+          <div className="flex flex-col items-center justify-center space-y-4 text-center">
+            <div className="p-4 rounded-full bg-muted">
+              <Upload className="h-8 w-8 text-muted-foreground" />
+            </div>
+            <div className="space-y-2">
+              <p className="text-sm text-foreground font-medium">
+                {t.analyze.upload.dragHint}
+              </p>
+              <p className="text-xs text-muted-foreground">
+                {t.analyze.upload.description}
+              </p>
+            </div>
+          </div>
+        ) : (
+          <div className="flex items-center justify-between">
+            <div className="flex items-center space-x-3">
+              <div className="p-2 rounded-lg bg-accent/10">
+                <File className="h-5 w-5 text-accent" />
+              </div>
+              <div className="flex flex-col">
+                <span className="text-sm font-medium text-foreground">
+                  {selectedFile.name}
+                </span>
+                <span className="text-xs text-muted-foreground">
+                  {(selectedFile.size / (1024 * 1024)).toFixed(2)} MB
+                </span>
+              </div>
+            </div>
+            {!isUploading && (
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  handleRemove();
+                }}
+              >
+                <X className="h-4 w-4" />
+              </Button>
+            )}
+          </div>
+        )}
+      </div>
+
+      {/* Error message */}
+      {error && <p className="text-sm text-destructive">{error}</p>}
+
+      {/* Upload button */}
+      {selectedFile && (
+        <Button
+          onClick={handleUploadClick}
+          disabled={isUploading || disabled}
+          className="w-full"
+          size="lg"
+        >
+          {isUploading
+            ? t.analyze.upload.buttonUploading
+            : t.analyze.upload.buttonUpload}
+        </Button>
+      )}
+    </div>
+  );
+}
