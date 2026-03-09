@@ -2,64 +2,57 @@
  * Analysis Types
  *
  * TypeScript types for Engage7 analysis API.
+ * Aligned with the actual engage7-api backend contract.
  */
 
-export type AnalysisStatus = "pending" | "processing" | "completed" | "failed";
+// Status values as returned by the backend
+export type AnalysisStatus = "queued" | "processing" | "completed" | "failed";
 
-export interface AnalysisJobAccepted {
-  jobId: string;
-  status: "pending";
-  createdAt: string;
+// -------------------------------------------------------------------------
+// Backend response shapes (snake_case — as returned by engage7-api)
+// -------------------------------------------------------------------------
+
+/** Returned by POST /api/analyze-upload */
+export interface UploadResponse {
+  job_id: string;
+  status: AnalysisStatus;
+  result_url: string;
+  pdf_url: string;
 }
 
-export interface AnalysisSummary {
-  datasetPeriod: string;
-  recordsAnalyzed: number;
-  insightsGenerated: number;
-  processingTimeMs?: number;
+/** Dataset summary in GET /api/result/{job_id} */
+export interface DatasetSummary {
+  dataset_start: string | null;
+  dataset_end: string | null;
+  days: number | null;
+  total_rows: number | null;
 }
 
-export interface Insight {
-  id: string;
-  title: string;
-  description: string;
-  category: string;
-  confidence?: number;
-  metadata?: Record<string, any>;
+/** Artifact info in GET /api/result/{job_id} */
+export interface AnalysisArtifacts {
+  pdf_available: boolean;
+  pdf_url: string | null;
+  pdf_blob_url: string | null;
 }
 
-export interface AnalysisArtifact {
-  type: "pdf" | "csv" | "json";
-  name: string;
-  url: string;
-  sizeBytes: number;
-}
-
+/** Full result returned by GET /api/result/{job_id} */
 export interface AnalysisResult {
-  jobId: string;
+  job_id: string;
   status: AnalysisStatus;
-  createdAt: string;
-  completedAt?: string;
-  summary?: AnalysisSummary;
-  insights?: Insight[];
-  artifacts?: AnalysisArtifact[];
-  error?: {
-    code: string;
-    message: string;
-    details?: string;
-  };
+  summary: DatasetSummary | null;
+  highlights: string[];
+  sections: Record<string, unknown> | null;
+  artifacts: AnalysisArtifacts | null;
+  error: string | null;
 }
 
-export interface AnalysisStatusResponse {
-  jobId: string;
-  status: AnalysisStatus;
-  progress?: number;
-  message?: string;
-}
+// -------------------------------------------------------------------------
+// Error type
+// -------------------------------------------------------------------------
 
 export interface ApiError {
   error: string;
   message: string;
   statusCode: number;
-  details?: any;
+  details?: unknown;
 }

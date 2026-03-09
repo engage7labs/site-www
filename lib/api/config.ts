@@ -18,11 +18,9 @@ export const API_BASE_URL =
  */
 export const API_ENDPOINTS = {
   // Analysis endpoints
-  uploadAnalysis: "/api/v1/analysis/upload",
-  getAnalysisStatus: (jobId: string) => `/api/v1/analysis/${jobId}/status`,
-  getAnalysisResult: (jobId: string) => `/api/v1/analysis/${jobId}`,
-  downloadArtifact: (jobId: string, artifactId: string) =>
-    `/api/v1/analysis/${jobId}/artifacts/${artifactId}`,
+  uploadAnalysis: "/api/analyze-upload",
+  getAnalysisResult: (jobId: string) => `/api/result/${jobId}`,
+  getPdf: (jobId: string) => `/api/result/${jobId}/pdf`,
 } as const;
 
 /**

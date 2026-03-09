@@ -11,6 +11,7 @@ import { FileUpload } from "@/components/shared/file-upload";
 import { Checkbox } from "@/components/ui/checkbox";
 import { submitAnalysisUpload } from "@/lib/api/analysis";
 import { motion } from "framer-motion";
+import { toast } from "sonner";
 import {
   ArrowLeft,
   BarChart3,
@@ -58,13 +59,10 @@ export default function AnalyzePage() {
       const result = await submitAnalysisUpload(selectedFile);
 
       // Redirect to result page with job ID
-      router.push(`/result/${result.jobId}`);
+      router.push(`/result/${result.job_id}`);
     } catch (error) {
       console.error("Upload error:", error);
-      // TODO: Add proper error handling/toast notification
-      alert(
-        "Failed to upload file. Please try again or contact support if the issue persists."
-      );
+      toast.error("Upload failed. Please try again or contact support.");
       setIsUploading(false);
     }
   };
