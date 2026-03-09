@@ -6,6 +6,7 @@
 
 export {
   getAnalysisResult,
+  getCsvUrl,
   getPdfUrl,
   submitAnalysisUpload,
 } from "./analysis";

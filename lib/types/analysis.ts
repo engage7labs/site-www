@@ -33,6 +33,8 @@ export interface AnalysisArtifacts {
   pdf_available: boolean;
   pdf_url: string | null;
   pdf_blob_url: string | null;
+  csv_available: boolean;
+  csv_url: string | null;
 }
 
 /** Full result returned by GET /api/result/{job_id} */
