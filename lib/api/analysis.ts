@@ -42,3 +42,11 @@ export async function getAnalysisResult(
 export function getPdfUrl(jobId: string): string {
   return API_BASE_URL + API_ENDPOINTS.getPdf(jobId);
 }
+
+/**
+ * Returns the full URL for downloading the canonical CSV dataset.
+ * The caller is responsible for verifying artifacts.csv_available before use.
+ */
+export function getCsvUrl(jobId: string): string {
+  return API_BASE_URL + API_ENDPOINTS.getCsv(jobId);
+}

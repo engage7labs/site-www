@@ -8,7 +8,7 @@
 "use client";
 
 import { useLocale } from "@/components/providers/locale-provider";
-import { getAnalysisResult, getPdfUrl } from "@/lib/api/analysis";
+import { getAnalysisResult, getCsvUrl, getPdfUrl } from "@/lib/api/analysis";
 import { ApiClientError } from "@/lib/api/client";
 import type { AnalysisResult } from "@/lib/types/analysis";
 import { motion } from "framer-motion";
@@ -309,6 +309,26 @@ function CompletedView({
             </a>
             <p className="text-xs text-muted-foreground">
               Opens a PDF report with detailed analysis findings.
+            </p>
+          </motion.div>
+        )}
+
+
+        {/* CSV Download */}
+        {artifacts?.csv_available && (
+          <motion.div
+            variants={fadeInUp}
+            className="rounded-lg border border-border bg-card p-6 space-y-4"
+          >
+            <a
+              href={getCsvUrl(jobId)}
+              className="inline-flex items-center space-x-2 px-5 py-2.5 rounded-md border border-border text-sm font-medium text-foreground hover:bg-muted/30 transition-colors"
+            >
+              <Download className="h-4 w-4" />
+              <span>{t.result.artifacts.downloadData}</span>
+            </a>
+            <p className="text-xs text-muted-foreground">
+              Downloads the canonical dataset used for this analysis (CSV).
             </p>
           </motion.div>
         )}
