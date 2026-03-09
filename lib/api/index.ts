@@ -5,9 +5,8 @@
  */
 
 export {
-  downloadArtifact,
   getAnalysisResult,
-  getAnalysisStatus,
+  getPdfUrl,
   submitAnalysisUpload,
 } from "./analysis";
 export { ApiClientError } from "./client";
