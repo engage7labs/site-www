@@ -4,10 +4,10 @@
 
 "use client";
 
+import { useLocale } from "@/components/providers/locale-provider";
 import { LocaleSwitcher } from "@/components/shared/locale-switcher";
 import { ThemeSwitcher } from "@/components/shared/theme-switcher";
 import { Button } from "@/components/ui/button";
-import { useLocale } from "@/components/providers/locale-provider";
 import { motion } from "framer-motion";
 import Image from "next/image";
 import Link from "next/link";
@@ -43,10 +43,7 @@ export function SiteHeader() {
           <ThemeSwitcher />
           <LocaleSwitcher />
           <Link href="/analyze">
-            <Button
-              variant="ghost"
-              className="text-foreground hover:bg-muted"
-            >
+            <Button variant="ghost" className="text-foreground hover:bg-muted">
               {t.nav.getStarted}
             </Button>
           </Link>
