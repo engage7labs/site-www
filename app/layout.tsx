@@ -16,7 +16,7 @@ export const metadata: Metadata = {
     template: "%s | Engage7",
   },
   description:
-    "Engage7 transforms raw Apple Health data into deterministic, explainable insights built from your physiological baseline. No AI black boxes. Your data stays yours.",
+    "From wearable signals to human-readable insights. Calm, explainable, and built for reflection.",
   keywords: [
     "wearable data analysis",
     "Apple Health",
@@ -29,30 +29,30 @@ export const metadata: Metadata = {
   ],
   authors: [{ name: "Engage7 Labs" }],
   creator: "Engage7 Labs",
-  metadataBase: new URL("https://engage7.com"),
+  metadataBase: new URL("https://www.engage7.ie"),
   openGraph: {
     type: "website",
     locale: "en_IE",
-    url: "https://engage7.com",
+    url: "https://www.engage7.ie",
     siteName: "Engage7",
-    title: "Engage7 - Understand Your Wearable Data Clearly",
+    title: "Engage7 — Understand Your Wearable Data",
     description:
-      "Transform raw health signals into deterministic insights built from your physiological baseline. No AI black boxes.",
+      "From wearable signals to human-readable insights. Calm, explainable, and built for reflection.",
     images: [
       {
-        url: "/og-image.png",
+        url: "/og",
         width: 1200,
         height: 630,
-        alt: "Engage7 - Deterministic Wearable Data Analysis",
+        alt: "Engage7 — From wearable signals to human-readable insights",
       },
     ],
   },
   twitter: {
     card: "summary_large_image",
-    title: "Engage7 - Understand Your Wearable Data Clearly",
+    title: "Engage7 — Understand Your Wearable Data",
     description:
-      "Transform raw health signals into deterministic insights built from your physiological baseline.",
-    images: ["/og-image.png"],
+      "From wearable signals to human-readable insights. Calm, explainable, and built for reflection.",
+    images: ["/og"],
   },
   robots: {
     index: true,
@@ -84,8 +84,8 @@ export default function RootLayout({
               "@type": "WebApplication",
               name: "Engage7",
               description:
-                "Deterministic wearable data analysis built from your physiological baseline.",
-              url: "https://engage7.com",
+                "From wearable signals to human-readable insights. Calm, explainable, and built for reflection.",
+              url: "https://www.engage7.ie",
               applicationCategory: "HealthApplication",
               operatingSystem: "Web",
               offers: {
@@ -96,7 +96,7 @@ export default function RootLayout({
               author: {
                 "@type": "Organization",
                 name: "Engage7 Labs",
-                url: "https://engage7.com",
+                url: "https://www.engage7.ie",
               },
             }),
           }}

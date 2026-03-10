@@ -70,9 +70,7 @@ export function CommunityActivity({ t, className }: CommunityActivityProps) {
               <p className="text-2xl font-semibold text-foreground">
                 {metrics.uploads_24h}
               </p>
-              <p className="text-xs text-muted-foreground">
-                {t.recentUploads}
-              </p>
+              <p className="text-xs text-muted-foreground">{t.recentUploads}</p>
             </div>
             <div className="text-center space-y-1">
               <div className="mx-auto w-10 h-10 rounded-full bg-accent/10 flex items-center justify-center">
