@@ -160,6 +160,16 @@ export const enIE = {
       title: "Built with trusted technologies",
     },
 
+    // Community Activity
+    communityActivity: {
+      title: "Community Activity",
+      totalUploads: "Total Analyses",
+      recentUploads: "Analyses (24h)",
+      languages: "Languages",
+      loading: "Loading metrics...",
+      error: "Metrics unavailable",
+    },
+
     // Final CTA Section
     cta: {
       title: "Ready to understand your data?",
@@ -384,7 +394,6 @@ export const enIE = {
     shareDescription: "Choose a platform to share Engage7 with your network.",
     shareText:
       "I just analyzed my wearable data with Engage7 — deterministic insights from my physiological baseline. Try it yourself!",
-    shareUrl: "https://engage7.com",
     copyLink: "Copy Link",
     copied: "Copied!",
     backToHome: "Back to Home",

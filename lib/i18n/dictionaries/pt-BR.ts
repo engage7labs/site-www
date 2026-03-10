@@ -163,6 +163,16 @@ export const ptBR: Dictionary = {
       title: "Construído com tecnologias confiáveis",
     },
 
+    // Community Activity
+    communityActivity: {
+      title: "Atividade da Comunidade",
+      totalUploads: "Total de Análises",
+      recentUploads: "Análises (24h)",
+      languages: "Idiomas",
+      loading: "Carregando métricas...",
+      error: "Métricas indisponíveis",
+    },
+
     // Final CTA Section
     cta: {
       title: "Pronto para entender seus dados?",
@@ -388,7 +398,6 @@ export const ptBR: Dictionary = {
       "Escolha uma plataforma para compartilhar o Engage7 com sua rede.",
     shareText:
       "Acabei de analisar meus dados de dispositivos vestíveis com o Engage7 — insights determinísticos da minha linha de base fisiológica. Experimente você também!",
-    shareUrl: "https://engage7.com",
     copyLink: "Copiar Link",
     copied: "Copiado!",
     backToHome: "Voltar para Início",

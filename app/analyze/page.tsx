@@ -8,13 +8,14 @@
 
 import { useLocale } from "@/components/providers/locale-provider";
 import { FileUpload } from "@/components/shared/file-upload";
+import { SiteFooter } from "@/components/shared/site-footer";
+import { SiteHeader } from "@/components/shared/site-header";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Turnstile } from "@/components/shared/turnstile";
 import { submitAnalysisUpload } from "@/lib/api/analysis";
 import { ApiClientError } from "@/lib/api/client";
 import { motion } from "framer-motion";
 import {
-  ArrowLeft,
   BarChart3,
   CheckCircle2,
   FileCheck,
@@ -73,22 +74,11 @@ export default function AnalyzePage() {
   };
 
   return (
-    <div className="min-h-screen bg-background">
-      {/* Header */}
-      <header className="border-b border-border bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 sticky top-0 z-50">
-        <div className="max-w-6xl mx-auto px-6 py-4">
-          <Link
-            href="/"
-            className="inline-flex items-center text-sm text-muted-foreground hover:text-foreground transition-colors"
-          >
-            <ArrowLeft className="h-4 w-4 mr-2" />
-            {t.analyze.backToHome}
-          </Link>
-        </div>
-      </header>
+    <div className="min-h-screen bg-background flex flex-col">
+      <SiteHeader />
 
       {/* Main Content */}
-      <main className="max-w-6xl mx-auto px-6 py-12">
+      <main className="flex-1 max-w-6xl w-full mx-auto px-6 pt-32 pb-12">
         <motion.div
           variants={staggerContainer}
           initial="initial"
@@ -253,6 +243,8 @@ export default function AnalyzePage() {
           </motion.div>
         </motion.div>
       </main>
+
+      <SiteFooter />
     </div>
   );
 }

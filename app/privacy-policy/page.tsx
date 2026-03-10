@@ -7,10 +7,10 @@
 "use client";
 
 import { useLocale } from "@/components/providers/locale-provider";
-import { Button } from "@/components/ui/button";
+import { SiteFooter } from "@/components/shared/site-footer";
+import { SiteHeader } from "@/components/shared/site-header";
 import { motion } from "framer-motion";
-import { ArrowLeft, Shield } from "lucide-react";
-import Link from "next/link";
+import { Shield } from "lucide-react";
 
 const fadeInUp = {
   initial: { opacity: 0, y: 20 },
@@ -31,22 +31,11 @@ export default function PrivacyPolicyPage() {
   const { t } = useLocale();
 
   return (
-    <div className="min-h-screen bg-background">
-      {/* Header */}
-      <header className="border-b border-border bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 sticky top-0 z-50">
-        <div className="max-w-4xl mx-auto px-6 py-4">
-          <Link
-            href="/"
-            className="inline-flex items-center text-sm text-muted-foreground hover:text-foreground transition-colors"
-          >
-            <ArrowLeft className="h-4 w-4 mr-2" />
-            {t.privacyPolicy.backToHome}
-          </Link>
-        </div>
-      </header>
+    <div className="min-h-screen bg-background flex flex-col">
+      <SiteHeader />
 
       {/* Main Content */}
-      <main className="max-w-4xl mx-auto px-6 py-16">
+      <main className="flex-1 max-w-4xl w-full mx-auto px-6 pt-32 pb-16">
         <motion.div
           variants={staggerContainer}
           initial="initial"
@@ -108,18 +97,10 @@ export default function PrivacyPolicyPage() {
               {t.privacyPolicy.sections.dataRights.content}
             </p>
           </motion.section>
-
-          {/* Back to Home CTA */}
-          <motion.div variants={fadeInUp} className="pt-8">
-            <Link href="/">
-              <Button size="lg" className="rounded-full">
-                <ArrowLeft className="mr-2 h-4 w-4" />
-                {t.privacyPolicy.backToHome}
-              </Button>
-            </Link>
-          </motion.div>
         </motion.div>
       </main>
+
+      <SiteFooter />
     </div>
   );
 }
