@@ -158,6 +158,11 @@ export const ptBR: Dictionary = {
       },
     },
 
+    // Technology Stack
+    techStack: {
+      title: "Construído com tecnologias confiáveis",
+    },
+
     // Final CTA Section
     cta: {
       title: "Pronto para entender seus dados?",
@@ -173,6 +178,7 @@ export const ptBR: Dictionary = {
       privacy: "Política de Privacidade",
       terms: "Termos de Serviço",
       contact: "Contato",
+      research: "Pesquisa",
     },
   },
 
@@ -363,18 +369,48 @@ export const ptBR: Dictionary = {
   contact: {
     title: "Entre em Contato",
     subtitle: "Tem perguntas? Adoraríamos ouvir de você.",
-    form: {
-      name: "Nome",
-      namePlaceholder: "Seu nome",
-      email: "E-mail",
-      emailPlaceholder: "seu@email.com",
-      message: "Mensagem",
-      messagePlaceholder: "Como podemos ajudá-lo?",
-      submit: "Enviar Mensagem",
-      sending: "Enviando...",
-      success: "Mensagem enviada com sucesso!",
-      error: "Falha ao enviar mensagem. Por favor, tente novamente.",
+    linkedin: {
+      heading: "Conecte-se no LinkedIn",
+      description:
+        "Entre em contato com Rodrigo Marques no LinkedIn para perguntas, feedback ou oportunidades de colaboração.",
+      button: "Abrir Perfil no LinkedIn",
     },
     backToHome: "Voltar para Início",
+  },
+
+  // Friends Page
+  friends: {
+    title: "Convide Amigos",
+    subtitle:
+      "Compartilhe o Engage7 com amigos e ajude-os a entender seus dados de dispositivos vestíveis também.",
+    shareTitle: "Compartilhar Engage7",
+    shareDescription:
+      "Escolha uma plataforma para compartilhar o Engage7 com sua rede.",
+    shareText:
+      "Acabei de analisar meus dados de dispositivos vestíveis com o Engage7 — insights determinísticos da minha linha de base fisiológica. Experimente você também!",
+    shareUrl: "https://engage7.com",
+    copyLink: "Copiar Link",
+    copied: "Copiado!",
+    backToHome: "Voltar para Início",
+
+    socialProof: {
+      title: "Atividade da Comunidade",
+      totalUploads: "Total de Análises",
+      recentUploads: "Análises (24h)",
+      languages: "Idiomas",
+      loading: "Carregando métricas...",
+      error: "Métricas indisponíveis",
+    },
+  },
+
+  // Social Share
+  socialShare: {
+    whatsapp: "WhatsApp",
+    facebook: "Facebook",
+    linkedin: "LinkedIn",
+    x: "X",
+    instagram: "Instagram",
+    copyLink: "Copiar Link",
+    copied: "Copiado!",
   },
 };

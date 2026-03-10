@@ -3,6 +3,7 @@
 import { MouseSpotlight } from "@/components/mouse-spotlight";
 import { useLocale } from "@/components/providers/locale-provider";
 import { LocaleSwitcher } from "@/components/shared/locale-switcher";
+import { TechLogos } from "@/components/shared/tech-logos";
 import { ThemeSwitcher } from "@/components/shared/theme-switcher";
 import { Button } from "@/components/ui/button";
 import { motion } from "framer-motion";
@@ -565,6 +566,31 @@ export default function Home() {
         </div>
       </section>
 
+      {/* Technology Stack */}
+      <section className="py-16 px-6 bg-background">
+        <div className="max-w-6xl mx-auto">
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.6 }}
+            viewport={{ once: true }}
+            className="text-center mb-8"
+          >
+            <p className="text-sm font-medium text-muted-foreground uppercase tracking-wider">
+              {t.home.techStack.title}
+            </p>
+          </motion.div>
+          <motion.div
+            initial={{ opacity: 0 }}
+            whileInView={{ opacity: 1 }}
+            transition={{ duration: 0.8 }}
+            viewport={{ once: true }}
+          >
+            <TechLogos />
+          </motion.div>
+        </div>
+      </section>
+
       {/* CTA Section */}
       <section className="py-24 px-6 bg-gradient-to-b from-background to-card/50">
         <motion.div
@@ -578,7 +604,7 @@ export default function Home() {
             {t.home.cta.title}
           </h2>
           <p className="text-lg text-muted-foreground">{t.home.cta.subtitle}</p>
-          <div className="flex flex-col sm:flex-row gap-4 justify-center pt-4">
+          <div className="flex justify-center pt-4">
             <Link href="/analyze">
               <Button
                 size="lg"
@@ -588,18 +614,6 @@ export default function Home() {
                 <ArrowRight className="ml-2 h-5 w-5" />
               </Button>
             </Link>
-            <Button
-              size="lg"
-              variant="outline"
-              className="border-border rounded-full px-8 hover:bg-muted transition-all duration-300 bg-transparent"
-              onClick={() => {
-                document
-                  .getElementById("how-it-works")
-                  ?.scrollIntoView({ behavior: "smooth" });
-              }}
-            >
-              {t.home.cta.ctaSecondary}
-            </Button>
           </div>
         </motion.div>
       </section>
@@ -636,6 +650,14 @@ export default function Home() {
               >
                 {t.home.footer.contact}
               </Link>
+              <a
+                href="https://github.com/rodrigomarquest/practicum2-nof1-adhd-bd"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="hover:text-foreground transition-colors duration-300"
+              >
+                {t.home.footer.research}
+              </a>
             </div>
           </motion.div>
         </div>

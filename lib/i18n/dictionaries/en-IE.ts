@@ -155,6 +155,11 @@ export const enIE = {
       },
     },
 
+    // Technology Stack
+    techStack: {
+      title: "Built with trusted technologies",
+    },
+
     // Final CTA Section
     cta: {
       title: "Ready to understand your data?",
@@ -170,6 +175,7 @@ export const enIE = {
       privacy: "Privacy Policy",
       terms: "Terms of Service",
       contact: "Contact",
+      research: "Research",
     },
   },
 
@@ -360,19 +366,48 @@ export const enIE = {
   contact: {
     title: "Contact Us",
     subtitle: "Have questions? We'd love to hear from you.",
-    form: {
-      name: "Name",
-      namePlaceholder: "Your name",
-      email: "Email",
-      emailPlaceholder: "your@email.com",
-      message: "Message",
-      messagePlaceholder: "How can we help you?",
-      submit: "Send Message",
-      sending: "Sending...",
-      success: "Message sent successfully!",
-      error: "Failed to send message. Please try again.",
+    linkedin: {
+      heading: "Connect on LinkedIn",
+      description:
+        "Reach out to Rodrigo Marques on LinkedIn for questions, feedback, or collaboration opportunities.",
+      button: "Open LinkedIn Profile",
     },
     backToHome: "Back to Home",
+  },
+
+  // Friends Page
+  friends: {
+    title: "Invite Friends",
+    subtitle:
+      "Share Engage7 with friends and help them understand their wearable data too.",
+    shareTitle: "Share Engage7",
+    shareDescription: "Choose a platform to share Engage7 with your network.",
+    shareText:
+      "I just analyzed my wearable data with Engage7 — deterministic insights from my physiological baseline. Try it yourself!",
+    shareUrl: "https://engage7.com",
+    copyLink: "Copy Link",
+    copied: "Copied!",
+    backToHome: "Back to Home",
+
+    socialProof: {
+      title: "Community Activity",
+      totalUploads: "Total Analyses",
+      recentUploads: "Analyses (24h)",
+      languages: "Languages",
+      loading: "Loading metrics...",
+      error: "Metrics unavailable",
+    },
+  },
+
+  // Social Share
+  socialShare: {
+    whatsapp: "WhatsApp",
+    facebook: "Facebook",
+    linkedin: "LinkedIn",
+    x: "X",
+    instagram: "Instagram",
+    copyLink: "Copy Link",
+    copied: "Copied!",
   },
 };
 
