@@ -2,9 +2,10 @@
 
 import { MouseSpotlight } from "@/components/mouse-spotlight";
 import { useLocale } from "@/components/providers/locale-provider";
-import { LocaleSwitcher } from "@/components/shared/locale-switcher";
+import { CommunityActivity } from "@/components/shared/community-activity";
+import { SiteFooter } from "@/components/shared/site-footer";
+import { SiteHeader } from "@/components/shared/site-header";
 import { TechLogos } from "@/components/shared/tech-logos";
-import { ThemeSwitcher } from "@/components/shared/theme-switcher";
 import { Button } from "@/components/ui/button";
 import { motion } from "framer-motion";
 import {
@@ -17,7 +18,6 @@ import {
   TrendingUp,
   Upload,
 } from "lucide-react";
-import Image from "next/image";
 import Link from "next/link";
 
 const fadeInUp = {
@@ -43,41 +43,7 @@ export default function Home() {
       <MouseSpotlight />
 
       {/* Navigation */}
-      <nav className="fixed top-0 w-full bg-white dark:bg-background border-b border-border z-50 backdrop-blur-sm bg-opacity-90 dark:bg-opacity-90">
-        <div className="max-w-6xl mx-auto px-6 py-4 flex items-center justify-between">
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ duration: 0.5 }}
-          >
-            <Image
-              src="/logo-engage7-labs.svg"
-              alt="Engage7 Labs"
-              width={160}
-              height={50}
-              className="h-12 w-auto"
-              priority
-            />
-          </motion.div>
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ duration: 0.5, delay: 0.1 }}
-            className="flex items-center gap-2"
-          >
-            <ThemeSwitcher />
-            <LocaleSwitcher />
-            <Link href="/analyze">
-              <Button
-                variant="ghost"
-                className="text-foreground hover:bg-muted"
-              >
-                {t.nav.getStarted}
-              </Button>
-            </Link>
-          </motion.div>
-        </div>
-      </nav>
+      <SiteHeader />
 
       {/* Hero Section */}
       <section className="pt-32 pb-24 px-6 min-h-screen flex items-center justify-center relative overflow-hidden">
@@ -385,6 +351,13 @@ export default function Home() {
         </div>
       </section>
 
+      {/* Community Activity Section */}
+      <section className="py-16 px-6 bg-background">
+        <div className="max-w-xl mx-auto">
+          <CommunityActivity t={t.home.communityActivity} />
+        </div>
+      </section>
+
       {/* Example Report Section */}
       <section className="py-24 px-6 bg-background">
         <div className="max-w-6xl mx-auto">
@@ -619,49 +592,7 @@ export default function Home() {
       </section>
 
       {/* Footer */}
-      <footer className="border-t border-border bg-background">
-        <div className="max-w-6xl mx-auto px-6 py-12">
-          <motion.div
-            initial={{ opacity: 0 }}
-            whileInView={{ opacity: 1 }}
-            transition={{ duration: 0.6 }}
-            viewport={{ once: true }}
-            className="flex flex-col md:flex-row items-center justify-between gap-8"
-          >
-            <p className="text-muted-foreground text-sm">
-              {t.home.footer.copyright}
-            </p>
-            <div className="flex gap-6 text-sm text-muted-foreground">
-              <Link
-                href="/privacy-policy"
-                className="hover:text-foreground transition-colors duration-300"
-              >
-                {t.home.footer.privacy}
-              </Link>
-              <Link
-                href="/terms-of-service"
-                className="hover:text-foreground transition-colors duration-300"
-              >
-                {t.home.footer.terms}
-              </Link>
-              <Link
-                href="/contact"
-                className="hover:text-foreground transition-colors duration-300"
-              >
-                {t.home.footer.contact}
-              </Link>
-              <a
-                href="https://github.com/rodrigomarquest/practicum2-nof1-adhd-bd"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="hover:text-foreground transition-colors duration-300"
-              >
-                {t.home.footer.research}
-              </a>
-            </div>
-          </motion.div>
-        </div>
-      </footer>
+      <SiteFooter />
     </div>
   );
 }

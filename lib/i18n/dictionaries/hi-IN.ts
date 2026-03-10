@@ -163,6 +163,16 @@ export const hiIN: Dictionary = {
       title: "विश्वसनीय तकनीकों के साथ निर्मित",
     },
 
+    // Community Activity
+    communityActivity: {
+      title: "सामुदायिक गतिविधि",
+      totalUploads: "कुल विश्लेषण",
+      recentUploads: "विश्लेषण (24 घंटे)",
+      languages: "भाषाएं",
+      loading: "मेट्रिक्स लोड हो रहे हैं...",
+      error: "मेट्रिक्स अनुपलब्ध",
+    },
+
     // Final CTA Section
     cta: {
       title: "अपने डेटा को समझने के लिए तैयार हैं?",
@@ -389,7 +399,6 @@ export const hiIN: Dictionary = {
       "अपने नेटवर्क के साथ Engage7 साझा करने के लिए एक प्लेटफ़ॉर्म चुनें।",
     shareText:
       "मैंने अभी Engage7 के साथ अपने पहनने योग्य डेटा का विश्लेषण किया — मेरी शारीरिक आधार रेखा से निश्चित अंतर्दृष्टि। आप भी आज़माएं!",
-    shareUrl: "https://engage7.com",
     copyLink: "लिंक कॉपी करें",
     copied: "कॉपी किया गया!",
     backToHome: "होम पर वापस जाएं",

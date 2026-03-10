@@ -8,4 +8,5 @@ export const config = {
   appEnv: process.env.NEXT_PUBLIC_APP_ENV ?? "dev",
   apiBaseUrl: process.env.NEXT_PUBLIC_API_BASE_URL ?? "http://localhost:8000",
   defaultLocale: process.env.NEXT_PUBLIC_DEFAULT_LOCALE ?? "en-IE",
+  siteUrl: process.env.NEXT_PUBLIC_SITE_URL ?? "https://engage7.com",
 } as const;
