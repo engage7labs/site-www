@@ -22,12 +22,14 @@ import { API_BASE_URL, API_ENDPOINTS } from "./config";
 export async function submitAnalysisUpload(
   file: File,
   consent: boolean,
-  locale: string
+  locale: string,
+  turnstileToken?: string
 ): Promise<UploadResponse> {
   const formData = new FormData();
   formData.append("file", file);
   formData.append("consent", String(consent));
   formData.append("locale", locale);
+  if (turnstileToken) formData.append("cf_turnstile_response", turnstileToken);
   return postFormData<UploadResponse>(API_ENDPOINTS.uploadAnalysis, formData);
 }
 
@@ -57,4 +59,19 @@ export function getPdfUrl(jobId: string): string {
  */
 export function getCsvUrl(jobId: string): string {
   return API_BASE_URL + API_ENDPOINTS.getCsv(jobId);
+}
+
+/**
+ * Fetches aggregate anonymous metrics for social proof display.
+ *
+ * GET /api/metrics
+ */
+export interface PublicMetrics {
+  total_uploads: number;
+  uploads_24h: number;
+  unique_locales: number;
+}
+
+export async function getPublicMetrics(): Promise<PublicMetrics> {
+  return get<PublicMetrics>(API_ENDPOINTS.getMetrics);
 }

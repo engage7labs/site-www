@@ -1,7 +1,7 @@
 /**
  * Contact Page
  *
- * Allows users to reach out to Engage7 Labs support.
+ * LinkedIn CTA page for connecting with Engage7 Labs.
  */
 
 "use client";
@@ -9,9 +9,8 @@
 import { useLocale } from "@/components/providers/locale-provider";
 import { Button } from "@/components/ui/button";
 import { motion } from "framer-motion";
-import { ArrowLeft, Mail, Send } from "lucide-react";
+import { ArrowLeft, ExternalLink, Linkedin } from "lucide-react";
 import Link from "next/link";
-import { useState } from "react";
 
 const fadeInUp = {
   initial: { opacity: 0, y: 20 },
@@ -30,41 +29,6 @@ const staggerContainer = {
 
 export default function ContactPage() {
   const { t } = useLocale();
-  const [formData, setFormData] = useState({
-    name: "",
-    email: "",
-    subject: "",
-    message: "",
-  });
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const [submitStatus, setSubmitStatus] = useState<
-    "idle" | "success" | "error"
-  >("idle");
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setIsSubmitting(true);
-
-    // TODO: Implement actual form submission
-    // For now, simulate submission
-    setTimeout(() => {
-      setIsSubmitting(false);
-      setSubmitStatus("success");
-      setFormData({ name: "", email: "", subject: "", message: "" });
-
-      // Reset success message after 5 seconds
-      setTimeout(() => setSubmitStatus("idle"), 5000);
-    }, 1500);
-  };
-
-  const handleChange = (
-    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
-  ) => {
-    setFormData((prev) => ({
-      ...prev,
-      [e.target.name]: e.target.value,
-    }));
-  };
 
   return (
     <div className="min-h-screen bg-background">
@@ -92,7 +56,7 @@ export default function ContactPage() {
           {/* Page Header */}
           <motion.div variants={fadeInUp} className="space-y-4 text-center">
             <div className="flex items-center justify-center space-x-3">
-              <Mail className="h-8 w-8 text-accent" />
+              <Linkedin className="h-8 w-8 text-accent" />
               <h1 className="text-4xl md:text-5xl font-semibold text-foreground">
                 {t.contact.title}
               </h1>
@@ -102,119 +66,34 @@ export default function ContactPage() {
             </p>
           </motion.div>
 
-          {/* Contact Form */}
-          <motion.div variants={fadeInUp} className="max-w-2xl mx-auto">
-            <form onSubmit={handleSubmit} className="space-y-6">
-              {/* Name Field */}
-              <div className="space-y-2">
-                <label
-                  htmlFor="name"
-                  className="text-sm font-medium text-foreground"
-                >
-                  {t.contact.form.name}
-                </label>
-                <input
-                  type="text"
-                  id="name"
-                  name="name"
-                  value={formData.name}
-                  onChange={handleChange}
-                  required
-                  placeholder={t.contact.form.namePlaceholder}
-                  className="w-full px-4 py-3 rounded-lg border border-border bg-background text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-accent focus:border-transparent transition-all"
-                />
+          {/* LinkedIn CTA Card */}
+          <motion.div variants={fadeInUp} className="max-w-lg mx-auto">
+            <div className="rounded-2xl border border-border bg-card p-8 space-y-6 text-center">
+              <div className="mx-auto w-20 h-20 rounded-full bg-[#0A66C2]/10 flex items-center justify-center">
+                <Linkedin className="h-10 w-10 text-[#0A66C2]" />
               </div>
-
-              {/* Email Field */}
               <div className="space-y-2">
-                <label
-                  htmlFor="email"
-                  className="text-sm font-medium text-foreground"
-                >
-                  {t.contact.form.email}
-                </label>
-                <input
-                  type="email"
-                  id="email"
-                  name="email"
-                  value={formData.email}
-                  onChange={handleChange}
-                  required
-                  placeholder={t.contact.form.emailPlaceholder}
-                  className="w-full px-4 py-3 rounded-lg border border-border bg-background text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-accent focus:border-transparent transition-all"
-                />
+                <h2 className="text-xl font-semibold text-foreground">
+                  {t.contact.linkedin.heading}
+                </h2>
+                <p className="text-sm text-muted-foreground">
+                  {t.contact.linkedin.description}
+                </p>
               </div>
-
-              {/* Subject Field */}
-              <div className="space-y-2">
-                <label
-                  htmlFor="subject"
-                  className="text-sm font-medium text-foreground"
-                >
-                  {t.contact.form.subject}
-                </label>
-                <input
-                  type="text"
-                  id="subject"
-                  name="subject"
-                  value={formData.subject}
-                  onChange={handleChange}
-                  required
-                  placeholder={t.contact.form.subjectPlaceholder}
-                  className="w-full px-4 py-3 rounded-lg border border-border bg-background text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-accent focus:border-transparent transition-all"
-                />
-              </div>
-
-              {/* Message Field */}
-              <div className="space-y-2">
-                <label
-                  htmlFor="message"
-                  className="text-sm font-medium text-foreground"
-                >
-                  {t.contact.form.message}
-                </label>
-                <textarea
-                  id="message"
-                  name="message"
-                  value={formData.message}
-                  onChange={handleChange}
-                  required
-                  placeholder={t.contact.form.messagePlaceholder}
-                  rows={6}
-                  className="w-full px-4 py-3 rounded-lg border border-border bg-background text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-accent focus:border-transparent transition-all resize-none"
-                />
-              </div>
-
-              {/* Submit Button */}
-              <Button
-                type="submit"
-                size="lg"
-                disabled={isSubmitting}
-                className="w-full rounded-lg"
+              <a
+                href="https://linkedin.com/in/rodrigomarquest"
+                target="_blank"
+                rel="noopener noreferrer"
               >
-                {isSubmitting ? (
-                  t.contact.form.sending
-                ) : (
-                  <>
-                    {t.contact.form.send}
-                    <Send className="ml-2 h-4 w-4" />
-                  </>
-                )}
-              </Button>
-
-              {/* Success Message */}
-              {submitStatus === "success" && (
-                <motion.div
-                  initial={{ opacity: 0, y: -10 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  className="p-4 rounded-lg bg-accent/10 border border-accent/20 text-center"
+                <Button
+                  size="lg"
+                  className="w-full bg-[#0A66C2] hover:bg-[#004182] text-white rounded-lg"
                 >
-                  <p className="text-sm text-accent font-medium">
-                    {t.contact.form.success}
-                  </p>
-                </motion.div>
-              )}
-            </form>
+                  {t.contact.linkedin.button}
+                  <ExternalLink className="ml-2 h-4 w-4" />
+                </Button>
+              </a>
+            </div>
           </motion.div>
 
           {/* Back to Home CTA */}

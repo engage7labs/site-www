@@ -21,6 +21,9 @@ export const API_ENDPOINTS = {
   getAnalysisResult: (jobId: string) => `/api/result/${jobId}`,
   getPdf: (jobId: string) => `/api/result/${jobId}/pdf`,
   getCsv: (jobId: string) => `/api/result/${jobId}/csv`,
+
+  // Metrics
+  getMetrics: "/api/metrics",
 } as const;
 
 /**

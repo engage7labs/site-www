@@ -9,6 +9,7 @@
 import { useLocale } from "@/components/providers/locale-provider";
 import { FileUpload } from "@/components/shared/file-upload";
 import { Checkbox } from "@/components/ui/checkbox";
+import { Turnstile } from "@/components/shared/turnstile";
 import { submitAnalysisUpload } from "@/lib/api/analysis";
 import { ApiClientError } from "@/lib/api/client";
 import { motion } from "framer-motion";
@@ -45,6 +46,7 @@ export default function AnalyzePage() {
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [isUploading, setIsUploading] = useState(false);
   const [consentGiven, setConsentGiven] = useState(false);
+  const [turnstileToken, setTurnstileToken] = useState<string | null>(null);
 
   const handleFileSelect = (file: File) => {
     setSelectedFile(file);
@@ -55,7 +57,7 @@ export default function AnalyzePage() {
 
     setIsUploading(true);
 
-    void submitAnalysisUpload(selectedFile, consentGiven, locale)
+    void submitAnalysisUpload(selectedFile, consentGiven, locale, turnstileToken ?? undefined)
       .then((result) => {
         router.push(`/result/${result.job_id}`);
       })
@@ -86,12 +88,12 @@ export default function AnalyzePage() {
       </header>
 
       {/* Main Content */}
-      <main className="max-w-6xl mx-auto px-6 py-16">
+      <main className="max-w-6xl mx-auto px-6 py-12">
         <motion.div
           variants={staggerContainer}
           initial="initial"
           animate="animate"
-          className="space-y-16"
+          className="space-y-10"
         >
           {/* Page Title */}
           <motion.div variants={fadeInUp} className="text-center space-y-4">
@@ -151,31 +153,6 @@ export default function AnalyzePage() {
             </div>
           </motion.div>
 
-          {/* Upload Section */}
-          <motion.div variants={fadeInUp} className="max-w-2xl mx-auto">
-            <div className="rounded-lg border border-border bg-card p-8 space-y-6">
-              <div className="space-y-2">
-                <h2 className="text-xl font-semibold text-foreground">
-                  {t.analyze.upload.title}
-                </h2>
-                <p className="text-sm text-muted-foreground">
-                  {t.analyze.upload.formatHint}
-                </p>
-                <p className="text-sm text-accent">
-                  ⏱️ {t.analyze.upload.expectationHint}
-                </p>
-              </div>
-
-              <FileUpload
-                onFileSelect={handleFileSelect}
-                onUpload={handleUpload}
-                isUploading={isUploading}
-                disabled={!consentGiven}
-                t={t}
-              />
-            </div>
-          </motion.div>
-
           {/* Consent Section */}
           <motion.div variants={fadeInUp} className="max-w-2xl mx-auto">
             <div className="rounded-lg border border-accent/20 bg-accent/5 p-6 space-y-4">
@@ -187,7 +164,7 @@ export default function AnalyzePage() {
                   {t.analyze.consent.description}
                 </p>
                 <p className="text-xs text-destructive font-medium">
-                  ⚠️ {t.analyze.consent.disclaimer}
+                  {t.analyze.consent.disclaimer}
                 </p>
               </div>
 
@@ -213,6 +190,32 @@ export default function AnalyzePage() {
                   </Link>
                 </label>
               </div>
+              <Turnstile onVerify={setTurnstileToken} />
+            </div>
+          </motion.div>
+
+          {/* Upload Section */}
+          <motion.div variants={fadeInUp} className="max-w-2xl mx-auto">
+            <div className="rounded-lg border border-border bg-card p-8 space-y-6">
+              <div className="space-y-2">
+                <h2 className="text-xl font-semibold text-foreground">
+                  {t.analyze.upload.title}
+                </h2>
+                <p className="text-sm text-muted-foreground">
+                  {t.analyze.upload.formatHint}
+                </p>
+                <p className="text-sm text-accent">
+                  {t.analyze.upload.expectationHint}
+                </p>
+              </div>
+
+              <FileUpload
+                onFileSelect={handleFileSelect}
+                onUpload={handleUpload}
+                isUploading={isUploading}
+                disabled={!consentGiven || !turnstileToken}
+                t={t}
+              />
             </div>
           </motion.div>
 

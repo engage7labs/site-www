@@ -28,7 +28,7 @@ export function FileUpload({
   isUploading,
   disabled = false,
   acceptedFileTypes = ".zip",
-  maxSizeMB = 500,
+  maxSizeMB = 150,
   t,
 }: FileUploadProps) {
   const [selectedFile, setSelectedFile] = useState<File | null>(null);

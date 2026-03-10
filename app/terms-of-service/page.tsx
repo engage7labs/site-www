@@ -95,30 +95,30 @@ export default function TermsOfServicePage() {
             className="space-y-4 p-6 border-l-4 border-destructive bg-destructive/5"
           >
             <h2 className="text-2xl font-semibold text-foreground">
-              {t.termsOfService.sections.medicalDisclaimer.title}
+              {t.termsOfService.sections.disclaimer.title}
             </h2>
             <p className="text-muted-foreground leading-relaxed">
-              {t.termsOfService.sections.medicalDisclaimer.content}
+              {t.termsOfService.sections.disclaimer.content}
             </p>
           </motion.section>
 
           {/* Section 4: Limitation of Liability */}
           <motion.section variants={fadeInUp} className="space-y-4">
             <h2 className="text-2xl font-semibold text-foreground">
-              {t.termsOfService.sections.limitationOfLiability.title}
+              {t.termsOfService.sections.limitation.title}
             </h2>
             <p className="text-muted-foreground leading-relaxed">
-              {t.termsOfService.sections.limitationOfLiability.content}
+              {t.termsOfService.sections.limitation.content}
             </p>
           </motion.section>
 
-          {/* Section 5: Changes to Terms */}
+          {/* Section 5: Service Changes */}
           <motion.section variants={fadeInUp} className="space-y-4">
             <h2 className="text-2xl font-semibold text-foreground">
-              {t.termsOfService.sections.changesToTerms.title}
+              {t.termsOfService.sections.serviceChanges.title}
             </h2>
             <p className="text-muted-foreground leading-relaxed">
-              {t.termsOfService.sections.changesToTerms.content}
+              {t.termsOfService.sections.serviceChanges.content}
             </p>
           </motion.section>
 

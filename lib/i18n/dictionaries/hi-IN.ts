@@ -158,6 +158,11 @@ export const hiIN: Dictionary = {
       },
     },
 
+    // Technology Stack
+    techStack: {
+      title: "विश्वसनीय तकनीकों के साथ निर्मित",
+    },
+
     // Final CTA Section
     cta: {
       title: "अपने डेटा को समझने के लिए तैयार हैं?",
@@ -173,6 +178,7 @@ export const hiIN: Dictionary = {
       privacy: "गोपनीयता नीति",
       terms: "सेवा की शर्तें",
       contact: "संपर्क करें",
+      research: "शोध",
     },
   },
 
@@ -364,18 +370,48 @@ export const hiIN: Dictionary = {
   contact: {
     title: "हमसे संपर्क करें",
     subtitle: "प्रश्न हैं? हमें आपसे सुनना बहुत पसंद होगा।",
-    form: {
-      name: "नाम",
-      namePlaceholder: "आपका नाम",
-      email: "ईमेल",
-      emailPlaceholder: "your@email.com",
-      message: "संदेश",
-      messagePlaceholder: "हम आपकी कैसे मदद कर सकते हैं?",
-      submit: "संदेश भेजें",
-      sending: "भेजा जा रहा है...",
-      success: "संदेश सफलतापूर्वक भेजा गया!",
-      error: "संदेश भेजने में विफल। कृपया पुनः प्रयास करें।",
+    linkedin: {
+      heading: "LinkedIn पर कनेक्ट करें",
+      description:
+        "प्रश्नों, फीडबैक या सहयोग के अवसरों के लिए LinkedIn पर Rodrigo Marques से संपर्क करें।",
+      button: "LinkedIn प्रोफ़ाइल खोलें",
     },
     backToHome: "होम पर वापस जाएं",
+  },
+
+  // Friends Page
+  friends: {
+    title: "दोस्तों को बुलाएं",
+    subtitle:
+      "Engage7 को दोस्तों के साथ साझा करें और उन्हें भी अपने पहनने योग्य डेटा को समझने में मदद करें।",
+    shareTitle: "Engage7 साझा करें",
+    shareDescription:
+      "अपने नेटवर्क के साथ Engage7 साझा करने के लिए एक प्लेटफ़ॉर्म चुनें।",
+    shareText:
+      "मैंने अभी Engage7 के साथ अपने पहनने योग्य डेटा का विश्लेषण किया — मेरी शारीरिक आधार रेखा से निश्चित अंतर्दृष्टि। आप भी आज़माएं!",
+    shareUrl: "https://engage7.com",
+    copyLink: "लिंक कॉपी करें",
+    copied: "कॉपी किया गया!",
+    backToHome: "होम पर वापस जाएं",
+
+    socialProof: {
+      title: "सामुदायिक गतिविधि",
+      totalUploads: "कुल विश्लेषण",
+      recentUploads: "विश्लेषण (24 घंटे)",
+      languages: "भाषाएं",
+      loading: "मेट्रिक्स लोड हो रहे हैं...",
+      error: "मेट्रिक्स अनुपलब्ध",
+    },
+  },
+
+  // Social Share
+  socialShare: {
+    whatsapp: "WhatsApp",
+    facebook: "Facebook",
+    linkedin: "LinkedIn",
+    x: "X",
+    instagram: "Instagram",
+    copyLink: "लिंक कॉपी करें",
+    copied: "कॉपी किया गया!",
   },
 };
