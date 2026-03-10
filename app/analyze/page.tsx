@@ -10,8 +10,8 @@ import { useLocale } from "@/components/providers/locale-provider";
 import { FileUpload } from "@/components/shared/file-upload";
 import { Checkbox } from "@/components/ui/checkbox";
 import { submitAnalysisUpload } from "@/lib/api/analysis";
+import { ApiClientError } from "@/lib/api/client";
 import { motion } from "framer-motion";
-import { toast } from "sonner";
 import {
   ArrowLeft,
   BarChart3,
@@ -22,6 +22,7 @@ import {
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
+import { toast } from "sonner";
 
 const fadeInUp = {
   initial: { opacity: 0, y: 20 },
@@ -39,7 +40,7 @@ const staggerContainer = {
 };
 
 export default function AnalyzePage() {
-  const { t } = useLocale();
+  const { t, locale } = useLocale();
   const router = useRouter();
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [isUploading, setIsUploading] = useState(false);
@@ -49,22 +50,24 @@ export default function AnalyzePage() {
     setSelectedFile(file);
   };
 
-  const handleUpload = async () => {
+  const handleUpload = () => {
     if (!selectedFile) return;
 
     setIsUploading(true);
 
-    try {
-      // Submit file to API
-      const result = await submitAnalysisUpload(selectedFile);
-
-      // Redirect to result page with job ID
-      router.push(`/result/${result.job_id}`);
-    } catch (error) {
-      console.error("Upload error:", error);
-      toast.error("Upload failed. Please try again or contact support.");
-      setIsUploading(false);
-    }
+    void submitAnalysisUpload(selectedFile, consentGiven, locale)
+      .then((result) => {
+        router.push(`/result/${result.job_id}`);
+      })
+      .catch((error: unknown) => {
+        console.error("Upload error:", error);
+        const message =
+          error instanceof ApiClientError && error.message
+            ? error.message
+            : "Upload failed. Please try again or contact support.";
+        toast.error(message);
+        setIsUploading(false);
+      });
   };
 
   return (

@@ -2,16 +2,15 @@
  * API Client Configuration
  *
  * Base configuration for Engage7 API client.
+ * API base URL is sourced from the centralized config module.
  */
 
+import { config } from "@/lib/config";
+
 /**
- * API base URL
- *
- * In production, this should point to the engage7-api service.
- * For now, it's configured for local development or future deployment.
+ * API base URL — reads from NEXT_PUBLIC_API_BASE_URL via centralized config.
  */
-export const API_BASE_URL =
-  process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
+export const API_BASE_URL = config.apiBaseUrl;
 
 /**
  * API endpoints

@@ -40,7 +40,7 @@ async function request<T>(
       ...fetchConfig,
       signal: controller.signal,
       headers: {
-        ...DEFAULT_HEADERS,
+        ...(fetchConfig.body instanceof FormData ? {} : DEFAULT_HEADERS),
         ...fetchConfig.headers,
       },
     });
@@ -62,8 +62,12 @@ async function request<T>(
 
       throw new ApiClientError(
         response.status,
-        errorData.message || errorData.error,
-        errorData.details
+        errorData.message ||
+          errorData.error ||
+          (typeof (errorData as any).detail === "string"
+            ? (errorData as any).detail
+            : `HTTP ${response.status}`),
+        (errorData as any).detail ?? errorData.details
       );
     }
 
