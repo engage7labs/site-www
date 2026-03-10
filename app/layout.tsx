@@ -1,10 +1,10 @@
 import { AppThemeProvider } from "@/components/providers/app-theme-provider";
 import { LocaleProvider } from "@/components/providers/locale-provider";
 import { Analytics } from "@vercel/analytics/next";
-import { Toaster } from "sonner";
 import type { Metadata } from "next";
 import { Geist_Mono, Inter } from "next/font/google";
 import type React from "react";
+import { Toaster } from "sonner";
 import "./globals.css";
 
 const inter = Inter({ subsets: ["latin"] });

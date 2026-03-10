@@ -37,7 +37,8 @@ export function Turnstile({ onVerify }: TurnstileProps) {
 
     // Load the script
     const script = document.createElement("script");
-    script.src = "https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit";
+    script.src =
+      "https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit";
     script.async = true;
     script.onload = renderWidget;
     document.head.appendChild(script);
@@ -60,7 +61,10 @@ export function Turnstile({ onVerify }: TurnstileProps) {
 declare global {
   interface Window {
     turnstile: {
-      render: (container: HTMLElement, options: Record<string, unknown>) => string;
+      render: (
+        container: HTMLElement,
+        options: Record<string, unknown>
+      ) => string;
       remove: (widgetId: string) => void;
     };
   }

@@ -40,7 +40,15 @@ const row3: TechLogo[] = [
   { name: "Uvicorn", icon: "Uvicorn" },
 ];
 
-function ScrollRow({ logos, direction = "left", duration = 30 }: { logos: TechLogo[]; direction?: "left" | "right"; duration?: number }) {
+function ScrollRow({
+  logos,
+  direction = "left",
+  duration = 30,
+}: {
+  logos: TechLogo[];
+  direction?: "left" | "right";
+  duration?: number;
+}) {
   const doubled = [...logos, ...logos];
 
   return (
