@@ -23,7 +23,7 @@ import {
   Loader2,
 } from "lucide-react";
 import Link from "next/link";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
 const POLL_INTERVAL_MS = 3000;
 const MAX_POLLS = 100; // 5 minutes max
@@ -110,15 +110,38 @@ function ProcessingView({ result }: { result: AnalysisResult }) {
       ? t.result.status.pending
       : t.result.status.processing;
 
+  // Elapsed timer
+  const [elapsed, setElapsed] = useState(0);
+  const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
+
+  useEffect(() => {
+    setElapsed(0);
+    timerRef.current = setInterval(() => {
+      setElapsed((prev) => prev + 1);
+    }, 1000);
+    return () => {
+      if (timerRef.current) clearInterval(timerRef.current);
+    };
+  }, []);
+
+  const formatTime = (seconds: number): string => {
+    const m = Math.floor(seconds / 60).toString().padStart(2, "0");
+    const s = (seconds % 60).toString().padStart(2, "0");
+    return `${m}:${s}`;
+  };
+
   return (
     <PageShell>
       <motion.div
         {...fadeInUp}
         className="flex flex-col items-center justify-center py-24 space-y-6 text-center"
       >
-        <div className="relative">
-          <div className="h-16 w-16 rounded-full border-4 border-accent/20" />
-          <div className="absolute inset-0 h-16 w-16 rounded-full border-4 border-accent border-t-transparent animate-spin" />
+        <div className="relative flex items-center justify-center">
+          <div className="h-20 w-20 rounded-full border-4 border-accent/20" />
+          <div className="absolute inset-0 h-20 w-20 rounded-full border-4 border-accent border-t-transparent animate-spin" />
+          <span className="absolute text-sm font-mono font-semibold text-foreground">
+            {formatTime(elapsed)}
+          </span>
         </div>
         <div className="space-y-2">
           <h1 className="text-2xl font-semibold text-foreground">

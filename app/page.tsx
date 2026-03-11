@@ -87,7 +87,7 @@ export default function Home() {
             <Link href="/analyze">
               <Button
                 size="lg"
-                className="bg-accent hover:bg-accent/90 text-accent-foreground rounded-full px-8 transition-all duration-300"
+                className="bg-[#C3F531] hover:bg-[#C3F531] text-black rounded-full px-8 transition-all duration-300 focus:ring-2 focus:ring-[#C3F531]/50 active:brightness-95"
               >
                 {t.home.hero.ctaPrimary}
                 <ArrowRight className="ml-2 h-5 w-5" />
@@ -581,7 +581,7 @@ export default function Home() {
             <Link href="/analyze">
               <Button
                 size="lg"
-                className="bg-accent hover:bg-accent/90 text-accent-foreground rounded-full px-8 transition-all duration-300"
+                className="bg-[#C3F531] hover:bg-[#C3F531] text-black rounded-full px-8 transition-all duration-300 focus:ring-2 focus:ring-[#C3F531]/50 active:brightness-95"
               >
                 {t.home.cta.ctaPrimary}
                 <ArrowRight className="ml-2 h-5 w-5" />
