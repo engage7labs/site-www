@@ -149,32 +149,6 @@ export default function AnalyzePage() {
             <AppleHealthTutorial />
           </motion.div>
 
-          {/* Consent Section — compact */}
-          <motion.div variants={fadeInUp} className="max-w-2xl mx-auto">
-            <div className="mt-8">
-              <label className="flex items-start gap-3 text-sm">
-                <Checkbox
-                  id="consent"
-                  checked={consentGiven}
-                  onCheckedChange={(checked) =>
-                    setConsentGiven(checked === true)
-                  }
-                />
-                <span className="text-foreground leading-snug cursor-pointer">
-                  {t.analyze.consent.description}{" "}
-                  <Link
-                    href="/privacy-policy"
-                    className="text-accent hover:underline"
-                    target="_blank"
-                  >
-                    {t.analyze.consent.linkText}
-                  </Link>
-                </span>
-              </label>
-            </div>
-            <Turnstile onVerify={setTurnstileToken} />
-          </motion.div>
-
           {/* Upload Section */}
           <motion.div variants={fadeInUp} className="max-w-2xl mx-auto">
             <div className="rounded-lg border border-border bg-card p-8 space-y-6">
@@ -196,6 +170,31 @@ export default function AnalyzePage() {
                 isUploading={isUploading}
                 disabled={!consentGiven || !turnstileToken}
                 t={t}
+                consentSlot={
+                  <>
+                    <label className="flex items-start gap-3 text-xs text-muted-foreground leading-snug cursor-pointer">
+                      <Checkbox
+                        id="consent"
+                        checked={consentGiven}
+                        onCheckedChange={(checked) =>
+                          setConsentGiven(checked === true)
+                        }
+                        className="mt-0.5"
+                      />
+                      <span>
+                        {t.analyze.consent.description}{" "}
+                        <Link
+                          href="/privacy-policy"
+                          className="text-accent hover:underline"
+                          target="_blank"
+                        >
+                          {t.analyze.consent.linkText}
+                        </Link>
+                      </span>
+                    </label>
+                    <Turnstile onVerify={setTurnstileToken} />
+                  </>
+                }
               />
             </div>
           </motion.div>

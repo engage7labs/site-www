@@ -20,6 +20,8 @@ interface FileUploadProps {
   acceptedFileTypes?: string;
   maxSizeMB?: number;
   t: any; // Dictionary translations
+  /** Optional slot rendered between the drop area and the upload button */
+  consentSlot?: React.ReactNode;
 }
 
 export function FileUpload({
@@ -30,6 +32,7 @@ export function FileUpload({
   acceptedFileTypes = ".zip",
   maxSizeMB = 150,
   t,
+  consentSlot,
 }: FileUploadProps) {
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [dragActive, setDragActive] = useState(false);
@@ -225,6 +228,9 @@ export function FileUpload({
 
       {/* Error message */}
       {error && <p className="text-sm text-destructive">{error}</p>}
+
+      {/* Consent slot */}
+      {consentSlot}
 
       {/* Upload button */}
       {selectedFile && (
