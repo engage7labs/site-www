@@ -43,7 +43,7 @@ export function SiteHeader() {
           <ThemeSwitcher />
           <LocaleSwitcher />
           <Link href="/analyze">
-            <Button variant="ghost" className="text-foreground hover:bg-muted">
+            <Button className="bg-[#C3F531] hover:bg-[#C3F531] text-black font-medium rounded-full px-6 transition-all duration-300 focus:ring-2 focus:ring-[#C3F531]/50 active:brightness-95">
               {t.nav.getStarted}
             </Button>
           </Link>

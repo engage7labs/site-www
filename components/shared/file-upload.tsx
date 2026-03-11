@@ -10,7 +10,7 @@ import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { File, Upload, X } from "lucide-react";
 import * as React from "react";
-import { useCallback, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 
 interface FileUploadProps {
   onFileSelect: (file: File) => void;
@@ -35,6 +35,34 @@ export function FileUpload({
   const [dragActive, setDragActive] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const inputRef = React.useRef<HTMLInputElement>(null);
+
+  // Upload elapsed timer
+  const [elapsed, setElapsed] = useState(0);
+  const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
+
+  useEffect(() => {
+    if (isUploading) {
+      setElapsed(0);
+      timerRef.current = setInterval(() => {
+        setElapsed((prev) => prev + 1);
+      }, 1000);
+    } else {
+      if (timerRef.current) {
+        clearInterval(timerRef.current);
+        timerRef.current = null;
+      }
+      setElapsed(0);
+    }
+    return () => {
+      if (timerRef.current) clearInterval(timerRef.current);
+    };
+  }, [isUploading]);
+
+  const formatTime = (seconds: number): string => {
+    const m = Math.floor(seconds / 60).toString().padStart(2, "0");
+    const s = (seconds % 60).toString().padStart(2, "0");
+    return `${m}:${s}`;
+  };
 
   const validateFile = (file: File): boolean => {
     // Check file size
@@ -203,11 +231,11 @@ export function FileUpload({
         <Button
           onClick={handleUploadClick}
           disabled={isUploading || disabled}
-          className="w-full"
+          className="w-full bg-[#C3F531] hover:bg-[#C3F531] text-black font-medium focus:ring-2 focus:ring-[#C3F531]/50 active:brightness-95"
           size="lg"
         >
           {isUploading
-            ? t.analyze.upload.buttonUploading
+            ? `${t.analyze.upload.buttonUploading} ${formatTime(elapsed)}`
             : t.analyze.upload.buttonUpload}
         </Button>
       )}

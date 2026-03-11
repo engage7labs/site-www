@@ -333,7 +333,7 @@ export const ptBR: Dictionary = {
       dataRights: {
         title: "Seus Direitos",
         content:
-          "Você mantém a propriedade total de seus dados. Pode solicitar a exclusão dos resultados de sua análise a qualquer momento entrando em contato conosco.",
+          "Você mantém a propriedade total de seus dados. Por padrão, o Engage7 não retém conjuntos de dados identificáveis ou resultados de análise além do operacionalmente necessário. Se recursos de armazenamento persistente ou histórico de conta forem introduzidos no futuro, eles exigirão seu consentimento explícito e serão acompanhados de termos de privacidade atualizados.",
       },
     },
     backToHome: "Voltar para Início",

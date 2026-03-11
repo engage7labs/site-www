@@ -6,6 +6,7 @@
 
 "use client";
 
+import { AppleHealthTutorial } from "@/components/shared/apple-health-tutorial";
 import { useLocale } from "@/components/providers/locale-provider";
 import { FileUpload } from "@/components/shared/file-upload";
 import { SiteFooter } from "@/components/shared/site-footer";
@@ -143,22 +144,22 @@ export default function AnalyzePage() {
             </div>
           </motion.div>
 
-          {/* Consent Section */}
+          {/* Consent Section — compact */}
           <motion.div variants={fadeInUp} className="max-w-2xl mx-auto">
-            <div className="rounded-lg border border-accent/20 bg-accent/5 p-6 space-y-4">
-              <div className="space-y-2">
-                <h2 className="text-lg font-semibold text-foreground">
+            <div className="rounded-lg border border-accent/20 bg-accent/5 px-5 py-3 space-y-2">
+              <div className="space-y-1">
+                <h2 className="text-sm font-semibold text-foreground">
                   {t.analyze.consent.title}
                 </h2>
-                <p className="text-sm text-muted-foreground">
+                <p className="text-xs text-muted-foreground leading-snug">
                   {t.analyze.consent.description}
                 </p>
-                <p className="text-xs text-destructive font-medium">
+                <p className="text-[11px] text-destructive font-medium">
                   {t.analyze.consent.disclaimer}
                 </p>
               </div>
 
-              <div className="flex items-start space-x-3 pt-2">
+              <div className="flex items-start space-x-3">
                 <Checkbox
                   id="consent"
                   checked={consentGiven}
@@ -168,7 +169,7 @@ export default function AnalyzePage() {
                 />
                 <label
                   htmlFor="consent"
-                  className="text-sm text-foreground leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 cursor-pointer"
+                  className="text-xs text-foreground leading-tight peer-disabled:cursor-not-allowed peer-disabled:opacity-70 cursor-pointer"
                 >
                   {t.analyze.consent.required}{" "}
                   <Link
@@ -182,6 +183,11 @@ export default function AnalyzePage() {
               </div>
               <Turnstile onVerify={setTurnstileToken} />
             </div>
+          </motion.div>
+
+          {/* Apple Health Export Tutorial */}
+          <motion.div variants={fadeInUp} className="max-w-4xl mx-auto">
+            <AppleHealthTutorial />
           </motion.div>
 
           {/* Upload Section */}

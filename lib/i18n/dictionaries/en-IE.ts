@@ -151,7 +151,7 @@ export const enIE = {
       q6: {
         question: "What happens to my data after analysis?",
         answer:
-          "Your uploaded file and analysis results are temporarily stored to generate your report. You retain full ownership of your data and can request deletion at any time.",
+          "Your uploaded file and analysis results are temporarily stored to generate your report. Engage7 does not retain identifiable data longer than operationally necessary. You retain full ownership of your data.",
       },
     },
 
@@ -330,7 +330,7 @@ export const enIE = {
       dataRights: {
         title: "Your Rights",
         content:
-          "You retain full ownership of your data. You can request deletion of your analysis results at any time by contacting us.",
+          "You retain full ownership of your data. By default, Engage7 does not retain identifiable uploaded datasets or analysis results longer than operationally necessary. If persistent storage or account history features are introduced in the future, they will require your explicit consent and will be accompanied by updated privacy terms.",
       },
     },
     backToHome: "Back to Home",
