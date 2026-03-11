@@ -144,22 +144,15 @@ export default function AnalyzePage() {
             </div>
           </motion.div>
 
+          {/* Apple Health Export Tutorial */}
+          <motion.div variants={fadeInUp} className="max-w-4xl mx-auto">
+            <AppleHealthTutorial />
+          </motion.div>
+
           {/* Consent Section — compact */}
           <motion.div variants={fadeInUp} className="max-w-2xl mx-auto">
-            <div className="rounded-lg border border-accent/20 bg-accent/5 px-5 py-3 space-y-2">
-              <div className="space-y-1">
-                <h2 className="text-sm font-semibold text-foreground">
-                  {t.analyze.consent.title}
-                </h2>
-                <p className="text-xs text-muted-foreground leading-snug">
-                  {t.analyze.consent.description}
-                </p>
-                <p className="text-[11px] text-destructive font-medium">
-                  {t.analyze.consent.disclaimer}
-                </p>
-              </div>
-
-              <div className="flex items-start space-x-3">
+            <div className="mt-8">
+              <label className="flex items-start gap-3 text-sm">
                 <Checkbox
                   id="consent"
                   checked={consentGiven}
@@ -167,11 +160,8 @@ export default function AnalyzePage() {
                     setConsentGiven(checked === true)
                   }
                 />
-                <label
-                  htmlFor="consent"
-                  className="text-xs text-foreground leading-tight peer-disabled:cursor-not-allowed peer-disabled:opacity-70 cursor-pointer"
-                >
-                  {t.analyze.consent.required}{" "}
+                <span className="text-foreground leading-snug cursor-pointer">
+                  {t.analyze.consent.description}{" "}
                   <Link
                     href="/privacy-policy"
                     className="text-accent hover:underline"
@@ -179,15 +169,10 @@ export default function AnalyzePage() {
                   >
                     {t.analyze.consent.linkText}
                   </Link>
-                </label>
-              </div>
-              <Turnstile onVerify={setTurnstileToken} />
+                </span>
+              </label>
             </div>
-          </motion.div>
-
-          {/* Apple Health Export Tutorial */}
-          <motion.div variants={fadeInUp} className="max-w-4xl mx-auto">
-            <AppleHealthTutorial />
+            <Turnstile onVerify={setTurnstileToken} />
           </motion.div>
 
           {/* Upload Section */}
