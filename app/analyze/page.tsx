@@ -6,22 +6,17 @@
 
 "use client";
 
-import { AppleHealthTutorial } from "@/components/shared/apple-health-tutorial";
 import { useLocale } from "@/components/providers/locale-provider";
+import { AppleHealthTutorial } from "@/components/shared/apple-health-tutorial";
 import { FileUpload } from "@/components/shared/file-upload";
 import { SiteFooter } from "@/components/shared/site-footer";
 import { SiteHeader } from "@/components/shared/site-header";
-import { Checkbox } from "@/components/ui/checkbox";
 import { Turnstile } from "@/components/shared/turnstile";
+import { Checkbox } from "@/components/ui/checkbox";
 import { submitAnalysisUpload } from "@/lib/api/analysis";
 import { ApiClientError } from "@/lib/api/client";
 import { motion } from "framer-motion";
-import {
-  BarChart3,
-  CheckCircle2,
-  FileCheck,
-  Upload,
-} from "lucide-react";
+import { BarChart3, CheckCircle2, FileCheck, Upload } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
@@ -59,7 +54,12 @@ export default function AnalyzePage() {
 
     setIsUploading(true);
 
-    void submitAnalysisUpload(selectedFile, consentGiven, locale, turnstileToken ?? undefined)
+    void submitAnalysisUpload(
+      selectedFile,
+      consentGiven,
+      locale,
+      turnstileToken ?? undefined
+    )
       .then((result) => {
         router.push(`/result/${result.job_id}`);
       })
