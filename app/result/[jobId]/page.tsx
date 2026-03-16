@@ -3,23 +3,29 @@
  *
  * Displays analysis results for a specific job ID.
  * Polls GET /api/result/{jobId} until the job reaches a terminal state.
+ *
+ * Sprint 11: when completed, renders the InsightPreview experience
+ * instead of the previous text-only CompletedView.
  */
 
 "use client";
 
+import { useAppTheme } from "@/components/providers/app-theme-provider";
 import { useLocale } from "@/components/providers/locale-provider";
-import { getAnalysisResult, getCsvUrl, getPdfUrl } from "@/lib/api/analysis";
+import { InsightPreview } from "@/components/insights";
+import { getAnalysisResult } from "@/lib/api/analysis";
 import { ApiClientError } from "@/lib/api/client";
+import {
+  trackResultPageViewed,
+  trackAnalysisStarted,
+  trackAnalysisCompleted,
+} from "@/lib/telemetry";
 import type { AnalysisResult } from "@/lib/types/analysis";
 import { motion } from "framer-motion";
 import {
   AlertCircle,
   ArrowLeft,
-  Calendar,
-  CheckCircle2,
   Clock,
-  Download,
-  FileText,
   Loader2,
 } from "lucide-react";
 import Link from "next/link";
@@ -221,169 +227,8 @@ function CompletedView({
   result: AnalysisResult;
   jobId: string;
 }) {
-  const { t } = useLocale();
-  const { summary, highlights, artifacts } = result;
-
-  const dateRange =
-    summary?.dataset_start && summary?.dataset_end
-      ? `${summary.dataset_start} \u2013 ${summary.dataset_end}`
-      : null;
-
-  return (
-    <PageShell>
-      <motion.div initial="initial" animate="animate" className="space-y-8">
-        {/* Header */}
-        <motion.div variants={fadeInUp} className="space-y-2">
-          <div className="flex items-center space-x-2 text-accent">
-            <CheckCircle2 className="h-5 w-5" />
-            <span className="text-sm font-medium">
-              {t.result.status.completed}
-            </span>
-          </div>
-          <h1 className="text-3xl font-semibold text-foreground">
-            {t.result.title}
-          </h1>
-        </motion.div>
-
-        {/* Summary Card */}
-        {summary && (
-          <motion.div
-            variants={fadeInUp}
-            className="rounded-lg border border-border bg-card p-6 space-y-4"
-          >
-            <h2 className="text-lg font-semibold text-foreground">
-              {t.result.summary.title}
-            </h2>
-            <div className="grid sm:grid-cols-3 gap-4">
-              {dateRange && (
-                <div className="space-y-1">
-                  <div className="flex items-center space-x-1.5 text-xs text-muted-foreground uppercase tracking-wide">
-                    <Calendar className="h-3.5 w-3.5" />
-                    <span>{t.result.summary.datasetPeriod}</span>
-                  </div>
-                  <p className="text-sm font-medium text-foreground">
-                    {dateRange}
-                  </p>
-                </div>
-              )}
-              {summary.days != null && (
-                <div className="space-y-1">
-                  <p className="text-xs text-muted-foreground uppercase tracking-wide">
-                    Days of Data
-                  </p>
-                  <p className="text-2xl font-semibold text-accent">
-                    {summary.days}
-                  </p>
-                </div>
-              )}
-              {summary.total_rows != null && (
-                <div className="space-y-1">
-                  <p className="text-xs text-muted-foreground uppercase tracking-wide">
-                    {t.result.summary.recordsAnalyzed}
-                  </p>
-                  <p className="text-2xl font-semibold text-foreground">
-                    {summary.total_rows.toLocaleString()}
-                  </p>
-                </div>
-              )}
-            </div>
-          </motion.div>
-        )}
-
-        {/* Highlights */}
-        {highlights && highlights.length > 0 && (
-          <motion.div
-            variants={fadeInUp}
-            className="rounded-lg border border-border bg-card p-6 space-y-4"
-          >
-            <h2 className="text-lg font-semibold text-foreground">
-              {t.result.insights.title}
-            </h2>
-            <ul className="space-y-3">
-              {highlights.map((highlight, i) => (
-                <li key={i} className="flex items-start space-x-3">
-                  <span className="mt-1.5 h-1.5 w-1.5 rounded-full bg-accent flex-shrink-0" />
-                  <span className="text-sm text-foreground leading-relaxed">
-                    {highlight}
-                  </span>
-                </li>
-              ))}
-            </ul>
-          </motion.div>
-        )}
-
-        {/* PDF Download */}
-        {artifacts?.pdf_available && (
-          <motion.div
-            variants={fadeInUp}
-            className="rounded-lg border border-accent/20 bg-accent/5 p-6 space-y-4"
-          >
-            <h2 className="text-lg font-semibold text-foreground">
-              {t.result.artifacts.title}
-            </h2>
-            <a
-              href={getPdfUrl(jobId)}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="inline-flex items-center space-x-2 px-5 py-2.5 rounded-md bg-accent text-white text-sm font-medium hover:bg-accent/90 transition-colors"
-            >
-              <Download className="h-4 w-4" />
-              <span>{t.result.artifacts.downloadPDF}</span>
-            </a>
-            <p className="text-xs text-muted-foreground">
-              Opens a PDF report with detailed analysis findings.
-            </p>
-          </motion.div>
-        )}
-
-
-        {/* CSV Download */}
-        {artifacts?.csv_available && (
-          <motion.div
-            variants={fadeInUp}
-            className="rounded-lg border border-border bg-card p-6 space-y-4"
-          >
-            <a
-              href={getCsvUrl(jobId)}
-              className="inline-flex items-center space-x-2 px-5 py-2.5 rounded-md border border-border text-sm font-medium text-foreground hover:bg-muted/30 transition-colors"
-            >
-              <Download className="h-4 w-4" />
-              <span>{t.result.artifacts.downloadData}</span>
-            </a>
-            <p className="text-xs text-muted-foreground">
-              Downloads the canonical dataset used for this analysis (CSV).
-            </p>
-          </motion.div>
-        )}
-
-        {/* Fallback when no highlights and no PDF */}
-        {(!highlights || highlights.length === 0) &&
-          !artifacts?.pdf_available && (
-            <motion.div
-              variants={fadeInUp}
-              className="rounded-lg border border-border bg-card p-6 flex items-start space-x-3"
-            >
-              <FileText className="h-5 w-5 text-muted-foreground mt-0.5 flex-shrink-0" />
-              <p className="text-sm text-muted-foreground">
-                Analysis completed. Fewer than 14 days of records may limit
-                insight generation.
-              </p>
-            </motion.div>
-          )}
-
-        {/* Footer action */}
-        <motion.div variants={fadeInUp} className="pt-2">
-          <Link
-            href="/analyze"
-            className="inline-flex items-center text-sm text-accent hover:underline"
-          >
-            <ArrowLeft className="h-4 w-4 mr-1.5" />
-            {t.result.backToAnalyze}
-          </Link>
-        </motion.div>
-      </motion.div>
-    </PageShell>
-  );
+  const { appTheme } = useAppTheme();
+  return <InsightPreview result={result} jobId={jobId} theme={appTheme} />;
 }
 
 // ---------------------------------------------------------------------------
@@ -403,18 +248,34 @@ export default function ResultPage({
   useEffect(() => {
     let interval: ReturnType<typeof setInterval> | null = null;
     let pollCount = 0;
+    let completedFired = false;
 
     const init = async () => {
       const { jobId: id } = await params;
       setJobId(id);
+
+      // Telemetry: result page viewed
+      trackResultPageViewed(id);
 
       // Initial fetch
       try {
         const data = await getAnalysisResult(id);
         setResult(data);
 
+        // Track initial state
+        if (
+          data.status === "queued" ||
+          data.status === "processing"
+        ) {
+          trackAnalysisStarted(id);
+        }
+
         // Immediately return if already in terminal state
         if (data.status === "completed" || data.status === "failed") {
+          if (data.status === "completed" && !completedFired) {
+            completedFired = true;
+            trackAnalysisCompleted(id);
+          }
           return;
         }
       } catch (err) {
@@ -443,6 +304,10 @@ export default function ResultPage({
           setResult(data);
           if (data.status === "completed" || data.status === "failed") {
             clearInterval(interval!);
+            if (data.status === "completed" && !completedFired) {
+              completedFired = true;
+              trackAnalysisCompleted(id);
+            }
           }
         } catch {
           // Ignore transient poll errors — keep polling

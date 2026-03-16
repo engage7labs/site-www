@@ -15,6 +15,11 @@ import { Turnstile } from "@/components/shared/turnstile";
 import { Checkbox } from "@/components/ui/checkbox";
 import { submitAnalysisUpload } from "@/lib/api/analysis";
 import { ApiClientError } from "@/lib/api/client";
+import {
+  trackDatasetUploadStarted,
+  trackDatasetUploadCompleted,
+  trackAnalysisStarted,
+} from "@/lib/telemetry";
 import { motion } from "framer-motion";
 import { BarChart3, CheckCircle2, FileCheck, Upload } from "lucide-react";
 import Link from "next/link";
@@ -53,6 +58,7 @@ export default function AnalyzePage() {
     if (!selectedFile) return;
 
     setIsUploading(true);
+    trackDatasetUploadStarted();
 
     void submitAnalysisUpload(
       selectedFile,
@@ -61,6 +67,8 @@ export default function AnalyzePage() {
       turnstileToken ?? undefined
     )
       .then((result) => {
+        trackDatasetUploadCompleted();
+        trackAnalysisStarted(result.job_id);
         router.push(`/result/${result.job_id}`);
       })
       .catch((error: unknown) => {

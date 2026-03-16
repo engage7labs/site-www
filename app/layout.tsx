@@ -1,5 +1,6 @@
 import { AppThemeProvider } from "@/components/providers/app-theme-provider";
 import { LocaleProvider } from "@/components/providers/locale-provider";
+import { PostHogProvider } from "@/components/providers/posthog-provider";
 import { Analytics } from "@vercel/analytics/next";
 import type { Metadata } from "next";
 import { Geist_Mono, Inter } from "next/font/google";
@@ -104,7 +105,9 @@ export default function RootLayout({
       </head>
       <body className={`${inter.className} font-sans antialiased`}>
         <AppThemeProvider>
-          <LocaleProvider>{children}</LocaleProvider>
+          <LocaleProvider>
+            <PostHogProvider>{children}</PostHogProvider>
+          </LocaleProvider>
         </AppThemeProvider>
         <Analytics />
         <Toaster richColors position="top-center" />
