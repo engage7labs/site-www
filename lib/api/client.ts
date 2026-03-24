@@ -39,10 +39,7 @@ function isRetryableError(error: unknown): boolean {
 /**
  * Retries a request with exponential backoff (max 2 retries)
  */
-async function withRetry<T>(
-  fn: () => Promise<T>,
-  maxRetries = 2
-): Promise<T> {
+async function withRetry<T>(fn: () => Promise<T>, maxRetries = 2): Promise<T> {
   let lastError: Error | null = null;
 
   for (let attempt = 0; attempt <= maxRetries; attempt++) {
@@ -63,7 +60,7 @@ async function withRetry<T>(
 
       // Exponential backoff: 500ms, 1000ms
       const delayMs = 500 * Math.pow(2, attempt);
-      await new Promise(resolve => setTimeout(resolve, delayMs));
+      await new Promise((resolve) => setTimeout(resolve, delayMs));
     }
   }
 

@@ -63,7 +63,8 @@ export function createPollingManager(config: PollingConfig) {
         }
       } catch (error) {
         logPollError("initial", error, config.jobId);
-        state.lastError = error instanceof Error ? error : new Error(String(error));
+        state.lastError =
+          error instanceof Error ? error : new Error(String(error));
         // Continue polling through transient errors
       }
 
@@ -125,8 +126,8 @@ function logPoll(
     phase === "initial"
       ? "initial fetch"
       : phase === "timeout"
-        ? "polling timeout"
-        : "poll";
+      ? "polling timeout"
+      : "poll";
   const pollStr = pollCount ? ` (poll #${pollCount})` : "";
   console.log(`[polling] ${msg}: ${resultStatus} for job ${jobId}${pollStr}`);
 }
@@ -143,5 +144,7 @@ function logPollError(
   const phase_str = phase === "initial" ? "initial fetch" : "poll";
   const pollStr = pollCount ? ` (poll #${pollCount})` : "";
   const msg = error instanceof Error ? error.message : String(error);
-  console.warn(`[polling] ${phase_str} error: ${msg} for job ${jobId}${pollStr}`);
+  console.warn(
+    `[polling] ${phase_str} error: ${msg} for job ${jobId}${pollStr}`
+  );
 }

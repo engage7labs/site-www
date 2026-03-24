@@ -1,24 +1,19 @@
 "use client";
 
+import { InsightPreview } from "@/components/insights";
 import { useAppTheme } from "@/components/providers/app-theme-provider";
 import { useLocale } from "@/components/providers/locale-provider";
-import { InsightPreview } from "@/components/insights";
 import { getAnalysisResult } from "@/lib/api/analysis";
 import { ApiClientError } from "@/lib/api/client";
 import { createPollingManager } from "@/lib/polling";
 import {
-  trackResultPageViewed,
-  trackAnalysisStarted,
   trackAnalysisCompleted,
+  trackAnalysisStarted,
+  trackResultPageViewed,
 } from "@/lib/telemetry";
 import type { AnalysisResult } from "@/lib/types/analysis";
 import { motion } from "framer-motion";
-import {
-  AlertCircle,
-  ArrowLeft,
-  Clock,
-  Loader2,
-} from "lucide-react";
+import { AlertCircle, ArrowLeft, Clock, Loader2 } from "lucide-react";
 import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
 
@@ -100,7 +95,13 @@ function NotFoundView() {
   );
 }
 
-function ProcessingView({ result, elapsedSeconds }: { result: AnalysisResult; elapsedSeconds: number }) {
+function ProcessingView({
+  result,
+  elapsedSeconds,
+}: {
+  result: AnalysisResult;
+  elapsedSeconds: number;
+}) {
   const { t } = useLocale();
   const statusLabel =
     result.status === "queued"
@@ -111,7 +112,9 @@ function ProcessingView({ result, elapsedSeconds }: { result: AnalysisResult; el
   const isDelayed = elapsedSeconds > 60;
 
   const formatTime = (seconds: number): string => {
-    const m = Math.floor(seconds / 60).toString().padStart(2, "0");
+    const m = Math.floor(seconds / 60)
+      .toString()
+      .padStart(2, "0");
     const s = (seconds % 60).toString().padStart(2, "0");
     return `${m}:${s}`;
   };
@@ -165,9 +168,7 @@ function FailedView({ error }: { error: string | null }) {
           <h1 className="text-2xl font-semibold text-foreground">
             {t.result.error.title}
           </h1>
-          <p className="text-muted-foreground max-w-md">
-            {calmMessage}
-          </p>
+          <p className="text-muted-foreground max-w-md">{calmMessage}</p>
         </div>
         <Link
           href="/analyze"
@@ -189,8 +190,10 @@ function getCalmErrorMessage(error: string | null, t: any): string {
   // Map technical errors to calm messages
   const errorMap: Record<string, string> = {
     timeout: "Your analysis took too long to process. Please try again.",
-    network: "We couldn't connect to process your data. Please check your connection and try again.",
-    invalid: "The data provided couldn't be processed. Please check your file and try again.",
+    network:
+      "We couldn't connect to process your data. Please check your connection and try again.",
+    invalid:
+      "The data provided couldn't be processed. Please check your file and try again.",
   };
 
   // Check for known error patterns
@@ -256,7 +259,9 @@ export default function ResultPage({
   const [fetchError, setFetchError] = useState<string | null>(null);
   const [elapsedSeconds, setElapsedSeconds] = useState(0);
 
-  const pollingManagerRef = useRef<ReturnType<typeof createPollingManager> | null>(null);
+  const pollingManagerRef = useRef<ReturnType<
+    typeof createPollingManager
+  > | null>(null);
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const completedFiredRef = useRef(false);
 
