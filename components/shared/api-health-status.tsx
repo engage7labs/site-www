@@ -1,5 +1,5 @@
 /**
- * APIHealthStatus — Calm API health indicator for Analyze page
+ * APIHealthStatus — Calm API health indicator
  *
  * Shows a friendly message if API is unavailable.
  * If available, optionally shows a positive/neutral state or nothing at all.
@@ -7,33 +7,64 @@
 
 "use client";
 
-import { getPublicMetrics } from "@/lib/api/analysis";
+import { getApiHealth } from "@/lib/api/analysis";
 import { motion } from "framer-motion";
-import { AlertCircle, Coffee } from "lucide-react";
+import { AlertCircle, CheckCircle2, Coffee } from "lucide-react";
 import { useEffect, useState } from "react";
 
 interface APIHealthStatusProps {
   className?: string;
 }
 
-export function APIHealthStatus({ className }: APIHealthStatusProps) {
+export function APIHealthStatus({ className }: Readonly<APIHealthStatusProps>) {
   const [isHealthy, setIsHealthy] = useState<boolean | null>(null);
 
   useEffect(() => {
-    // Use metrics endpoint as health check
-    getPublicMetrics()
-      .then(() => setIsHealthy(true))
-      .catch(() => setIsHealthy(false));
+    let cancelled = false;
+
+    const checkHealth = () => {
+      getApiHealth()
+        .then((response) => {
+          if (!cancelled) {
+            setIsHealthy(response.status === "healthy");
+          }
+        })
+        .catch(() => {
+          if (!cancelled) {
+            setIsHealthy(false);
+          }
+        });
+    };
+
+    checkHealth();
+    const interval = window.setInterval(checkHealth, 30000);
+
+    return () => {
+      cancelled = true;
+      window.clearInterval(interval);
+    };
   }, []);
 
-  // Still checking - render nothing
+  // Still checking - keep UI quiet.
   if (isHealthy === null) {
     return null;
   }
 
-  // API is healthy - render nothing (no need to show "everything is fine")
+  // API is healthy - show a subtle positive state.
   if (isHealthy) {
-    return null;
+    return (
+      <motion.div
+        initial={{ opacity: 0, y: 12 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.5 }}
+        className={className}
+      >
+        <div className="inline-flex items-center gap-2 rounded-full border border-emerald-200 dark:border-emerald-900/50 bg-emerald-50 dark:bg-emerald-950/20 px-3 py-1.5 text-xs text-emerald-800 dark:text-emerald-200">
+          <CheckCircle2 className="h-3.5 w-3.5" />
+          API online
+        </div>
+      </motion.div>
+    );
   }
 
   // API is unhealthy - show calm, friendly message

@@ -72,6 +72,19 @@ export interface PublicMetrics {
   unique_locales: number;
 }
 
+export interface APIHealth {
+  status: string;
+  timestamp: string;
+  version: string;
+}
+
 export async function getPublicMetrics(): Promise<PublicMetrics> {
   return get<PublicMetrics>(API_ENDPOINTS.getMetrics);
+}
+
+export async function getApiHealth(): Promise<APIHealth> {
+  return get<APIHealth>(API_ENDPOINTS.getHealth, {
+    timeout: 5000,
+    skipRetry: true,
+  });
 }

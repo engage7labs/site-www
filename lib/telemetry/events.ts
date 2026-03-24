@@ -112,7 +112,22 @@ export function trackReportUnlockClicked(ctaLocation: string): void {
   });
 }
 
-// ---- Upload lifecycle (only if not already present) -----------------------
+// ---- Upload lifecycle -----------------------------------------------------
+
+export function trackUploadStarted(fileSize?: number, fileName?: string): void {
+  capture("upload_started", {
+    ...getUserContext(),
+    file_size: fileSize,
+    file_name: fileName,
+  });
+}
+
+export function trackUploadCompleted(jobId: string): void {
+  capture("upload_completed", {
+    ...getUserContext(),
+    job_id: jobId,
+  });
+}
 
 export function trackDatasetUploadStarted(): void {
   capture("dataset_upload_started", getUserContext());
@@ -128,4 +143,32 @@ export function trackAnalysisStarted(jobId: string): void {
 
 export function trackAnalysisCompleted(jobId: string): void {
   capture("analysis_completed", { job_id: jobId, ...getUserContext() });
+}
+
+// ---- PDF & Downloads ------------------------------------------------------
+
+export function trackPdfDownloadClicked(
+  jobId: string,
+  ctaLocation?: string
+): void {
+  capture("pdf_download_clicked", {
+    ...getUserContext(),
+    job_id: jobId,
+    cta_location: ctaLocation,
+  });
+}
+
+// ---- Error tracking -------------------------------------------------------
+
+export function trackErrorOccurred(
+  errorType: string,
+  errorMessage?: string,
+  context?: Record<string, unknown>
+): void {
+  capture("error_occurred", {
+    ...getUserContext(),
+    error_type: errorType,
+    error_message: errorMessage,
+    ...context,
+  });
 }

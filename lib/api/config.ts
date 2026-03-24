@@ -24,6 +24,9 @@ export const API_ENDPOINTS = {
 
   // Metrics
   getMetrics: "/api/metrics",
+
+  // Health
+  getHealth: "/health",
 } as const;
 
 /**

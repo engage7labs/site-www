@@ -2,6 +2,7 @@
 
 import { MouseSpotlight } from "@/components/mouse-spotlight";
 import { useLocale } from "@/components/providers/locale-provider";
+import { APIHealthStatus } from "@/components/shared/api-health-status";
 import { CommunityActivity } from "@/components/shared/community-activity";
 import { SiteFooter } from "@/components/shared/site-footer";
 import { SiteHeader } from "@/components/shared/site-header";
@@ -160,6 +161,10 @@ export default function Home() {
               </svg>
               {t.home.hero.trustLine3}
             </span>
+          </motion.div>
+
+          <motion.div variants={fadeInUp} className="pt-2 flex justify-center">
+            <APIHealthStatus />
           </motion.div>
         </motion.div>
       </section>

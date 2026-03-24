@@ -18,8 +18,9 @@ import { submitAnalysisUpload } from "@/lib/api/analysis";
 import { ApiClientError } from "@/lib/api/client";
 import {
   trackAnalysisStarted,
-  trackDatasetUploadCompleted,
-  trackDatasetUploadStarted,
+  trackErrorOccurred,
+  trackUploadCompleted,
+  trackUploadStarted,
 } from "@/lib/telemetry";
 import { motion } from "framer-motion";
 import { BarChart3, CheckCircle2, FileCheck, Upload } from "lucide-react";
@@ -59,7 +60,9 @@ export default function AnalyzePage() {
     if (!selectedFile) return;
 
     setIsUploading(true);
-    trackDatasetUploadStarted();
+
+    // Track upload started with file metadata (no PII)
+    trackUploadStarted(selectedFile.size, selectedFile.name.endsWith('.zip') ? 'export.zip' : undefined);
 
     void submitAnalysisUpload(
       selectedFile,
@@ -68,12 +71,27 @@ export default function AnalyzePage() {
       turnstileToken ?? undefined
     )
       .then((result) => {
-        trackDatasetUploadCompleted();
+        trackUploadCompleted(result.job_id);
         trackAnalysisStarted(result.job_id);
         router.push(`/result/${result.job_id}`);
       })
       .catch((error: unknown) => {
         console.error("Upload error:", error);
+
+        // Track error occurrence
+        const errorMessage = error instanceof ApiClientError && error.message
+          ? error.message
+          : "Upload failed";
+
+        trackErrorOccurred(
+          "upload_failed",
+          errorMessage,
+          {
+            file_size: selectedFile.size,
+            status_code: error instanceof ApiClientError ? error.statusCode : undefined,
+          }
+        );
+
         const message =
           error instanceof ApiClientError && error.message
             ? error.message
