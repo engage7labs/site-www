@@ -13,20 +13,20 @@ const _geistMono = Geist_Mono({ subsets: ["latin"] });
 
 export const metadata: Metadata = {
   title: {
-    default: "Engage7 - Understand Your Wearable Data",
+    default: "Engage7 — See What Your Body Is Telling You",
     template: "%s | Engage7",
   },
   description:
-    "From wearable signals to human-readable insights. Calm, explainable, and built for reflection.",
+    "Turn your wearable data into clear insights about sleep, recovery, and movement. Based on your own patterns, not averages.",
   keywords: [
-    "wearable data analysis",
+    "wearable data",
     "Apple Health",
     "health insights",
-    "deterministic analysis",
-    "physiological baseline",
-    "heart rate variability",
     "sleep analysis",
-    "health data privacy",
+    "recovery patterns",
+    "heart rate",
+    "activity tracking",
+    "data privacy",
   ],
   authors: [{ name: "Engage7 Labs" }],
   creator: "Engage7 Labs",
@@ -36,23 +36,23 @@ export const metadata: Metadata = {
     locale: "en_IE",
     url: "https://www.engage7.ie",
     siteName: "Engage7",
-    title: "Engage7 — Understand Your Wearable Data",
+    title: "Engage7 — See What Your Body Is Telling You",
     description:
-      "From wearable signals to human-readable insights. Calm, explainable, and built for reflection.",
+      "Turn your wearable data into clear insights about sleep, recovery, and movement. Based on your own patterns, not averages.",
     images: [
       {
         url: "/og",
         width: 1200,
         height: 630,
-        alt: "Engage7 — From wearable signals to human-readable insights",
+        alt: "Engage7 — Understanding patterns in your data",
       },
     ],
   },
   twitter: {
     card: "summary_large_image",
-    title: "Engage7 — Understand Your Wearable Data",
+    title: "Engage7 — See What Your Body Is Telling You",
     description:
-      "From wearable signals to human-readable insights. Calm, explainable, and built for reflection.",
+      "Turn your wearable data into clear insights about sleep, recovery, and movement. Based on your own patterns, not averages.",
     images: ["/og"],
   },
   robots: {
@@ -85,7 +85,7 @@ export default function RootLayout({
               "@type": "WebApplication",
               name: "Engage7",
               description:
-                "From wearable signals to human-readable insights. Calm, explainable, and built for reflection.",
+                "Turn your wearable data into clear insights about sleep, recovery, and movement. Based on your own patterns, not averages.",
               url: "https://www.engage7.ie",
               applicationCategory: "HealthApplication",
               operatingSystem: "Web",

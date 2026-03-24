@@ -34,6 +34,11 @@ export function CommunityActivity({ t, className }: CommunityActivityProps) {
       .catch(() => setMetricsError(true));
   }, []);
 
+  // If API is unavailable, render nothing (calm UX - no error message on homepage)
+  if (metricsError) {
+    return null;
+  }
+
   return (
     <motion.div
       initial={{ opacity: 0, y: 20 }}
@@ -46,9 +51,7 @@ export function CommunityActivity({ t, className }: CommunityActivityProps) {
         <h2 className="text-lg font-semibold text-foreground text-center">
           {t.title}
         </h2>
-        {metricsError ? (
-          <p className="text-sm text-muted-foreground text-center">{t.error}</p>
-        ) : !metrics ? (
+        {!metrics ? (
           <p className="text-sm text-muted-foreground text-center">
             {t.loading}
           </p>

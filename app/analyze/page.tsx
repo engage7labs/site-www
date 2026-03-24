@@ -7,6 +7,7 @@
 "use client";
 
 import { useLocale } from "@/components/providers/locale-provider";
+import { APIHealthStatus } from "@/components/shared/api-health-status";
 import { AppleHealthTutorial } from "@/components/shared/apple-health-tutorial";
 import { FileUpload } from "@/components/shared/file-upload";
 import { SiteFooter } from "@/components/shared/site-footer";
@@ -16,9 +17,9 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { submitAnalysisUpload } from "@/lib/api/analysis";
 import { ApiClientError } from "@/lib/api/client";
 import {
-  trackDatasetUploadStarted,
-  trackDatasetUploadCompleted,
   trackAnalysisStarted,
+  trackDatasetUploadCompleted,
+  trackDatasetUploadStarted,
 } from "@/lib/telemetry";
 import { motion } from "framer-motion";
 import { BarChart3, CheckCircle2, FileCheck, Upload } from "lucide-react";
@@ -238,6 +239,11 @@ export default function AnalyzePage() {
                 </li>
               </ul>
             </div>
+          </motion.div>
+
+          {/* API Health Status */}
+          <motion.div variants={fadeInUp} className="max-w-2xl mx-auto">
+            <APIHealthStatus />
           </motion.div>
         </motion.div>
       </main>

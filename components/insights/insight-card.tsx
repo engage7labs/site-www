@@ -7,6 +7,7 @@
 
 "use client";
 
+import { useLocale } from "@/components/providers/locale-provider";
 import type { InsightText } from "@/lib/insights";
 import { motion } from "framer-motion";
 import { ChevronRight } from "lucide-react";
@@ -47,10 +48,11 @@ export function InsightCard({
   compact = false,
   className = "",
 }: InsightCardProps) {
+  const { t } = useLocale();
   return (
     <motion.div
       {...fadeIn}
-      className={`rounded-xl border border-border bg-card p-5 transition-shadow hover:shadow-md ${
+      className={`h-full flex flex-col rounded-xl border border-border bg-card transition-shadow hover:shadow-md ${
         compact ? "p-4" : "p-5 sm:p-6"
       } ${className}`}
     >
@@ -95,18 +97,18 @@ export function InsightCard({
             compact ? "text-xs mb-3" : "text-sm mb-4"
           }`}
         >
-          Not enough data to generate this insight yet.
+          {t.result.preview.emptyInsights}
         </p>
       )}
 
-      {/* Chart */}
-      {chart && <div className={compact ? "mb-3" : "mb-4"}>{chart}</div>}
+      {/* Chart - grows to fill available space */}
+      {chart && <div className={`flex-grow ${compact ? "mb-3" : "mb-4"}`}>{chart}</div>}
 
       {/* CTA */}
       {ctaLabel && onCtaClick && (
         <button
           onClick={onCtaClick}
-          className="inline-flex items-center gap-1 text-sm font-medium text-accent hover:text-accent/80 transition-colors"
+          className="inline-flex items-center gap-1 text-sm font-medium text-accent hover:text-accent/80 transition-colors mt-auto"
         >
           {ctaLabel}
           <ChevronRight className="h-4 w-4" />

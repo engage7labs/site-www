@@ -12,69 +12,69 @@ export const enIE = {
   // Homepage - Hero Section
   home: {
     hero: {
-      title: "Understand your wearable data.",
-      titleHighlight: "Clearly.",
+      title: "See what patterns in your life",
+      titleHighlight: "are showing up in your body.",
       subtitle:
-        "Engage7 transforms raw health signals into deterministic insights built from your physiological baseline.",
+        "Engage7 turns your wearable data into clear insights about sleep, recovery, and movement—based on your own patterns.",
       ctaPrimary: "Run Analysis",
       ctaSecondary: "How It Works",
-      trustBadge: "Deterministic insights from your data",
+      trustBadge: "Clear insights from your data",
       trustLine1: "No account required",
       trustLine2: "Your data stays yours",
-      trustLine3: "Analysis ~1 minute",
+      trustLine3: "Results in ~1 minute",
     },
 
     // Three Pillars Section
     pillars: {
-      sectionTitle: "Three pillars of clarity",
-      sectionSubtitle: "Built to deliver explainable insights you can trust.",
+      sectionTitle: "Built for understanding",
+      sectionSubtitle: "Clear insights you can trust and actually understand.",
 
       deterministic: {
-        title: "Deterministic Analysis",
+        title: "Based on Your Patterns",
         description:
-          "No black-box predictions. Insights derived from measurable physiological baselines.",
+          "We find patterns in your data—not guesses. Every insight comes from what your body is actually showing.",
       },
 
       explainable: {
-        title: "Explainable Signals",
+        title: "Easy to Understand",
         description:
-          "Understand trends in sleep, heart rate, activity, and recovery through transparent analysis.",
+          "See what's happening with your sleep, recovery, and movement. No jargon, no confusion.",
       },
 
       privacy: {
-        title: "Privacy by Design",
+        title: "Your Data Stays Yours",
         description:
-          "Your dataset remains yours. Engage7 processes signals without training external AI models on your data.",
+          "We analyze your data to give you insights, but we don't train AI models on it or share it with anyone.",
       },
     },
 
     // How Engage7 Works Section
     howItWorks: {
-      sectionTitle: "How Engage7 works",
+      sectionTitle: "How it works",
       sectionSubtitle:
-        "Four steps from raw data to clear, explainable insights",
+        "Four simple steps from your wearable data to clear insights",
 
       step1: {
-        title: "Upload dataset",
-        description: "Provide your Apple Health export as a standard .zip file",
+        title: "Upload your data",
+        description: "Export from Apple Health and upload as a .zip file",
       },
 
       step2: {
-        title: "Detect physiological baseline",
+        title: "We find your baseline",
         description:
-          "Engage7 analyzes your individual patterns to establish your normal ranges",
+          "We look at what's normal for you—not what's normal for everyone else",
       },
 
       step3: {
-        title: "Apply deterministic rules",
+        title: "We spot the patterns",
         description:
-          "Transparent processing rules identify meaningful signals and trends",
+          "We identify what's changed, what's consistent, and what stands out",
       },
 
       step4: {
-        title: "Generate insight brief",
+        title: "You get clear insights",
         description:
-          "Receive a clear, actionable report with explainable findings",
+          "See what your body is telling you, in plain language you can understand",
       },
     },
 
@@ -116,42 +116,42 @@ export const enIE = {
 
     // FAQ Section
     faq: {
-      sectionTitle: "Frequently Asked Questions",
+      sectionTitle: "Common questions",
 
       q1: {
         question: "What data can I upload?",
         answer:
-          "Currently, Engage7 supports Apple Health exports. Export your data as a .zip file from the Health app on your iPhone and upload it here.",
+          "Right now, we support Apple Health data. Just export it from your iPhone's Health app as a .zip file and upload it here.",
       },
 
       q2: {
-        question: "What kind of insights will I receive?",
+        question: "What will I learn?",
         answer:
-          "You'll receive a deterministic analysis report covering sleep patterns, heart rate variability, activity trends, and recovery signals. All insights are explainable and derived from your physiological baseline.",
+          "You'll see patterns in your sleep, heart rate, movement, and recovery—all based on what's normal for you, not general averages.",
       },
 
       q3: {
-        question: "Is my data used to train AI models?",
+        question: "Do you use my data to train AI?",
         answer:
-          "No. Your dataset is processed using deterministic rules to generate your personal analysis. We do not train external AI models on your data.",
+          "No. We analyze your data to give you insights, but we don't use it to train AI models or improve our algorithms.",
       },
 
       q4: {
         question: "Is this medical advice?",
         answer:
-          "No. Engage7 provides informational insights only. Results do not constitute medical advice and should not replace consultation with qualified healthcare professionals.",
+          "No. Engage7 helps you understand patterns in your data, but it's not a substitute for talking to a doctor.",
       },
 
       q5: {
-        question: "How long does analysis take?",
+        question: "How long does it take?",
         answer:
-          "Most analyses complete in 30–90 seconds, depending on the size of your dataset.",
+          "Most analyses finish in 30–90 seconds, depending on how much data you have.",
       },
 
       q6: {
-        question: "What happens to my data after analysis?",
+        question: "What happens to my data after?",
         answer:
-          "Your uploaded file and analysis results are temporarily stored to generate your report. Engage7 does not retain identifiable data longer than operationally necessary. You retain full ownership of your data.",
+          "We keep your data temporarily to generate your report, then delete it. You always own your data.",
       },
     },
 
@@ -172,9 +172,9 @@ export const enIE = {
 
     // Final CTA Section
     cta: {
-      title: "Ready to understand your data?",
+      title: "Ready to understand your patterns?",
       subtitle:
-        "Upload your dataset, run a deterministic analysis, and review a clear result you can trust.",
+        "Upload your data and see what your body's been trying to tell you.",
       ctaPrimary: "Run Analysis",
       ctaSecondary: "Learn How It Works",
     },
@@ -191,62 +191,61 @@ export const enIE = {
 
   // Analyze Page
   analyze: {
-    title: "Run your Engage7 analysis",
+    title: "Analyze your wearable data",
     subtitle:
-      "Upload your wearable dataset to generate a deterministic, explainable insight brief based on your physiological baseline.",
+      "Upload your data and we'll show you patterns in sleep, recovery, and movement based on what's normal for you.",
 
     workflow: {
       title: "How it works",
       step1: {
-        title: "Upload Dataset",
-        description: "Provide your Apple Health export",
+        title: "Upload Data",
+        description: "Your Apple Health export file",
       },
       step2: {
-        title: "Processing",
-        description: "Deterministic analysis runs on your data",
+        title: "We Analyze",
+        description: "Find patterns based on your baseline",
       },
       step3: {
-        title: "Results",
-        description: "Review explainable insights and trends",
+        title: "You Understand",
+        description: "See clear insights about your body",
       },
     },
 
     upload: {
-      title: "Upload your dataset",
-      description: "Supported format: Apple Health export (export.zip)",
-      dragHint: "Drag and drop your file here, or click to browse",
-      fileSelected: "File selected:",
+      title: "Upload your data",
+      description: "Supported: Apple Health export (export.zip)",
+      dragHint: "Drop your file here, or click to browse",
+      fileSelected: "File ready:",
       analyzing: "Analyzing...",
-      buttonUpload: "Upload and Analyze",
+      buttonUpload: "Upload & Analyze",
       buttonUploading: "Uploading...",
       buttonProcessing: "Processing...",
-      formatHint: "Supported format: Apple Health export (.zip)",
-      expectationHint: "Analysis typically completes in 30–90 seconds.",
+      formatHint: "Supported: Apple Health export (.zip)",
+      expectationHint: "Usually takes 30–90 seconds.",
     },
 
     consent: {
-      title: "Consent for dataset processing",
+      title: "Consent",
       description:
-        "I confirm that this dataset belongs to me and I consent to Engage7 processing it for the purpose of generating a deterministic analysis report.",
-      disclaimer:
-        "I understand that the results are informational and do not constitute medical advice.",
+        "I confirm this data is mine and I'm OK with Engage7 analyzing it to generate insights.",
+      disclaimer: "I understand this is informational and not medical advice.",
       linkText: "Read our Privacy Policy",
-      required: "You must consent to continue",
+      required: "Please confirm to continue",
     },
 
     trust: {
       title: "Your data stays yours",
-      point1: "File used only for this analysis",
-      point2: "No training of external AI models",
-      point3: "Deterministic processing rules",
+      point1: "Used only for your analysis",
+      point2: "Not used to train AI",
+      point3: "Clear, explainable results",
     },
 
     privacy: {
       title: "Your data stays yours",
-      point1: "Your file is used only for analysis",
-      point2: "No training on external AI models",
-      point3: "Processing follows deterministic rules",
-      point4: "Results generated from your physiological baseline",
+      point1: "Only used for your analysis",
+      point2: "Never used to train AI",
+      point3: "Based on your own patterns",
+      point4: "Clear and understandable",
     },
 
     backToHome: "Back to Home",
@@ -274,6 +273,39 @@ export const enIE = {
     insights: {
       title: "Key Insights",
       noInsights: "No insights available",
+    },
+
+    preview: {
+      backToHome: "Back to Home",
+      subtitle: "Your personal insight preview",
+      sleepHero: {
+        title: "Something interesting happened",
+        titleHighlight: "in your sleep data.",
+        emptyState:
+          "Your sleep data has been analyzed. Explore your patterns below.",
+        curiosPrompt: "Curious how this changed over time?",
+        mobileCuriousPrompt: "Want to see what happened next?",
+        ctaRecovery: "Explore your recovery",
+      },
+      sections: {
+        sleepPattern: "Sleep Pattern",
+        recovery: "Recovery",
+        activityMobility: "Activity & Mobility",
+      },
+      cta: {
+        exploreRecovery: "Explore recovery",
+        exploreActivity: "Explore activity next",
+        viewMovement: "View movement details",
+      },
+      emptyChart: "Not enough data to visualize.",
+      emptyInsights: "Not enough data to generate this insight yet.",
+      fullReport: {
+        title: "Want the full picture?",
+        description:
+          "Your complete report includes detailed trends, correlations, and a downloadable PDF with all your insights.",
+        downloadButton: "Download Full Report",
+        runAnother: "Run another analysis",
+      },
     },
 
     artifacts: {

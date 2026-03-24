@@ -12,6 +12,7 @@
 
 "use client";
 
+import { useLocale } from "@/components/providers/locale-provider";
 import { getPdfUrl } from "@/lib/api/analysis";
 import {
   buildActivityChart,
@@ -105,6 +106,7 @@ function useDarkMode(theme?: string) {
 // ---------------------------------------------------------------------------
 
 export function InsightPreview({ result, jobId, theme }: InsightPreviewProps) {
+  const { t } = useLocale();
   const isDark = useDarkMode(theme);
   const sections: Sections | null = result.sections ?? null;
   const summary = result.summary;
@@ -267,10 +269,10 @@ export function InsightPreview({ result, jobId, theme }: InsightPreviewProps) {
             className="inline-flex items-center text-sm text-muted-foreground hover:text-foreground transition-colors"
           >
             <ArrowLeft className="h-4 w-4 mr-2" />
-            Back to Home
+            {t.result.preview.backToHome}
           </Link>
           <span className="text-xs text-muted-foreground">
-            Your personal insight preview
+            {t.result.preview.subtitle}
           </span>
         </div>
       </header>
@@ -290,8 +292,10 @@ export function InsightPreview({ result, jobId, theme }: InsightPreviewProps) {
               className="flex flex-col justify-center py-4"
             >
               <h1 className="text-3xl lg:text-4xl font-semibold text-foreground leading-tight mb-3">
-                Something interesting happened{" "}
-                <span className="text-accent">in your sleep data.</span>
+                {t.result.preview.sleepHero.title}{" "}
+                <span className="text-accent">
+                  {t.result.preview.sleepHero.titleHighlight}
+                </span>
               </h1>
 
               {durationMessage && (
@@ -318,20 +322,19 @@ export function InsightPreview({ result, jobId, theme }: InsightPreviewProps) {
 
               {sleepInsights.length === 0 && (
                 <p className="text-sm text-muted-foreground mb-6">
-                  Your sleep data has been analysed. Explore your patterns
-                  below.
+                  {t.result.preview.sleepHero.emptyState}
                 </p>
               )}
 
               <p className="text-sm text-muted-foreground italic mb-4">
-                Curious how this changed over time?
+                {t.result.preview.sleepHero.curiosPrompt}
               </p>
 
               <button
                 onClick={goToRecovery}
                 className="inline-flex items-center gap-2 px-5 py-2.5 rounded-lg bg-accent text-accent-foreground text-sm font-medium hover:bg-accent/90 transition-colors w-fit"
               >
-                Explore your recovery
+                {t.result.preview.sleepHero.ctaRecovery}
                 <ArrowRight className="h-4 w-4" />
               </button>
             </motion.div>
@@ -346,7 +349,7 @@ export function InsightPreview({ result, jobId, theme }: InsightPreviewProps) {
               <div className="flex items-center gap-2 mb-2">
                 <Moon className="h-4 w-4 text-accent" />
                 <span className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
-                  Sleep Pattern
+                  {t.result.preview.sections.sleepPattern}
                 </span>
               </div>
               {sleepChartOption ? (
@@ -357,18 +360,18 @@ export function InsightPreview({ result, jobId, theme }: InsightPreviewProps) {
                 />
               ) : (
                 <div className="h-[280px] flex items-center justify-center text-sm text-muted-foreground">
-                  Not enough sleep data to visualise.
+                  {t.result.preview.emptyChart}
                 </div>
               )}
             </motion.div>
           </section>
 
-          {/* Lower compact zone — Recovery + Activity */}
+          {/* Lower compact zone— Recovery + Activity */}
           <section className="grid grid-cols-2 gap-6 mt-6">
             {/* Recovery card */}
-            <div id="recovery-desktop" className="scroll-mt-28">
+            <div id="recovery-desktop" className="scroll-mt-28 h-full">
               <InsightCard
-                title="Recovery"
+                title={t.result.preview.sections.recovery}
                 icon={<HeartPulse className="h-4 w-4" />}
                 insights={recoveryInsights}
                 compact
@@ -381,15 +384,13 @@ export function InsightPreview({ result, jobId, theme }: InsightPreviewProps) {
                     />
                   ) : undefined
                 }
-                ctaLabel="Explore recovery"
-                onCtaClick={goToRecovery}
               />
             </div>
 
             {/* Activity card */}
-            <div id="activity-desktop" className="scroll-mt-28">
+            <div id="activity-desktop" className="scroll-mt-28 h-full">
               <InsightCard
-                title="Activity & Mobility"
+                title={t.result.preview.sections.activityMobility}
                 icon={<Footprints className="h-4 w-4" />}
                 insights={activityInsights}
                 compact
@@ -402,8 +403,6 @@ export function InsightPreview({ result, jobId, theme }: InsightPreviewProps) {
                     />
                   ) : undefined
                 }
-                ctaLabel="View movement details"
-                onCtaClick={goToActivity}
               />
             </div>
           </section>
@@ -421,8 +420,10 @@ export function InsightPreview({ result, jobId, theme }: InsightPreviewProps) {
           >
             <div className="rounded-xl border border-border bg-card p-5">
               <h1 className="text-2xl font-semibold text-foreground leading-tight mb-2">
-                Something interesting happened{" "}
-                <span className="text-accent">in your sleep data.</span>
+                {t.result.preview.sleepHero.title}{" "}
+                <span className="text-accent">
+                  {t.result.preview.sleepHero.titleHighlight}
+                </span>
               </h1>
 
               {durationMessage && (
@@ -449,7 +450,7 @@ export function InsightPreview({ result, jobId, theme }: InsightPreviewProps) {
               <div className="flex items-center gap-2 mb-2">
                 <Moon className="h-4 w-4 text-accent" />
                 <span className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
-                  Sleep Pattern
+                  {t.result.preview.sections.sleepPattern}
                 </span>
               </div>
               {sleepChartOption ? (
@@ -460,18 +461,18 @@ export function InsightPreview({ result, jobId, theme }: InsightPreviewProps) {
                 />
               ) : (
                 <div className="h-[220px] flex items-center justify-center text-sm text-muted-foreground">
-                  Not enough sleep data to visualise.
+                  {t.result.preview.emptyChart}
                 </div>
               )}
 
               <p className="text-sm text-muted-foreground italic mt-4 mb-3">
-                Want to see what happened next?
+                {t.result.preview.sleepHero.mobileCuriousPrompt}
               </p>
               <button
                 onClick={goToRecovery}
                 className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-accent text-accent-foreground text-sm font-medium hover:bg-accent/90 transition-colors"
               >
-                Explore your recovery
+                {t.result.preview.sleepHero.ctaRecovery}
                 <ArrowRight className="h-4 w-4" />
               </button>
             </div>
@@ -479,7 +480,7 @@ export function InsightPreview({ result, jobId, theme }: InsightPreviewProps) {
 
           <section id="recovery-mobile" className="scroll-mt-28">
             <InsightCard
-              title="Recovery"
+              title={t.result.preview.sections.recovery}
               icon={<HeartPulse className="h-4 w-4" />}
               insights={recoveryInsights}
               chart={
@@ -491,14 +492,14 @@ export function InsightPreview({ result, jobId, theme }: InsightPreviewProps) {
                   />
                 ) : undefined
               }
-              ctaLabel="Explore activity next"
+              ctaLabel={t.result.preview.cta.exploreActivity}
               onCtaClick={goToActivity}
             />
           </section>
 
           <section id="activity-mobile" className="scroll-mt-28">
             <InsightCard
-              title="Activity & Mobility"
+              title={t.result.preview.sections.activityMobility}
               icon={<Footprints className="h-4 w-4" />}
               insights={activityInsights}
               chart={
@@ -525,11 +526,10 @@ export function InsightPreview({ result, jobId, theme }: InsightPreviewProps) {
             className="rounded-xl border border-accent/20 bg-accent/5 p-6 text-center"
           >
             <h2 className="text-lg font-semibold text-foreground mb-2">
-              Want the full picture?
+              {t.result.preview.fullReport.title}
             </h2>
             <p className="text-sm text-muted-foreground mb-4 max-w-md mx-auto">
-              Your complete report includes detailed trends, correlations, and a
-              downloadable PDF with all your insights.
+              {t.result.preview.fullReport.description}
             </p>
 
             <div className="flex flex-col sm:flex-row items-center justify-center gap-3">
@@ -542,7 +542,7 @@ export function InsightPreview({ result, jobId, theme }: InsightPreviewProps) {
                   className="inline-flex items-center gap-2 px-5 py-2.5 rounded-lg bg-accent text-accent-foreground text-sm font-medium hover:bg-accent/90 transition-colors"
                 >
                   <Download className="h-4 w-4" />
-                  Download Full Report
+                  {t.result.preview.fullReport.downloadButton}
                 </a>
               )}
               <Link
@@ -550,7 +550,7 @@ export function InsightPreview({ result, jobId, theme }: InsightPreviewProps) {
                 className="inline-flex items-center text-sm text-accent hover:underline"
               >
                 <ArrowLeft className="h-4 w-4 mr-1" />
-                Run another analysis
+                {t.result.preview.fullReport.runAnother}
               </Link>
             </div>
           </motion.div>

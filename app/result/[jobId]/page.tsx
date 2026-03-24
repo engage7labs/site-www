@@ -1,13 +1,3 @@
-/**
- * Result Page
- *
- * Displays analysis results for a specific job ID.
- * Polls GET /api/result/{jobId} until the job reaches a terminal state.
- *
- * Sprint 11: when completed, renders the InsightPreview experience
- * instead of the previous text-only CompletedView.
- */
-
 "use client";
 
 import { useAppTheme } from "@/components/providers/app-theme-provider";
@@ -15,6 +5,7 @@ import { useLocale } from "@/components/providers/locale-provider";
 import { InsightPreview } from "@/components/insights";
 import { getAnalysisResult } from "@/lib/api/analysis";
 import { ApiClientError } from "@/lib/api/client";
+import { createPollingManager } from "@/lib/polling";
 import {
   trackResultPageViewed,
   trackAnalysisStarted,
@@ -109,26 +100,15 @@ function NotFoundView() {
   );
 }
 
-function ProcessingView({ result }: { result: AnalysisResult }) {
+function ProcessingView({ result, elapsedSeconds }: { result: AnalysisResult; elapsedSeconds: number }) {
   const { t } = useLocale();
   const statusLabel =
     result.status === "queued"
       ? t.result.status.pending
       : t.result.status.processing;
 
-  // Elapsed timer
-  const [elapsed, setElapsed] = useState(0);
-  const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
-
-  useEffect(() => {
-    setElapsed(0);
-    timerRef.current = setInterval(() => {
-      setElapsed((prev) => prev + 1);
-    }, 1000);
-    return () => {
-      if (timerRef.current) clearInterval(timerRef.current);
-    };
-  }, []);
+  // Show calm message if taking longer than 60 seconds
+  const isDelayed = elapsedSeconds > 60;
 
   const formatTime = (seconds: number): string => {
     const m = Math.floor(seconds / 60).toString().padStart(2, "0");
@@ -146,15 +126,17 @@ function ProcessingView({ result }: { result: AnalysisResult }) {
           <div className="h-20 w-20 rounded-full border-4 border-accent/20" />
           <div className="absolute inset-0 h-20 w-20 rounded-full border-4 border-accent border-t-transparent animate-spin" />
           <span className="absolute text-sm font-mono font-semibold text-foreground">
-            {formatTime(elapsed)}
+            {formatTime(elapsedSeconds)}
           </span>
         </div>
         <div className="space-y-2">
           <h1 className="text-2xl font-semibold text-foreground">
-            {statusLabel}
+            {isDelayed ? "Still working on your analysis…" : statusLabel}
           </h1>
           <p className="text-muted-foreground max-w-md">
-            Your analysis is underway. This page updates automatically.
+            {isDelayed
+              ? "This is taking longer than expected, but we're still processing your data."
+              : "Your analysis is underway. This page updates automatically."}
           </p>
         </div>
         <div className="flex items-center space-x-2 text-sm text-muted-foreground">
@@ -168,6 +150,10 @@ function ProcessingView({ result }: { result: AnalysisResult }) {
 
 function FailedView({ error }: { error: string | null }) {
   const { t } = useLocale();
+
+  // Transform technical errors into calm messages
+  const calmMessage = getCalmErrorMessage(error, t);
+
   return (
     <PageShell>
       <motion.div
@@ -180,7 +166,7 @@ function FailedView({ error }: { error: string | null }) {
             {t.result.error.title}
           </h1>
           <p className="text-muted-foreground max-w-md">
-            {error ?? t.result.error.description}
+            {calmMessage}
           </p>
         </div>
         <Link
@@ -192,6 +178,30 @@ function FailedView({ error }: { error: string | null }) {
       </motion.div>
     </PageShell>
   );
+}
+
+/**
+ * Transform technical errors into user-friendly messages
+ */
+function getCalmErrorMessage(error: string | null, t: any): string {
+  if (!error) return t.result.error.description;
+
+  // Map technical errors to calm messages
+  const errorMap: Record<string, string> = {
+    timeout: "Your analysis took too long to process. Please try again.",
+    network: "We couldn't connect to process your data. Please check your connection and try again.",
+    invalid: "The data provided couldn't be processed. Please check your file and try again.",
+  };
+
+  // Check for known error patterns
+  for (const [pattern, message] of Object.entries(errorMap)) {
+    if (error.toLowerCase().includes(pattern)) {
+      return message;
+    }
+  }
+
+  // Default to generic message
+  return t.result.error.description;
 }
 
 function FetchErrorView({ message }: { message: string }) {
@@ -244,81 +254,107 @@ export default function ResultPage({
   const [jobId, setJobId] = useState<string | null>(null);
   const [isNotFound, setIsNotFound] = useState(false);
   const [fetchError, setFetchError] = useState<string | null>(null);
+  const [elapsedSeconds, setElapsedSeconds] = useState(0);
+
+  const pollingManagerRef = useRef<ReturnType<typeof createPollingManager> | null>(null);
+  const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const completedFiredRef = useRef(false);
 
   useEffect(() => {
-    let interval: ReturnType<typeof setInterval> | null = null;
-    let pollCount = 0;
-    let completedFired = false;
+    let mounted = true;
 
     const init = async () => {
       const { jobId: id } = await params;
+      if (!mounted) return;
+
       setJobId(id);
 
       // Telemetry: result page viewed
       trackResultPageViewed(id);
 
-      // Initial fetch
+      // Reset completed flag for new job
+      completedFiredRef.current = false;
+
+      // Start elapsed timer
+      setElapsedSeconds(0);
+      timerRef.current = setInterval(() => {
+        if (mounted) {
+          setElapsedSeconds((prev) => prev + 1);
+        }
+      }, 1000);
+
+      // Create polling manager
+      const pollingManager = createPollingManager({
+        maxPolls: MAX_POLLS,
+        intervalMs: POLL_INTERVAL_MS,
+        jobId: id,
+      });
+      pollingManagerRef.current = pollingManager;
+
+      // Initial fetch with error tracking
       try {
         const data = await getAnalysisResult(id);
+        if (!mounted) return;
+
         setResult(data);
 
         // Track initial state
-        if (
-          data.status === "queued" ||
-          data.status === "processing"
-        ) {
+        if (data.status === "queued" || data.status === "processing") {
           trackAnalysisStarted(id);
         }
 
-        // Immediately return if already in terminal state
-        if (data.status === "completed" || data.status === "failed") {
-          if (data.status === "completed" && !completedFired) {
-            completedFired = true;
+        // If already terminal, stop polling
+        if (data.status === "completed") {
+          if (!completedFiredRef.current) {
+            completedFiredRef.current = true;
             trackAnalysisCompleted(id);
           }
           return;
         }
+
+        if (data.status === "failed") {
+          return;
+        }
+
+        // Start polling for non-terminal states
+        await pollingManager.start(async () => {
+          const updated = await getAnalysisResult(id);
+          if (mounted) {
+            setResult(updated);
+
+            if (updated.status === "completed" && !completedFiredRef.current) {
+              completedFiredRef.current = true;
+              trackAnalysisCompleted(id);
+            }
+          }
+          return updated;
+        });
       } catch (err) {
+        if (!mounted) return;
+
         if (err instanceof ApiClientError && err.statusCode === 404) {
           setIsNotFound(true);
           return;
         }
-        setFetchError(
-          err instanceof Error ? err.message : "Failed to load results"
-        );
-        return;
-      }
 
-      // Poll until terminal state or timeout
-      interval = setInterval(async () => {
-        pollCount++;
-        if (pollCount >= MAX_POLLS) {
-          clearInterval(interval!);
-          setFetchError(
-            "Analysis timed out after 5 minutes. Please try again."
-          );
-          return;
-        }
-        try {
-          const data = await getAnalysisResult(id);
-          setResult(data);
-          if (data.status === "completed" || data.status === "failed") {
-            clearInterval(interval!);
-            if (data.status === "completed" && !completedFired) {
-              completedFired = true;
-              trackAnalysisCompleted(id);
-            }
-          }
-        } catch {
-          // Ignore transient poll errors — keep polling
-        }
-      }, POLL_INTERVAL_MS);
+        // User-friendly error message
+        const message =
+          err instanceof Error ? err.message : "Failed to load results";
+        setFetchError(message);
+      }
     };
 
     init();
 
+    // Cleanup
     return () => {
-      if (interval) clearInterval(interval);
+      mounted = false;
+      if (pollingManagerRef.current) {
+        pollingManagerRef.current.stop();
+      }
+      if (timerRef.current) {
+        clearInterval(timerRef.current);
+      }
     };
   }, [params]);
 
@@ -342,7 +378,7 @@ export default function ResultPage({
   }
 
   if (result.status === "queued" || result.status === "processing") {
-    return <ProcessingView result={result} />;
+    return <ProcessingView result={result} elapsedSeconds={elapsedSeconds} />;
   }
 
   return <CompletedView result={result} jobId={jobId!} />;
