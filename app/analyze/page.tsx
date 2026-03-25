@@ -269,7 +269,7 @@ export default function AnalyzePage() {
 
           {/* API Health Status */}
           <motion.div variants={fadeInUp} className="max-w-2xl mx-auto">
-            <APIHealthStatus />
+            <APIHealthStatus suppressUnhealthy={isUploading} />
           </motion.div>
         </motion.div>
       </main>

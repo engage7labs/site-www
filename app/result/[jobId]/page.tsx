@@ -190,6 +190,12 @@ function getCalmErrorMessage(error: string | null, t: any): string {
   // Map technical errors to calm messages
   const errorMap: Record<string, string> = {
     timeout: "Your analysis took too long to process. Please try again.",
+    interrupted:
+      "Your analysis was interrupted while processing. Please run the upload again.",
+    stalled:
+      "Your analysis appears to have stalled. Please run the upload again.",
+    missing:
+      "Your report artifacts were not fully available after processing. Please run the upload again.",
     network:
       "We couldn't connect to process your data. Please check your connection and try again.",
     invalid:
@@ -334,6 +340,20 @@ export default function ResultPage({
           }
           return updated;
         });
+
+        const pollingState = pollingManager.getState();
+        if (mounted && pollingState.status === "timeout") {
+          setResult((prev) => ({
+            job_id: id,
+            status: "failed",
+            summary: prev?.summary ?? null,
+            highlights: prev?.highlights ?? [],
+            sections: prev?.sections ?? null,
+            artifacts: prev?.artifacts ?? null,
+            error:
+              "Analysis stalled and did not reach a terminal state in time. Please retry your upload.",
+          }));
+        }
       } catch (err) {
         if (!mounted) return;
 
