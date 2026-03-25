@@ -94,7 +94,9 @@ function logUploadDebug(
   logger(`[upload-debug] ${event}`, payload);
 }
 
-function clearTimeoutSafe(timeoutId: ReturnType<typeof setTimeout> | null): void {
+function clearTimeoutSafe(
+  timeoutId: ReturnType<typeof setTimeout> | null
+): void {
   if (timeoutId !== null) {
     clearTimeout(timeoutId);
   }
