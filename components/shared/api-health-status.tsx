@@ -14,9 +14,13 @@ import { useEffect, useState } from "react";
 
 interface APIHealthStatusProps {
   className?: string;
+  hideWhenUnhealthy?: boolean;
 }
 
-export function APIHealthStatus({ className }: Readonly<APIHealthStatusProps>) {
+export function APIHealthStatus({
+  className,
+  hideWhenUnhealthy = false,
+}: Readonly<APIHealthStatusProps>) {
   const [isHealthy, setIsHealthy] = useState<boolean | null>(null);
 
   useEffect(() => {
@@ -65,6 +69,11 @@ export function APIHealthStatus({ className }: Readonly<APIHealthStatusProps>) {
         </div>
       </motion.div>
     );
+  }
+
+  // Homepage mode: quietly hide indicator when API is unhealthy.
+  if (hideWhenUnhealthy) {
+    return null;
   }
 
   // API is unhealthy - show calm, friendly message

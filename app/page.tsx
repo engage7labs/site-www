@@ -164,7 +164,7 @@ export default function Home() {
           </motion.div>
 
           <motion.div variants={fadeInUp} className="pt-2 flex justify-center">
-            <APIHealthStatus />
+            <APIHealthStatus hideWhenUnhealthy />
           </motion.div>
         </motion.div>
       </section>

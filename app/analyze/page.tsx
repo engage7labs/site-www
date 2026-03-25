@@ -57,12 +57,15 @@ export default function AnalyzePage() {
   };
 
   const handleUpload = () => {
-    if (!selectedFile) return;
+    if (!selectedFile || isUploading) return;
 
     setIsUploading(true);
 
     // Track upload started with file metadata (no PII)
-    trackUploadStarted(selectedFile.size, selectedFile.name.endsWith('.zip') ? 'export.zip' : undefined);
+    trackUploadStarted(
+      selectedFile.size,
+      selectedFile.name.endsWith(".zip") ? "export.zip" : undefined
+    );
 
     void submitAnalysisUpload(
       selectedFile,
@@ -79,18 +82,16 @@ export default function AnalyzePage() {
         console.error("Upload error:", error);
 
         // Track error occurrence
-        const errorMessage = error instanceof ApiClientError && error.message
-          ? error.message
-          : "Upload failed";
+        const errorMessage =
+          error instanceof ApiClientError && error.message
+            ? error.message
+            : "Upload failed";
 
-        trackErrorOccurred(
-          "upload_failed",
-          errorMessage,
-          {
-            file_size: selectedFile.size,
-            status_code: error instanceof ApiClientError ? error.statusCode : undefined,
-          }
-        );
+        trackErrorOccurred("upload_failed", errorMessage, {
+          file_size: selectedFile.size,
+          status_code:
+            error instanceof ApiClientError ? error.statusCode : undefined,
+        });
 
         const message =
           error instanceof ApiClientError && error.message
