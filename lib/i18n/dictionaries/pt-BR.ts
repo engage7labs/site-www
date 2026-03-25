@@ -279,6 +279,39 @@ export const ptBR: Dictionary = {
       noInsights: "Nenhum insight disponível",
     },
 
+    preview: {
+      backToHome: "Voltar para Início",
+      subtitle: "Sua prévia de insights pessoais",
+      sleepHero: {
+        title: "Algo interessante aconteceu",
+        titleHighlight: "nos seus dados de sono.",
+        emptyState:
+          "Seus dados de sono foram analisados. Explore seus padrões abaixo.",
+        curiosPrompt: "Curioso para ver como isso mudou ao longo do tempo?",
+        mobileCuriousPrompt: "Quer ver o que aconteceu em seguida?",
+        ctaRecovery: "Explorar sua recuperação",
+      },
+      sections: {
+        sleepPattern: "Padrão de Sono",
+        recovery: "Recuperação",
+        activityMobility: "Atividade e Mobilidade",
+      },
+      cta: {
+        exploreRecovery: "Explorar recuperação",
+        exploreActivity: "Explorar atividade",
+        viewMovement: "Ver detalhes de movimento",
+      },
+      emptyChart: "Dados insuficientes para visualizar.",
+      emptyInsights: "Dados insuficientes para gerar este insight ainda.",
+      fullReport: {
+        title: "Quer ver o panorama completo?",
+        description:
+          "Seu relatório completo inclui tendências detalhadas, correlações e um PDF para download com todos os seus insights.",
+        downloadButton: "Baixar Relatório Completo",
+        runAnother: "Executar outra análise",
+      },
+    },
+
     artifacts: {
       title: "Relatório e Artefatos",
       downloadPDF: "Baixar Relatório PDF",

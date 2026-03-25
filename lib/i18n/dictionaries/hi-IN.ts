@@ -280,6 +280,39 @@ export const hiIN: Dictionary = {
       noInsights: "कोई अंतर्दृष्टि उपलब्ध नहीं",
     },
 
+    preview: {
+      backToHome: "होम पर वापस जाएं",
+      subtitle: "आपका व्यक्तिगत अंतर्दृष्टि प्रीव्यू",
+      sleepHero: {
+        title: "आपके स्लीप डेटा में",
+        titleHighlight: "कुछ दिलचस्प हुआ है।",
+        emptyState:
+          "आपके स्लीप डेटा का विश्लेषण किया गया है। नीचे अपने पैटर्न देखें।",
+        curiosPrompt: "जानना चाहते हैं कि समय के साथ यह कैसे बदला?",
+        mobileCuriousPrompt: "देखना चाहते हैं कि आगे क्या हुआ?",
+        ctaRecovery: "अपनी रिकवरी देखें",
+      },
+      sections: {
+        sleepPattern: "स्लीप पैटर्न",
+        recovery: "रिकवरी",
+        activityMobility: "गतिविधि और गतिशीलता",
+      },
+      cta: {
+        exploreRecovery: "रिकवरी देखें",
+        exploreActivity: "अगली गतिविधि देखें",
+        viewMovement: "मूवमेंट विवरण देखें",
+      },
+      emptyChart: "विज़ुअलाइज़ करने के लिए पर्याप्त डेटा नहीं है।",
+      emptyInsights: "इस अंतर्दृष्टि के लिए अभी पर्याप्त डेटा नहीं है।",
+      fullReport: {
+        title: "पूरा चित्र देखना चाहते हैं?",
+        description:
+          "आपकी पूरी रिपोर्ट में विस्तृत ट्रेंड्स, सहसंबंध और आपके सभी अंतर्दृष्टियों वाला डाउनलोड करने योग्य PDF शामिल है।",
+        downloadButton: "पूरा रिपोर्ट डाउनलोड करें",
+        runAnother: "एक और विश्लेषण चलाएं",
+      },
+    },
+
     artifacts: {
       title: "रिपोर्ट और कलाकृतियाँ",
       downloadPDF: "PDF रिपोर्ट डाउनलोड करें",
