@@ -72,6 +72,34 @@ interface RequestConfig extends RequestInit {
   skipRetry?: boolean;
 }
 
+function isUploadEndpoint(endpoint: string): boolean {
+  return endpoint === "/api/analyze-upload";
+}
+
+function logUploadDebug(
+  endpoint: string,
+  level: "info" | "warn" | "error",
+  event: string,
+  payload: Record<string, unknown>
+): void {
+  if (!isUploadEndpoint(endpoint)) return;
+  let logger: typeof console.info;
+  if (level === "warn") {
+    logger = console.warn;
+  } else if (level === "error") {
+    logger = console.error;
+  } else {
+    logger = console.info;
+  }
+  logger(`[upload-debug] ${event}`, payload);
+}
+
+function clearTimeoutSafe(timeoutId: ReturnType<typeof setTimeout> | null): void {
+  if (timeoutId !== null) {
+    clearTimeout(timeoutId);
+  }
+}
+
 /**
  * Makes an HTTP request with timeout and error handling.
  * Automatically retries transient failures.
@@ -85,7 +113,15 @@ async function request<T>(
   const makeRequest = async (): Promise<T> => {
     // Create abort controller for timeout
     const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), timeout);
+    const timeoutEnabled = Number.isFinite(timeout) && timeout > 0;
+    const timeoutId = timeoutEnabled
+      ? setTimeout(() => controller.abort(), timeout)
+      : null;
+    logUploadDebug(endpoint, "info", "request_start", {
+      endpoint,
+      timeoutEnabled,
+      timeoutMs: timeout,
+    });
 
     try {
       const url = `${API_BASE_URL}${endpoint}`;
@@ -98,7 +134,12 @@ async function request<T>(
         },
       });
 
-      clearTimeout(timeoutId);
+      clearTimeoutSafe(timeoutId);
+      logUploadDebug(endpoint, "info", "request_returned", {
+        endpoint,
+        status: response.status,
+        ok: response.ok,
+      });
 
       // Handle non-OK responses
       if (!response.ok) {
@@ -128,10 +169,15 @@ async function request<T>(
       const data = await response.json();
       return data as T;
     } catch (error) {
-      clearTimeout(timeoutId);
+      clearTimeoutSafe(timeoutId);
 
       // Handle abort/timeout
       if (error instanceof DOMException && error.name === "AbortError") {
+        logUploadDebug(endpoint, "warn", "request_aborted", {
+          endpoint,
+          timeoutEnabled,
+          timeoutMs: timeout,
+        });
         throw new ApiClientError(408, "Request timeout");
       }
 
@@ -141,6 +187,10 @@ async function request<T>(
       }
 
       // Handle network errors
+      logUploadDebug(endpoint, "error", "request_failed", {
+        endpoint,
+        error,
+      });
       throw new ApiClientError(
         0,
         "Network error. Please check your connection.",

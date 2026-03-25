@@ -59,6 +59,13 @@ export default function AnalyzePage() {
   const handleUpload = () => {
     if (!selectedFile || isUploading) return;
 
+    console.info("[upload-debug] submit_clicked", {
+      fileName: selectedFile.name,
+      fileSize: selectedFile.size,
+      consentGiven,
+      hasTurnstileToken: Boolean(turnstileToken),
+    });
+
     setIsUploading(true);
 
     // Track upload started with file metadata (no PII)

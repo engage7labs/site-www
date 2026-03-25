@@ -30,8 +30,17 @@ export async function submitAnalysisUpload(
   formData.append("consent", String(consent));
   formData.append("locale", locale);
   if (turnstileToken) formData.append("cf_turnstile_response", turnstileToken);
+
+  console.info("[upload-debug] formdata_created", {
+    fileName: file.name,
+    fileSize: file.size,
+    consent,
+    locale,
+    hasTurnstileToken: Boolean(turnstileToken),
+  });
+
   return postFormData<UploadResponse>(API_ENDPOINTS.uploadAnalysis, formData, {
-    timeout: 300000,
+    timeout: 0,
     skipRetry: true,
   });
 }
