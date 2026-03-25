@@ -30,7 +30,7 @@ const fadeInUp = {
 // Shell wrapper with sticky header
 // ---------------------------------------------------------------------------
 
-function PageShell({ children }: { children: React.ReactNode }) {
+function PageShell({ children }: Readonly<{ children: React.ReactNode }>) {
   const { t } = useLocale();
   return (
     <div className="min-h-screen bg-background">
@@ -98,10 +98,10 @@ function NotFoundView() {
 function ProcessingView({
   result,
   elapsedSeconds,
-}: {
+}: Readonly<{
   result: AnalysisResult;
   elapsedSeconds: number;
-}) {
+}>) {
   const { t } = useLocale();
   const statusLabel =
     result.status === "queued"
@@ -151,7 +151,7 @@ function ProcessingView({
   );
 }
 
-function FailedView({ error }: { error: string | null }) {
+function FailedView({ error }: Readonly<{ error: string | null }>) {
   const { t } = useLocale();
 
   // Transform technical errors into calm messages
@@ -213,7 +213,7 @@ function getCalmErrorMessage(error: string | null, t: any): string {
   return t.result.error.description;
 }
 
-function FetchErrorView({ message }: { message: string }) {
+function FetchErrorView({ message }: Readonly<{ message: string }>) {
   const { t } = useLocale();
   return (
     <PageShell>
@@ -242,10 +242,10 @@ function FetchErrorView({ message }: { message: string }) {
 function CompletedView({
   result,
   jobId,
-}: {
+}: Readonly<{
   result: AnalysisResult;
   jobId: string;
-}) {
+}>) {
   const { appTheme } = useAppTheme();
   return <InsightPreview result={result} jobId={jobId} theme={appTheme} />;
 }
@@ -256,9 +256,9 @@ function CompletedView({
 
 export default function ResultPage({
   params,
-}: {
+}: Readonly<{
   params: Promise<{ jobId: string }>;
-}) {
+}>) {
   const [result, setResult] = useState<AnalysisResult | null>(null);
   const [jobId, setJobId] = useState<string | null>(null);
   const [isNotFound, setIsNotFound] = useState(false);
@@ -270,6 +270,8 @@ export default function ResultPage({
   > | null>(null);
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const completedFiredRef = useRef(false);
+  const seenInProgressRef = useRef(false);
+  const polling404CountRef = useRef(0);
 
   useEffect(() => {
     let mounted = true;
@@ -285,6 +287,8 @@ export default function ResultPage({
 
       // Reset completed flag for new job
       completedFiredRef.current = false;
+      seenInProgressRef.current = false;
+      polling404CountRef.current = 0;
 
       // Start elapsed timer
       setElapsedSeconds(0);
@@ -308,6 +312,9 @@ export default function ResultPage({
         if (!mounted) return;
 
         setResult(data);
+        if (data.status === "queued" || data.status === "processing") {
+          seenInProgressRef.current = true;
+        }
 
         // Track initial state
         if (data.status === "queued" || data.status === "processing") {
@@ -329,16 +336,42 @@ export default function ResultPage({
 
         // Start polling for non-terminal states
         await pollingManager.start(async () => {
-          const updated = await getAnalysisResult(id);
-          if (mounted) {
-            setResult(updated);
+          try {
+            const updated = await getAnalysisResult(id);
+            polling404CountRef.current = 0;
+            if (mounted) {
+              setResult(updated);
+              if (updated.status === "queued" || updated.status === "processing") {
+                seenInProgressRef.current = true;
+              }
 
-            if (updated.status === "completed" && !completedFiredRef.current) {
-              completedFiredRef.current = true;
-              trackAnalysisCompleted(id);
+              if (updated.status === "completed" && !completedFiredRef.current) {
+                completedFiredRef.current = true;
+                trackAnalysisCompleted(id);
+              }
             }
+            return updated;
+          } catch (error) {
+            const isNotFound =
+              error instanceof ApiClientError && error.statusCode === 404;
+
+            if (isNotFound && seenInProgressRef.current) {
+              polling404CountRef.current += 1;
+              if (polling404CountRef.current >= 3) {
+                return {
+                  job_id: id,
+                  status: "failed",
+                  summary: null,
+                  highlights: [],
+                  sections: null,
+                  artifacts: null,
+                  error:
+                    "Analysis state was lost after a service interruption. Please retry your upload.",
+                } as AnalysisResult;
+              }
+            }
+            throw error;
           }
-          return updated;
         });
 
         const pollingState = pollingManager.getState();
