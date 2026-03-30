@@ -6,18 +6,24 @@
  */
 
 import type { AnalysisResult, UploadResponse } from "@/lib/types/analysis";
-import { get, postFormData } from "./client";
+import { ApiClientError, get } from "./client";
 import { API_ENDPOINTS } from "./config";
 
 /**
  * Submits an Apple Health ZIP export for analysis.
  *
- * POST /api/analyze-upload
- * Returns immediately with a job_id and status "queued".
+ * Uses a two-step direct-upload strategy to bypass the Vercel 4.5 MB
+ * serverless function body size limit:
+ *   1. Fetch pre-signed HMAC headers from /api/proxy/upload-token (tiny req).
+ *   2. POST the FormData directly to the API backend using those headers.
  *
- * @param file    Apple Health ZIP export file.
- * @param consent User consent flag — must be true to proceed.
- * @param locale  User locale string (e.g. "en-IE").
+ * The HMAC secret never leaves the Next.js server. The browser only receives
+ * the computed signature which expires within 5 minutes.
+ *
+ * @param file          Apple Health ZIP export file.
+ * @param consent       User consent flag — must be true to proceed.
+ * @param locale        User locale string (e.g. "en-IE").
+ * @param turnstileToken Cloudflare Turnstile challenge token.
  */
 export async function submitAnalysisUpload(
   file: File,
@@ -39,10 +45,58 @@ export async function submitAnalysisUpload(
     hasTurnstileToken: Boolean(turnstileToken),
   });
 
-  return postFormData<UploadResponse>(API_ENDPOINTS.uploadAnalysis, formData, {
-    timeout: 0,
-    skipRetry: true,
+  // Step 1 — obtain pre-signed upload headers from the Next.js server.
+  // This is a tiny JSON request (no file body) — safe within Vercel limits.
+  const tokenRes = await fetch("/api/proxy/upload-token", { method: "POST" });
+  if (!tokenRes.ok) {
+    throw new ApiClientError(tokenRes.status, "Failed to obtain upload token");
+  }
+  const { uploadUrl, headers: sigHeaders } = (await tokenRes.json()) as {
+    uploadUrl: string;
+    headers: Record<string, string>;
+  };
+
+  console.info("[upload-debug] upload_token_obtained", {
+    uploadUrl,
+    hasSigHeaders: Boolean(sigHeaders && Object.keys(sigHeaders).length),
   });
+
+  // Step 2 — POST FormData directly to the API (bypasses Vercel body limit).
+  const controller = new AbortController();
+  const response = await fetch(uploadUrl, {
+    method: "POST",
+    headers: sigHeaders, // HMAC + key-id + timestamp — no Content-Type (browser sets boundary)
+    body: formData,
+    signal: controller.signal,
+  });
+
+  console.info("[upload-debug] direct_upload_returned", {
+    uploadUrl,
+    status: response.status,
+    ok: response.ok,
+  });
+
+  if (!response.ok) {
+    let errorData: { message?: string; error?: string; detail?: unknown };
+    try {
+      errorData = await response.json();
+    } catch {
+      errorData = { message: `Upload failed with status ${response.status}` };
+    }
+    let message: string;
+    if (typeof errorData.message === "string") {
+      message = errorData.message;
+    } else if (typeof errorData.error === "string") {
+      message = errorData.error;
+    } else if (typeof errorData.detail === "string") {
+      message = errorData.detail;
+    } else {
+      message = `HTTP ${response.status}`;
+    }
+    throw new ApiClientError(response.status, message, errorData.detail);
+  }
+
+  return response.json() as Promise<UploadResponse>;
 }
 
 /**
