@@ -15,14 +15,23 @@ export async function POST(request: NextRequest) {
   const sigHeaders = signRequest("POST", path);
   const rawBody = await request.text();
 
-  const upstreamResponse = await fetch(`${INTERNAL_API_BASE_URL}${path}`, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      ...sigHeaders,
-    },
-    body: rawBody,
-  });
+  let upstreamResponse: Response;
+  try {
+    upstreamResponse = await fetch(`${INTERNAL_API_BASE_URL}${path}`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        ...sigHeaders,
+      },
+      body: rawBody,
+    });
+  } catch {
+    // API backend unreachable — analytics is best-effort, return 503
+    return NextResponse.json(
+      { detail: "Event service unavailable" },
+      { status: 503 }
+    );
+  }
 
   if (upstreamResponse.status === 204) {
     return new NextResponse(null, { status: 204 });

@@ -350,16 +350,30 @@ export default function ResultPage({
     });
   };
 
-  const handleModalShare = () => {
-    if (!jobId) return;
+  const handleModalShare = async (): Promise<void> => {
     const shareUrl = "https://www.engage7.ie";
-    void sendUserEvent("share_clicked", {
-      job_id: jobId,
-      metadata: { channel: "share_engage7", url: shareUrl },
-    });
 
-    navigator.clipboard.writeText(shareUrl).catch(() => {
-      /* Clipboard API unavailable — silently fail */
+    // Prefer native share sheet (mobile + modern desktop)
+    if (typeof navigator.share === "function") {
+      try {
+        await navigator.share({ title: "Engage7", url: shareUrl });
+        void sendUserEvent("share_clicked", {
+          job_id: jobId ?? undefined,
+          metadata: { channel: "native_share", url: shareUrl },
+        });
+        return;
+      } catch (err) {
+        // User dismissed the share sheet — propagate so modal shows no feedback
+        if (err instanceof DOMException && err.name === "AbortError") throw err;
+        // Other navigator.share failures — try clipboard fallback
+      }
+    }
+
+    // Clipboard fallback — let errors propagate so modal doesn't show false feedback
+    await navigator.clipboard.writeText(shareUrl);
+    void sendUserEvent("share_clicked", {
+      job_id: jobId ?? undefined,
+      metadata: { channel: "clipboard", url: shareUrl },
     });
   };
 

@@ -17,7 +17,7 @@ interface PostAnalysisModalProps {
   onDownload: () => void;
   onFeedback: (value: FeedbackValue, note?: string) => void;
   onEmailSubmit: (email: string) => void;
-  onShare: () => void;
+  onShare: () => Promise<void>;
 }
 
 const FEEDBACK_OPTIONS: Array<{
@@ -59,9 +59,13 @@ export function PostAnalysisModal({
   };
 
   const handleShareClick = async () => {
-    onShare();
-    setShared(true);
-    setTimeout(() => setShared(false), 1600);
+    try {
+      await onShare();
+      setShared(true);
+      setTimeout(() => setShared(false), 1600);
+    } catch {
+      // Share dismissed or unavailable — no feedback shown
+    }
   };
 
   return (
@@ -179,7 +183,7 @@ export function PostAnalysisModal({
               className="inline-flex items-center gap-2 rounded-md border border-border px-3 py-2 text-sm text-foreground hover:bg-muted/40"
             >
               <ExternalLink className="h-4 w-4" />
-              {shared ? "Link copied" : "Share Engage7"}
+              {shared ? "Shared!" : "Share Engage7"}
             </button>
             <button
               type="button"
