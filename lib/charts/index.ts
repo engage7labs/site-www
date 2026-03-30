@@ -3,12 +3,18 @@
  */
 
 export {
-  buildSleepWeeklyChart,
-  buildSleepMonthlyChart,
-  buildRecoveryChart,
   buildActivityChart,
   buildActivityWeeklyChart,
+  buildRecoveryChart,
+  buildSleepMonthlyChart,
+  buildSleepWeeklyChart,
 } from "./chart-configs";
 
-export { METRIC_COLORS, METRIC_COLORS_LIGHT, GRAPHITE, MUTED, LIGHT_GRAY } from "./metric-colors";
+export {
+  GRAPHITE,
+  LIGHT_GRAY,
+  METRIC_COLORS,
+  METRIC_COLORS_LIGHT,
+  MUTED,
+} from "./metric-colors";
 export type { MetricKey } from "./metric-colors";
