@@ -6,7 +6,11 @@ import { useLocale } from "@/components/providers/locale-provider";
 import { PostAnalysisModal } from "@/components/shared/post-analysis-modal";
 import { getAnalysisResult } from "@/lib/api/analysis";
 import { ApiClientError } from "@/lib/api/client";
-import { sendUserEvent, trackPdfDownloaded } from "@/lib/api/events";
+import {
+  getOrCreateSessionId,
+  sendUserEvent,
+  trackPdfDownloaded,
+} from "@/lib/api/events";
 import { createPollingManager } from "@/lib/polling";
 import {
   trackAnalysisCompleted,
@@ -17,7 +21,7 @@ import type { AnalysisResult } from "@/lib/types/analysis";
 import { motion } from "framer-motion";
 import { AlertCircle, ArrowLeft, Clock, Loader2 } from "lucide-react";
 import Link from "next/link";
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 
 const POLL_INTERVAL_MS = 3000;
 const MAX_POLLS = 100; // 5 minutes max
@@ -244,12 +248,38 @@ function FetchErrorView({ message }: Readonly<{ message: string }>) {
 function CompletedView({
   result,
   jobId,
+  onOpenModal,
 }: Readonly<{
   result: AnalysisResult;
   jobId: string;
+  onOpenModal: () => void;
 }>) {
   const { appTheme } = useAppTheme();
-  return <InsightPreview result={result} jobId={jobId} theme={appTheme} />;
+  return (
+    <InsightPreview
+      result={result}
+      jobId={jobId}
+      theme={appTheme}
+      onOpenModal={onOpenModal}
+    />
+  );
+}
+
+// ---------------------------------------------------------------------------
+// Session boundary helper
+// ---------------------------------------------------------------------------
+
+/**
+ * Returns true if the current session is allowed to view the given job.
+ * Claims ownership for pre-boundary jobs (no owner recorded yet).
+ */
+function verifySessionOwnership(jobId: string): boolean {
+  const sessionId = getOrCreateSessionId();
+  const ownerKey = `engage7_job_${jobId}`;
+  const owner = window.localStorage.getItem(ownerKey);
+  if (owner && owner !== sessionId) return false;
+  if (!owner) window.localStorage.setItem(ownerKey, sessionId);
+  return true;
 }
 
 // ---------------------------------------------------------------------------
@@ -273,25 +303,20 @@ export default function ResultPage({
   > | null>(null);
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const completedFiredRef = useRef(false);
-  const completionModalShownRef = useRef(false);
   const seenInProgressRef = useRef(false);
   const polling404CountRef = useRef(0);
 
-  const handleCompletedState = (id: string, completed: AnalysisResult) => {
+  const handleCompletedState = (id: string) => {
     if (!completedFiredRef.current) {
       completedFiredRef.current = true;
       trackAnalysisCompleted(id);
       void sendUserEvent("analysis_completed", { job_id: id });
     }
-
-    if (
-      completed.artifacts?.pdf_available &&
-      !completionModalShownRef.current
-    ) {
-      completionModalShownRef.current = true;
-      setShowCompletionModal(true);
-    }
   };
+
+  const handleOpenModal = useCallback(() => {
+    setShowCompletionModal(true);
+  }, []);
 
   const handleModalDownload = () => {
     if (!jobId || !result?.artifacts?.pdf_available) return;
@@ -327,24 +352,67 @@ export default function ResultPage({
 
   const handleModalShare = () => {
     if (!jobId) return;
-    const shareUrl = window.location.href;
+    const shareUrl = "https://www.engage7.ie";
     void sendUserEvent("share_clicked", {
       job_id: jobId,
-      metadata: { channel: "copy_link", url: shareUrl },
+      metadata: { channel: "share_engage7", url: shareUrl },
     });
 
     navigator.clipboard.writeText(shareUrl).catch(() => {
-      const textArea = document.createElement("textarea");
-      textArea.value = shareUrl;
-      document.body.appendChild(textArea);
-      textArea.select();
-      document.execCommand("copy");
-      document.body.removeChild(textArea);
+      /* Clipboard API unavailable — silently fail */
     });
   };
 
   useEffect(() => {
     let mounted = true;
+
+    const createPollCallback = (id: string) => async () => {
+      try {
+        const updated = await getAnalysisResult(id);
+        polling404CountRef.current = 0;
+        if (!mounted) return updated;
+
+        setResult(updated);
+        if (updated.status === "queued" || updated.status === "processing") {
+          seenInProgressRef.current = true;
+        }
+
+        if (updated.status === "completed" && !completedFiredRef.current) {
+          handleCompletedState(id);
+        }
+        return updated;
+      } catch (error) {
+        const is404 =
+          error instanceof ApiClientError && error.statusCode === 404;
+
+        if (is404 && seenInProgressRef.current) {
+          polling404CountRef.current += 1;
+          if (polling404CountRef.current >= 3) {
+            return {
+              job_id: id,
+              status: "failed",
+              summary: null,
+              highlights: [],
+              sections: null,
+              artifacts: null,
+              error:
+                "Analysis state was lost after a service interruption. Please retry your upload.",
+            } as AnalysisResult;
+          }
+        }
+        throw error;
+      }
+    };
+
+    const handleInitError = (err: unknown) => {
+      if (err instanceof ApiClientError && err.statusCode === 404) {
+        setIsNotFound(true);
+        return;
+      }
+      const message =
+        err instanceof Error ? err.message : "Failed to load results";
+      setFetchError(message);
+    };
 
     const init = async () => {
       const { jobId: id } = await params;
@@ -352,22 +420,26 @@ export default function ResultPage({
 
       setJobId(id);
 
+      // ── Session boundary ──
+      if (!verifySessionOwnership(id)) {
+        setIsNotFound(true);
+        return;
+      }
+
       // Telemetry: result page viewed
       trackResultPageViewed(id);
 
       // Reset completed flag for new job
       completedFiredRef.current = false;
-      completionModalShownRef.current = false;
       seenInProgressRef.current = false;
       polling404CountRef.current = 0;
 
       // Start elapsed timer
       setElapsedSeconds(0);
-      timerRef.current = setInterval(() => {
-        if (mounted) {
-          setElapsedSeconds((prev) => prev + 1);
-        }
-      }, 1000);
+      timerRef.current = setInterval(
+        () => mounted && setElapsedSeconds((prev) => prev + 1),
+        1000
+      );
 
       // Create polling manager
       const pollingManager = createPollingManager({
@@ -383,18 +455,17 @@ export default function ResultPage({
         if (!mounted) return;
 
         setResult(data);
-        if (data.status === "queued" || data.status === "processing") {
-          seenInProgressRef.current = true;
-        }
 
-        // Track initial state
-        if (data.status === "queued" || data.status === "processing") {
+        const isInProgress =
+          data.status === "queued" || data.status === "processing";
+        if (isInProgress) {
+          seenInProgressRef.current = true;
           trackAnalysisStarted(id);
         }
 
         // If already terminal, stop polling
         if (data.status === "completed") {
-          handleCompletedState(id, data);
+          handleCompletedState(id);
           return;
         }
 
@@ -403,49 +474,7 @@ export default function ResultPage({
         }
 
         // Start polling for non-terminal states
-        await pollingManager.start(async () => {
-          try {
-            const updated = await getAnalysisResult(id);
-            polling404CountRef.current = 0;
-            if (mounted) {
-              setResult(updated);
-              if (
-                updated.status === "queued" ||
-                updated.status === "processing"
-              ) {
-                seenInProgressRef.current = true;
-              }
-
-              if (
-                updated.status === "completed" &&
-                !completedFiredRef.current
-              ) {
-                handleCompletedState(id, updated);
-              }
-            }
-            return updated;
-          } catch (error) {
-            const isNotFound =
-              error instanceof ApiClientError && error.statusCode === 404;
-
-            if (isNotFound && seenInProgressRef.current) {
-              polling404CountRef.current += 1;
-              if (polling404CountRef.current >= 3) {
-                return {
-                  job_id: id,
-                  status: "failed",
-                  summary: null,
-                  highlights: [],
-                  sections: null,
-                  artifacts: null,
-                  error:
-                    "Analysis state was lost after a service interruption. Please retry your upload.",
-                } as AnalysisResult;
-              }
-            }
-            throw error;
-          }
-        });
+        await pollingManager.start(createPollCallback(id));
 
         const pollingState = pollingManager.getState();
         if (mounted && pollingState.status === "timeout") {
@@ -462,16 +491,7 @@ export default function ResultPage({
         }
       } catch (err) {
         if (!mounted) return;
-
-        if (err instanceof ApiClientError && err.statusCode === 404) {
-          setIsNotFound(true);
-          return;
-        }
-
-        // User-friendly error message
-        const message =
-          err instanceof Error ? err.message : "Failed to load results";
-        setFetchError(message);
+        handleInitError(err);
       }
     };
 
@@ -514,7 +534,11 @@ export default function ResultPage({
 
   return (
     <>
-      <CompletedView result={result} jobId={jobId!} />
+      <CompletedView
+        result={result}
+        jobId={jobId!}
+        onOpenModal={handleOpenModal}
+      />
       <PostAnalysisModal
         open={showCompletionModal}
         onClose={() => setShowCompletionModal(false)}

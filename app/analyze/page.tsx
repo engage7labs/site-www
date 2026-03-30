@@ -16,6 +16,7 @@ import { Turnstile } from "@/components/shared/turnstile";
 import { Checkbox } from "@/components/ui/checkbox";
 import { submitAnalysisUpload } from "@/lib/api/analysis";
 import { ApiClientError } from "@/lib/api/client";
+import { getOrCreateSessionId } from "@/lib/api/events";
 import {
   trackAnalysisStarted,
   trackErrorOccurred,
@@ -81,6 +82,10 @@ export default function AnalyzePage() {
       turnstileToken ?? undefined
     )
       .then((result) => {
+        // Claim job ownership for session boundary enforcement
+        const sessionId = getOrCreateSessionId();
+        window.localStorage.setItem(`engage7_job_${result.job_id}`, sessionId);
+
         trackUploadCompleted(result.job_id);
         trackAnalysisStarted(result.job_id);
         router.push(`/result/${result.job_id}`);

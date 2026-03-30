@@ -13,8 +13,6 @@
 "use client";
 
 import { useLocale } from "@/components/providers/locale-provider";
-import { getPdfUrl } from "@/lib/api/analysis";
-import { trackPdfDownloaded } from "@/lib/api/events";
 import {
   buildActivityChart,
   buildActivityWeeklyChart,
@@ -66,6 +64,8 @@ interface InsightPreviewProps {
   jobId: string;
   /** Current theme: "light" or "black" (product names) */
   theme?: string;
+  /** Opens the post-analysis modal */
+  onOpenModal?: () => void;
 }
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -106,7 +106,12 @@ function useDarkMode(theme?: string) {
 // Component
 // ---------------------------------------------------------------------------
 
-export function InsightPreview({ result, jobId, theme }: InsightPreviewProps) {
+export function InsightPreview({
+  result,
+  jobId,
+  theme,
+  onOpenModal,
+}: Readonly<InsightPreviewProps>) {
   const { t } = useLocale();
   const isDark = useDarkMode(theme);
   const sections: Sections | null = result.sections ?? null;
@@ -535,19 +540,17 @@ export function InsightPreview({ result, jobId, theme }: InsightPreviewProps) {
 
             <div className="flex flex-col sm:flex-row items-center justify-center gap-3">
               {result.artifacts?.pdf_available && (
-                <a
-                  href={getPdfUrl(jobId)}
-                  target="_blank"
-                  rel="noopener noreferrer"
+                <button
+                  type="button"
                   onClick={() => {
                     trackReportUnlockClicked("bottom");
-                    trackPdfDownloaded(jobId, "insight_preview_bottom");
+                    onOpenModal?.();
                   }}
                   className="inline-flex items-center gap-2 px-5 py-2.5 rounded-lg bg-accent text-accent-foreground text-sm font-medium hover:bg-accent/90 transition-colors"
                 >
                   <Download className="h-4 w-4" />
                   {t.result.preview.fullReport.downloadButton}
-                </a>
+                </button>
               )}
               <Link
                 href="/analyze"

@@ -1,22 +1,27 @@
 "use client";
 
-import { Download, Mail, MessageSquareText, Share2, X } from "lucide-react";
+import {
+  Download,
+  ExternalLink,
+  Mail,
+  MessageSquareText,
+  X,
+} from "lucide-react";
 import { useMemo, useState } from "react";
+
+type FeedbackValue = "made_sense" | "not_sure" | "didnt_make_sense";
 
 interface PostAnalysisModalProps {
   open: boolean;
   onClose: () => void;
   onDownload: () => void;
-  onFeedback: (
-    value: "made_sense" | "not_sure" | "didnt_make_sense",
-    note?: string
-  ) => void;
+  onFeedback: (value: FeedbackValue, note?: string) => void;
   onEmailSubmit: (email: string) => void;
   onShare: () => void;
 }
 
 const FEEDBACK_OPTIONS: Array<{
-  value: "made_sense" | "not_sure" | "didnt_make_sense";
+  value: FeedbackValue;
   label: string;
 }> = [
   { value: "made_sense", label: "👍 Made sense" },
@@ -31,21 +36,17 @@ export function PostAnalysisModal({
   onFeedback,
   onEmailSubmit,
   onShare,
-}: PostAnalysisModalProps) {
-  const [feedback, setFeedback] = useState<
-    "made_sense" | "not_sure" | "didnt_make_sense" | null
-  >(null);
+}: Readonly<PostAnalysisModalProps>) {
+  const [feedback, setFeedback] = useState<FeedbackValue | null>(null);
   const [note, setNote] = useState("");
   const [email, setEmail] = useState("");
-  const [copied, setCopied] = useState(false);
+  const [shared, setShared] = useState(false);
 
   const canSubmitEmail = useMemo(() => email.trim().length > 0, [email]);
 
   if (!open) return null;
 
-  const handleFeedbackClick = (
-    value: "made_sense" | "not_sure" | "didnt_make_sense"
-  ) => {
+  const handleFeedbackClick = (value: FeedbackValue) => {
     setFeedback(value);
     onFeedback(value, note.trim() || undefined);
   };
@@ -59,8 +60,8 @@ export function PostAnalysisModal({
 
   const handleShareClick = async () => {
     onShare();
-    setCopied(true);
-    setTimeout(() => setCopied(false), 1600);
+    setShared(true);
+    setTimeout(() => setShared(false), 1600);
   };
 
   return (
@@ -177,8 +178,8 @@ export function PostAnalysisModal({
               onClick={handleShareClick}
               className="inline-flex items-center gap-2 rounded-md border border-border px-3 py-2 text-sm text-foreground hover:bg-muted/40"
             >
-              <Share2 className="h-4 w-4" />
-              {copied ? "Link copied" : "Copy Link"}
+              <ExternalLink className="h-4 w-4" />
+              {shared ? "Link copied" : "Share Engage7"}
             </button>
             <button
               type="button"
