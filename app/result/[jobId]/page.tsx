@@ -3,8 +3,10 @@
 import { InsightPreview } from "@/components/insights";
 import { useAppTheme } from "@/components/providers/app-theme-provider";
 import { useLocale } from "@/components/providers/locale-provider";
+import { PostAnalysisModal } from "@/components/shared/post-analysis-modal";
 import { getAnalysisResult } from "@/lib/api/analysis";
 import { ApiClientError } from "@/lib/api/client";
+import { sendUserEvent, trackPdfDownloaded } from "@/lib/api/events";
 import { createPollingManager } from "@/lib/polling";
 import {
   trackAnalysisCompleted,
@@ -264,14 +266,82 @@ export default function ResultPage({
   const [isNotFound, setIsNotFound] = useState(false);
   const [fetchError, setFetchError] = useState<string | null>(null);
   const [elapsedSeconds, setElapsedSeconds] = useState(0);
+  const [showCompletionModal, setShowCompletionModal] = useState(false);
 
   const pollingManagerRef = useRef<ReturnType<
     typeof createPollingManager
   > | null>(null);
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const completedFiredRef = useRef(false);
+  const completionModalShownRef = useRef(false);
   const seenInProgressRef = useRef(false);
   const polling404CountRef = useRef(0);
+
+  const handleCompletedState = (id: string, completed: AnalysisResult) => {
+    if (!completedFiredRef.current) {
+      completedFiredRef.current = true;
+      trackAnalysisCompleted(id);
+      void sendUserEvent("analysis_completed", { job_id: id });
+    }
+
+    if (
+      completed.artifacts?.pdf_available &&
+      !completionModalShownRef.current
+    ) {
+      completionModalShownRef.current = true;
+      setShowCompletionModal(true);
+    }
+  };
+
+  const handleModalDownload = () => {
+    if (!jobId || !result?.artifacts?.pdf_available) return;
+    trackPdfDownloaded(jobId, "post_analysis_modal");
+    window.open(
+      `/api/proxy/result/${jobId}/pdf`,
+      "_blank",
+      "noopener,noreferrer"
+    );
+  };
+
+  const handleModalFeedback = (
+    value: "made_sense" | "not_sure" | "didnt_make_sense",
+    note?: string
+  ) => {
+    if (!jobId) return;
+    void sendUserEvent("feedback_given", {
+      job_id: jobId,
+      metadata: {
+        value,
+        note: note ?? null,
+      },
+    });
+  };
+
+  const handleModalEmail = (email: string) => {
+    if (!jobId) return;
+    void sendUserEvent("email_submitted", {
+      job_id: jobId,
+      metadata: { email },
+    });
+  };
+
+  const handleModalShare = () => {
+    if (!jobId) return;
+    const shareUrl = window.location.href;
+    void sendUserEvent("share_clicked", {
+      job_id: jobId,
+      metadata: { channel: "copy_link", url: shareUrl },
+    });
+
+    navigator.clipboard.writeText(shareUrl).catch(() => {
+      const textArea = document.createElement("textarea");
+      textArea.value = shareUrl;
+      document.body.appendChild(textArea);
+      textArea.select();
+      document.execCommand("copy");
+      document.body.removeChild(textArea);
+    });
+  };
 
   useEffect(() => {
     let mounted = true;
@@ -287,6 +357,7 @@ export default function ResultPage({
 
       // Reset completed flag for new job
       completedFiredRef.current = false;
+      completionModalShownRef.current = false;
       seenInProgressRef.current = false;
       polling404CountRef.current = 0;
 
@@ -323,10 +394,7 @@ export default function ResultPage({
 
         // If already terminal, stop polling
         if (data.status === "completed") {
-          if (!completedFiredRef.current) {
-            completedFiredRef.current = true;
-            trackAnalysisCompleted(id);
-          }
+          handleCompletedState(id, data);
           return;
         }
 
@@ -341,13 +409,18 @@ export default function ResultPage({
             polling404CountRef.current = 0;
             if (mounted) {
               setResult(updated);
-              if (updated.status === "queued" || updated.status === "processing") {
+              if (
+                updated.status === "queued" ||
+                updated.status === "processing"
+              ) {
                 seenInProgressRef.current = true;
               }
 
-              if (updated.status === "completed" && !completedFiredRef.current) {
-                completedFiredRef.current = true;
-                trackAnalysisCompleted(id);
+              if (
+                updated.status === "completed" &&
+                !completedFiredRef.current
+              ) {
+                handleCompletedState(id, updated);
               }
             }
             return updated;
@@ -439,5 +512,17 @@ export default function ResultPage({
     return <ProcessingView result={result} elapsedSeconds={elapsedSeconds} />;
   }
 
-  return <CompletedView result={result} jobId={jobId!} />;
+  return (
+    <>
+      <CompletedView result={result} jobId={jobId!} />
+      <PostAnalysisModal
+        open={showCompletionModal}
+        onClose={() => setShowCompletionModal(false)}
+        onDownload={handleModalDownload}
+        onFeedback={handleModalFeedback}
+        onEmailSubmit={handleModalEmail}
+        onShare={handleModalShare}
+      />
+    </>
+  );
 }

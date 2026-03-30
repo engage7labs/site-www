@@ -14,6 +14,7 @@
 
 import { useLocale } from "@/components/providers/locale-provider";
 import { getPdfUrl } from "@/lib/api/analysis";
+import { trackPdfDownloaded } from "@/lib/api/events";
 import {
   buildActivityChart,
   buildActivityWeeklyChart,
@@ -538,7 +539,10 @@ export function InsightPreview({ result, jobId, theme }: InsightPreviewProps) {
                   href={getPdfUrl(jobId)}
                   target="_blank"
                   rel="noopener noreferrer"
-                  onClick={() => trackReportUnlockClicked("bottom")}
+                  onClick={() => {
+                    trackReportUnlockClicked("bottom");
+                    trackPdfDownloaded(jobId, "insight_preview_bottom");
+                  }}
                   className="inline-flex items-center gap-2 px-5 py-2.5 rounded-lg bg-accent text-accent-foreground text-sm font-medium hover:bg-accent/90 transition-colors"
                 >
                   <Download className="h-4 w-4" />
