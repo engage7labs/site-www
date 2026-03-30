@@ -6,6 +6,7 @@ import {
   signJwt,
   verifyPassword,
 } from "@/lib/auth-server";
+import { INTERNAL_API_BASE_URL } from "@/lib/server-config";
 import { NextResponse } from "next/server";
 
 export async function POST(request: Request) {
@@ -24,21 +25,64 @@ export async function POST(request: Request) {
       );
     }
 
-    const adminEmail = getAdminEmail();
-    const adminHash = getAdminPasswordHash();
+    // ------------------------------------------------------------------
+    // Phase 1: env-var admin account (always present, no DB required)
+    // ------------------------------------------------------------------
+    let authenticatedEmail: string | null = null;
 
-    // Constant-time-ish comparison via bcrypt — always runs the hash
-    const emailMatch = email.toLowerCase() === adminEmail.toLowerCase();
-    const passMatch = await verifyPassword(password, adminHash);
+    try {
+      const adminEmail = getAdminEmail();
+      const adminHash = getAdminPasswordHash();
+      const emailMatch = email.toLowerCase() === adminEmail.toLowerCase();
+      const passMatch = await verifyPassword(password, adminHash);
+      if (emailMatch && passMatch) {
+        authenticatedEmail = adminEmail;
+      }
+    } catch {
+      // Admin env vars not configured — skip
+    }
 
-    if (!emailMatch || !passMatch) {
+    // ------------------------------------------------------------------
+    // Phase 2: DB-registered users
+    // 2a: dev in-memory store (when Python API is unavailable)
+    // 2b: Python API (production / running API)
+    // ------------------------------------------------------------------
+    if (!authenticatedEmail && process.env.NODE_ENV !== "production") {
+      try {
+        const { devUserStore } = await import("@/lib/dev-user-store");
+        const devOk = await devUserStore.verify(email, password);
+        if (devOk) {
+          authenticatedEmail = email.toLowerCase().trim();
+        }
+      } catch {
+        // ignore
+      }
+    }
+
+    if (!authenticatedEmail) {
+      try {
+        const upstream = await fetch(`${INTERNAL_API_BASE_URL}/auth/login`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ email, password }),
+        });
+        if (upstream.ok) {
+          const data = (await upstream.json()) as { email?: string };
+          authenticatedEmail = data.email ?? email.toLowerCase().trim();
+        }
+      } catch {
+        // Python API unreachable — fall through to 401
+      }
+    }
+
+    if (!authenticatedEmail) {
       return NextResponse.json(
         { error: "Invalid credentials" },
         { status: 401 }
       );
     }
 
-    const token = signJwt({ sub: adminEmail, role: "user" });
+    const token = signJwt({ sub: authenticatedEmail, role: "user" });
 
     const res = NextResponse.json({ ok: true });
     res.cookies.set(SESSION_COOKIE_NAME, token, {

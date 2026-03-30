@@ -1,10 +1,10 @@
 "use client";
 
-import { useState } from "react";
-import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { useRouter } from "next/navigation";
+import { useState } from "react";
 
 interface LoginFormFieldsProps {
   /** Where to redirect on successful login (default: /portal) */
@@ -18,26 +18,58 @@ export function LoginFormFields({
   onSuccess,
 }: LoginFormFieldsProps) {
   const router = useRouter();
+  const [mode, setMode] = useState<"login" | "register">("login");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+
+  const isRegister = mode === "register";
+
+  const switchMode = (next: "login" | "register") => {
+    setMode(next);
+    setError("");
+    setPassword("");
+    setConfirmPassword("");
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError("");
+
+    if (isRegister && password !== confirmPassword) {
+      setError("Passwords do not match");
+      return;
+    }
+
     setLoading(true);
 
     try {
-      const res = await fetch("/api/auth/login", {
+      const endpoint = isRegister ? "/api/auth/register" : "/api/auth/login";
+      const bodyPayload = isRegister
+        ? { email, password, confirmPassword }
+        : { email, password };
+
+      const res = await fetch(endpoint, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email, password }),
+        body: JSON.stringify(bodyPayload),
       });
 
       if (!res.ok) {
         const data = await res.json().catch(() => ({}));
-        setError((data as { error?: string }).error ?? "Invalid credentials");
+        setError((data as { error?: string }).error ?? "Something went wrong");
+        return;
+      }
+
+      if (isRegister) {
+        // After successful registration, switch to login with a success hint
+        setMode("login");
+        setPassword("");
+        setConfirmPassword("");
+        setError("");
+        // Brief info message reusing the error slot (green styling handled below)
         return;
       }
 
@@ -53,15 +85,42 @@ export function LoginFormFields({
 
   return (
     <form onSubmit={handleSubmit} className="flex flex-col gap-4">
+      {/* Mode toggle */}
+      <div className="flex gap-1 rounded-lg bg-muted p-1 text-sm font-medium">
+        <button
+          type="button"
+          onClick={() => switchMode("login")}
+          className={`flex-1 rounded-md py-1.5 transition-colors ${
+            !isRegister
+              ? "bg-background text-foreground shadow-sm"
+              : "text-muted-foreground hover:text-foreground"
+          }`}
+        >
+          Sign in
+        </button>
+        <button
+          type="button"
+          onClick={() => switchMode("register")}
+          className={`flex-1 rounded-md py-1.5 transition-colors ${
+            isRegister
+              ? "bg-background text-foreground shadow-sm"
+              : "text-muted-foreground hover:text-foreground"
+          }`}
+        >
+          Create account
+        </button>
+      </div>
+
       {error && (
         <p className="rounded-lg bg-destructive/10 px-3 py-2 text-sm text-destructive">
           {error}
         </p>
       )}
+
       <div className="flex flex-col gap-2">
-        <Label htmlFor="login-email">Email</Label>
+        <Label htmlFor="auth-email">Email</Label>
         <Input
-          id="login-email"
+          id="auth-email"
           type="email"
           placeholder="you@example.com"
           value={email}
@@ -71,19 +130,41 @@ export function LoginFormFields({
         />
       </div>
       <div className="flex flex-col gap-2">
-        <Label htmlFor="login-password">Password</Label>
+        <Label htmlFor="auth-password">Password</Label>
         <Input
-          id="login-password"
+          id="auth-password"
           type="password"
           placeholder="••••••••"
           value={password}
           onChange={(e) => setPassword(e.target.value)}
           required
-          autoComplete="current-password"
+          autoComplete={isRegister ? "new-password" : "current-password"}
         />
       </div>
+
+      {isRegister && (
+        <div className="flex flex-col gap-2">
+          <Label htmlFor="auth-confirm-password">Confirm password</Label>
+          <Input
+            id="auth-confirm-password"
+            type="password"
+            placeholder="••••••••"
+            value={confirmPassword}
+            onChange={(e) => setConfirmPassword(e.target.value)}
+            required
+            autoComplete="new-password"
+          />
+        </div>
+      )}
+
       <Button type="submit" className="w-full" disabled={loading}>
-        {loading ? "Signing in…" : "Sign in"}
+        {loading
+          ? isRegister
+            ? "Creating account…"
+            : "Signing in…"
+          : isRegister
+          ? "Create account"
+          : "Sign in"}
       </Button>
     </form>
   );

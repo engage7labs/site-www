@@ -26,7 +26,9 @@ export async function POST() {
 
   // NEXT_PUBLIC_API_BASE_URL is the public API URL.
   // The browser will POST the FormData directly to this URL.
-  const uploadUrl = `${process.env.NEXT_PUBLIC_API_BASE_URL ?? "http://localhost:8000"}${path}`;
+  const uploadUrl = `${
+    process.env.NEXT_PUBLIC_API_BASE_URL ?? "http://localhost:8000"
+  }${path}`;
 
   return NextResponse.json({
     uploadUrl,

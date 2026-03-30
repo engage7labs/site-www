@@ -1,5 +1,6 @@
 "use client";
 
+import { LoginFormFields } from "@/components/shared/login-form-fields";
 import {
   Card,
   CardContent,
@@ -7,7 +8,6 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { LoginFormFields } from "@/components/shared/login-form-fields";
 import { useSearchParams } from "next/navigation";
 import { useState } from "react";
 
