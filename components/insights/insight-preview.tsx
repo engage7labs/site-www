@@ -36,7 +36,6 @@ import {
   trackAnalysisPreviewLoaded,
   trackChartInteracted,
   trackFullReportCtaViewed,
-  trackPdfDownloadClicked,
   trackPreviewNextClicked,
   trackRecoveryPreviewViewed,
   trackReportUnlockClicked,
