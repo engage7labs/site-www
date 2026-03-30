@@ -5,6 +5,7 @@
 "use client";
 
 import { useLocale } from "@/components/providers/locale-provider";
+import { config } from "@/lib/config";
 import { motion } from "framer-motion";
 import Link from "next/link";
 
@@ -21,7 +22,10 @@ export function SiteFooter() {
           viewport={{ once: true }}
           className="flex flex-col md:flex-row items-center justify-between gap-8"
         >
-          <p className="text-muted-foreground text-sm">
+          <p
+            className="text-muted-foreground text-sm"
+            title={`v${config.appVersion} · ${config.gitSha} · ${config.buildTime}`}
+          >
             {t.home.footer.copyright}
           </p>
           <div className="flex gap-6 text-sm text-muted-foreground">
