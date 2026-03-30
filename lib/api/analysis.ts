@@ -7,7 +7,7 @@
 
 import type { AnalysisResult, UploadResponse } from "@/lib/types/analysis";
 import { get, postFormData } from "./client";
-import { API_BASE_URL, API_ENDPOINTS } from "./config";
+import { API_ENDPOINTS } from "./config";
 
 /**
  * Submits an Apple Health ZIP export for analysis.
@@ -59,18 +59,20 @@ export async function getAnalysisResult(
 
 /**
  * Returns the full URL for downloading the PDF report.
+ * Routes through the server-side proxy (same origin).
  * The caller is responsible for verifying artifacts.pdf_available before use.
  */
 export function getPdfUrl(jobId: string): string {
-  return API_BASE_URL + API_ENDPOINTS.getPdf(jobId);
+  return API_ENDPOINTS.getPdf(jobId);
 }
 
 /**
  * Returns the full URL for downloading the canonical CSV dataset.
+ * Routes through the server-side proxy (same origin).
  * The caller is responsible for verifying artifacts.csv_available before use.
  */
 export function getCsvUrl(jobId: string): string {
-  return API_BASE_URL + API_ENDPOINTS.getCsv(jobId);
+  return API_ENDPOINTS.getCsv(jobId);
 }
 
 /**

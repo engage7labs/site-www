@@ -30,6 +30,9 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
+      - name: Dependency audit (advisory)
+        run: pnpm audit --prod || true
+
       - name: Build
         env:
           NEXT_PUBLIC_APP_VERSION: ${{ github.sha }}

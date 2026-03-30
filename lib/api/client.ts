@@ -126,7 +126,9 @@ async function request<T>(
     });
 
     try {
-      const url = `${API_BASE_URL}${endpoint}`;
+      // Proxy endpoints (/api/proxy/*) are same-origin; others use the external API base URL.
+      const isProxied = endpoint.startsWith("/api/proxy/");
+      const url = isProxied ? endpoint : `${API_BASE_URL}${endpoint}`;
       const response = await fetch(url, {
         ...fetchConfig,
         signal: controller.signal,
