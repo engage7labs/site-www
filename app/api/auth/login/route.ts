@@ -93,10 +93,12 @@ export async function POST(request: Request) {
       maxAge: SESSION_HOURS * 3600,
     });
     return res;
-  } catch {
-    return NextResponse.json(
-      { error: "Internal server error" },
-      { status: 500 }
-    );
+  } catch (err) {
+    const msg =
+      err instanceof Error && err.message.includes("ENGAGE7_JWT_SECRET")
+        ? "Server authentication is misconfigured"
+        : "Internal server error";
+    console.error("[login]", err);
+    return NextResponse.json({ error: msg }, { status: 500 });
   }
 }

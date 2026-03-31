@@ -18,6 +18,7 @@ interface PostAnalysisModalProps {
   onFeedback: (value: FeedbackValue, note?: string) => void;
   onEmailSubmit: (email: string) => void;
   onShare: () => Promise<void>;
+  pdfAvailable?: boolean;
 }
 
 const FEEDBACK_OPTIONS: Array<{
@@ -36,6 +37,7 @@ export function PostAnalysisModal({
   onFeedback,
   onEmailSubmit,
   onShare,
+  pdfAvailable = true,
 }: Readonly<PostAnalysisModalProps>) {
   const [feedback, setFeedback] = useState<FeedbackValue | null>(null);
   const [note, setNote] = useState("");
@@ -89,21 +91,31 @@ export function PostAnalysisModal({
         <div className="p-6 space-y-5">
           <div className="space-y-1">
             <h2 className="text-xl font-semibold text-foreground">
-              Your report is ready
+              {pdfAvailable
+                ? "Your report is ready"
+                : "Thanks for reviewing your insights"}
             </h2>
             <p className="text-sm text-muted-foreground">
-              You can download it now. If you want, share quick feedback below.
+              {pdfAvailable
+                ? "You can download it now. If you want, share quick feedback below."
+                : "Share quick feedback below — it helps us improve."}
             </p>
           </div>
 
-          <button
-            type="button"
-            onClick={onDownload}
-            className="inline-flex w-full items-center justify-center gap-2 rounded-lg bg-accent px-4 py-2.5 text-sm font-medium text-accent-foreground hover:bg-accent/90"
-          >
-            <Download className="h-4 w-4" />
-            Download PDF
-          </button>
+          {pdfAvailable ? (
+            <button
+              type="button"
+              onClick={onDownload}
+              className="inline-flex w-full items-center justify-center gap-2 rounded-lg bg-accent px-4 py-2.5 text-sm font-medium text-accent-foreground hover:bg-accent/90"
+            >
+              <Download className="h-4 w-4" />
+              Download PDF
+            </button>
+          ) : (
+            <p className="rounded-lg bg-muted px-4 py-2.5 text-center text-sm text-muted-foreground">
+              PDF not available for this dataset — more data may be needed.
+            </p>
+          )}
 
           <div className="space-y-2">
             <p className="text-sm font-medium text-foreground">

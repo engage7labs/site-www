@@ -539,19 +539,17 @@ export function InsightPreview({
             </p>
 
             <div className="flex flex-col sm:flex-row items-center justify-center gap-3">
-              {result.artifacts?.pdf_available && (
-                <button
-                  type="button"
-                  onClick={() => {
-                    trackReportUnlockClicked("bottom");
-                    onOpenModal?.();
-                  }}
-                  className="inline-flex items-center gap-2 px-5 py-2.5 rounded-lg bg-accent text-accent-foreground text-sm font-medium hover:bg-accent/90 transition-colors"
-                >
-                  <Download className="h-4 w-4" />
-                  {t.result.preview.fullReport.downloadButton}
-                </button>
-              )}
+              <button
+                type="button"
+                onClick={() => {
+                  trackReportUnlockClicked("bottom");
+                  onOpenModal?.();
+                }}
+                className="inline-flex items-center gap-2 px-5 py-2.5 rounded-lg bg-accent text-accent-foreground text-sm font-medium hover:bg-accent/90 transition-colors"
+              >
+                <Download className="h-4 w-4" />
+                {t.result.preview.fullReport.downloadButton}
+              </button>
               <Link
                 href="/analyze"
                 className="inline-flex items-center text-sm text-accent hover:underline"

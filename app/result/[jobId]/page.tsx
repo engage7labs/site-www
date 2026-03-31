@@ -560,6 +560,7 @@ export default function ResultPage({
         onFeedback={handleModalFeedback}
         onEmailSubmit={handleModalEmail}
         onShare={handleModalShare}
+        pdfAvailable={result.artifacts?.pdf_available === true}
       />
     </>
   );
