@@ -18,10 +18,23 @@ const EMERALD_LIGHT = "rgba(61, 190, 115, 0.15)";
 const EMERALD_MID = "rgba(61, 190, 115, 0.4)";
 const GRAPHITE = "#1c1e20";
 const MUTED = "#9aa0a6";
+const LIGHT_TEXT = "#E5E7EB";
+const LIGHT_TOOLTIP_BG = "#F9FAFB";
+const DARK_TOOLTIP_TEXT = "#111827";
 const TEAL = "#2ea8a0";
 const TEAL_LIGHT = "rgba(46, 168, 160, 0.15)";
 const AMBER = "#e5a336";
 const AMBER_LIGHT = "rgba(229, 163, 54, 0.15)";
+
+const LIGHT_CHART_THEME = {
+  axisLabelColor: "#5f6368",
+  splitLineColor: "rgba(148, 163, 184, 0.18)",
+};
+
+const DARK_CHART_THEME = {
+  axisLabelColor: LIGHT_TEXT,
+  splitLineColor: "rgba(229, 231, 235, 0.09)",
+};
 
 // Shared axis / grid styles for a premium, low-clutter look
 const CLEAN_GRID = {
@@ -38,17 +51,46 @@ const CLEAN_AXIS_LABEL = {
   fontFamily: "Inter, sans-serif",
 };
 
-const SUBTLE_SPLIT_LINE = {
-  lineStyle: { color: "rgba(200, 200, 200, 0.15)", type: "dashed" as const },
-};
-
 const CLEAN_TOOLTIP = {
   trigger: "axis" as const,
-  backgroundColor: "rgba(26, 28, 31, 0.92)",
-  borderColor: "transparent",
-  textStyle: { color: "#e8eaed", fontSize: 12, fontFamily: "Inter, sans-serif" },
+  backgroundColor: LIGHT_TOOLTIP_BG,
+  borderColor: "rgba(148, 163, 184, 0.22)",
+  borderWidth: 1,
+  textStyle: {
+    color: DARK_TOOLTIP_TEXT,
+    fontSize: 12,
+    fontFamily: "Inter, sans-serif",
+  },
   padding: [8, 12],
+  extraCssText:
+    "box-shadow: 0 10px 30px rgba(15, 23, 42, 0.12); border-radius: 12px;",
 };
+
+function getSplitLine(color: string) {
+  return {
+    lineStyle: {
+      color,
+      type: "dashed" as const,
+    },
+  };
+}
+
+function getLineGlow(color: string) {
+  return {
+    color,
+    width: 2.5,
+    shadowBlur: 10,
+    shadowColor: `${color}22`,
+  };
+}
+
+function getSeriesEmphasis() {
+  return {
+    focus: "series" as const,
+    lineStyle: { width: 3 },
+    itemStyle: { borderWidth: 2.5 },
+  };
+}
 
 // ---------------------------------------------------------------------------
 // Sleep — weekly pattern line chart
@@ -69,9 +111,11 @@ export function buildSleepWeeklyChart(
 ): EChartsOption {
   const labels = weekly.map((d) => d.day_name?.slice(0, 3) ?? "");
   const values = weekly.map((d) => d.sleep_hours ?? null);
-  const axisLabelColor = isDark ? "#9aa0a6" : "#5f6368";
+  const chartTheme = isDark ? DARK_CHART_THEME : LIGHT_CHART_THEME;
+  const axisLabelColor = chartTheme.axisLabelColor;
 
   return {
+    textStyle: { color: axisLabelColor, fontFamily: "Inter, sans-serif" },
     grid: CLEAN_GRID,
     tooltip: { ...CLEAN_TOOLTIP },
     xAxis: {
@@ -79,14 +123,19 @@ export function buildSleepWeeklyChart(
       data: labels,
       axisLabel: { ...CLEAN_AXIS_LABEL, color: axisLabelColor },
       axisLine: { show: false },
-      axisTick: { show: false },
+      axisTick: { show: false, lineStyle: { color: axisLabelColor } },
     },
     yAxis: {
       type: "value",
       name: "hours",
-      nameTextStyle: { color: axisLabelColor, fontSize: 10, padding: [0, 0, 0, -30] },
+      nameTextStyle: {
+        color: axisLabelColor,
+        fontSize: 10,
+        padding: [0, 0, 0, -30],
+      },
       axisLabel: { ...CLEAN_AXIS_LABEL, color: axisLabelColor },
-      splitLine: SUBTLE_SPLIT_LINE,
+      axisTick: { show: false, lineStyle: { color: axisLabelColor } },
+      splitLine: getSplitLine(chartTheme.splitLineColor),
       min: (v: { min: number }) => Math.floor(v.min - 0.5),
       max: (v: { max: number }) => Math.ceil(v.max + 0.5),
     },
@@ -102,7 +151,7 @@ export function buildSleepWeeklyChart(
                 lineStyle: { color: MUTED, type: "dashed" as const, width: 1 },
                 label: {
                   formatter: `baseline: ${baselineMedian.toFixed(1)}h`,
-                  color: MUTED,
+                  color: axisLabelColor,
                   fontSize: 10,
                 },
                 data: [{ yAxis: baselineMedian }],
@@ -118,8 +167,13 @@ export function buildSleepWeeklyChart(
         smooth: true,
         symbol: "circle",
         symbolSize: 6,
-        lineStyle: { color: EMERALD, width: 2.5 },
-        itemStyle: { color: EMERALD, borderWidth: 2, borderColor: isDark ? "#1a1c1f" : "#fff" },
+        lineStyle: getLineGlow(EMERALD),
+        itemStyle: {
+          color: EMERALD,
+          borderWidth: 2,
+          borderColor: isDark ? "#1a1c1f" : "#fff",
+        },
+        emphasis: getSeriesEmphasis(),
         areaStyle: {
           color: {
             type: "linear" as const,
@@ -129,7 +183,7 @@ export function buildSleepWeeklyChart(
             y2: 1,
             colorStops: [
               { offset: 0, color: EMERALD_MID },
-              { offset: 1, color: "rgba(61, 190, 115, 0.02)" },
+              { offset: 1, color: "rgba(61, 190, 115, 0.04)" },
             ],
           },
         },
@@ -157,9 +211,11 @@ export function buildSleepMonthlyChart(
 ): EChartsOption {
   const labels = monthly.map((d) => d.month_name?.slice(0, 3) ?? "");
   const values = monthly.map((d) => d.sleep_hours ?? null);
-  const axisLabelColor = isDark ? "#9aa0a6" : "#5f6368";
+  const chartTheme = isDark ? DARK_CHART_THEME : LIGHT_CHART_THEME;
+  const axisLabelColor = chartTheme.axisLabelColor;
 
   return {
+    textStyle: { color: axisLabelColor, fontFamily: "Inter, sans-serif" },
     grid: CLEAN_GRID,
     tooltip: { ...CLEAN_TOOLTIP },
     xAxis: {
@@ -167,14 +223,19 @@ export function buildSleepMonthlyChart(
       data: labels,
       axisLabel: { ...CLEAN_AXIS_LABEL, color: axisLabelColor },
       axisLine: { show: false },
-      axisTick: { show: false },
+      axisTick: { show: false, lineStyle: { color: axisLabelColor } },
     },
     yAxis: {
       type: "value",
       name: "hours",
-      nameTextStyle: { color: axisLabelColor, fontSize: 10, padding: [0, 0, 0, -30] },
+      nameTextStyle: {
+        color: axisLabelColor,
+        fontSize: 10,
+        padding: [0, 0, 0, -30],
+      },
       axisLabel: { ...CLEAN_AXIS_LABEL, color: axisLabelColor },
-      splitLine: SUBTLE_SPLIT_LINE,
+      axisTick: { show: false, lineStyle: { color: axisLabelColor } },
+      splitLine: getSplitLine(chartTheme.splitLineColor),
       min: (v: { min: number }) => Math.floor(v.min - 0.5),
       max: (v: { max: number }) => Math.ceil(v.max + 0.5),
     },
@@ -189,7 +250,7 @@ export function buildSleepMonthlyChart(
                 lineStyle: { color: MUTED, type: "dashed" as const, width: 1 },
                 label: {
                   formatter: `baseline: ${baselineMedian.toFixed(1)}h`,
-                  color: MUTED,
+                  color: axisLabelColor,
                   fontSize: 10,
                 },
                 data: [{ yAxis: baselineMedian }],
@@ -204,8 +265,13 @@ export function buildSleepMonthlyChart(
         smooth: true,
         symbol: "circle",
         symbolSize: 5,
-        lineStyle: { color: EMERALD, width: 2.5 },
-        itemStyle: { color: EMERALD, borderWidth: 2, borderColor: isDark ? "#1a1c1f" : "#fff" },
+        lineStyle: getLineGlow(EMERALD),
+        itemStyle: {
+          color: EMERALD,
+          borderWidth: 2,
+          borderColor: isDark ? "#1a1c1f" : "#fff",
+        },
+        emphasis: getSeriesEmphasis(),
         areaStyle: {
           color: {
             type: "linear" as const,
@@ -215,7 +281,7 @@ export function buildSleepMonthlyChart(
             y2: 1,
             colorStops: [
               { offset: 0, color: EMERALD_MID },
-              { offset: 1, color: "rgba(61, 190, 115, 0.02)" },
+              { offset: 1, color: "rgba(61, 190, 115, 0.04)" },
             ],
           },
         },
@@ -236,9 +302,11 @@ export function buildRecoveryChart(
   const hrValues = weekly.map((d) => d.hr_mean ?? null);
   const hrvValues = weekly.map((d) => d.hrv_sdnn_mean ?? null);
   const hasHrv = hrvValues.some((v) => v != null && v > 0);
-  const axisLabelColor = isDark ? "#9aa0a6" : "#5f6368";
+  const chartTheme = isDark ? DARK_CHART_THEME : LIGHT_CHART_THEME;
+  const axisLabelColor = chartTheme.axisLabelColor;
 
   return {
+    textStyle: { color: axisLabelColor, fontFamily: "Inter, sans-serif" },
     grid: { ...CLEAN_GRID, right: hasHrv ? "12%" : "4%" },
     tooltip: { ...CLEAN_TOOLTIP },
     legend: {
@@ -254,7 +322,7 @@ export function buildRecoveryChart(
       data: labels,
       axisLabel: { ...CLEAN_AXIS_LABEL, color: axisLabelColor },
       axisLine: { show: false },
-      axisTick: { show: false },
+      axisTick: { show: false, lineStyle: { color: axisLabelColor } },
     },
     yAxis: [
       {
@@ -262,7 +330,8 @@ export function buildRecoveryChart(
         name: "bpm",
         nameTextStyle: { color: axisLabelColor, fontSize: 10 },
         axisLabel: { ...CLEAN_AXIS_LABEL, color: axisLabelColor },
-        splitLine: SUBTLE_SPLIT_LINE,
+        axisTick: { show: false, lineStyle: { color: axisLabelColor } },
+        splitLine: getSplitLine(chartTheme.splitLineColor),
       },
       ...(hasHrv
         ? [
@@ -271,6 +340,7 @@ export function buildRecoveryChart(
               name: "ms",
               nameTextStyle: { color: axisLabelColor, fontSize: 10 },
               axisLabel: { ...CLEAN_AXIS_LABEL, color: axisLabelColor },
+              axisTick: { show: false, lineStyle: { color: axisLabelColor } },
               splitLine: { show: false },
             },
           ]
@@ -284,8 +354,13 @@ export function buildRecoveryChart(
         smooth: true,
         symbol: "circle",
         symbolSize: 5,
-        lineStyle: { color: TEAL, width: 2 },
-        itemStyle: { color: TEAL, borderWidth: 2, borderColor: isDark ? "#1a1c1f" : "#fff" },
+        lineStyle: getLineGlow(TEAL),
+        itemStyle: {
+          color: TEAL,
+          borderWidth: 2,
+          borderColor: isDark ? "#1a1c1f" : "#fff",
+        },
+        emphasis: getSeriesEmphasis(),
         areaStyle: {
           color: {
             type: "linear" as const,
@@ -295,7 +370,7 @@ export function buildRecoveryChart(
             y2: 1,
             colorStops: [
               { offset: 0, color: TEAL_LIGHT },
-              { offset: 1, color: "rgba(46, 168, 160, 0.02)" },
+              { offset: 1, color: "rgba(46, 168, 160, 0.04)" },
             ],
           },
         },
@@ -310,12 +385,13 @@ export function buildRecoveryChart(
               smooth: true,
               symbol: "circle",
               symbolSize: 5,
-              lineStyle: { color: EMERALD, width: 2 },
+              lineStyle: getLineGlow(EMERALD),
               itemStyle: {
                 color: EMERALD,
                 borderWidth: 2,
                 borderColor: isDark ? "#1a1c1f" : "#fff",
               },
+              emphasis: getSeriesEmphasis(),
               areaStyle: {
                 color: {
                   type: "linear" as const,
@@ -325,7 +401,7 @@ export function buildRecoveryChart(
                   y2: 1,
                   colorStops: [
                     { offset: 0, color: EMERALD_LIGHT },
-                    { offset: 1, color: "rgba(61, 190, 115, 0.02)" },
+                    { offset: 1, color: "rgba(61, 190, 115, 0.04)" },
                   ],
                 },
               },
@@ -346,9 +422,11 @@ export function buildActivityChart(
 ): EChartsOption {
   const labels = monthly.map((d) => d.month_name?.slice(0, 3) ?? "");
   const values = monthly.map((d) => d.total_steps ?? null);
-  const axisLabelColor = isDark ? "#9aa0a6" : "#5f6368";
+  const chartTheme = isDark ? DARK_CHART_THEME : LIGHT_CHART_THEME;
+  const axisLabelColor = chartTheme.axisLabelColor;
 
   return {
+    textStyle: { color: axisLabelColor, fontFamily: "Inter, sans-serif" },
     grid: CLEAN_GRID,
     tooltip: {
       ...CLEAN_TOOLTIP,
@@ -356,7 +434,9 @@ export function buildActivityChart(
         const p = Array.isArray(params) ? params[0] : params;
         const val = (p as { value?: number })?.value;
         if (val == null) return "";
-        return `<b>${(p as { name?: string })?.name ?? ""}</b><br/>${val.toLocaleString()} steps`;
+        return `<b>${
+          (p as { name?: string })?.name ?? ""
+        }</b><br/>${val.toLocaleString()} steps`;
       },
     },
     xAxis: {
@@ -364,22 +444,25 @@ export function buildActivityChart(
       data: labels,
       axisLabel: { ...CLEAN_AXIS_LABEL, color: axisLabelColor },
       axisLine: { show: false },
-      axisTick: { show: false },
+      axisTick: { show: false, lineStyle: { color: axisLabelColor } },
     },
     yAxis: {
       type: "value",
       axisLabel: {
         ...CLEAN_AXIS_LABEL,
         color: axisLabelColor,
-        formatter: (v: number) => (v >= 1000 ? `${(v / 1000).toFixed(0)}k` : String(v)),
+        formatter: (v: number) =>
+          v >= 1000 ? `${(v / 1000).toFixed(0)}k` : String(v),
       },
-      splitLine: SUBTLE_SPLIT_LINE,
+      axisTick: { show: false, lineStyle: { color: axisLabelColor } },
+      splitLine: getSplitLine(chartTheme.splitLineColor),
     },
     series: [
       {
         type: "bar" as const,
         data: values,
         barWidth: "50%",
+        emphasis: getSeriesEmphasis(),
         itemStyle: {
           color: {
             type: "linear" as const,
@@ -393,6 +476,8 @@ export function buildActivityChart(
             ],
           },
           borderRadius: [4, 4, 0, 0],
+          shadowBlur: 10,
+          shadowColor: "rgba(229, 163, 54, 0.14)",
         },
       },
     ],
@@ -409,9 +494,11 @@ export function buildActivityWeeklyChart(
 ): EChartsOption {
   const labels = weekly.map((d) => d.day_name?.slice(0, 3) ?? "");
   const values = weekly.map((d) => d.total_steps ?? null);
-  const axisLabelColor = isDark ? "#9aa0a6" : "#5f6368";
+  const chartTheme = isDark ? DARK_CHART_THEME : LIGHT_CHART_THEME;
+  const axisLabelColor = chartTheme.axisLabelColor;
 
   return {
+    textStyle: { color: axisLabelColor, fontFamily: "Inter, sans-serif" },
     grid: CLEAN_GRID,
     tooltip: {
       ...CLEAN_TOOLTIP,
@@ -419,7 +506,9 @@ export function buildActivityWeeklyChart(
         const p = Array.isArray(params) ? params[0] : params;
         const val = (p as { value?: number })?.value;
         if (val == null) return "";
-        return `<b>${(p as { name?: string })?.name ?? ""}</b><br/>${val.toLocaleString()} steps`;
+        return `<b>${
+          (p as { name?: string })?.name ?? ""
+        }</b><br/>${val.toLocaleString()} steps`;
       },
     },
     xAxis: {
@@ -427,22 +516,25 @@ export function buildActivityWeeklyChart(
       data: labels,
       axisLabel: { ...CLEAN_AXIS_LABEL, color: axisLabelColor },
       axisLine: { show: false },
-      axisTick: { show: false },
+      axisTick: { show: false, lineStyle: { color: axisLabelColor } },
     },
     yAxis: {
       type: "value",
       axisLabel: {
         ...CLEAN_AXIS_LABEL,
         color: axisLabelColor,
-        formatter: (v: number) => (v >= 1000 ? `${(v / 1000).toFixed(0)}k` : String(v)),
+        formatter: (v: number) =>
+          v >= 1000 ? `${(v / 1000).toFixed(0)}k` : String(v),
       },
-      splitLine: SUBTLE_SPLIT_LINE,
+      axisTick: { show: false, lineStyle: { color: axisLabelColor } },
+      splitLine: getSplitLine(chartTheme.splitLineColor),
     },
     series: [
       {
         type: "bar" as const,
         data: values,
         barWidth: "50%",
+        emphasis: getSeriesEmphasis(),
         itemStyle: {
           color: {
             type: "linear" as const,
@@ -456,6 +548,8 @@ export function buildActivityWeeklyChart(
             ],
           },
           borderRadius: [4, 4, 0, 0],
+          shadowBlur: 10,
+          shadowColor: "rgba(229, 163, 54, 0.14)",
         },
       },
     ],

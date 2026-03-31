@@ -6,7 +6,9 @@ import { PortalSidebar } from "./portal-sidebar";
 
 const STORAGE_KEY = "engage7_portal_sidebar_collapsed";
 
-export function PortalShell({ children }: { children: React.ReactNode }) {
+export function PortalShell({
+  children,
+}: Readonly<{ children: React.ReactNode }>) {
   const [collapsed, setCollapsed] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
 
@@ -28,7 +30,7 @@ export function PortalShell({ children }: { children: React.ReactNode }) {
   }, []);
 
   return (
-    <div className="flex min-h-screen bg-background text-foreground">
+    <div className="portal-surface flex min-h-screen text-foreground">
       <PortalSidebar
         collapsed={collapsed}
         mobileOpen={mobileOpen}

@@ -36,17 +36,21 @@ const SLEEP_HOURS = [
 const HRV = [42, 38, 45, 50, 35, 40, 44, 48, 33, 41, 46, 52, 43, 47];
 const ACTIVITY_MIN = [32, 45, 28, 60, 22, 50, 35, 42, 55, 30, 48, 38, 62, 44];
 
+const LIGHT_TEXT = "#E5E7EB";
+const TOOLTIP_TEXT = "#111827";
+const TOOLTIP_BG = "#F9FAFB";
+
 function TrendChart({
   title,
   data,
   unit,
   color,
-}: {
+}: Readonly<{
   title: string;
   data: number[];
   unit: string;
   color: string;
-}) {
+}>) {
   const containerRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -59,20 +63,40 @@ function TrendChart({
       const echarts = await getEcharts();
       if (disposed || !containerRef.current) return;
       chart = echarts.init(containerRef.current);
+      const isDark = document.documentElement.classList.contains("dark");
+      const axisLabelColor = isDark ? LIGHT_TEXT : "#5f6368";
+      const splitLineColor = isDark
+        ? "rgba(229, 231, 235, 0.09)"
+        : "rgba(148, 163, 184, 0.18)";
 
       const option: EChartsOption = {
-        tooltip: { trigger: "axis" },
-        grid: { left: 40, right: 16, top: 8, bottom: 24 },
+        textStyle: { color: axisLabelColor, fontFamily: "Inter, sans-serif" },
+        tooltip: {
+          trigger: "axis",
+          backgroundColor: TOOLTIP_BG,
+          borderColor: "rgba(148, 163, 184, 0.22)",
+          borderWidth: 1,
+          textStyle: {
+            color: TOOLTIP_TEXT,
+            fontSize: 12,
+            fontFamily: "Inter, sans-serif",
+          },
+          extraCssText:
+            "box-shadow: 0 10px 30px rgba(15, 23, 42, 0.12); border-radius: 12px;",
+        },
+        grid: { left: 40, right: 16, top: 12, bottom: 24 },
         xAxis: {
           type: "category",
           data: DAYS,
-          axisLabel: { fontSize: 10, color: "var(--muted-foreground)" },
-          axisLine: { lineStyle: { color: "var(--border)" } },
+          axisLabel: { fontSize: 10, color: axisLabelColor },
+          axisLine: { lineStyle: { color: "transparent" } },
+          axisTick: { show: false, lineStyle: { color: axisLabelColor } },
         },
         yAxis: {
           type: "value",
-          axisLabel: { fontSize: 10, color: "var(--muted-foreground)" },
-          splitLine: { lineStyle: { color: "var(--border)", type: "dashed" } },
+          axisLabel: { fontSize: 10, color: axisLabelColor },
+          axisTick: { show: false, lineStyle: { color: axisLabelColor } },
+          splitLine: { lineStyle: { color: splitLineColor, type: "dashed" } },
         },
         series: [
           {
@@ -81,9 +105,15 @@ function TrendChart({
             smooth: true,
             symbol: "circle",
             symbolSize: 6,
-            lineStyle: { width: 2, color },
+            lineStyle: {
+              width: 2.5,
+              color,
+              shadowBlur: 10,
+              shadowColor: `${color}22`,
+            },
             itemStyle: { color },
-            areaStyle: { color: `${color}20` },
+            emphasis: { focus: "series", lineStyle: { width: 3 } },
+            areaStyle: { color: `${color}24` },
           },
         ],
       };
@@ -101,7 +131,7 @@ function TrendChart({
   }, [data, color]);
 
   return (
-    <div className="rounded-xl border border-border bg-card p-4">
+    <div className="portal-panel rounded-xl border border-border/70 bg-card/85 p-4">
       <div className="mb-2 flex items-baseline gap-2">
         <h3 className="text-sm font-semibold text-card-foreground">{title}</h3>
         <span className="text-xs text-muted-foreground">{unit}</span>
