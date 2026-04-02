@@ -17,7 +17,7 @@ interface AdminUsersResponse {
   total: number;
 }
 
-function PlanBadge({ plan }: { plan: string }) {
+function PlanBadge({ plan }: Readonly<{ plan: string }>) {
   const colors: Record<string, string> = {
     trial: "bg-blue-500/10 text-blue-600 dark:text-blue-400",
     premium: "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400",

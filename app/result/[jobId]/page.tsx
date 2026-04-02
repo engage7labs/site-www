@@ -387,6 +387,8 @@ export default function ResultPage({
     });
   };
 
+  const tickElapsed = () => setElapsedSeconds((prev) => prev + 1);
+
   useEffect(() => {
     let mounted = true;
 
@@ -460,10 +462,7 @@ export default function ResultPage({
 
       // Start elapsed timer
       setElapsedSeconds(0);
-      timerRef.current = setInterval(
-        () => mounted && setElapsedSeconds((prev) => prev + 1),
-        1000
-      );
+      timerRef.current = setInterval(() => mounted && tickElapsed(), 1000);
 
       // Create polling manager
       const pollingManager = createPollingManager({

@@ -313,8 +313,8 @@ export function InsightPreview({
               {/* Primary sleep insight */}
               {sleepInsights.length > 0 && (
                 <div className="space-y-3 mb-6">
-                  {sleepInsights.slice(0, 2).map((ins, i) => (
-                    <div key={`d-sleep-${i}`}>
+                  {sleepInsights.slice(0, 2).map((ins) => (
+                    <div key={`d-sleep-${ins.headline}`}>
                       <p className="text-sm font-medium text-foreground">
                         {ins.headline}
                       </p>
@@ -440,8 +440,8 @@ export function InsightPreview({
 
               {sleepInsights.length > 0 && (
                 <div className="space-y-2 mb-4">
-                  {sleepInsights.slice(0, 2).map((ins, i) => (
-                    <div key={`m-sleep-${i}`}>
+                  {sleepInsights.slice(0, 2).map((ins) => (
+                    <div key={`m-sleep-${ins.headline}`}>
                       <p className="text-sm font-medium text-foreground">
                         {ins.headline}
                       </p>

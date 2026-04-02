@@ -215,6 +215,18 @@ function MultiAxisTrendChart() {
   );
 }
 
+// Pre-compute average sleep by weekday from the 14-day window
+const SLEEP_BY_DAY = WEEK_DAYS.map((_, i) => {
+  const vals = SLEEP_HOURS.filter((_, j) => {
+    const d = new Date();
+    d.setDate(d.getDate() - (13 - j));
+    return d.getDay() === (i === 6 ? 0 : i + 1);
+  });
+  return vals.length
+    ? +(vals.reduce((a, b) => a + b, 0) / vals.length).toFixed(1)
+    : 0;
+});
+
 // ---------------------------------------------------------------------------
 // Chart 2: Weekly Patterns (bar)
 // ---------------------------------------------------------------------------
@@ -239,16 +251,7 @@ function WeeklyPatternsChart() {
         : "rgba(148, 163, 184, 0.18)";
 
       // Average by weekday from the 14-day window
-      const sleepByDay = WEEK_DAYS.map((_, i) => {
-        const vals = SLEEP_HOURS.filter((_, j) => {
-          const d = new Date();
-          d.setDate(d.getDate() - (13 - j));
-          return d.getDay() === (i === 6 ? 0 : i + 1);
-        });
-        return vals.length
-          ? +(vals.reduce((a, b) => a + b, 0) / vals.length).toFixed(1)
-          : 0;
-      });
+      const sleepByDay = SLEEP_BY_DAY;
 
       const option: EChartsOption = {
         textStyle: { color: axisLabelColor, fontFamily: "Inter, sans-serif" },
