@@ -145,12 +145,13 @@ export default function PortalReportPage({
       <div className="flex flex-col gap-6">
         {backLink}
         <div className="flex flex-col items-center justify-center py-24 gap-4 text-center">
-          <AlertCircle className="h-12 w-12 text-destructive" />
+          <AlertCircle className="h-12 w-12 text-amber-500" />
           <h1 className="text-xl font-semibold text-foreground">
-            Analysis failed
+            We had trouble processing this file
           </h1>
           <p className="text-sm text-muted-foreground max-w-sm">
-            {result.error ?? "Something went wrong during analysis."}
+            {result.error ??
+              "This can happen with unsupported or incomplete exports. Please try again."}
           </p>
           <Link
             href="/portal/upload"

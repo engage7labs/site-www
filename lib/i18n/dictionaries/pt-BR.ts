@@ -33,21 +33,21 @@ export const ptBR: Dictionary = {
         "Projetado para fornecer insights explicáveis em que você pode confiar.",
 
       deterministic: {
-        title: "Análise Determinística",
+        title: "Baseado nos Seus Padrões",
         description:
-          "Sem previsões de caixa-preta. Insights derivados de linhas de base fisiológicas mensuráveis.",
+          "Analisamos seus dados e identificamos o que realmente está acontecendo. Cada insight vem dos seus próprios padrões, não de previsões.",
       },
 
       explainable: {
-        title: "Sinais Explicáveis",
+        title: "Fácil de Entender",
         description:
-          "Entenda tendências em sono, frequência cardíaca, atividade e recuperação através de análise transparente.",
+          "Veja o que está acontecendo com seu sono, recuperação e movimento. Linguagem clara, sem jargão.",
       },
 
       privacy: {
-        title: "Privacidade por Design",
+        title: "Seus Dados Permanecem Seus",
         description:
-          "Seu conjunto de dados permanece seu. O Engage7 processa sinais sem treinar modelos de IA externos com seus dados.",
+          "Analisamos seus dados para gerar insights, mas não treinamos modelos de IA com eles nem os compartilhamos.",
       },
     },
 
@@ -194,9 +194,9 @@ export const ptBR: Dictionary = {
 
   // Analyze Page
   analyze: {
-    title: "Execute sua análise Engage7",
+    title: "Analise seus dados de saúde",
     subtitle:
-      "Carregue seu conjunto de dados de dispositivos vestíveis para gerar um resumo de insights determinístico e explicável baseado na sua linha de base fisiológica.",
+      "Exporte do app Saúde no seu iPhone e carregue o arquivo aqui. Mostraremos padrões de sono, recuperação e movimento baseados no que é normal para você.",
 
     workflow: {
       title: "Como funciona",
@@ -215,7 +215,7 @@ export const ptBR: Dictionary = {
     },
 
     upload: {
-      title: "Carregue seu conjunto de dados",
+      title: "Carregue sua exportação do Apple Health",
       description: "Formato suportado: exportação do Apple Health (export.zip)",
       dragHint: "Arraste e solte seu arquivo aqui, ou clique para procurar",
       fileSelected: "Arquivo selecionado:",
@@ -287,9 +287,9 @@ export const ptBR: Dictionary = {
         titleHighlight: "nos seus dados de sono.",
         emptyState:
           "Seus dados de sono foram analisados. Explore seus padrões abaixo.",
-        curiosPrompt: "Curioso para ver como isso mudou ao longo do tempo?",
-        mobileCuriousPrompt: "Quer ver o que aconteceu em seguida?",
-        ctaRecovery: "Explorar sua recuperação",
+        curiosPrompt: "Veja como sua recuperação se conecta ao seu sono.",
+        mobileCuriousPrompt: "Veja seus padrões de recuperação e atividade.",
+        ctaRecovery: "Ver padrões de recuperação",
       },
       sections: {
         sleepPattern: "Padrão de Sono",
@@ -304,9 +304,9 @@ export const ptBR: Dictionary = {
       emptyChart: "Dados insuficientes para visualizar.",
       emptyInsights: "Dados insuficientes para gerar este insight ainda.",
       fullReport: {
-        title: "Desbloqueie sua visão completa de saúde",
+        title: "Vá mais fundo com o Premium",
         description:
-          "Acesse tendências avançadas, mapas de correlação, insights de volatilidade e um portal premium — grátis por 90 dias.",
+          "Veja tendências ao longo do tempo, correlações entre seus sinais e acesse seu portal pessoal — grátis por 90 dias.",
         downloadButton: "Desbloquear Premium (90 dias grátis)",
         runAnother: "Executar outra análise",
       },

@@ -71,9 +71,11 @@ function ShareCard() {
 }
 
 function planLabel(plan: string): string {
+  if (plan === "trial_start") return "Getting Started";
   if (plan === "trial") return "Premium Trial";
   if (plan === "premium") return "Premium";
-  return "Expired";
+  if (plan === "expired") return "Expired";
+  return plan;
 }
 
 export default function PortalOverviewPage() {

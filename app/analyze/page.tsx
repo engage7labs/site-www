@@ -24,7 +24,7 @@ import {
   trackUploadStarted,
 } from "@/lib/telemetry";
 import { motion } from "framer-motion";
-import { BarChart3, CheckCircle2, FileCheck, Upload } from "lucide-react";
+import { CheckCircle2 } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
@@ -136,52 +136,12 @@ export default function AnalyzePage() {
             </p>
           </motion.div>
 
-          {/* Workflow Steps */}
-          <motion.div
-            variants={fadeInUp}
-            className="grid md:grid-cols-3 gap-8 max-w-4xl mx-auto"
-          >
-            <div className="flex flex-col items-center text-center space-y-3">
-              <div className="p-4 rounded-full bg-accent/10">
-                <Upload className="h-6 w-6 text-accent" />
-              </div>
-              <div className="space-y-1">
-                <h3 className="font-semibold text-foreground">
-                  {t.analyze.workflow.step1.title}
-                </h3>
-                <p className="text-sm text-muted-foreground">
-                  {t.analyze.workflow.step1.description}
-                </p>
-              </div>
-            </div>
-
-            <div className="flex flex-col items-center text-center space-y-3">
-              <div className="p-4 rounded-full bg-accent/10">
-                <BarChart3 className="h-6 w-6 text-accent" />
-              </div>
-              <div className="space-y-1">
-                <h3 className="font-semibold text-foreground">
-                  {t.analyze.workflow.step2.title}
-                </h3>
-                <p className="text-sm text-muted-foreground">
-                  {t.analyze.workflow.step2.description}
-                </p>
-              </div>
-            </div>
-
-            <div className="flex flex-col items-center text-center space-y-3">
-              <div className="p-4 rounded-full bg-accent/10">
-                <FileCheck className="h-6 w-6 text-accent" />
-              </div>
-              <div className="space-y-1">
-                <h3 className="font-semibold text-foreground">
-                  {t.analyze.workflow.step3.title}
-                </h3>
-                <p className="text-sm text-muted-foreground">
-                  {t.analyze.workflow.step3.description}
-                </p>
-              </div>
-            </div>
+          {/* Upload instruction line */}
+          <motion.div variants={fadeInUp} className="text-center">
+            <p className="text-sm text-muted-foreground max-w-md mx-auto">
+              Export from the Health app on your iPhone, then upload the .zip
+              file below.
+            </p>
           </motion.div>
 
           {/* Apple Health Export Tutorial */}

@@ -85,6 +85,11 @@ export function InsightCard({
                   {insight.body}
                 </p>
               )}
+              {!compact && insight.meaning && (
+                <p className="text-xs text-muted-foreground/80 mt-0.5 italic leading-relaxed">
+                  {insight.meaning}
+                </p>
+              )}
             </div>
           ))}
         </div>
@@ -102,7 +107,9 @@ export function InsightCard({
       )}
 
       {/* Chart - grows to fill available space */}
-      {chart && <div className={`flex-grow ${compact ? "mb-3" : "mb-4"}`}>{chart}</div>}
+      {chart && (
+        <div className={`flex-grow ${compact ? "mb-3" : "mb-4"}`}>{chart}</div>
+      )}
 
       {/* CTA */}
       {ctaLabel && onCtaClick && (

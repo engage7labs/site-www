@@ -321,6 +321,11 @@ export function InsightPreview({
                       <p className="text-xs text-muted-foreground leading-relaxed mt-0.5">
                         {ins.body}
                       </p>
+                      {ins.meaning && (
+                        <p className="text-xs text-muted-foreground/80 italic leading-relaxed mt-0.5">
+                          {ins.meaning}
+                        </p>
+                      )}
                     </div>
                   ))}
                 </div>
@@ -448,6 +453,11 @@ export function InsightPreview({
                       <p className="text-xs text-muted-foreground mt-0.5">
                         {ins.body}
                       </p>
+                      {ins.meaning && (
+                        <p className="text-xs text-muted-foreground/80 italic mt-0.5">
+                          {ins.meaning}
+                        </p>
+                      )}
                     </div>
                   ))}
                 </div>

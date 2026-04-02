@@ -169,18 +169,22 @@ function FailedView({ error }: Readonly<{ error: string | null }>) {
         {...fadeInUp}
         className="flex flex-col items-center justify-center py-24 space-y-6 text-center"
       >
-        <AlertCircle className="h-12 w-12 text-destructive" />
+        <AlertCircle className="h-12 w-12 text-amber-500" />
         <div className="space-y-2">
           <h1 className="text-2xl font-semibold text-foreground">
-            {t.result.error.title}
+            We had trouble processing this file
           </h1>
           <p className="text-muted-foreground max-w-md">{calmMessage}</p>
+          <p className="text-sm text-muted-foreground max-w-md">
+            This can happen with unsupported or incomplete exports. You can try
+            again with a different file.
+          </p>
         </div>
         <Link
           href="/analyze"
           className="inline-flex items-center px-5 py-2.5 rounded-md bg-accent text-white text-sm font-medium hover:bg-accent/90 transition-colors"
         >
-          {t.result.error.retryButton}
+          Try again
         </Link>
       </motion.div>
     </PageShell>
@@ -191,21 +195,23 @@ function FailedView({ error }: Readonly<{ error: string | null }>) {
  * Transform technical errors into user-friendly messages
  */
 function getCalmErrorMessage(error: string | null, t: any): string {
-  if (!error) return t.result.error.description;
+  if (!error)
+    return "We weren't able to complete your analysis. Please try uploading again.";
 
   // Map technical errors to calm messages
   const errorMap: Record<string, string> = {
-    timeout: "Your analysis took too long to process. Please try again.",
+    timeout:
+      "Your analysis took longer than expected. Please try again — most files process in under two minutes.",
     interrupted:
-      "Your analysis was interrupted while processing. Please run the upload again.",
+      "Your analysis was interrupted. This sometimes happens during high traffic. Please try again.",
     stalled:
-      "Your analysis appears to have stalled. Please run the upload again.",
+      "Your analysis didn't finish processing. Please try uploading again.",
     missing:
-      "Your report artifacts were not fully available after processing. Please run the upload again.",
+      "Some of your results weren't available after processing. Please try again.",
     network:
       "We couldn't connect to process your data. Please check your connection and try again.",
     invalid:
-      "The data provided couldn't be processed. Please check your file and try again.",
+      "We couldn't read the data in this file. Please make sure you're uploading an Apple Health export (.zip).",
   };
 
   // Check for known error patterns
@@ -342,7 +348,10 @@ export default function ResultPage({
     });
   };
 
-  const handleModalEmail = async (email: string, consent: boolean): Promise<void> => {
+  const handleModalEmail = async (
+    email: string,
+    consent: boolean
+  ): Promise<void> => {
     if (!jobId) return;
     const analysisData = result
       ? {

@@ -34,6 +34,8 @@ function round1(n: number): number {
 export interface InsightText {
   headline: string;
   body: string;
+  /** Short explanation of what this means for the user */
+  meaning?: string;
 }
 
 export function extractSleepInsights(sections: Sections | null): InsightText[] {
@@ -49,6 +51,8 @@ export function extractSleepInsights(sections: Sections | null): InsightText[] {
         body: `Your usual night is around ${round1(
           median
         )} hours. Shorter sleep can sometimes affect how you feel during the day.`,
+        meaning:
+          "This may indicate less recovery time than your body needs on a regular basis.",
       });
     } else if (median > 8.5) {
       insights.push({
@@ -56,6 +60,8 @@ export function extractSleepInsights(sections: Sections | null): InsightText[] {
         body: `Your usual night is around ${round1(
           median
         )} hours—longer than average. This often means your body values deeper recovery time.`,
+        meaning:
+          "Longer sleep can be a sign that your body prioritizes recovery.",
       });
     } else {
       insights.push({
@@ -63,6 +69,8 @@ export function extractSleepInsights(sections: Sections | null): InsightText[] {
         body: `You're getting around ${round1(
           median
         )} hours most nights, which is in a healthy range. Consistency like this is a strong sign of stable rest.`,
+        meaning:
+          "Consistent sleep in this range supports steady energy and recovery.",
       });
     }
   }
@@ -73,6 +81,8 @@ export function extractSleepInsights(sections: Sections | null): InsightText[] {
     insights.push({
       headline: "Your sleep duration varies quite a bit",
       body: "Some nights are longer, some shorter. This kind of variation can sometimes affect how rested you feel.",
+      meaning:
+        "Variable sleep may reduce the predictability of your energy levels.",
     });
   }
 
@@ -88,6 +98,8 @@ export function extractSleepInsights(sections: Sections | null): InsightText[] {
         body: `Around ${latest.date}, your sleep ${dir} by about ${round1(
           mag
         )} hours. This is one of the clearest changes we spotted.`,
+        meaning:
+          "A notable shift like this often reflects a change in routine, stress, or environment.",
       });
     }
   }
@@ -117,6 +129,8 @@ export function extractSleepInsights(sections: Sections | null): InsightText[] {
         body: `There's a noticeable difference between your weekday and weekend sleep — about ${round1(
           Math.abs(diff)
         )} hours ${more} on Saturday and Sunday.`,
+        meaning:
+          "A consistent weekday–weekend difference can indicate your body is catching up on rest.",
       });
     }
   }
@@ -149,6 +163,10 @@ export function extractRecoveryInsights(
       body: `Your typical resting heart rate is around ${Math.round(
         hrMedian
       )} bpm. A ${stab} heart rate is generally a good recovery sign.`,
+      meaning:
+        stab === "stable"
+          ? "A steady heart rate suggests your body is maintaining a consistent recovery rhythm."
+          : "More variation in heart rate can reflect changes in stress, fitness, or daily routine.",
     });
   }
 
@@ -160,6 +178,8 @@ export function extractRecoveryInsights(
       body: `Your HRV is typically around ${Math.round(
         hrvMedian
       )} ms. This reflects how your nervous system balances stress and recovery.`,
+      meaning:
+        "HRV is one of the strongest indicators of how well your body recovers from daily demands.",
     });
   }
 
@@ -173,6 +193,8 @@ export function extractRecoveryInsights(
     insights.push({
       headline: "Sleep and heart rate are connected",
       body: `Your data shows that ${relationship}. This is one pattern that helps explain your recovery rhythm.`,
+      meaning:
+        "This connection shows that your sleep quality directly influences your cardiovascular recovery.",
     });
   }
 
@@ -184,6 +206,8 @@ export function extractRecoveryInsights(
     insights.push({
       headline: "Your heart rate shifted at some point",
       body: `Around ${latest.date}, your resting heart rate ${dir} noticeably. This kind of change can reflect shifts in stress, fitness, or routine.`,
+      meaning:
+        "A clear shift in resting heart rate often marks a meaningful change in how your body is coping.",
     });
   }
 
@@ -207,6 +231,8 @@ export function extractActivityInsights(
     insights.push({
       headline: "Your daily movement baseline",
       body: `On a typical day, you're getting around ${formatted} steps. Consistency in movement is a strong sign of sustainable habits.`,
+      meaning:
+        "Regular daily movement supports both physical health and mental well-being over time.",
     });
   }
 
@@ -217,11 +243,15 @@ export function extractActivityInsights(
       insights.push({
         headline: "Your movement is quite consistent",
         body: "Your daily step count doesn't swing wildly day to day. That kind of consistency is a good sign for long-term mobility.",
+        meaning:
+          "Consistent movement patterns are associated with stable energy and sustained physical health.",
       });
     } else if (stepsCv > 50) {
       insights.push({
         headline: "Your activity levels vary a lot",
         body: "Some days you move a lot, some much less. High variation can sometimes reflect an unpredictable schedule or energy levels.",
+        meaning:
+          "Large swings in activity may indicate uneven recovery or fluctuating demands on your body.",
       });
     }
   }
@@ -243,6 +273,8 @@ export function extractActivityInsights(
         insights.push({
           headline: `${most.day_name} is your most active day`,
           body: `You tend to move most on ${most.day_name} and least on ${least.day_name}. Knowing your weekly rhythm can help you stay consistent.`,
+          meaning:
+            "Understanding your activity pattern helps you plan for consistent movement throughout the week.",
         });
       }
     }

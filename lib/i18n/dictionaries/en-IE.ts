@@ -32,13 +32,13 @@ export const enIE = {
       deterministic: {
         title: "Based on Your Patterns",
         description:
-          "We find patterns in your data—not guesses. Every insight comes from what your body is actually showing.",
+          "We analyze your data and identify what is actually happening. Every insight is based on your own patterns, not predictions.",
       },
 
       explainable: {
         title: "Easy to Understand",
         description:
-          "See what's happening with your sleep, recovery, and movement. No jargon, no confusion.",
+          "See what's happening with your sleep, recovery, and movement. Clear language, no jargon.",
       },
 
       privacy: {
@@ -193,7 +193,7 @@ export const enIE = {
   analyze: {
     title: "Analyze your wearable data",
     subtitle:
-      "Upload your data and we'll show you patterns in sleep, recovery, and movement based on what's normal for you.",
+      "Export from the Health app on your iPhone, then upload the file here. We'll show you patterns in sleep, recovery, and movement based on what's normal for you.",
 
     workflow: {
       title: "How it works",
@@ -212,7 +212,7 @@ export const enIE = {
     },
 
     upload: {
-      title: "Upload your data",
+      title: "Upload your Apple Health export",
       description: "Supported: Apple Health export (export.zip)",
       dragHint: "Drop your file here, or click to browse",
       fileSelected: "File ready:",
@@ -283,9 +283,9 @@ export const enIE = {
         titleHighlight: "in your sleep data.",
         emptyState:
           "Your sleep data has been analyzed. Explore your patterns below.",
-        curiosPrompt: "Curious how this changed over time?",
-        mobileCuriousPrompt: "Want to see what happened next?",
-        ctaRecovery: "Explore your recovery",
+        curiosPrompt: "See how your recovery connects to your sleep.",
+        mobileCuriousPrompt: "See your recovery and activity patterns.",
+        ctaRecovery: "See recovery patterns",
       },
       sections: {
         sleepPattern: "Sleep Pattern",
@@ -300,9 +300,9 @@ export const enIE = {
       emptyChart: "Not enough data to visualize.",
       emptyInsights: "Not enough data to generate this insight yet.",
       fullReport: {
-        title: "Unlock your full health picture",
+        title: "Go deeper with Premium",
         description:
-          "Get access to advanced trends, correlation heatmaps, volatility insights, and a premium portal — free for 90 days.",
+          "See trends over time, correlations between your signals, and access your personal portal — free for 90 days.",
         downloadButton: "Unlock Premium (90 days free)",
         runAnother: "Run another analysis",
       },

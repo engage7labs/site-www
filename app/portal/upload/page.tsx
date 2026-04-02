@@ -1,7 +1,6 @@
 "use client";
 
 import { useLocale } from "@/components/providers/locale-provider";
-import { AppleHealthTutorial } from "@/components/shared/apple-health-tutorial";
 import { FileUpload } from "@/components/shared/file-upload";
 import { Turnstile } from "@/components/shared/turnstile";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -89,7 +88,10 @@ export default function PortalUploadPage() {
       </div>
 
       <div className="max-w-2xl">
-        <AppleHealthTutorial />
+        <p className="text-sm text-muted-foreground mb-4">
+          Export from the Health app on your iPhone, then upload the .zip file
+          below.
+        </p>
       </div>
 
       <div className="max-w-2xl">
