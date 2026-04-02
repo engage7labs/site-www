@@ -77,69 +77,73 @@ export default function PortalUploadPage() {
   };
 
   return (
-    <div className="flex flex-col gap-8">
-      <div>
-        <h1 className="text-2xl font-bold text-foreground">
-          {t.analyze.title}
-        </h1>
-        <p className="mt-1 text-sm text-muted-foreground">
-          {t.analyze.subtitle}
-        </p>
-      </div>
-
-      <div className="max-w-2xl">
-        <p className="text-sm text-muted-foreground mb-4">
-          Export from the Health app on your iPhone, then upload the .zip file
-          below.
-        </p>
-      </div>
-
-      <div className="max-w-2xl">
-        <div className="rounded-lg border border-border bg-card p-8 space-y-6">
-          <div className="space-y-2">
-            <h2 className="text-xl font-semibold text-foreground">
-              {t.analyze.upload.title}
-            </h2>
-            <p className="text-sm text-muted-foreground">
-              {t.analyze.upload.formatHint}
-            </p>
-            <p className="text-sm text-accent">
-              {t.analyze.upload.expectationHint}
+    <div className="flex justify-center">
+      <div className="w-full max-w-2xl px-4 md:px-8 mt-10">
+        <div className="flex flex-col gap-8">
+          <div>
+            <h1 className="text-2xl font-bold text-foreground">
+              {t.analyze.title}
+            </h1>
+            <p className="mt-1 text-sm text-muted-foreground">
+              {t.analyze.subtitle}
             </p>
           </div>
 
-          <FileUpload
-            onFileSelect={handleFileSelect}
-            onUpload={handleUpload}
-            isUploading={isUploading}
-            disabled={!consentGiven || !turnstileToken}
-            t={t}
-            consentSlot={
-              <>
-                <label className="flex items-start gap-3 text-xs text-muted-foreground leading-snug cursor-pointer">
-                  <Checkbox
-                    id="consent"
-                    checked={consentGiven}
-                    onCheckedChange={(checked) =>
-                      setConsentGiven(checked === true)
-                    }
-                    className="mt-0.5"
-                  />
-                  <span>
-                    {t.analyze.consent.description}{" "}
-                    <Link
-                      href="/privacy-policy"
-                      className="text-accent hover:underline"
-                      target="_blank"
-                    >
-                      {t.analyze.consent.linkText}
-                    </Link>
-                  </span>
-                </label>
-                <Turnstile onVerify={setTurnstileToken} />
-              </>
-            }
-          />
+          <div>
+            <p className="text-sm text-muted-foreground mb-4">
+              Export from the Health app on your iPhone, then upload the .zip
+              file below.
+            </p>
+          </div>
+
+          <div>
+            <div className="rounded-lg border border-border bg-card p-8 space-y-6">
+              <div className="space-y-2">
+                <h2 className="text-xl font-semibold text-foreground">
+                  {t.analyze.upload.title}
+                </h2>
+                <p className="text-sm text-muted-foreground">
+                  {t.analyze.upload.formatHint}
+                </p>
+                <p className="text-sm text-accent">
+                  {t.analyze.upload.expectationHint}
+                </p>
+              </div>
+
+              <FileUpload
+                onFileSelect={handleFileSelect}
+                onUpload={handleUpload}
+                isUploading={isUploading}
+                disabled={!consentGiven || !turnstileToken}
+                t={t}
+                consentSlot={
+                  <>
+                    <label className="flex items-start gap-3 text-xs text-muted-foreground leading-snug cursor-pointer">
+                      <Checkbox
+                        id="consent"
+                        checked={consentGiven}
+                        onCheckedChange={(checked) =>
+                          setConsentGiven(checked === true)
+                        }
+                        className="mt-0.5"
+                      />
+                      <span>
+                        {t.analyze.consent.description}{" "}
+                        <Link
+                          href="/privacy-policy"
+                          className="text-accent hover:underline"
+                          target="_blank"
+                        >
+                          {t.analyze.consent.linkText}
+                        </Link>
+                      </span>
+                    </label>
+                    <Turnstile onVerify={setTurnstileToken} />
+                  </>
+                }
+              />
+            </div>
+          </div>
         </div>
       </div>
     </div>

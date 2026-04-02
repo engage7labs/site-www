@@ -36,20 +36,12 @@ import {
   trackChartInteracted,
   trackFullReportCtaViewed,
   trackPreviewNextClicked,
-  trackRecoveryPreviewViewed,
   trackReportUnlockClicked,
   trackSleepPreviewViewed,
 } from "@/lib/telemetry";
 import type { AnalysisResult } from "@/lib/types/analysis";
 import { motion } from "framer-motion";
-import {
-  ArrowLeft,
-  ArrowRight,
-  Crown,
-  Footprints,
-  HeartPulse,
-  Moon,
-} from "lucide-react";
+import { ArrowLeft, Crown, Footprints, HeartPulse, Moon } from "lucide-react";
 import Link from "next/link";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { EChart } from "./echart";
@@ -216,18 +208,6 @@ export function InsightPreview({
     }
   }, [scrollToSection]);
 
-  const goToRecovery = () => {
-    setActiveStage("recovery");
-    trackPreviewNextClicked("sleep", "sleep");
-    trackRecoveryPreviewViewed({
-      jobId,
-      datasetDurationUnit: durationInfo?.unit,
-      datasetDurationValue: durationInfo?.value,
-      previewStage: "recovery",
-    });
-    scrollToSection("recovery");
-  };
-
   const goToActivity = () => {
     setActiveStage("activity");
     trackPreviewNextClicked("recovery", "recovery");
@@ -336,18 +316,6 @@ export function InsightPreview({
                   {t.result.preview.sleepHero.emptyState}
                 </p>
               )}
-
-              <p className="text-sm text-muted-foreground italic mb-4">
-                {t.result.preview.sleepHero.curiosPrompt}
-              </p>
-
-              <button
-                onClick={goToRecovery}
-                className="inline-flex items-center gap-2 px-5 py-2.5 rounded-lg bg-accent text-accent-foreground text-sm font-medium hover:bg-accent/90 transition-colors w-fit"
-              >
-                {t.result.preview.sleepHero.ctaRecovery}
-                <ArrowRight className="h-4 w-4" />
-              </button>
             </motion.div>
 
             {/* Right column — chart */}
@@ -480,17 +448,6 @@ export function InsightPreview({
                   {t.result.preview.emptyChart}
                 </div>
               )}
-
-              <p className="text-sm text-muted-foreground italic mt-4 mb-3">
-                {t.result.preview.sleepHero.mobileCuriousPrompt}
-              </p>
-              <button
-                onClick={goToRecovery}
-                className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-accent text-accent-foreground text-sm font-medium hover:bg-accent/90 transition-colors"
-              >
-                {t.result.preview.sleepHero.ctaRecovery}
-                <ArrowRight className="h-4 w-4" />
-              </button>
             </div>
           </motion.div>
 
