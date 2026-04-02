@@ -344,12 +344,24 @@ export default function ResultPage({
 
   const handleModalEmail = async (email: string) => {
     if (!jobId) return;
-    // Create or retrieve user with trial plan + link analysis
+    // Create or retrieve user with trial plan + link analysis + persist analysis data
     try {
+      const analysisData = result
+        ? {
+            report_label: "Health Analysis",
+            summary: result.summary,
+            highlights: result.highlights,
+            sections: result.sections,
+          }
+        : undefined;
       await fetch("/api/proxy/users/create-or-get", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email, job_id: jobId }),
+        body: JSON.stringify({
+          email,
+          job_id: jobId,
+          analysis_data: analysisData,
+        }),
       });
     } catch {
       // best-effort — don't block the flow

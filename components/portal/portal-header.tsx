@@ -1,7 +1,8 @@
 "use client";
 
 import { useAppTheme } from "@/components/providers/app-theme-provider";
-import { LogOut, Menu, Moon, Sun } from "lucide-react";
+import { LogOut, Menu, Moon, Sun, Upload } from "lucide-react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 
 interface PortalHeaderProps {
@@ -36,8 +37,15 @@ export function PortalHeader({ onToggleMobile }: PortalHeaderProps) {
         <span className="text-lg font-semibold text-foreground">Engage7</span>
       </div>
 
-      {/* Right: theme + logout */}
+      {/* Right: upload + theme + logout */}
       <div className="flex items-center gap-2">
+        <Link
+          href="/analyze"
+          className="flex items-center gap-1.5 rounded-lg bg-[#e6b800] px-3 py-1.5 text-sm font-medium text-[#1a1a1a] shadow-sm transition-colors hover:bg-[#f2c94c] active:bg-[#c99a00]"
+        >
+          <Upload className="h-4 w-4" />
+          <span className="hidden sm:inline">Upload</span>
+        </Link>
         <button
           onClick={toggleTheme}
           className="rounded-lg p-2 text-muted-foreground hover:bg-muted hover:text-foreground"

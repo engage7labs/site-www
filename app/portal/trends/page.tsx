@@ -1,7 +1,7 @@
 "use client";
 
 import type { EChartsOption } from "echarts";
-import { useEffect, useRef } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 
 export const dynamic = "force-dynamic";
 
@@ -29,31 +29,12 @@ async function getEcharts() {
   return echarts;
 }
 
-// Placeholder data — will be replaced with real API data
-const DAYS = Array.from({ length: 14 }, (_, i) => {
-  const d = new Date();
-  d.setDate(d.getDate() - (13 - i));
-  return d.toLocaleDateString("en-IE", { month: "short", day: "numeric" });
-});
-
-const SLEEP_HOURS = [
-  7.2, 6.8, 7.5, 8.1, 6.9, 7.0, 7.4, 7.8, 6.5, 7.1, 7.6, 8.0, 7.3, 7.5,
-];
-const HRV = [42, 38, 45, 50, 35, 40, 44, 48, 33, 41, 46, 52, 43, 47];
-const HR = [72, 75, 70, 68, 78, 74, 71, 69, 80, 73, 70, 67, 72, 71];
-const STEPS = [
-  8200, 6500, 9100, 12000, 5400, 10500, 7800, 9200, 11000, 6800, 9800, 8100,
-  13000, 8500,
-];
-const ACTIVITY_MIN = [32, 45, 28, 60, 22, 50, 35, 42, 55, 30, 48, 38, 62, 44];
-
 const LIGHT_TEXT = "#E5E7EB";
 const TOOLTIP_TEXT = "#111827";
 const TOOLTIP_BG = "#F9FAFB";
 
 const WEEK_DAYS = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
 
-// Metric colors from metric-colors.ts
 const COLORS = {
   sleep: "#3dbe73",
   hr: "#e5a336",
@@ -62,40 +43,44 @@ const COLORS = {
   activity: "#f59e0b",
 };
 
-function useChart(
-  containerRef: React.RefObject<HTMLDivElement | null>,
-  buildOption: (isDark: boolean) => EChartsOption
-) {
-  useEffect(() => {
-    let chart:
-      | ReturnType<Awaited<ReturnType<typeof getEcharts>>["init"]>
-      | undefined;
-    let disposed = false;
+// ---------------------------------------------------------------------------
+// Data types from portal-trends API
+// ---------------------------------------------------------------------------
 
-    (async () => {
-      const echarts = await getEcharts();
-      if (disposed || !containerRef.current) return;
-      chart = echarts.init(containerRef.current);
-      const isDark = document.documentElement.classList.contains("dark");
-      chart.setOption(buildOption(isDark));
+interface TrendPoint {
+  date: string;
+  value: number | null;
+}
 
-      const observer = new ResizeObserver(() => chart?.resize());
-      observer.observe(containerRef.current);
-      return () => observer.disconnect();
-    })();
-
-    return () => {
-      disposed = true;
-      chart?.dispose();
-    };
-  }, [containerRef, buildOption]);
+interface TrendsData {
+  trends: {
+    sleep: TrendPoint[];
+    hrv: TrendPoint[];
+    hr: TrendPoint[];
+    steps: TrendPoint[];
+    activity: TrendPoint[];
+    correlations: Record<string, unknown> | null;
+    baseline: Record<string, unknown> | null;
+    volatility: Record<string, unknown> | null;
+  };
+  analysis_count: number;
 }
 
 // ---------------------------------------------------------------------------
 // Chart 1: Multi-Axis Trends
 // ---------------------------------------------------------------------------
 
-function MultiAxisTrendChart() {
+function MultiAxisTrendChart({
+  days,
+  sleep,
+  hrv,
+  hr,
+}: Readonly<{
+  days: string[];
+  sleep: number[];
+  hrv: number[];
+  hr: number[];
+}>) {
   const containerRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -131,7 +116,7 @@ function MultiAxisTrendChart() {
         grid: { left: 50, right: 50, top: 36, bottom: 24 },
         xAxis: {
           type: "category",
-          data: DAYS,
+          data: days,
           axisLabel: { fontSize: 10, color: axisLabelColor },
           axisLine: { lineStyle: { color: "transparent" } },
           axisTick: { show: false },
@@ -155,7 +140,7 @@ function MultiAxisTrendChart() {
         series: [
           {
             name: "Sleep (h)",
-            data: SLEEP_HOURS,
+            data: sleep,
             type: "line",
             smooth: true,
             symbol: "circle",
@@ -166,7 +151,7 @@ function MultiAxisTrendChart() {
           },
           {
             name: "HRV (ms)",
-            data: HRV,
+            data: hrv,
             type: "line",
             smooth: true,
             symbol: "circle",
@@ -176,7 +161,7 @@ function MultiAxisTrendChart() {
           },
           {
             name: "HR (bpm)",
-            data: HR,
+            data: hr,
             type: "line",
             smooth: true,
             yAxisIndex: 1,
@@ -198,7 +183,7 @@ function MultiAxisTrendChart() {
       disposed = true;
       chart?.dispose();
     };
-  }, []);
+  }, [days, sleep, hrv, hr]);
 
   return (
     <div className="portal-panel rounded-xl border border-border/70 bg-card/85 p-4">
@@ -207,7 +192,7 @@ function MultiAxisTrendChart() {
           Multi-Signal Trends
         </h3>
         <span className="text-xs text-muted-foreground">
-          14-day rolling view across sleep, HRV, and heart rate
+          Rolling view across sleep, HRV, and heart rate
         </span>
       </div>
       <div ref={containerRef} className="h-72 w-full" />
@@ -215,23 +200,13 @@ function MultiAxisTrendChart() {
   );
 }
 
-// Pre-compute average sleep by weekday from the 14-day window
-const SLEEP_BY_DAY = WEEK_DAYS.map((_, i) => {
-  const vals = SLEEP_HOURS.filter((_, j) => {
-    const d = new Date();
-    d.setDate(d.getDate() - (13 - j));
-    return d.getDay() === (i === 6 ? 0 : i + 1);
-  });
-  return vals.length
-    ? +(vals.reduce((a, b) => a + b, 0) / vals.length).toFixed(1)
-    : 0;
-});
-
 // ---------------------------------------------------------------------------
 // Chart 2: Weekly Patterns (bar)
 // ---------------------------------------------------------------------------
 
-function WeeklyPatternsChart() {
+function WeeklyPatternsChart({
+  sleepByDay,
+}: Readonly<{ sleepByDay: number[] }>) {
   const containerRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -249,9 +224,6 @@ function WeeklyPatternsChart() {
       const splitLineColor = isDark
         ? "rgba(229, 231, 235, 0.09)"
         : "rgba(148, 163, 184, 0.18)";
-
-      // Average by weekday from the 14-day window
-      const sleepByDay = SLEEP_BY_DAY;
 
       const option: EChartsOption = {
         textStyle: { color: axisLabelColor, fontFamily: "Inter, sans-serif" },
@@ -296,7 +268,7 @@ function WeeklyPatternsChart() {
       disposed = true;
       chart?.dispose();
     };
-  }, []);
+  }, [sleepByDay]);
 
   return (
     <div className="portal-panel rounded-xl border border-border/70 bg-card/85 p-4">
@@ -317,7 +289,9 @@ function WeeklyPatternsChart() {
 // Chart 3: Correlation Heatmap
 // ---------------------------------------------------------------------------
 
-function CorrelationHeatmapChart() {
+function CorrelationHeatmapChart({
+  correlations,
+}: Readonly<{ correlations: Record<string, unknown> | null }>) {
   const containerRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -334,34 +308,30 @@ function CorrelationHeatmapChart() {
       const axisLabelColor = isDark ? LIGHT_TEXT : "#5f6368";
 
       const metrics = ["Sleep", "HRV", "HR", "Steps", "Activity"];
-      // Simulated correlation matrix
-      const corrData = [
-        [0, 0, 1.0],
-        [0, 1, 0.65],
-        [0, 2, -0.42],
-        [0, 3, 0.28],
-        [0, 4, 0.31],
-        [1, 0, 0.65],
-        [1, 1, 1.0],
-        [1, 2, -0.58],
-        [1, 3, 0.15],
-        [1, 4, 0.22],
-        [2, 0, -0.42],
-        [2, 1, -0.58],
-        [2, 2, 1.0],
-        [2, 3, 0.35],
-        [2, 4, 0.4],
-        [3, 0, 0.28],
-        [3, 1, 0.15],
-        [3, 2, 0.35],
-        [3, 3, 1.0],
-        [3, 4, 0.82],
-        [4, 0, 0.31],
-        [4, 1, 0.22],
-        [4, 2, 0.4],
-        [4, 3, 0.82],
-        [4, 4, 1.0],
-      ];
+      // Use real correlations if available, else identity matrix
+      let corrData: number[][] = [];
+      if (correlations && typeof correlations === "object") {
+        const matrix = correlations as Record<string, Record<string, number>>;
+        const keys = [
+          "sleep_hours",
+          "hrv_sdnn_mean",
+          "hr_mean",
+          "total_steps",
+          "active_minutes",
+        ];
+        for (let i = 0; i < keys.length; i++) {
+          for (let j = 0; j < keys.length; j++) {
+            const val = matrix[keys[i]]?.[keys[j]] ?? (i === j ? 1.0 : 0);
+            corrData.push([i, j, Math.round(val * 100) / 100]);
+          }
+        }
+      } else {
+        for (let i = 0; i < 5; i++) {
+          for (let j = 0; j < 5; j++) {
+            corrData.push([i, j, i === j ? 1.0 : 0]);
+          }
+        }
+      }
 
       const option: EChartsOption = {
         textStyle: { color: axisLabelColor, fontFamily: "Inter, sans-serif" },
@@ -428,7 +398,7 @@ function CorrelationHeatmapChart() {
       disposed = true;
       chart?.dispose();
     };
-  }, []);
+  }, [correlations]);
 
   return (
     <div className="portal-panel rounded-xl border border-border/70 bg-card/85 p-4">
@@ -449,7 +419,9 @@ function CorrelationHeatmapChart() {
 // Chart 4: Baseline Ranges
 // ---------------------------------------------------------------------------
 
-function BaselineRangesChart() {
+function BaselineRangesChart({
+  baseline,
+}: Readonly<{ baseline: Record<string, unknown> | null }>) {
   const containerRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -468,10 +440,33 @@ function BaselineRangesChart() {
         ? "rgba(229, 231, 235, 0.09)"
         : "rgba(148, 163, 184, 0.18)";
 
+      const bMetrics =
+        (baseline as Record<string, Record<string, Record<string, number>>>)
+          ?.metrics ?? {};
+      const sleepM = bMetrics.sleep_hours ?? {};
+      const hrvM = bMetrics.hrv_sdnn_mean ?? {};
+      const hrM = bMetrics.hr_mean ?? {};
+      const stepsM = bMetrics.total_steps ?? {};
+
       const metrics = ["Sleep (h)", "HRV (ms)", "HR (bpm)", "Steps (k)"];
-      const baselines = [7.2, 43, 72, 8.5];
-      const lows = [6.5, 35, 65, 6.0];
-      const highs = [8.0, 52, 80, 12.0];
+      const baselines = [
+        sleepM.median ?? 7.2,
+        hrvM.median ?? 43,
+        hrM.median ?? 72,
+        (stepsM.median ?? 8500) / 1000,
+      ];
+      const lows = [
+        sleepM.p25 ?? sleepM.median ? (sleepM.median ?? 7.2) - 0.7 : 6.5,
+        hrvM.p25 ?? (hrvM.median ?? 43) - 8,
+        hrM.p25 ?? (hrM.median ?? 72) - 7,
+        (stepsM.p25 ?? (stepsM.median ?? 8500) - 2500) / 1000,
+      ];
+      const highs = [
+        sleepM.p75 ?? (sleepM.median ?? 7.2) + 0.8,
+        hrvM.p75 ?? (hrvM.median ?? 43) + 9,
+        hrM.p75 ?? (hrM.median ?? 72) + 8,
+        (stepsM.p75 ?? (stepsM.median ?? 8500) + 3500) / 1000,
+      ];
 
       const option: EChartsOption = {
         textStyle: { color: axisLabelColor, fontFamily: "Inter, sans-serif" },
@@ -535,7 +530,7 @@ function BaselineRangesChart() {
       disposed = true;
       chart?.dispose();
     };
-  }, []);
+  }, [baseline]);
 
   return (
     <div className="portal-panel rounded-xl border border-border/70 bg-card/85 p-4">
@@ -556,7 +551,10 @@ function BaselineRangesChart() {
 // Chart 5: Volatility Bands
 // ---------------------------------------------------------------------------
 
-function VolatilityBandsChart() {
+function VolatilityBandsChart({
+  days,
+  sleep,
+}: Readonly<{ days: string[]; sleep: number[] }>) {
   const containerRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -575,13 +573,13 @@ function VolatilityBandsChart() {
         ? "rgba(229, 231, 235, 0.09)"
         : "rgba(148, 163, 184, 0.18)";
 
-      // Simulate volatility bands around sleep
-      const upper = SLEEP_HOURS.map(
-        (v) => +(v + 0.8 + Math.random() * 0.3).toFixed(1)
-      );
-      const lower = SLEEP_HOURS.map(
-        (v) => +(v - 0.8 - Math.random() * 0.3).toFixed(1)
-      );
+      // Compute ±1 SD band from data
+      const mean = sleep.reduce((a, b) => a + b, 0) / (sleep.length || 1);
+      const variance =
+        sleep.reduce((a, b) => a + (b - mean) ** 2, 0) / (sleep.length || 1);
+      const sd = Math.sqrt(variance);
+      const upper = sleep.map((v) => +(v + sd).toFixed(1));
+      const lower = sleep.map((v) => +(v - sd).toFixed(1));
 
       const option: EChartsOption = {
         textStyle: { color: axisLabelColor, fontFamily: "Inter, sans-serif" },
@@ -598,7 +596,7 @@ function VolatilityBandsChart() {
         grid: { left: 40, right: 16, top: 36, bottom: 24 },
         xAxis: {
           type: "category",
-          data: DAYS,
+          data: days,
           axisLabel: { fontSize: 10, color: axisLabelColor },
           axisLine: { lineStyle: { color: "transparent" } },
           axisTick: { show: false },
@@ -630,7 +628,7 @@ function VolatilityBandsChart() {
           {
             name: "Sleep",
             type: "line",
-            data: SLEEP_HOURS,
+            data: sleep,
             smooth: true,
             symbol: "circle",
             symbolSize: 6,
@@ -650,7 +648,7 @@ function VolatilityBandsChart() {
       disposed = true;
       chart?.dispose();
     };
-  }, []);
+  }, [days, sleep]);
 
   return (
     <div className="portal-panel rounded-xl border border-border/70 bg-card/85 p-4">
@@ -683,6 +681,11 @@ function TrendChart({
   color: string;
 }>) {
   const containerRef = useRef<HTMLDivElement>(null);
+  const days = data.map((_, i) => {
+    const d = new Date();
+    d.setDate(d.getDate() - (data.length - 1 - i));
+    return d.toLocaleDateString("en-IE", { month: "short", day: "numeric" });
+  });
 
   useEffect(() => {
     let chart:
@@ -718,7 +721,7 @@ function TrendChart({
         grid: { left: 40, right: 16, top: 12, bottom: 24 },
         xAxis: {
           type: "category",
-          data: DAYS,
+          data: days,
           axisLabel: { fontSize: 10, color: axisLabelColor },
           axisLine: { lineStyle: { color: "transparent" } },
           axisTick: { show: false, lineStyle: { color: axisLabelColor } },
@@ -759,7 +762,7 @@ function TrendChart({
       disposed = true;
       chart?.dispose();
     };
-  }, [data, color]);
+  }, [data, color, days]);
 
   return (
     <div className="portal-panel rounded-xl border border-border/70 bg-card/85 p-4">
@@ -773,10 +776,103 @@ function TrendChart({
 }
 
 // ---------------------------------------------------------------------------
+// Empty state
+// ---------------------------------------------------------------------------
+
+function EmptyTrendsState() {
+  return (
+    <div className="flex flex-col gap-6">
+      <div>
+        <h1 className="text-2xl font-bold text-foreground">Trends</h1>
+        <p className="mt-1 text-sm text-muted-foreground">
+          Multi-signal trends, correlations, baselines, and volatility
+        </p>
+      </div>
+      <div className="portal-panel rounded-xl border border-border/70 bg-card/85 p-8 text-center">
+        <p className="text-sm text-muted-foreground">
+          No trend data available yet. Upload an Apple Health export to populate
+          your trends.
+        </p>
+      </div>
+    </div>
+  );
+}
+
+// ---------------------------------------------------------------------------
 // Page
 // ---------------------------------------------------------------------------
 
 export default function TrendsPage() {
+  const [trendsData, setTrendsData] = useState<TrendsData | null>(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    (async () => {
+      try {
+        const res = await fetch("/api/proxy/users/portal-trends");
+        if (res.ok) {
+          setTrendsData(await res.json());
+        }
+      } catch {
+        // silent
+      } finally {
+        setLoading(false);
+      }
+    })();
+  }, []);
+
+  const extractValues = useCallback(
+    (points: TrendPoint[]): number[] =>
+      points.filter((p) => p.value != null).map((p) => p.value as number),
+    []
+  );
+
+  const extractDates = useCallback(
+    (points: TrendPoint[]): string[] =>
+      points.filter((p) => p.value != null).map((p) => p.date),
+    []
+  );
+
+  if (loading) {
+    return (
+      <div className="flex flex-col gap-6">
+        <div>
+          <h1 className="text-2xl font-bold text-foreground">Trends</h1>
+          <p className="mt-1 text-sm text-muted-foreground">Loading…</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (!trendsData || trendsData.analysis_count === 0) {
+    return <EmptyTrendsState />;
+  }
+
+  const { trends } = trendsData;
+  const sleepVals = extractValues(trends.sleep);
+  const hrvVals = extractValues(trends.hrv);
+  const hrVals = extractValues(trends.hr);
+  const stepVals = extractValues(trends.steps);
+  const days = extractDates(trends.sleep);
+
+  // Compute sleep by weekday from available data
+  const sleepByDay = WEEK_DAYS.map((_, i) => {
+    const dayIdx = i === 6 ? 0 : i + 1; // JS Sunday=0
+    const vals = sleepVals.filter((_, j) => {
+      if (!days[j]) return false;
+      // Parse year from date string if possible
+      const parsed = new Date(days[j]);
+      return !isNaN(parsed.getTime()) && parsed.getDay() === dayIdx;
+    });
+    return vals.length
+      ? +(vals.reduce((a, b) => a + b, 0) / vals.length).toFixed(1)
+      : 0;
+  });
+
+  // If no yearly data, try to use individual trend data from sections
+  const hasYearlyData = sleepVals.length > 0;
+  const activityVals = extractValues(trends.activity);
+
   return (
     <div className="flex flex-col gap-6">
       <div>
@@ -786,43 +882,53 @@ export default function TrendsPage() {
         </p>
       </div>
 
-      {/* Multi-axis trend — full width */}
-      <MultiAxisTrendChart />
+      {hasYearlyData && (
+        <MultiAxisTrendChart
+          days={days}
+          sleep={sleepVals}
+          hrv={hrvVals}
+          hr={hrVals}
+        />
+      )}
 
-      {/* Row: Weekly Patterns + Baseline Ranges */}
       <div className="grid gap-4 lg:grid-cols-2">
-        <WeeklyPatternsChart />
-        <BaselineRangesChart />
+        <WeeklyPatternsChart sleepByDay={sleepByDay} />
+        <BaselineRangesChart baseline={trends.baseline} />
       </div>
 
-      {/* Correlation Heatmap — full width */}
-      <CorrelationHeatmapChart />
+      <CorrelationHeatmapChart correlations={trends.correlations} />
 
-      {/* Volatility Bands — full width */}
-      <VolatilityBandsChart />
+      {sleepVals.length > 1 && (
+        <VolatilityBandsChart days={days} sleep={sleepVals} />
+      )}
 
-      {/* Individual line charts */}
       <div className="grid gap-4 lg:grid-cols-2">
-        <TrendChart
-          title="Sleep Duration"
-          data={SLEEP_HOURS}
-          unit="hours"
-          color={COLORS.sleep}
-        />
-        <TrendChart
-          title="Heart Rate Variability"
-          data={HRV}
-          unit="ms (rMSSD)"
-          color={COLORS.hrv}
-        />
+        {sleepVals.length > 0 && (
+          <TrendChart
+            title="Sleep Duration"
+            data={sleepVals}
+            unit="hours"
+            color={COLORS.sleep}
+          />
+        )}
+        {hrvVals.length > 0 && (
+          <TrendChart
+            title="Heart Rate Variability"
+            data={hrvVals}
+            unit="ms (rMSSD)"
+            color={COLORS.hrv}
+          />
+        )}
       </div>
 
-      <TrendChart
-        title="Active Minutes"
-        data={ACTIVITY_MIN}
-        unit="minutes / day"
-        color={COLORS.activity}
-      />
+      {(activityVals.length > 0 || stepVals.length > 0) && (
+        <TrendChart
+          title={activityVals.length > 0 ? "Active Minutes" : "Daily Steps"}
+          data={activityVals.length > 0 ? activityVals : stepVals}
+          unit={activityVals.length > 0 ? "minutes / day" : "steps / day"}
+          color={COLORS.activity}
+        />
+      )}
     </div>
   );
 }
