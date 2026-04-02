@@ -1,9 +1,7 @@
 /**
- * Server-side proxy: GET /api/proxy/admin/users
+ * Server-side proxy: GET /api/proxy/admin/metrics
  *
- * Forwards admin requests to the API backend.
- * Sprint 15.0: Admin panel API proxy.
- * Sprint 15.4: Uses session JWT (X-User-Email) for role-based auth.
+ * Sprint 15.4: Role-protected admin metrics endpoint.
  */
 
 import { signRequest } from "@/lib/api/signing";
@@ -26,17 +24,14 @@ export async function GET() {
     return NextResponse.json({ detail: "Forbidden" }, { status: 403 });
   }
 
-  const path = "/api/admin/users";
+  const path = "/api/admin/metrics";
   const sigHeaders = signRequest("GET", path);
 
   let upstreamResponse: Response;
   try {
     upstreamResponse = await fetch(`${INTERNAL_API_BASE_URL}${path}`, {
       method: "GET",
-      headers: {
-        ...sigHeaders,
-        "X-User-Email": session.sub,
-      },
+      headers: { ...sigHeaders, "X-User-Email": session.sub },
     });
   } catch {
     return NextResponse.json(

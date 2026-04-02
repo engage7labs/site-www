@@ -1,156 +1,162 @@
 "use client";
 
-import { Crown, Database, Mail, Users } from "lucide-react";
+import { BarChart3, MessageSquare, Users, Zap } from "lucide-react";
 import { useEffect, useState } from "react";
 
-interface AdminUser {
-  id: number;
-  email: string;
-  plan: string;
-  trial_end_at: string | null;
-  created_at: string | null;
-  analyses_count: number;
+interface AdminMetrics {
+  total_users: number;
+  users_with_consent: number;
+  users_by_plan: Record<string, number>;
+  total_analyses: number;
+  total_events: number;
+  total_feedback: number;
+  premium_unlock_events: number;
+  conversion_rate_approx: number;
+  analyses_per_user_avg: number;
 }
 
-interface AdminUsersResponse {
-  users: AdminUser[];
-  total: number;
-}
-
-function PlanBadge({ plan }: Readonly<{ plan: string }>) {
-  const colors: Record<string, string> = {
-    trial: "bg-blue-500/10 text-blue-600 dark:text-blue-400",
-    premium: "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400",
-    expired: "bg-red-500/10 text-red-600 dark:text-red-400",
-  };
+function MetricCard({
+  label,
+  value,
+  icon: Icon,
+  sub,
+}: Readonly<{
+  label: string;
+  value: string | number;
+  icon: React.ElementType;
+  sub?: string;
+}>) {
   return (
-    <span
-      className={`inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium ${
-        colors[plan] ?? "bg-muted text-muted-foreground"
-      }`}
-    >
-      {plan}
-    </span>
+    <div className="rounded-xl border border-border bg-card p-5">
+      <div className="flex items-center justify-between mb-3">
+        <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
+          {label}
+        </p>
+        <Icon className="h-4 w-4 text-muted-foreground" />
+      </div>
+      <p className="text-2xl font-bold text-card-foreground">{value}</p>
+      {sub && <p className="mt-1 text-xs text-muted-foreground">{sub}</p>}
+    </div>
   );
 }
 
-function formatDate(iso: string | null): string {
-  if (!iso) return "—";
-  return new Date(iso).toLocaleDateString("en-IE", {
-    year: "numeric",
-    month: "short",
-    day: "numeric",
-  });
-}
-
-export default function AdminPage() {
-  const [data, setData] = useState<AdminUsersResponse | null>(null);
+export default function AdminOverviewPage() {
+  const [metrics, setMetrics] = useState<AdminMetrics | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const key = new URLSearchParams(window.location.search).get("key") ?? "";
-    fetch(`/api/proxy/admin/users?admin_key=${encodeURIComponent(key)}`)
+    fetch("/api/proxy/admin/metrics")
       .then(async (res) => {
         if (!res.ok) throw new Error(`${res.status}: ${await res.text()}`);
-        return res.json() as Promise<AdminUsersResponse>;
+        return res.json() as Promise<AdminMetrics>;
       })
-      .then(setData)
-      .catch((err) => setError(err.message))
+      .then(setMetrics)
+      .catch((err: unknown) =>
+        setError(err instanceof Error ? err.message : String(err))
+      )
       .finally(() => setLoading(false));
   }, []);
 
   if (loading) {
     return (
       <div className="flex items-center justify-center py-24">
-        <p className="text-muted-foreground">Loading users…</p>
+        <p className="text-muted-foreground text-sm">Loading metrics…</p>
       </div>
     );
   }
 
   if (error) {
     return (
-      <div className="flex flex-col items-center justify-center py-24 gap-4">
+      <div className="flex flex-col items-center justify-center py-24 gap-2">
         <p className="text-destructive text-sm">{error}</p>
         <p className="text-muted-foreground text-xs">
-          Append ?key=YOUR_ADMIN_KEY to the URL to authenticate.
+          Make sure you are signed in as an admin.
         </p>
       </div>
     );
   }
 
-  if (!data) return null;
+  if (!metrics) return null;
+
+  const planEntries = Object.entries(metrics.users_by_plan).sort(
+    ([, a], [, b]) => b - a
+  );
 
   return (
-    <div className="flex flex-col gap-6">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-bold text-foreground">Users</h1>
-          <p className="mt-1 text-sm text-muted-foreground">
-            {data.total} registered user{data.total !== 1 ? "s" : ""}
-          </p>
-        </div>
-        <div className="flex gap-4 text-xs text-muted-foreground">
-          <span className="inline-flex items-center gap-1.5">
-            <Users className="h-3.5 w-3.5" />
-            Total: {data.total}
-          </span>
-          <span className="inline-flex items-center gap-1.5">
-            <Crown className="h-3.5 w-3.5" />
-            Trial: {data.users.filter((u) => u.plan === "trial").length}
-          </span>
+    <div className="flex flex-col gap-8">
+      <div>
+        <h1 className="text-2xl font-bold text-foreground">Overview</h1>
+        <p className="mt-1 text-sm text-muted-foreground">
+          Product validation metrics
+        </p>
+      </div>
+
+      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+        <MetricCard
+          label="Total users"
+          value={metrics.total_users}
+          icon={Users}
+          sub={`${metrics.users_with_consent} with consent`}
+        />
+        <MetricCard
+          label="Total analyses"
+          value={metrics.total_analyses}
+          icon={BarChart3}
+          sub={`avg ${metrics.analyses_per_user_avg} per user`}
+        />
+        <MetricCard
+          label="Total events"
+          value={metrics.total_events}
+          icon={Zap}
+          sub={`${metrics.premium_unlock_events} premium unlocks`}
+        />
+        <MetricCard
+          label="Total feedback"
+          value={metrics.total_feedback}
+          icon={MessageSquare}
+          sub={`${(metrics.conversion_rate_approx * 100).toFixed(
+            1
+          )}% conversion approx`}
+        />
+      </div>
+
+      <div className="rounded-xl border border-border bg-card p-5">
+        <h2 className="text-sm font-semibold text-card-foreground mb-4">
+          Users by plan
+        </h2>
+        <div className="flex flex-wrap gap-3">
+          {planEntries.map(([plan, count]) => (
+            <div
+              key={plan}
+              className="flex items-center gap-2 rounded-lg border border-border px-3 py-2"
+            >
+              <span className="text-xs text-muted-foreground">{plan}</span>
+              <span className="text-sm font-semibold text-card-foreground">
+                {count}
+              </span>
+            </div>
+          ))}
+          {planEntries.length === 0 && (
+            <p className="text-sm text-muted-foreground">No data yet.</p>
+          )}
         </div>
       </div>
 
-      <div className="rounded-xl border border-border overflow-hidden">
-        <table className="w-full text-sm">
-          <thead>
-            <tr className="border-b border-border bg-muted/30">
-              <th className="px-4 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">
-                <span className="inline-flex items-center gap-1.5">
-                  <Mail className="h-3 w-3" />
-                  Email
-                </span>
-              </th>
-              <th className="px-4 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">
-                Plan
-              </th>
-              <th className="px-4 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">
-                Trial Expires
-              </th>
-              <th className="px-4 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">
-                Created
-              </th>
-              <th className="px-4 py-3 text-right text-xs font-medium text-muted-foreground uppercase tracking-wider">
-                <span className="inline-flex items-center gap-1.5">
-                  <Database className="h-3 w-3" />
-                  Analyses
-                </span>
-              </th>
-            </tr>
-          </thead>
-          <tbody className="divide-y divide-border">
-            {data.users.map((user) => (
-              <tr key={user.id} className="hover:bg-muted/20 transition-colors">
-                <td className="px-4 py-3 text-foreground font-medium">
-                  {user.email}
-                </td>
-                <td className="px-4 py-3">
-                  <PlanBadge plan={user.plan} />
-                </td>
-                <td className="px-4 py-3 text-muted-foreground">
-                  {formatDate(user.trial_end_at)}
-                </td>
-                <td className="px-4 py-3 text-muted-foreground">
-                  {formatDate(user.created_at)}
-                </td>
-                <td className="px-4 py-3 text-right text-muted-foreground tabular-nums">
-                  {user.analyses_count}
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
+      <div className="grid gap-3 sm:grid-cols-3">
+        {[
+          { href: "/admin/users", label: "View all users →" },
+          { href: "/admin/events", label: "View events →" },
+          { href: "/admin/feedback", label: "View feedback →" },
+        ].map(({ href, label }) => (
+          <a
+            key={href}
+            href={href}
+            className="rounded-xl border border-border bg-card p-4 text-sm font-medium text-accent hover:bg-muted transition-colors"
+          >
+            {label}
+          </a>
+        ))}
       </div>
     </div>
   );

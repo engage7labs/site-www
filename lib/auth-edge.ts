@@ -30,7 +30,7 @@ export function getJwtSecret(): string {
 
 export type SessionPayload = {
   sub: string; // email
-  role: "user";
+  role: "user" | "admin";
   iat: number;
   exp: number;
 };

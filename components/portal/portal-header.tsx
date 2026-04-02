@@ -40,7 +40,7 @@ export function PortalHeader({ onToggleMobile }: PortalHeaderProps) {
       {/* Right: upload + theme + logout */}
       <div className="flex items-center gap-2">
         <Link
-          href="/analyze"
+          href="/portal/upload"
           className="flex items-center gap-1.5 rounded-lg bg-[#e6b800] px-3 py-1.5 text-sm font-medium text-[#1a1a1a] shadow-sm transition-colors hover:bg-[#f2c94c] active:bg-[#c99a00]"
         >
           <Upload className="h-4 w-4" />

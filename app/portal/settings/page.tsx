@@ -9,6 +9,7 @@ export default function SettingsPage() {
   const [confirmText, setConfirmText] = useState("");
   const [deleting, setDeleting] = useState(false);
   const [deleteError, setDeleteError] = useState<string | null>(null);
+  const [deleted, setDeleted] = useState(false);
 
   const canDelete = confirmText === "DELETE";
 
@@ -27,8 +28,9 @@ export default function SettingsPage() {
             "Deletion failed. Please try again."
         );
       }
-      // Session cookie cleared by proxy on success — redirect to home
-      router.push("/");
+      // Session cookie cleared by proxy on success — show success then redirect
+      setDeleted(true);
+      setTimeout(() => router.push("/"), 2500);
     } catch (err) {
       setDeleteError(
         err instanceof Error
@@ -38,6 +40,32 @@ export default function SettingsPage() {
       setDeleting(false);
     }
   };
+
+  if (deleted) {
+    return (
+      <div className="flex flex-col items-center justify-center py-24 gap-4">
+        <div className="rounded-full bg-emerald-500/10 p-4">
+          <svg
+            className="h-8 w-8 text-emerald-400"
+            fill="none"
+            viewBox="0 0 24 24"
+            stroke="currentColor"
+            strokeWidth={2}
+          >
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              d="M5 13l4 4L19 7"
+            />
+          </svg>
+        </div>
+        <p className="text-lg font-medium text-foreground">Account deleted</p>
+        <p className="text-sm text-muted-foreground">
+          Your account and data have been removed. Redirecting…
+        </p>
+      </div>
+    );
+  }
 
   return (
     <div className="flex flex-col gap-6">

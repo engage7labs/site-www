@@ -1,20 +1,18 @@
 /**
- * Server-side proxy: GET /api/proxy/admin/users
+ * Server-side proxy: GET /api/proxy/admin/events
  *
- * Forwards admin requests to the API backend.
- * Sprint 15.0: Admin panel API proxy.
- * Sprint 15.4: Uses session JWT (X-User-Email) for role-based auth.
+ * Sprint 15.4: Role-protected admin events endpoint.
  */
 
 import { signRequest } from "@/lib/api/signing";
 import { SESSION_COOKIE_NAME, verifyJwt } from "@/lib/auth-server";
 import { INTERNAL_API_BASE_URL } from "@/lib/server-config";
 import { cookies } from "next/headers";
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 
 export const runtime = "nodejs";
 
-export async function GET() {
+export async function GET(request: NextRequest) {
   const cookieStore = await cookies();
   const token = cookieStore.get(SESSION_COOKIE_NAME)?.value;
   if (!token) {
@@ -26,17 +24,21 @@ export async function GET() {
     return NextResponse.json({ detail: "Forbidden" }, { status: 403 });
   }
 
-  const path = "/api/admin/users";
-  const sigHeaders = signRequest("GET", path);
+  const params = request.nextUrl.searchParams;
+  const limit = params.get("limit") ?? "100";
+  const event_type = params.get("event_type") ?? "";
+
+  let qs = `?limit=${limit}`;
+  if (event_type) qs += `&event_type=${encodeURIComponent(event_type)}`;
+
+  const path = `/api/admin/events${qs}`;
+  const sigHeaders = signRequest("GET", `/api/admin/events`);
 
   let upstreamResponse: Response;
   try {
     upstreamResponse = await fetch(`${INTERNAL_API_BASE_URL}${path}`, {
       method: "GET",
-      headers: {
-        ...sigHeaders,
-        "X-User-Email": session.sub,
-      },
+      headers: { ...sigHeaders, "X-User-Email": session.sub },
     });
   } catch {
     return NextResponse.json(

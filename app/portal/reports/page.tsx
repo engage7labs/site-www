@@ -1,6 +1,7 @@
 "use client";
 
 import { Eye, FileText } from "lucide-react";
+import Link from "next/link";
 import { useEffect, useState } from "react";
 
 interface AnalysisReport {
@@ -112,13 +113,13 @@ export default function ReportsPage() {
                         </span>
                       </td>
                       <td className="px-4 py-3">
-                        <a
-                          href={`/result/${report.job_id}`}
+                        <Link
+                          href={`/portal/reports/${report.job_id}`}
                           className="inline-flex items-center gap-1.5 text-sm text-accent hover:underline"
                         >
                           <Eye className="h-3.5 w-3.5" />
                           View
-                        </a>
+                        </Link>
                       </td>
                     </tr>
                   );

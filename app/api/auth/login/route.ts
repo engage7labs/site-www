@@ -29,6 +29,7 @@ export async function POST(request: Request) {
     // Phase 1: env-var admin account (always present, no DB required)
     // ------------------------------------------------------------------
     let authenticatedEmail: string | null = null;
+    let authenticatedRole: "user" | "admin" = "user";
 
     try {
       const adminEmail = getAdminEmail();
@@ -37,6 +38,7 @@ export async function POST(request: Request) {
       const passMatch = await verifyPassword(password, adminHash);
       if (emailMatch && passMatch) {
         authenticatedEmail = adminEmail;
+        authenticatedRole = "admin";
       }
     } catch {
       // Admin env vars not configured — skip
@@ -53,6 +55,7 @@ export async function POST(request: Request) {
         const devOk = await devUserStore.verify(email, password);
         if (devOk) {
           authenticatedEmail = email.toLowerCase().trim();
+          authenticatedRole = "user";
         }
       } catch {
         // ignore
@@ -67,8 +70,12 @@ export async function POST(request: Request) {
           body: JSON.stringify({ email, password }),
         });
         if (upstream.ok) {
-          const data = (await upstream.json()) as { email?: string };
+          const data = (await upstream.json()) as {
+            email?: string;
+            role?: string;
+          };
           authenticatedEmail = data.email ?? email.toLowerCase().trim();
+          authenticatedRole = data.role === "admin" ? "admin" : "user";
         }
       } catch {
         // Python API unreachable — fall through to 401
@@ -82,9 +89,9 @@ export async function POST(request: Request) {
       );
     }
 
-    const token = signJwt({ sub: authenticatedEmail, role: "user" });
+    const token = signJwt({ sub: authenticatedEmail, role: authenticatedRole });
 
-    const res = NextResponse.json({ ok: true });
+    const res = NextResponse.json({ ok: true, role: authenticatedRole });
     res.cookies.set(SESSION_COOKIE_NAME, token, {
       httpOnly: true,
       secure: process.env.NODE_ENV === "production",
