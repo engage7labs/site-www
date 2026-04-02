@@ -342,9 +342,19 @@ export default function ResultPage({
     });
   };
 
-  const handleModalEmail = (email: string) => {
+  const handleModalEmail = async (email: string) => {
     if (!jobId) return;
-    void sendUserEvent("email_submitted", {
+    // Create or retrieve user with trial plan + link analysis
+    try {
+      await fetch("/api/proxy/users/create-or-get", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email, job_id: jobId }),
+      });
+    } catch {
+      // best-effort — don't block the flow
+    }
+    void sendUserEvent("premium_unlock", {
       job_id: jobId,
       metadata: { email },
     });
@@ -560,7 +570,6 @@ export default function ResultPage({
         onFeedback={handleModalFeedback}
         onEmailSubmit={handleModalEmail}
         onShare={handleModalShare}
-        pdfAvailable={result.artifacts?.pdf_available === true}
       />
     </>
   );

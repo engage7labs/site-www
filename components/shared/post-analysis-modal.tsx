@@ -1,12 +1,6 @@
 "use client";
 
-import {
-  Download,
-  ExternalLink,
-  Mail,
-  MessageSquareText,
-  X,
-} from "lucide-react";
+import { Crown, Loader2, Mail, MessageSquareText, X } from "lucide-react";
 import { useMemo, useState } from "react";
 
 type FeedbackValue = "made_sense" | "not_sure" | "didnt_make_sense";
@@ -30,21 +24,22 @@ const FEEDBACK_OPTIONS: Array<{
   { value: "didnt_make_sense", label: "😕 Didn't make sense" },
 ];
 
+const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
 export function PostAnalysisModal({
   open,
   onClose,
-  onDownload,
   onFeedback,
   onEmailSubmit,
-  onShare,
-  pdfAvailable = true,
 }: Readonly<PostAnalysisModalProps>) {
   const [feedback, setFeedback] = useState<FeedbackValue | null>(null);
   const [note, setNote] = useState("");
   const [email, setEmail] = useState("");
-  const [shared, setShared] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
+  const [submitted, setSubmitted] = useState(false);
+  const [emailError, setEmailError] = useState<string | null>(null);
 
-  const canSubmitEmail = useMemo(() => email.trim().length > 0, [email]);
+  const isValidEmail = useMemo(() => EMAIL_RE.test(email.trim()), [email]);
 
   if (!open) return null;
 
@@ -53,20 +48,24 @@ export function PostAnalysisModal({
     onFeedback(value, note.trim() || undefined);
   };
 
-  const handleEmailSubmit = () => {
+  const handleUnlockPremium = async () => {
     const normalized = email.trim();
-    if (!normalized) return;
-    onEmailSubmit(normalized);
-    setEmail("");
-  };
+    if (!normalized) {
+      setEmailError("Email is required to unlock premium.");
+      return;
+    }
+    if (!EMAIL_RE.test(normalized)) {
+      setEmailError("Please enter a valid email address.");
+      return;
+    }
+    setEmailError(null);
+    setSubmitting(true);
 
-  const handleShareClick = async () => {
     try {
-      await onShare();
-      setShared(true);
-      setTimeout(() => setShared(false), 1600);
-    } catch {
-      // Share dismissed or unavailable — no feedback shown
+      onEmailSubmit(normalized);
+      setSubmitted(true);
+    } finally {
+      setSubmitting(false);
     }
   };
 
@@ -91,120 +90,123 @@ export function PostAnalysisModal({
         <div className="p-6 space-y-5">
           <div className="space-y-1">
             <h2 className="text-xl font-semibold text-foreground">
-              {pdfAvailable
-                ? "Your report is ready"
-                : "Thanks for reviewing your insights"}
+              {submitted
+                ? "Welcome to Engage7 Premium"
+                : "Unlock your premium experience"}
             </h2>
             <p className="text-sm text-muted-foreground">
-              {pdfAvailable
-                ? "You can download it now. If you want, share quick feedback below."
-                : "Share quick feedback below — it helps us improve."}
+              {submitted
+                ? "Your 90-day trial has started. Access your portal to explore advanced insights."
+                : "Get 90 days of free premium access — advanced trends, correlations, and a personal health portal."}
             </p>
           </div>
 
-          {pdfAvailable ? (
-            <button
-              type="button"
-              onClick={onDownload}
+          {submitted ? (
+            <a
+              href="/portal"
               className="inline-flex w-full items-center justify-center gap-2 rounded-lg bg-accent px-4 py-2.5 text-sm font-medium text-accent-foreground hover:bg-accent/90"
             >
-              <Download className="h-4 w-4" />
-              Download PDF
-            </button>
+              <Crown className="h-4 w-4" />
+              Go to Portal
+            </a>
           ) : (
-            <p className="rounded-lg bg-muted px-4 py-2.5 text-center text-sm text-muted-foreground">
-              PDF not available for this dataset — more data may be needed.
-            </p>
-          )}
-
-          <div className="space-y-2">
-            <p className="text-sm font-medium text-foreground">
-              Quick feedback
-            </p>
-            <div className="grid gap-2 sm:grid-cols-3">
-              {FEEDBACK_OPTIONS.map((option) => (
-                <button
-                  key={option.value}
-                  type="button"
-                  onClick={() => handleFeedbackClick(option.value)}
-                  className={`rounded-md border px-3 py-2 text-sm transition-colors ${
-                    feedback === option.value
-                      ? "border-accent bg-accent/10 text-foreground"
-                      : "border-border bg-background text-muted-foreground hover:text-foreground"
-                  }`}
+            <>
+              {/* Email input — required */}
+              <div className="space-y-2">
+                <label
+                  className="text-sm font-medium text-foreground"
+                  htmlFor="premium-email"
                 >
-                  {option.label}
+                  <span className="inline-flex items-center gap-2">
+                    <Mail className="h-4 w-4" />
+                    Your email
+                  </span>
+                </label>
+                <input
+                  id="premium-email"
+                  type="email"
+                  required
+                  value={email}
+                  onChange={(e) => {
+                    setEmail(e.target.value);
+                    setEmailError(null);
+                  }}
+                  placeholder="you@example.com"
+                  className="w-full rounded-md border border-border bg-background px-3 py-2 text-sm text-foreground outline-none placeholder:text-muted-foreground focus:border-accent"
+                />
+                {emailError && (
+                  <p className="text-xs text-destructive">{emailError}</p>
+                )}
+              </div>
+
+              {/* Feedback section */}
+              <div className="space-y-2">
+                <p className="text-sm font-medium text-foreground">
+                  Quick feedback
+                </p>
+                <div className="grid gap-2 sm:grid-cols-3">
+                  {FEEDBACK_OPTIONS.map((option) => (
+                    <button
+                      key={option.value}
+                      type="button"
+                      onClick={() => handleFeedbackClick(option.value)}
+                      className={`rounded-md border px-3 py-2 text-sm transition-colors ${
+                        feedback === option.value
+                          ? "border-accent bg-accent/10 text-foreground"
+                          : "border-border bg-background text-muted-foreground hover:text-foreground"
+                      }`}
+                    >
+                      {option.label}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {/* Optional note */}
+              <div className="space-y-2">
+                <label
+                  className="text-sm font-medium text-foreground"
+                  htmlFor="feedback-note"
+                >
+                  <span className="inline-flex items-center gap-2">
+                    <MessageSquareText className="h-4 w-4" />
+                    Optional note
+                  </span>
+                </label>
+                <textarea
+                  id="feedback-note"
+                  value={note}
+                  onChange={(e) => setNote(e.target.value)}
+                  placeholder="Anything surprising or confusing?"
+                  className="min-h-[80px] w-full rounded-md border border-border bg-background px-3 py-2 text-sm text-foreground outline-none ring-0 placeholder:text-muted-foreground focus:border-accent"
+                />
+              </div>
+
+              {/* CTA — Unlock Premium */}
+              <div className="flex items-center justify-between border-t border-border pt-4">
+                <button
+                  type="button"
+                  onClick={handleUnlockPremium}
+                  disabled={submitting || !isValidEmail}
+                  className="inline-flex items-center gap-2 rounded-lg bg-[#e6b800] px-5 py-2.5 text-sm font-medium text-[#1a1a1a] shadow-sm transition-colors duration-200 hover:bg-[#f2c94c] active:bg-[#c99a00] disabled:cursor-not-allowed disabled:opacity-50 dark:text-[#1a1a1a]"
+                >
+                  {submitting ? (
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                  ) : (
+                    <Crown className="h-4 w-4" />
+                  )}
+                  Unlock Premium (90 days free)
                 </button>
-              ))}
-            </div>
-          </div>
-
-          <div className="space-y-2">
-            <label
-              className="text-sm font-medium text-foreground"
-              htmlFor="feedback-note"
-            >
-              <span className="inline-flex items-center gap-2">
-                <MessageSquareText className="h-4 w-4" />
-                Optional note
-              </span>
-            </label>
-            <textarea
-              id="feedback-note"
-              value={note}
-              onChange={(e) => setNote(e.target.value)}
-              placeholder="Anything surprising or confusing?"
-              className="min-h-[80px] w-full rounded-md border border-border bg-background px-3 py-2 text-sm text-foreground outline-none ring-0 placeholder:text-muted-foreground focus:border-accent"
-            />
-          </div>
-
-          <div className="space-y-2">
-            <label
-              className="text-sm font-medium text-foreground"
-              htmlFor="updates-email"
-            >
-              <span className="inline-flex items-center gap-2">
-                <Mail className="h-4 w-4" />
-                Optional email
-              </span>
-            </label>
-            <div className="flex gap-2">
-              <input
-                id="updates-email"
-                type="email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                placeholder="Enter your email to receive updates"
-                className="flex-1 rounded-md border border-border bg-background px-3 py-2 text-sm text-foreground outline-none placeholder:text-muted-foreground focus:border-accent"
-              />
-              <button
-                type="button"
-                onClick={handleEmailSubmit}
-                disabled={!canSubmitEmail}
-                className="rounded-md border border-border px-3 py-2 text-sm text-foreground disabled:cursor-not-allowed disabled:opacity-50"
-              >
-                Submit
-              </button>
-            </div>
-          </div>
-
-          <div className="flex items-center justify-between border-t border-border pt-4">
-            <button
-              type="button"
-              onClick={handleShareClick}
-              className="inline-flex items-center gap-2 rounded-md border border-border px-3 py-2 text-sm text-foreground hover:bg-muted/40"
-            >
-              <ExternalLink className="h-4 w-4" />
-              {shared ? "Shared!" : "Share Engage7"}
-            </button>
-            <button
-              type="button"
-              onClick={onClose}
-              className="text-sm text-muted-foreground hover:text-foreground"
-            >
-              Continue
-            </button>
-          </div>
+                <button
+                  type="button"
+                  onClick={onClose}
+                  className="text-sm text-muted-foreground hover:text-foreground"
+                >
+                  Maybe later
+                </button>
+              </div>
+            </>
+          )}
         </div>
       </div>
     </div>

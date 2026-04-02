@@ -304,10 +304,10 @@ export const ptBR: Dictionary = {
       emptyChart: "Dados insuficientes para visualizar.",
       emptyInsights: "Dados insuficientes para gerar este insight ainda.",
       fullReport: {
-        title: "Quer ver o panorama completo?",
+        title: "Desbloqueie sua visão completa de saúde",
         description:
-          "Seu relatório completo inclui tendências detalhadas, correlações e um PDF para download com todos os seus insights.",
-        downloadButton: "Baixar Relatório Completo",
+          "Acesse tendências avançadas, mapas de correlação, insights de volatilidade e um portal premium — grátis por 90 dias.",
+        downloadButton: "Desbloquear Premium (90 dias grátis)",
         runAnother: "Executar outra análise",
       },
     },

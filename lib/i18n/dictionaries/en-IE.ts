@@ -300,10 +300,10 @@ export const enIE = {
       emptyChart: "Not enough data to visualize.",
       emptyInsights: "Not enough data to generate this insight yet.",
       fullReport: {
-        title: "Want the full picture?",
+        title: "Unlock your full health picture",
         description:
-          "Your complete report includes detailed trends, correlations, and a downloadable PDF with all your insights.",
-        downloadButton: "Download Full Report",
+          "Get access to advanced trends, correlation heatmaps, volatility insights, and a premium portal — free for 90 days.",
+        downloadButton: "Unlock Premium (90 days free)",
         runAnother: "Run another analysis",
       },
     },

@@ -10,7 +10,8 @@ export type UserEventType =
   | "pdf_downloaded"
   | "feedback_given"
   | "email_submitted"
-  | "share_clicked";
+  | "share_clicked"
+  | "premium_unlock";
 
 export interface UserEventPayload {
   job_id?: string;

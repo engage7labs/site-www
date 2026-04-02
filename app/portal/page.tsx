@@ -1,4 +1,4 @@
-import { Activity, Clock, Heart, Moon, Upload } from "lucide-react";
+import { Clock, Crown, ExternalLink, Heart, Moon, Upload } from "lucide-react";
 import type { Metadata } from "next";
 
 export const metadata: Metadata = {
@@ -14,7 +14,7 @@ interface MetricCardProps {
 
 function MetricCard({ label, value, icon: Icon, subtitle }: MetricCardProps) {
   return (
-    <div className="rounded-xl border border-border bg-card px-4 py-3">
+    <div className="portal-panel rounded-xl border border-border/70 bg-card/85 px-4 py-3">
       <div className="flex items-center justify-between">
         <span className="text-[11px] font-medium uppercase tracking-wider text-muted-foreground">
           {label}
@@ -25,6 +25,33 @@ function MetricCard({ label, value, icon: Icon, subtitle }: MetricCardProps) {
       {subtitle && (
         <p className="mt-0.5 text-xs text-muted-foreground">{subtitle}</p>
       )}
+    </div>
+  );
+}
+
+function ShareCard() {
+  return (
+    <div className="portal-panel rounded-xl border border-border/70 bg-card/85 p-6">
+      <div className="flex items-center gap-3">
+        <ExternalLink className="h-5 w-5 text-accent" />
+        <div>
+          <h3 className="text-sm font-semibold text-card-foreground">
+            Share Engage7
+          </h3>
+          <p className="text-xs text-muted-foreground">
+            Share the product homepage with friends — not your data.
+          </p>
+        </div>
+        <a
+          href="https://www.engage7.ie"
+          target="_blank"
+          rel="noopener noreferrer"
+          className="ml-auto inline-flex items-center gap-1.5 rounded-lg border border-border px-3 py-1.5 text-xs font-medium text-foreground hover:bg-muted/40 transition-colors"
+        >
+          <ExternalLink className="h-3 w-3" />
+          Share
+        </a>
+      </div>
     </div>
   );
 }
@@ -41,43 +68,47 @@ export default function PortalOverviewPage() {
 
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5">
         <MetricCard
-          label="Latest Analysis"
-          value="Jun 14"
-          icon={Activity}
-          subtitle="2 days ago"
+          label="Plan"
+          value="Premium Trial"
+          icon={Crown}
+          subtitle="90 days included"
         />
         <MetricCard
           label="Sleep Score"
-          value="82"
+          value="—"
           icon={Moon}
-          subtitle="7-day avg"
+          subtitle="Upload data to see"
         />
         <MetricCard
           label="Recovery Trend"
-          value="↑ Good"
+          value="—"
           icon={Heart}
-          subtitle="Improving over 14d"
+          subtitle="Requires uploads"
         />
         <MetricCard
           label="Data Completeness"
-          value="94%"
+          value="—"
           icon={Clock}
-          subtitle="Last 30 days"
+          subtitle="No uploads yet"
         />
         <MetricCard
-          label="Last Upload"
-          value="Today"
+          label="Uploads"
+          value="0"
           icon={Upload}
-          subtitle="Apple Health export"
+          subtitle="Start by uploading"
         />
       </div>
 
-      <div className="rounded-xl border border-border bg-card p-6">
+      <ShareCard />
+
+      <div className="portal-panel rounded-xl border border-border/70 bg-card/85 p-6">
         <h2 className="text-lg font-semibold text-card-foreground">
-          Recent Activity
+          Recent Analyses
         </h2>
         <p className="mt-2 text-sm text-muted-foreground">
-          Your latest analyses and reports will appear here once generated.
+          Your analyses will appear here once you upload Apple Health exports.
+          Upload multiple exports over time to track trends and accumulate
+          insights.
         </p>
       </div>
     </div>
