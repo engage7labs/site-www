@@ -138,6 +138,7 @@ export async function isValidSession(
 ): Promise<SessionPayload | null> {
   if (!cookieValue) return null;
   const payload = await verifyJwtEdge(cookieValue);
-  if (!payload || payload.role !== "user") return null;
+  if (!payload) return null;
+  if (payload.role !== "user" && payload.role !== "admin") return null;
   return payload;
 }
