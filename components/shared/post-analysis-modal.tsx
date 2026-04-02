@@ -10,7 +10,7 @@ interface PostAnalysisModalProps {
   onClose: () => void;
   onDownload: () => void;
   onFeedback: (value: FeedbackValue, note?: string) => void;
-  onEmailSubmit: (email: string) => void;
+  onEmailSubmit: (email: string, consent: boolean) => Promise<void>;
   onShare: () => Promise<void>;
   pdfAvailable?: boolean;
 }
@@ -35,11 +35,14 @@ export function PostAnalysisModal({
   const [feedback, setFeedback] = useState<FeedbackValue | null>(null);
   const [note, setNote] = useState("");
   const [email, setEmail] = useState("");
+  const [consentChecked, setConsentChecked] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [submitted, setSubmitted] = useState(false);
   const [emailError, setEmailError] = useState<string | null>(null);
+  const [submitError, setSubmitError] = useState<string | null>(null);
 
   const isValidEmail = useMemo(() => EMAIL_RE.test(email.trim()), [email]);
+  const canSubmit = isValidEmail && consentChecked && !submitting;
 
   if (!open) return null;
 
@@ -58,12 +61,22 @@ export function PostAnalysisModal({
       setEmailError("Please enter a valid email address.");
       return;
     }
+    if (!consentChecked) {
+      return;
+    }
     setEmailError(null);
+    setSubmitError(null);
     setSubmitting(true);
 
     try {
-      onEmailSubmit(normalized);
+      await onEmailSubmit(normalized, true);
       setSubmitted(true);
+    } catch (err) {
+      setSubmitError(
+        err instanceof Error
+          ? err.message
+          : "Something went wrong. Please try again."
+      );
     } finally {
       setSubmitting(false);
     }
@@ -182,12 +195,36 @@ export function PostAnalysisModal({
                 />
               </div>
 
+              {/* Consent checkbox — required before unlock */}
+              <div className="flex items-start gap-3">
+                <input
+                  id="consent-checkbox"
+                  type="checkbox"
+                  checked={consentChecked}
+                  onChange={(e) => setConsentChecked(e.target.checked)}
+                  className="mt-0.5 h-4 w-4 rounded border-border accent-[#e6b800] cursor-pointer"
+                />
+                <label
+                  htmlFor="consent-checkbox"
+                  className="text-xs text-muted-foreground leading-relaxed cursor-pointer"
+                >
+                  I agree to store my processed health insights so Engage7 can
+                  show me trends and portal insights. I can delete this data at
+                  any time from portal settings.
+                </label>
+              </div>
+
+              {/* Error from backend */}
+              {submitError && (
+                <p className="text-xs text-destructive">{submitError}</p>
+              )}
+
               {/* CTA — Unlock Premium */}
-              <div className="flex items-center justify-between border-t border-border pt-4">
+              <div className="flex justify-center border-t border-border pt-4">
                 <button
                   type="button"
                   onClick={handleUnlockPremium}
-                  disabled={submitting || !isValidEmail}
+                  disabled={!canSubmit}
                   className="inline-flex items-center gap-2 rounded-lg bg-[#e6b800] px-5 py-2.5 text-sm font-medium text-[#1a1a1a] shadow-sm transition-colors duration-200 hover:bg-[#f2c94c] active:bg-[#c99a00] disabled:cursor-not-allowed disabled:opacity-50 dark:text-[#1a1a1a]"
                 >
                   {submitting ? (
@@ -196,13 +233,6 @@ export function PostAnalysisModal({
                     <Crown className="h-4 w-4" />
                   )}
                   Unlock Premium (90 days free)
-                </button>
-                <button
-                  type="button"
-                  onClick={onClose}
-                  className="text-sm text-muted-foreground hover:text-foreground"
-                >
-                  Maybe later
                 </button>
               </div>
             </>

@@ -342,34 +342,41 @@ export default function ResultPage({
     });
   };
 
-  const handleModalEmail = async (email: string) => {
+  const handleModalEmail = async (email: string, consent: boolean): Promise<void> => {
     if (!jobId) return;
-    // Create or retrieve user with trial plan + link analysis + persist analysis data
-    try {
-      const analysisData = result
-        ? {
-            report_label: "Health Analysis",
-            summary: result.summary,
-            highlights: result.highlights,
-            sections: result.sections,
-          }
-        : undefined;
-      await fetch("/api/proxy/users/create-or-get", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          email,
-          job_id: jobId,
-          analysis_data: analysisData,
-        }),
-      });
-    } catch {
-      // best-effort — don't block the flow
+    const analysisData = result
+      ? {
+          report_label: "Health Analysis",
+          summary: result.summary,
+          highlights: result.highlights,
+          sections: result.sections,
+        }
+      : undefined;
+
+    const response = await fetch("/api/proxy/users/create-or-get", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        email,
+        consent,
+        job_id: jobId,
+        analysis_data: analysisData,
+      }),
+    });
+
+    if (!response.ok) {
+      const data = await response.json().catch(() => ({}));
+      throw new Error(
+        (data as { detail?: string }).detail ||
+          "Failed to create account. Please try again."
+      );
     }
+
+    // Non-blocking: telemetry errors must not affect UX
     void sendUserEvent("premium_unlock", {
       job_id: jobId,
       metadata: { email },
-    });
+    }).catch(() => undefined);
   };
 
   const handleModalShare = async (): Promise<void> => {
