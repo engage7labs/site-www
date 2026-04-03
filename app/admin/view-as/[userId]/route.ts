@@ -37,7 +37,9 @@ export async function POST(
   let userEmail: string | null = null;
   try {
     const userResponse = await fetch(
-      `${process.env.NEXTAUTH_URL || "http://localhost:3000"}/api/proxy/admin/users/${userId_num}`,
+      `${
+        process.env.NEXTAUTH_URL || "http://localhost:3000"
+      }/api/proxy/admin/users/${userId_num}`,
       {
         method: "GET",
         headers: {
@@ -47,14 +49,11 @@ export async function POST(
     );
 
     if (userResponse.status === 404) {
-      return NextResponse.json(
-        { detail: "User not found" },
-        { status: 404 }
-      );
+      return NextResponse.json({ detail: "User not found" }, { status: 404 });
     }
 
     if (userResponse.ok) {
-      const user = await userResponse.json() as { email?: string };
+      const user = (await userResponse.json()) as { email?: string };
       userEmail = user.email || null;
     }
   } catch (err) {
