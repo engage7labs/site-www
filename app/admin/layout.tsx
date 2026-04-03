@@ -1,3 +1,4 @@
+import { Logo } from "@/components/shared/logo";
 import { SESSION_COOKIE_NAME, verifyJwt } from "@/lib/auth-server";
 import type { Metadata } from "next";
 import { cookies } from "next/headers";
@@ -26,9 +27,7 @@ export default async function AdminLayout({
       <header className="border-b border-border bg-background/95 backdrop-blur sticky top-0 z-50">
         <div className="max-w-6xl mx-auto px-6 py-3 flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-accent text-accent-foreground text-xs font-bold">
-              E7
-            </span>
+            <Logo size={28} href="/admin" className="rounded-lg" />
             <span className="text-sm font-semibold text-foreground">
               Admin Panel
             </span>
@@ -64,6 +63,9 @@ export default async function AdminLayout({
             >
               ← Portal
             </a>
+            <span className="text-[10px] text-muted-foreground/50">
+              v{process.env.NEXT_PUBLIC_APP_VERSION ?? "—"}
+            </span>
           </nav>
         </div>
       </header>

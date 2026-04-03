@@ -1,6 +1,7 @@
 "use client";
 
 import { useAppTheme } from "@/components/providers/app-theme-provider";
+import { Logo } from "@/components/shared/logo";
 import { SESSION_COOKIE_NAME } from "@/lib/auth-edge";
 import {
   LogOut,
@@ -81,6 +82,7 @@ export function PortalHeader({
             )}
           </button>
         )}
+        <Logo size={28} href="/portal" className="rounded-lg" />
         <span className="text-lg font-semibold text-foreground">Engage7</span>
       </div>
 
@@ -113,6 +115,9 @@ export function PortalHeader({
           <LogOut className="h-4 w-4" />
           <span className="hidden sm:inline">Sign out</span>
         </button>
+        <span className="hidden text-[10px] text-muted-foreground/50 sm:inline">
+          v{process.env.NEXT_PUBLIC_APP_VERSION ?? "—"}
+        </span>
       </div>
     </header>
   );

@@ -1,8 +1,10 @@
 "use client";
 
+import { CompareImproveBlock } from "@/components/portal/compare-improve-block";
+import { generateCompareImprove } from "@/lib/insights/compare-improve";
 import type { EChartsOption } from "echarts";
 import { Clock, Crown, ExternalLink, Heart, Moon, Upload } from "lucide-react";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 
 // Lazy-load echarts
 async function getEcharts() {
@@ -365,17 +367,34 @@ function HealthRadar({
 export default function PortalOverviewPage() {
   const [data, setData] = useState<OverviewData | null>(null);
   const [trends, setTrends] = useState<TrendsData | null>(null);
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const [sections, setSections] = useState<Record<string, any> | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     (async () => {
       try {
-        const [overviewRes, trendsRes] = await Promise.all([
+        const [overviewRes, trendsRes, analysesRes] = await Promise.all([
           fetch("/api/proxy/users/portal-overview"),
           fetch("/api/proxy/users/portal-trends"),
+          fetch("/api/proxy/users/portal-analyses"),
         ]);
         if (overviewRes.ok) setData(await overviewRes.json());
         if (trendsRes.ok) setTrends(await trendsRes.json());
+        if (analysesRes.ok) {
+          const analyses = await analysesRes.json();
+          // Use sections from the latest analysis
+          if (Array.isArray(analyses) && analyses.length > 0) {
+            const latest = analyses[0];
+            if (latest.sections_json) {
+              setSections(
+                typeof latest.sections_json === "string"
+                  ? JSON.parse(latest.sections_json)
+                  : latest.sections_json
+              );
+            }
+          }
+        }
       } catch {
         // silent — show empty state
       } finally {
@@ -403,6 +422,11 @@ export default function PortalOverviewPage() {
   const completeness = data?.data_completeness ?? "—";
   const latest = data?.latest_analysis;
 
+  const compareImprove = useMemo(
+    () => generateCompareImprove(data, trends, sections),
+    [data, trends, sections]
+  );
+
   return (
     <div className="flex flex-col gap-6">
       <div>
@@ -411,6 +435,9 @@ export default function PortalOverviewPage() {
           Your health data at a glance
         </p>
       </div>
+
+      {/* Compare & Improve — Sprint 17.5 */}
+      <CompareImproveBlock result={compareImprove} />
 
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5">
         <MetricCard
