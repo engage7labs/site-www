@@ -70,17 +70,23 @@ export default function AdminUsersPage() {
     try {
       const response = await fetch(`/admin/view-as/${userId}`, {
         method: "POST",
+        redirect: "manual",
       });
       if (response.ok) {
-        // The route redirects, so if we get here, go to portal
+        // Route returns JSON { ok: true } with session cookie set.
+        // Navigate to portal via GET (not redirect) to avoid POST /portal → 405.
         window.location.href = "/portal";
       } else {
+        const body = (await response
+          .json()
+          .catch(() => ({ detail: "Unknown error" }))) as { detail?: string };
+        setError(body.detail ?? `Failed to view as user (${response.status})`);
         setViewingAsUserId(null);
-        alert("Failed to view as user");
       }
     } catch (err) {
       setViewingAsUserId(null);
-      console.error("Error viewing as user:", err);
+      console.error("[admin view-as client]", err);
+      setError("Network error while switching to user view");
     }
   };
 

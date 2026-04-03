@@ -106,8 +106,10 @@ export async function POST(
       exp: Math.floor(Date.now() / 1000) + 900,
     });
 
-    // 5. Set session cookie and redirect
-    const response = NextResponse.redirect(new URL("/portal", request.url));
+    // 5. Set session cookie and return JSON success
+    //    (returning a redirect would send 307 which preserves POST method,
+    //     causing POST /portal → 405. Client navigates with GET instead.)
+    const response = NextResponse.json({ ok: true });
     response.cookies.set(SESSION_COOKIE_NAME, adminViewToken, {
       httpOnly: true,
       secure: process.env.NODE_ENV === "production",
