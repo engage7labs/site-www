@@ -1,32 +1,17 @@
 "use client";
 
 import { useAppTheme } from "@/components/providers/app-theme-provider";
-import { Logo } from "@/components/shared/logo";
 import { SESSION_COOKIE_NAME } from "@/lib/auth-edge";
-import {
-  LogOut,
-  Menu,
-  Moon,
-  PanelLeft,
-  PanelLeftClose,
-  Sun,
-  Upload,
-} from "lucide-react";
+import { LogOut, Menu, Moon, Sun, Upload } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 
 interface PortalHeaderProps {
   onToggleMobile: () => void;
-  collapsed?: boolean;
-  onToggleCollapse?: () => void;
 }
 
-export function PortalHeader({
-  onToggleMobile,
-  collapsed,
-  onToggleCollapse,
-}: PortalHeaderProps) {
+export function PortalHeader({ onToggleMobile }: PortalHeaderProps) {
   const router = useRouter();
   const { appTheme, setAppTheme } = useAppTheme();
   const [isAdminView, setIsAdminView] = useState(false);
@@ -60,7 +45,7 @@ export function PortalHeader({
 
   return (
     <header className="sticky top-0 z-20 flex h-16 items-center justify-between border-b border-border bg-background/80 px-4 backdrop-blur sm:px-6">
-      {/* Left: mobile menu + sidebar collapse + branding */}
+      {/* Left: mobile menu */}
       <div className="flex items-center gap-3">
         <button
           onClick={onToggleMobile}
@@ -69,21 +54,9 @@ export function PortalHeader({
         >
           <Menu className="h-5 w-5" />
         </button>
-        {onToggleCollapse && (
-          <button
-            onClick={onToggleCollapse}
-            className="hidden rounded-lg p-2 text-muted-foreground hover:bg-muted hover:text-foreground md:inline-flex"
-            aria-label={collapsed ? "Expand sidebar" : "Collapse sidebar"}
-          >
-            {collapsed ? (
-              <PanelLeft className="h-5 w-5" />
-            ) : (
-              <PanelLeftClose className="h-5 w-5" />
-            )}
-          </button>
-        )}
-        <Logo size={28} href="/portal" className="rounded-lg" />
-        <span className="text-lg font-semibold text-foreground">Engage7</span>
+        <span className="text-lg font-semibold text-foreground md:hidden">
+          Engage7
+        </span>
       </div>
 
       {/* Right: upload + theme + logout */}
@@ -115,9 +88,6 @@ export function PortalHeader({
           <LogOut className="h-4 w-4" />
           <span className="hidden sm:inline">Sign out</span>
         </button>
-        <span className="hidden text-[10px] text-muted-foreground/50 sm:inline">
-          v{process.env.NEXT_PUBLIC_APP_VERSION ?? "—"}
-        </span>
       </div>
     </header>
   );

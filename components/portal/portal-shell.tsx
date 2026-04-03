@@ -42,11 +42,7 @@ export function PortalShell({
       />
 
       <div className="flex flex-1 flex-col">
-        <PortalHeader
-          onToggleMobile={toggleMobile}
-          collapsed={collapsed}
-          onToggleCollapse={toggleCollapsed}
-        />
+        <PortalHeader onToggleMobile={toggleMobile} />
 
         <PasswordSetupAlert />
 

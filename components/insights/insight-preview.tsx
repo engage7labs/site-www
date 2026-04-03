@@ -506,37 +506,39 @@ export function InsightPreview({
         </div>
 
         {/* ============================================================= */}
-        {/* Full Report CTA (shared desktop + mobile)                      */}
+        {/* Full Report CTA — hidden when embedded in portal               */}
         {/* ============================================================= */}
-        <div ref={fullReportRef} className="mt-10">
-          <motion.div
-            initial={{ opacity: 0, y: 16 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.4, delay: 0.3 }}
-            className="rounded-xl border border-accent/20 bg-accent/5 p-6 text-center"
-          >
-            <h2 className="text-lg font-semibold text-foreground mb-2">
-              {t.result.preview.fullReport.title}
-            </h2>
-            <p className="text-sm text-muted-foreground mb-4 max-w-md mx-auto">
-              {t.result.preview.fullReport.description}
-            </p>
+        {!embedded && (
+          <div ref={fullReportRef} className="mt-10">
+            <motion.div
+              initial={{ opacity: 0, y: 16 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.4, delay: 0.3 }}
+              className="rounded-xl border border-accent/20 bg-accent/5 p-6 text-center"
+            >
+              <h2 className="text-lg font-semibold text-foreground mb-2">
+                {t.result.preview.fullReport.title}
+              </h2>
+              <p className="text-sm text-muted-foreground mb-4 max-w-md mx-auto">
+                {t.result.preview.fullReport.description}
+              </p>
 
-            <div className="flex flex-col sm:flex-row items-center justify-center gap-3">
-              <button
-                type="button"
-                onClick={() => {
-                  trackReportUnlockClicked("bottom");
-                  onOpenModal?.();
-                }}
-                className="inline-flex items-center gap-2 px-5 py-2.5 rounded-lg bg-[#e6b800] text-[#1a1a1a] text-sm font-medium shadow-sm transition-colors duration-200 hover:bg-[#f2c94c] active:bg-[#c99a00]"
-              >
-                <Crown className="h-4 w-4" />
-                {t.result.preview.fullReport.downloadButton}
-              </button>
-            </div>
-          </motion.div>
-        </div>
+              <div className="flex flex-col sm:flex-row items-center justify-center gap-3">
+                <button
+                  type="button"
+                  onClick={() => {
+                    trackReportUnlockClicked("bottom");
+                    onOpenModal?.();
+                  }}
+                  className="inline-flex items-center gap-2 px-5 py-2.5 rounded-lg bg-[#e6b800] text-[#1a1a1a] text-sm font-medium shadow-sm transition-colors duration-200 hover:bg-[#f2c94c] active:bg-[#c99a00]"
+                >
+                  <Crown className="h-4 w-4" />
+                  {t.result.preview.fullReport.downloadButton}
+                </button>
+              </div>
+            </motion.div>
+          </div>
+        )}
       </main>
     </div>
   );

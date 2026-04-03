@@ -90,7 +90,7 @@ export function PostAnalysisModal({
         aria-hidden="true"
       />
 
-      <div className="relative w-full max-w-xl rounded-xl border border-border bg-card shadow-xl">
+      <div className="relative w-full max-w-lg rounded-xl border border-border bg-card shadow-xl">
         <button
           type="button"
           onClick={onClose}
@@ -117,7 +117,7 @@ export function PostAnalysisModal({
           {submitted ? (
             <a
               href="/portal"
-              className="inline-flex w-full items-center justify-center gap-2 rounded-lg bg-accent px-4 py-2.5 text-sm font-medium text-accent-foreground hover:bg-accent/90"
+              className="inline-flex w-full items-center justify-center gap-2 rounded-lg bg-[#e6b800] px-4 py-2.5 text-sm font-medium text-[#1a1a1a] shadow-sm transition-colors hover:bg-[#f2c94c] active:bg-[#c99a00]"
             >
               <Crown className="h-4 w-4" />
               Go to Portal

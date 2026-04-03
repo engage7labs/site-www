@@ -1,11 +1,14 @@
 "use client";
 
+import { Logo } from "@/components/shared/logo";
 import {
-  FileText,
   LayoutDashboard,
   Lightbulb,
+  PanelLeft,
+  PanelLeftClose,
   Settings,
   TrendingUp,
+  Upload,
   X,
 } from "lucide-react";
 import Link from "next/link";
@@ -20,7 +23,7 @@ interface NavItem {
 
 const NAV_ITEMS: NavItem[] = [
   { label: "Overview", href: "/portal", icon: LayoutDashboard },
-  { label: "My Reports", href: "/portal/reports", icon: FileText },
+  { label: "My Uploads", href: "/portal/reports", icon: Upload },
   { label: "Trends", href: "/portal/trends", icon: TrendingUp },
   { label: "Insights", href: "/portal/insights", icon: Lightbulb },
 ];
@@ -50,7 +53,7 @@ export function PortalSidebar({
   const pathname = usePathname();
 
   const sidebarContent = (
-    <>
+    <div className="flex h-full flex-col">
       {/* Brand */}
       <div className="flex h-16 items-center gap-3 border-b border-border px-4">
         <Link
@@ -58,9 +61,7 @@ export function PortalSidebar({
           className="flex items-center gap-2 text-foreground"
           onClick={onCloseMobile}
         >
-          <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-accent text-accent-foreground text-sm font-bold">
-            E7
-          </span>
+          <Logo size={32} className="rounded-lg shrink-0" />
           <span
             className={`overflow-hidden whitespace-nowrap font-semibold transition-all duration-300 ${
               collapsed ? "w-0 opacity-0" : "w-auto opacity-100"
@@ -98,8 +99,33 @@ export function PortalSidebar({
             onClick={onCloseMobile}
           />
         ))}
+
+        {/* Version — subtle, below Settings */}
+        <span
+          className={`mt-1 text-[10px] text-muted-foreground/40 transition-all duration-300 ${
+            collapsed ? "text-center" : "px-3"
+          }`}
+        >
+          v{process.env.NEXT_PUBLIC_APP_VERSION ?? "—"}
+        </span>
       </nav>
-    </>
+
+      {/* Collapse toggle — Pipeboard-style bottom rail */}
+      <button
+        onClick={onToggleCollapse}
+        className="hidden md:flex items-center justify-center gap-2 border-t border-border px-4 py-3 text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+        aria-label={collapsed ? "Expand sidebar" : "Collapse sidebar"}
+      >
+        {collapsed ? (
+          <PanelLeft className="h-4 w-4 shrink-0" />
+        ) : (
+          <>
+            <PanelLeftClose className="h-4 w-4 shrink-0" />
+            <span className="text-xs">Collapse</span>
+          </>
+        )}
+      </button>
+    </div>
   );
 
   return (

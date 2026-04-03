@@ -30,6 +30,9 @@ export function LoginForm() {
         <CardTitle className="text-2xl">
           {isAdmin ? "Admin Portal" : "Sign in to Engage7"}
         </CardTitle>
+        <p className="text-xs font-medium text-muted-foreground/70 mt-0.5">
+          {isAdmin ? "Administrative Access" : "User Portal"}
+        </p>
         <CardDescription>
           {isAdmin
             ? "Administrative access — restricted to authorised accounts"

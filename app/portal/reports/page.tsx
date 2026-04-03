@@ -35,7 +35,7 @@ export default function ReportsPage() {
   return (
     <div className="flex flex-col gap-6">
       <div>
-        <h1 className="text-2xl font-bold text-foreground">My Reports</h1>
+        <h1 className="text-2xl font-bold text-foreground">My Uploads</h1>
         <p className="mt-1 text-sm text-muted-foreground">
           Review your generated health reports
         </p>

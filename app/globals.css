@@ -42,37 +42,37 @@
 }
 
 .dark {
-  --background: #0f1113;
+  --background: #0a0f0d;
   --foreground: #e8eaed;
-  --card: #1a1c1f;
+  --card: #111916;
   --card-foreground: #e8eaed;
-  --popover: #1a1c1f;
+  --popover: #111916;
   --popover-foreground: #e8eaed;
   --primary: #ffffff;
-  --primary-foreground: #1c1e20;
+  --primary-foreground: #0a0f0d;
   --secondary: #3dbe73;
-  --secondary-foreground: #1c1e20;
-  --muted: #3c3f44;
+  --secondary-foreground: #0a0f0d;
+  --muted: #1e2b24;
   --muted-foreground: #9aa0a6;
   --accent: #3dbe73;
-  --accent-foreground: #1c1e20;
+  --accent-foreground: #0a0f0d;
   --destructive: #f28482;
-  --destructive-foreground: #1c1e20;
-  --border: #3c3f44;
-  --input: #1a1c1f;
+  --destructive-foreground: #0a0f0d;
+  --border: #1e2b24;
+  --input: #111916;
   --ring: #3dbe73;
   --chart-1: #3dbe73;
   --chart-2: #ffffff;
   --chart-3: #9aa0a6;
   --chart-4: #5f6368;
-  --chart-5: #3c3f44;
-  --sidebar: #1a1c1f;
+  --chart-5: #1e2b24;
+  --sidebar: #0d1410;
   --sidebar-foreground: #e8eaed;
   --sidebar-primary: #ffffff;
-  --sidebar-primary-foreground: #1c1e20;
+  --sidebar-primary-foreground: #0a0f0d;
   --sidebar-accent: #3dbe73;
-  --sidebar-accent-foreground: #1c1e20;
-  --sidebar-border: #3c3f44;
+  --sidebar-accent-foreground: #0a0f0d;
+  --sidebar-border: #1e2b24;
   --sidebar-ring: #3dbe73;
 }
 
@@ -148,23 +148,23 @@
   }
 
   .dark .portal-surface {
-    background-color: #020617;
+    background-color: #060d09;
     background-image: radial-gradient(
         ellipse 70% 50% at 50% 0%,
-        rgba(16, 185, 129, 0.08) 0%,
-        rgba(16, 185, 129, 0.03) 30%,
+        rgba(16, 185, 129, 0.1) 0%,
+        rgba(16, 185, 129, 0.04) 30%,
         transparent 60%
       ),
       radial-gradient(
         circle 600px at 80% 20%,
-        rgba(16, 185, 129, 0.04) 0%,
+        rgba(16, 185, 129, 0.05) 0%,
         transparent 50%
       ),
       linear-gradient(
         180deg,
-        rgba(2, 6, 23, 0.98) 0%,
-        rgba(4, 11, 28, 0.94) 20%,
-        rgba(2, 6, 23, 1) 100%
+        rgba(6, 13, 9, 0.98) 0%,
+        rgba(10, 15, 13, 0.96) 20%,
+        rgba(6, 13, 9, 1) 100%
       );
   }
 
