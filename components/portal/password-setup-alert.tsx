@@ -49,6 +49,7 @@ export function PasswordSetupAlert() {
       });
 
       if (res.ok) {
+        setHasPassword(true);
         setStatus("success");
         setOpen(false);
       } else {

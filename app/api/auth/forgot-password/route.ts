@@ -36,10 +36,12 @@ export async function POST(req: NextRequest) {
   // Always return success to prevent email enumeration.
   // Generate and send the token regardless — if the user doesn't exist
   // they simply won't be able to reset (the set-password endpoint will 404).
+  const now = Math.floor(Date.now() / 1000);
   const resetToken = signJwt({
     sub: email,
     role: "user",
     purpose: "password_reset",
+    exp: now + 3600, // 1 hour
   } as Parameters<typeof signJwt>[0] & { purpose: string });
 
   const resetUrl = `${APP_URL}/auth/reset-password?token=${encodeURIComponent(

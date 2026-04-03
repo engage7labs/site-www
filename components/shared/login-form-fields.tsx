@@ -154,7 +154,7 @@ export function LoginFormFields({
         />
         {!isRegister && (
           <a
-            href="/auth/reset-password"
+            href="/auth/forgot-password"
             className="self-end text-xs text-muted-foreground hover:text-foreground transition-colors"
           >
             Forgot password?
