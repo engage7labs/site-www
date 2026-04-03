@@ -11,7 +11,9 @@ function ResetPasswordForm() {
   const [password, setPassword] = useState("");
   const [confirm, setConfirm] = useState("");
   const [showPassword, setShowPassword] = useState(false);
-  const [status, setStatus] = useState<"idle" | "loading" | "success" | "error">("idle");
+  const [status, setStatus] = useState<
+    "idle" | "loading" | "success" | "error"
+  >("idle");
   const [error, setError] = useState("");
 
   const valid = password.length >= 8 && password === confirm;
@@ -47,7 +49,9 @@ function ResetPasswordForm() {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background px-4">
         <div className="max-w-sm w-full text-center space-y-4">
-          <h1 className="text-xl font-semibold text-foreground">Invalid Link</h1>
+          <h1 className="text-xl font-semibold text-foreground">
+            Invalid Link
+          </h1>
           <p className="text-sm text-muted-foreground">
             This password reset link is invalid or has expired.
           </p>
@@ -67,11 +71,23 @@ function ResetPasswordForm() {
       <div className="min-h-screen flex items-center justify-center bg-background px-4">
         <div className="max-w-sm w-full text-center space-y-4">
           <div className="mx-auto w-12 h-12 rounded-full bg-emerald-100 dark:bg-emerald-900/30 flex items-center justify-center">
-            <svg className="w-6 h-6 text-emerald-600 dark:text-emerald-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-              <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+            <svg
+              className="w-6 h-6 text-emerald-600 dark:text-emerald-400"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
+              strokeWidth={2}
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                d="M5 13l4 4L19 7"
+              />
             </svg>
           </div>
-          <h1 className="text-xl font-semibold text-foreground">Password updated</h1>
+          <h1 className="text-xl font-semibold text-foreground">
+            Password updated
+          </h1>
           <p className="text-sm text-muted-foreground">
             Your password has been set. You can now sign in.
           </p>
@@ -90,7 +106,9 @@ function ResetPasswordForm() {
     <div className="min-h-screen flex items-center justify-center bg-background px-4">
       <form onSubmit={handleSubmit} className="max-w-sm w-full space-y-6">
         <div className="text-center space-y-1">
-          <h1 className="text-xl font-semibold text-foreground">Set your password</h1>
+          <h1 className="text-xl font-semibold text-foreground">
+            Set your password
+          </h1>
           <p className="text-sm text-muted-foreground">
             Choose a strong password for your Engage7 account.
           </p>
@@ -114,7 +132,11 @@ function ResetPasswordForm() {
               className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
               tabIndex={-1}
             >
-              {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+              {showPassword ? (
+                <EyeOff className="h-4 w-4" />
+              ) : (
+                <Eye className="h-4 w-4" />
+              )}
             </button>
           </div>
 

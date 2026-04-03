@@ -252,20 +252,20 @@ export function InsightPreview({
     <div className={embedded ? "" : "min-h-screen bg-background"}>
       {/* Header bar — hidden when embedded in portal */}
       {!embedded && (
-      <header className="border-b border-border bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 sticky top-0 z-50">
-        <div className="max-w-6xl mx-auto px-6 py-4 flex items-center justify-between">
-          <Link
-            href="/"
-            className="inline-flex items-center text-sm text-muted-foreground hover:text-foreground transition-colors"
-          >
-            <ArrowLeft className="h-4 w-4 mr-2" />
-            {t.result.preview.backToHome}
-          </Link>
-          <span className="text-xs text-muted-foreground">
-            {t.result.preview.subtitle}
-          </span>
-        </div>
-      </header>
+        <header className="border-b border-border bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 sticky top-0 z-50">
+          <div className="max-w-6xl mx-auto px-6 py-4 flex items-center justify-between">
+            <Link
+              href="/"
+              className="inline-flex items-center text-sm text-muted-foreground hover:text-foreground transition-colors"
+            >
+              <ArrowLeft className="h-4 w-4 mr-2" />
+              {t.result.preview.backToHome}
+            </Link>
+            <span className="text-xs text-muted-foreground">
+              {t.result.preview.subtitle}
+            </span>
+          </div>
+        </header>
       )}
 
       <main className={embedded ? "" : "max-w-6xl mx-auto px-6 pt-8 pb-16"}>

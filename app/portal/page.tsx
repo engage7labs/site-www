@@ -8,12 +8,8 @@ import { useEffect, useRef, useState } from "react";
 async function getEcharts() {
   const echarts = await import("echarts/core");
   const { LineChart, BarChart, RadarChart } = await import("echarts/charts");
-  const {
-    GridComponent,
-    TooltipComponent,
-    LegendComponent,
-    RadarComponent,
-  } = await import("echarts/components");
+  const { GridComponent, TooltipComponent, LegendComponent, RadarComponent } =
+    await import("echarts/components");
   const { CanvasRenderer } = await import("echarts/renderers");
   echarts.use([
     LineChart,
@@ -128,7 +124,10 @@ function planLabel(plan: string): string {
 
 function median(points?: TrendPoint[]): number | null {
   if (!points) return null;
-  const vals = points.map((p) => p.value).filter((v): v is number => v != null).sort((a, b) => a - b);
+  const vals = points
+    .map((p) => p.value)
+    .filter((v): v is number => v != null)
+    .sort((a, b) => a - b);
   if (vals.length === 0) return null;
   const mid = Math.floor(vals.length / 2);
   return vals.length % 2 === 0 ? (vals[mid - 1] + vals[mid]) / 2 : vals[mid];
@@ -142,7 +141,9 @@ function SleepTrendMini({ data }: Readonly<{ data: TrendPoint[] }>) {
   const containerRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    let chart: ReturnType<Awaited<ReturnType<typeof getEcharts>>["init"]> | undefined;
+    let chart:
+      | ReturnType<Awaited<ReturnType<typeof getEcharts>>["init"]>
+      | undefined;
     let disposed = false;
 
     (async () => {
@@ -151,7 +152,9 @@ function SleepTrendMini({ data }: Readonly<{ data: TrendPoint[] }>) {
       chart = echarts.init(containerRef.current);
       const isDark = document.documentElement.classList.contains("dark");
       const axisColor = isDark ? "#E5E7EB" : "#5f6368";
-      const splitColor = isDark ? "rgba(229,231,235,0.09)" : "rgba(148,163,184,0.18)";
+      const splitColor = isDark
+        ? "rgba(229,231,235,0.09)"
+        : "rgba(148,163,184,0.18)";
 
       const recent = data.slice(-14);
       const days = recent.map((p) => p.date.slice(5));
@@ -193,7 +196,10 @@ function SleepTrendMini({ data }: Readonly<{ data: TrendPoint[] }>) {
             areaStyle: {
               color: {
                 type: "linear",
-                x: 0, y: 0, x2: 0, y2: 1,
+                x: 0,
+                y: 0,
+                x2: 0,
+                y2: 1,
                 colorStops: [
                   { offset: 0, color: `${COLORS.sleep}30` },
                   { offset: 1, color: `${COLORS.sleep}05` },
@@ -242,7 +248,9 @@ function HealthRadar({
   useEffect(() => {
     if (sleep == null && hr == null && hrv == null && steps == null) return;
 
-    let chart: ReturnType<Awaited<ReturnType<typeof getEcharts>>["init"]> | undefined;
+    let chart:
+      | ReturnType<Awaited<ReturnType<typeof getEcharts>>["init"]>
+      | undefined;
     let disposed = false;
 
     (async () => {
@@ -274,15 +282,44 @@ function HealthRadar({
         radar: {
           indicator: [
             { name: `Sleep\n${sleep != null ? sleep + "h" : "—"}`, max: 100 },
-            { name: `HR\n${hr != null ? Math.round(hr) + " bpm" : "—"}`, max: 100 },
-            { name: `HRV\n${hrv != null ? Math.round(hrv) + " ms" : "—"}`, max: 100 },
-            { name: `Steps\n${steps != null ? Math.round(steps).toLocaleString() : "—"}`, max: 100 },
+            {
+              name: `HR\n${hr != null ? Math.round(hr) + " bpm" : "—"}`,
+              max: 100,
+            },
+            {
+              name: `HRV\n${hrv != null ? Math.round(hrv) + " ms" : "—"}`,
+              max: 100,
+            },
+            {
+              name: `Steps\n${
+                steps != null ? Math.round(steps).toLocaleString() : "—"
+              }`,
+              max: 100,
+            },
           ],
           shape: "circle",
           axisName: { color: labelColor, fontSize: 10 },
-          splitArea: { areaStyle: { color: isDark ? ["rgba(16,185,129,0.03)", "rgba(16,185,129,0.06)"] : ["rgba(61,190,115,0.03)", "rgba(61,190,115,0.06)"] } },
-          splitLine: { lineStyle: { color: isDark ? "rgba(229,231,235,0.08)" : "rgba(148,163,184,0.15)" } },
-          axisLine: { lineStyle: { color: isDark ? "rgba(229,231,235,0.08)" : "rgba(148,163,184,0.15)" } },
+          splitArea: {
+            areaStyle: {
+              color: isDark
+                ? ["rgba(16,185,129,0.03)", "rgba(16,185,129,0.06)"]
+                : ["rgba(61,190,115,0.03)", "rgba(61,190,115,0.06)"],
+            },
+          },
+          splitLine: {
+            lineStyle: {
+              color: isDark
+                ? "rgba(229,231,235,0.08)"
+                : "rgba(148,163,184,0.15)",
+            },
+          },
+          axisLine: {
+            lineStyle: {
+              color: isDark
+                ? "rgba(229,231,235,0.08)"
+                : "rgba(148,163,184,0.15)",
+            },
+          },
         },
         series: [
           {

@@ -1,6 +1,5 @@
 "use client";
 
-import { SESSION_COOKIE_NAME } from "@/lib/auth-edge";
 import { useLocale } from "@/components/providers/locale-provider";
 import { FileUpload } from "@/components/shared/file-upload";
 import { Turnstile } from "@/components/shared/turnstile";
@@ -8,6 +7,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { submitAnalysisUpload } from "@/lib/api/analysis";
 import { ApiClientError } from "@/lib/api/client";
 import { getOrCreateSessionId } from "@/lib/api/events";
+import { SESSION_COOKIE_NAME } from "@/lib/auth-edge";
 import {
   trackAnalysisStarted,
   trackErrorOccurred,
@@ -30,9 +30,13 @@ function useIsAdminView(): boolean {
       const token = sc.split("=")[1];
       const parts = token.split(".");
       if (parts.length !== 3) return;
-      const body = JSON.parse(atob(parts[1].replace(/-/g, "+").replace(/_/g, "/")));
+      const body = JSON.parse(
+        atob(parts[1].replace(/-/g, "+").replace(/_/g, "/"))
+      );
       if (body.mode === "admin_view") setIsAdminView(true);
-    } catch { /* ignore */ }
+    } catch {
+      /* ignore */
+    }
   }, []);
   return isAdminView;
 }
@@ -116,67 +120,68 @@ export default function PortalUploadPage() {
                 Upload disabled
               </h2>
               <p className="text-sm text-muted-foreground">
-                Uploads are not available while viewing as another user (read-only mode).
+                Uploads are not available while viewing as another user
+                (read-only mode).
               </p>
             </div>
           ) : (
-          <>
-          <div>
-            <p className="text-sm text-muted-foreground mb-4">
-              Export from the Health app on your iPhone, then upload the .zip
-              file below.
-            </p>
-          </div>
-
-          <div>
-            <div className="rounded-lg border border-border bg-card p-8 space-y-6">
-              <div className="space-y-2">
-                <h2 className="text-xl font-semibold text-foreground">
-                  {t.analyze.upload.title}
-                </h2>
-                <p className="text-sm text-muted-foreground">
-                  {t.analyze.upload.formatHint}
-                </p>
-                <p className="text-sm text-accent">
-                  {t.analyze.upload.expectationHint}
+            <>
+              <div>
+                <p className="text-sm text-muted-foreground mb-4">
+                  Export from the Health app on your iPhone, then upload the
+                  .zip file below.
                 </p>
               </div>
 
-              <FileUpload
-                onFileSelect={handleFileSelect}
-                onUpload={handleUpload}
-                isUploading={isUploading}
-                disabled={!consentGiven || !turnstileToken}
-                t={t}
-                consentSlot={
-                  <>
-                    <label className="flex items-start gap-3 text-xs text-muted-foreground leading-snug cursor-pointer">
-                      <Checkbox
-                        id="consent"
-                        checked={consentGiven}
-                        onCheckedChange={(checked) =>
-                          setConsentGiven(checked === true)
-                        }
-                        className="mt-0.5"
-                      />
-                      <span>
-                        {t.analyze.consent.description}{" "}
-                        <Link
-                          href="/privacy-policy"
-                          className="text-accent hover:underline"
-                          target="_blank"
-                        >
-                          {t.analyze.consent.linkText}
-                        </Link>
-                      </span>
-                    </label>
-                    <Turnstile onVerify={setTurnstileToken} />
-                  </>
-                }
-              />
-            </div>
-          </div>
-          </>
+              <div>
+                <div className="rounded-lg border border-border bg-card p-8 space-y-6">
+                  <div className="space-y-2">
+                    <h2 className="text-xl font-semibold text-foreground">
+                      {t.analyze.upload.title}
+                    </h2>
+                    <p className="text-sm text-muted-foreground">
+                      {t.analyze.upload.formatHint}
+                    </p>
+                    <p className="text-sm text-accent">
+                      {t.analyze.upload.expectationHint}
+                    </p>
+                  </div>
+
+                  <FileUpload
+                    onFileSelect={handleFileSelect}
+                    onUpload={handleUpload}
+                    isUploading={isUploading}
+                    disabled={!consentGiven || !turnstileToken}
+                    t={t}
+                    consentSlot={
+                      <>
+                        <label className="flex items-start gap-3 text-xs text-muted-foreground leading-snug cursor-pointer">
+                          <Checkbox
+                            id="consent"
+                            checked={consentGiven}
+                            onCheckedChange={(checked) =>
+                              setConsentGiven(checked === true)
+                            }
+                            className="mt-0.5"
+                          />
+                          <span>
+                            {t.analyze.consent.description}{" "}
+                            <Link
+                              href="/privacy-policy"
+                              className="text-accent hover:underline"
+                              target="_blank"
+                            >
+                              {t.analyze.consent.linkText}
+                            </Link>
+                          </span>
+                        </label>
+                        <Turnstile onVerify={setTurnstileToken} />
+                      </>
+                    }
+                  />
+                </div>
+              </div>
+            </>
           )}
         </div>
       </div>

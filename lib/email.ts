@@ -12,8 +12,7 @@
 
 const RESEND_API_KEY = process.env.RESEND_API_KEY ?? "";
 const EMAIL_FROM = process.env.EMAIL_FROM ?? "Engage7 <noreply@engage7.ie>";
-const APP_URL =
-  process.env.NEXT_PUBLIC_APP_URL ?? "https://engage7.ie";
+const APP_URL = process.env.NEXT_PUBLIC_APP_URL ?? "https://engage7.ie";
 
 interface SendEmailOptions {
   to: string;
@@ -21,7 +20,11 @@ interface SendEmailOptions {
   html: string;
 }
 
-export async function sendEmail({ to, subject, html }: SendEmailOptions): Promise<{ ok: boolean; error?: string }> {
+export async function sendEmail({
+  to,
+  subject,
+  html,
+}: SendEmailOptions): Promise<{ ok: boolean; error?: string }> {
   if (!RESEND_API_KEY) {
     console.error("[email] RESEND_API_KEY not configured — email not sent");
     return { ok: false, error: "Email service not configured" };
@@ -45,7 +48,10 @@ export async function sendEmail({ to, subject, html }: SendEmailOptions): Promis
   return { ok: true };
 }
 
-export function passwordSetupEmail(resetUrl: string): { subject: string; html: string } {
+export function passwordSetupEmail(resetUrl: string): {
+  subject: string;
+  html: string;
+} {
   return {
     subject: "Set your Engage7 password",
     html: `
@@ -67,7 +73,10 @@ export function passwordSetupEmail(resetUrl: string): { subject: string; html: s
   };
 }
 
-export function passwordResetEmail(resetUrl: string): { subject: string; html: string } {
+export function passwordResetEmail(resetUrl: string): {
+  subject: string;
+  html: string;
+} {
   return {
     subject: "Reset your Engage7 password",
     html: `

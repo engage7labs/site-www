@@ -856,10 +856,22 @@ export default function TrendsPage() {
   const days = extractDates(trends.sleep);
 
   // Summary stats
-  const avgSleep = sleepVals.length > 0 ? (sleepVals.reduce((a, b) => a + b, 0) / sleepVals.length).toFixed(1) : null;
-  const avgHrv = hrvVals.length > 0 ? Math.round(hrvVals.reduce((a, b) => a + b, 0) / hrvVals.length) : null;
-  const avgHr = hrVals.length > 0 ? Math.round(hrVals.reduce((a, b) => a + b, 0) / hrVals.length) : null;
-  const avgSteps = stepVals.length > 0 ? Math.round(stepVals.reduce((a, b) => a + b, 0) / stepVals.length) : null;
+  const avgSleep =
+    sleepVals.length > 0
+      ? (sleepVals.reduce((a, b) => a + b, 0) / sleepVals.length).toFixed(1)
+      : null;
+  const avgHrv =
+    hrvVals.length > 0
+      ? Math.round(hrvVals.reduce((a, b) => a + b, 0) / hrvVals.length)
+      : null;
+  const avgHr =
+    hrVals.length > 0
+      ? Math.round(hrVals.reduce((a, b) => a + b, 0) / hrVals.length)
+      : null;
+  const avgSteps =
+    stepVals.length > 0
+      ? Math.round(stepVals.reduce((a, b) => a + b, 0) / stepVals.length)
+      : null;
 
   // Compute sleep by weekday from available data
   const sleepByDay = WEEK_DAYS.map((_, i) => {
@@ -892,65 +904,99 @@ export default function TrendsPage() {
       <div className="grid gap-3 grid-cols-2 lg:grid-cols-4">
         {avgSleep && (
           <div className="portal-panel rounded-xl border border-border/70 bg-card/85 px-4 py-3">
-            <span className="text-[10px] font-medium uppercase tracking-wider text-muted-foreground">Avg Sleep</span>
-            <p className="text-lg font-bold text-card-foreground">{avgSleep}h</p>
-            <p className="text-[10px] text-muted-foreground">{sleepVals.length} data points</p>
+            <span className="text-[10px] font-medium uppercase tracking-wider text-muted-foreground">
+              Avg Sleep
+            </span>
+            <p className="text-lg font-bold text-card-foreground">
+              {avgSleep}h
+            </p>
+            <p className="text-[10px] text-muted-foreground">
+              {sleepVals.length} data points
+            </p>
           </div>
         )}
         {avgHrv != null && (
           <div className="portal-panel rounded-xl border border-border/70 bg-card/85 px-4 py-3">
-            <span className="text-[10px] font-medium uppercase tracking-wider text-muted-foreground">Avg HRV</span>
-            <p className="text-lg font-bold text-card-foreground">{avgHrv} ms</p>
-            <p className="text-[10px] text-muted-foreground">{hrvVals.length} data points</p>
+            <span className="text-[10px] font-medium uppercase tracking-wider text-muted-foreground">
+              Avg HRV
+            </span>
+            <p className="text-lg font-bold text-card-foreground">
+              {avgHrv} ms
+            </p>
+            <p className="text-[10px] text-muted-foreground">
+              {hrvVals.length} data points
+            </p>
           </div>
         )}
         {avgHr != null && (
           <div className="portal-panel rounded-xl border border-border/70 bg-card/85 px-4 py-3">
-            <span className="text-[10px] font-medium uppercase tracking-wider text-muted-foreground">Avg HR</span>
-            <p className="text-lg font-bold text-card-foreground">{avgHr} bpm</p>
-            <p className="text-[10px] text-muted-foreground">{hrVals.length} data points</p>
+            <span className="text-[10px] font-medium uppercase tracking-wider text-muted-foreground">
+              Avg HR
+            </span>
+            <p className="text-lg font-bold text-card-foreground">
+              {avgHr} bpm
+            </p>
+            <p className="text-[10px] text-muted-foreground">
+              {hrVals.length} data points
+            </p>
           </div>
         )}
         {avgSteps != null && (
           <div className="portal-panel rounded-xl border border-border/70 bg-card/85 px-4 py-3">
-            <span className="text-[10px] font-medium uppercase tracking-wider text-muted-foreground">Avg Steps</span>
-            <p className="text-lg font-bold text-card-foreground">{avgSteps.toLocaleString()}</p>
-            <p className="text-[10px] text-muted-foreground">{stepVals.length} data points</p>
+            <span className="text-[10px] font-medium uppercase tracking-wider text-muted-foreground">
+              Avg Steps
+            </span>
+            <p className="text-lg font-bold text-card-foreground">
+              {avgSteps.toLocaleString()}
+            </p>
+            <p className="text-[10px] text-muted-foreground">
+              {stepVals.length} data points
+            </p>
           </div>
         )}
       </div>
 
       {hasYearlyData && (
         <>
-          <h2 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider mt-2">Signal Overview</h2>
+          <h2 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider mt-2">
+            Signal Overview
+          </h2>
           <MultiAxisTrendChart
-          days={days}
-          sleep={sleepVals}
-          hrv={hrvVals}
-          hr={hrVals}
-        />
+            days={days}
+            sleep={sleepVals}
+            hrv={hrvVals}
+            hr={hrVals}
+          />
         </>
       )}
 
-      <h2 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider mt-2">Patterns &amp; Baselines</h2>
+      <h2 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider mt-2">
+        Patterns &amp; Baselines
+      </h2>
 
       <div className="grid gap-4 lg:grid-cols-2">
         <WeeklyPatternsChart sleepByDay={sleepByDay} />
         <BaselineRangesChart baseline={trends.baseline} />
       </div>
 
-      <h2 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider mt-2">Correlations</h2>
+      <h2 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider mt-2">
+        Correlations
+      </h2>
 
       <CorrelationHeatmapChart correlations={trends.correlations} />
 
       {sleepVals.length > 1 && (
         <>
-          <h2 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider mt-2">Volatility</h2>
+          <h2 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider mt-2">
+            Volatility
+          </h2>
           <VolatilityBandsChart days={days} sleep={sleepVals} />
         </>
       )}
 
-      <h2 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider mt-2">Individual Signals</h2>
+      <h2 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider mt-2">
+        Individual Signals
+      </h2>
 
       <div className="grid gap-4 lg:grid-cols-2">
         {sleepVals.length > 0 && (

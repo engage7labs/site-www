@@ -19,12 +19,18 @@ export async function POST(req: NextRequest) {
   try {
     body = await req.json();
   } catch {
-    return NextResponse.json({ error: "Invalid request body" }, { status: 400 });
+    return NextResponse.json(
+      { error: "Invalid request body" },
+      { status: 400 }
+    );
   }
 
   const email = body.email?.trim().toLowerCase();
   if (!email || !/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)) {
-    return NextResponse.json({ error: "Invalid email address" }, { status: 422 });
+    return NextResponse.json(
+      { error: "Invalid email address" },
+      { status: 422 }
+    );
   }
 
   // Always return success to prevent email enumeration.
@@ -36,7 +42,9 @@ export async function POST(req: NextRequest) {
     purpose: "password_reset",
   } as Parameters<typeof signJwt>[0] & { purpose: string });
 
-  const resetUrl = `${APP_URL}/auth/reset-password?token=${encodeURIComponent(resetToken)}`;
+  const resetUrl = `${APP_URL}/auth/reset-password?token=${encodeURIComponent(
+    resetToken
+  )}`;
   const { subject, html } = passwordResetEmail(resetUrl);
 
   await sendEmail({ to: email, subject, html });

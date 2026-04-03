@@ -17,7 +17,9 @@ export function PasswordSetupAlert() {
   const [password, setPassword] = useState("");
   const [confirm, setConfirm] = useState("");
   const [showPassword, setShowPassword] = useState(false);
-  const [status, setStatus] = useState<"idle" | "loading" | "success" | "error">("idle");
+  const [status, setStatus] = useState<
+    "idle" | "loading" | "success" | "error"
+  >("idle");
   const [error, setError] = useState("");
 
   useEffect(() => {
@@ -27,7 +29,8 @@ export function PasswordSetupAlert() {
       .catch(() => setHasPassword(true));
   }, []);
 
-  if (hasPassword === null || hasPassword || dismissed || status === "success") return null;
+  if (hasPassword === null || hasPassword || dismissed || status === "success")
+    return null;
 
   const valid = password.length >= 8 && password === confirm;
 
@@ -109,7 +112,11 @@ export function PasswordSetupAlert() {
                 className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
                 tabIndex={-1}
               >
-                {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                {showPassword ? (
+                  <EyeOff className="h-4 w-4" />
+                ) : (
+                  <Eye className="h-4 w-4" />
+                )}
               </button>
             </div>
 
@@ -128,16 +135,16 @@ export function PasswordSetupAlert() {
               <p className="text-xs text-destructive">Passwords do not match</p>
             )}
 
-            {error && (
-              <p className="text-sm text-destructive">{error}</p>
-            )}
+            {error && <p className="text-sm text-destructive">{error}</p>}
 
             <button
               type="submit"
               disabled={!valid || status === "loading"}
               className="w-full rounded-lg bg-accent px-4 py-2.5 text-sm font-medium text-white hover:bg-accent/90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
             >
-              {status === "loading" && <Loader2 className="h-4 w-4 animate-spin" />}
+              {status === "loading" && (
+                <Loader2 className="h-4 w-4 animate-spin" />
+              )}
               Set Password
             </button>
           </form>

@@ -2,10 +2,18 @@
 
 import { useAppTheme } from "@/components/providers/app-theme-provider";
 import { SESSION_COOKIE_NAME } from "@/lib/auth-edge";
-import { LogOut, Menu, Moon, PanelLeft, PanelLeftClose, Sun, Upload } from "lucide-react";
+import {
+  LogOut,
+  Menu,
+  Moon,
+  PanelLeft,
+  PanelLeftClose,
+  Sun,
+  Upload,
+} from "lucide-react";
 import Link from "next/link";
-import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
+import { useEffect, useState } from "react";
 
 interface PortalHeaderProps {
   onToggleMobile: () => void;
@@ -13,7 +21,11 @@ interface PortalHeaderProps {
   onToggleCollapse?: () => void;
 }
 
-export function PortalHeader({ onToggleMobile, collapsed, onToggleCollapse }: PortalHeaderProps) {
+export function PortalHeader({
+  onToggleMobile,
+  collapsed,
+  onToggleCollapse,
+}: PortalHeaderProps) {
   const router = useRouter();
   const { appTheme, setAppTheme } = useAppTheme();
   const [isAdminView, setIsAdminView] = useState(false);
@@ -26,9 +38,13 @@ export function PortalHeader({ onToggleMobile, collapsed, onToggleCollapse }: Po
       const token = sc.split("=")[1];
       const parts = token.split(".");
       if (parts.length !== 3) return;
-      const body = JSON.parse(atob(parts[1].replace(/-/g, "+").replace(/_/g, "/")));
+      const body = JSON.parse(
+        atob(parts[1].replace(/-/g, "+").replace(/_/g, "/"))
+      );
       if (body.mode === "admin_view") setIsAdminView(true);
-    } catch { /* ignore */ }
+    } catch {
+      /* ignore */
+    }
   }, []);
 
   const handleLogout = async () => {

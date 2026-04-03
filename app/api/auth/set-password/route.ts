@@ -29,10 +29,17 @@ export async function POST(req: NextRequest) {
   try {
     body = await req.json();
   } catch {
-    return NextResponse.json({ error: "Invalid request body" }, { status: 400 });
+    return NextResponse.json(
+      { error: "Invalid request body" },
+      { status: 400 }
+    );
   }
 
-  if (!body.password || typeof body.password !== "string" || body.password.length < 8) {
+  if (
+    !body.password ||
+    typeof body.password !== "string" ||
+    body.password.length < 8
+  ) {
     return NextResponse.json(
       { error: "Password must be at least 8 characters" },
       { status: 422 }

@@ -17,14 +17,21 @@ export async function POST(req: NextRequest) {
   try {
     body = await req.json();
   } catch {
-    return NextResponse.json({ error: "Invalid request body" }, { status: 400 });
+    return NextResponse.json(
+      { error: "Invalid request body" },
+      { status: 400 }
+    );
   }
 
   if (!body.token || typeof body.token !== "string") {
     return NextResponse.json({ error: "Missing reset token" }, { status: 400 });
   }
 
-  if (!body.password || typeof body.password !== "string" || body.password.length < 8) {
+  if (
+    !body.password ||
+    typeof body.password !== "string" ||
+    body.password.length < 8
+  ) {
     return NextResponse.json(
       { error: "Password must be at least 8 characters" },
       { status: 422 }
@@ -33,7 +40,10 @@ export async function POST(req: NextRequest) {
 
   const payload = verifyJwt(body.token);
   if (!payload?.sub) {
-    return NextResponse.json({ error: "Invalid or expired reset link" }, { status: 401 });
+    return NextResponse.json(
+      { error: "Invalid or expired reset link" },
+      { status: 401 }
+    );
   }
 
   // Verify this is actually a password_reset token

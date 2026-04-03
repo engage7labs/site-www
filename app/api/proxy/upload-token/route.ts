@@ -24,7 +24,10 @@ export const runtime = "nodejs";
 export async function POST() {
   const { isReadOnly, error } = await checkReadOnlyMode();
   if (isReadOnly) {
-    return NextResponse.json({ detail: error!.detail }, { status: error!.status });
+    return NextResponse.json(
+      { detail: error!.detail },
+      { status: error!.status }
+    );
   }
 
   const path = "/api/analyze-upload";

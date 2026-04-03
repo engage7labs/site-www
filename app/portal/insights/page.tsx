@@ -6,7 +6,13 @@ import {
   extractSleepInsights,
   type InsightText,
 } from "@/lib/insights/extract";
-import { Lightbulb, Loader2, Minus, TrendingDown, TrendingUp } from "lucide-react";
+import {
+  Lightbulb,
+  Loader2,
+  Minus,
+  TrendingDown,
+  TrendingUp,
+} from "lucide-react";
 import { useEffect, useState } from "react";
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -135,13 +141,15 @@ export default function InsightsPage() {
         <div>
           <h1 className="text-2xl font-bold text-foreground">Insights</h1>
           <p className="mt-1 text-sm text-muted-foreground">
-            Patterns detected from your data — based on your own history, not averages
+            Patterns detected from your data — based on your own history, not
+            averages
           </p>
         </div>
         <div className="flex flex-col items-center justify-center py-16 gap-4 text-center">
           <Lightbulb className="h-10 w-10 text-muted-foreground/50" />
           <p className="text-sm text-muted-foreground max-w-sm">
-            No insights yet. Upload your health data to start seeing patterns and recommendations.
+            No insights yet. Upload your health data to start seeing patterns
+            and recommendations.
           </p>
         </div>
       </div>
