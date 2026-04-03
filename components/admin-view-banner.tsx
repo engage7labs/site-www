@@ -16,6 +16,7 @@ interface SessionPayload {
   role: "user" | "admin";
   mode?: "admin_view";
   read_only?: boolean;
+  view_as_user_id?: number;
 }
 
 function parseJwt(token: string): SessionPayload | null {
@@ -62,7 +63,7 @@ export function AdminViewBanner() {
         <div className="flex items-center gap-2 text-sm text-amber-700 dark:text-amber-300">
           <AlertCircle className="h-4 w-4 flex-shrink-0" />
           <span className="font-medium">
-            Viewing as user {session.sub} (read-only mode)
+            Viewing as user {session.view_as_user_id ?? session.sub} (read-only mode)
           </span>
         </div>
         <div className="flex items-center gap-2">

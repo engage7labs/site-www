@@ -27,17 +27,60 @@ export async function POST(
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
 
-  // 2. Create admin_view session
-  // Use userId as the subject (not email, for privacy)
+  // 2. Parse and validate userId
+  const userId_num = parseInt(userId, 10);
+  if (isNaN(userId_num)) {
+    return NextResponse.json({ detail: "Invalid user ID" }, { status: 400 });
+  }
+
+  // 3. Fetch target user to get email (backend contract compatibility)
+  let userEmail: string | null = null;
+  try {
+    const userResponse = await fetch(
+      `${process.env.NEXTAUTH_URL || "http://localhost:3000"}/api/proxy/admin/users/${userId_num}`,
+      {
+        method: "GET",
+        headers: {
+          cookie: `${SESSION_COOKIE_NAME}=${token}`,
+        },
+      }
+    );
+
+    if (userResponse.status === 404) {
+      return NextResponse.json(
+        { detail: "User not found" },
+        { status: 404 }
+      );
+    }
+
+    if (userResponse.ok) {
+      const user = await userResponse.json() as { email?: string };
+      userEmail = user.email || null;
+    }
+  } catch (err) {
+    console.error("Failed to fetch user:", err);
+  }
+
+  if (!userEmail) {
+    return NextResponse.json(
+      { detail: "Could not load user email" },
+      { status: 500 }
+    );
+  }
+
+  // 4. Create admin_view session with user's email as sub (backend compatibility)
+  // sub = email (for /me endpoint)
+  // view_as_user_id = numeric ID (for UI display)
   const adminViewToken = signJwt({
-    sub: userId,
+    sub: userEmail,
     role: "user",
     mode: "admin_view",
+    view_as_user_id: userId_num,
     read_only: true,
     exp: Math.floor(Date.now() / 1000) + 900, // 15 minute TTL
   });
 
-  // 3. Set session cookie and redirect
+  // 5. Set session cookie and redirect
   const response = NextResponse.redirect(new URL("/portal", request.url));
   response.cookies.set(SESSION_COOKIE_NAME, adminViewToken, {
     httpOnly: true,
