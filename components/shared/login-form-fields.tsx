@@ -76,8 +76,11 @@ export function LoginFormFields({
         return;
       }
 
+      const data = (await res.json().catch(() => ({}))) as { role?: string };
+      const role = data.role === "admin" ? "admin" : "user";
+
       onSuccess?.();
-      router.push(redirectTo);
+      router.push(role === "admin" ? "/admin" : "/portal");
       router.refresh();
     } catch {
       setError("Something went wrong. Please try again.");

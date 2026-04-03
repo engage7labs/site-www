@@ -16,78 +16,112 @@ export async function POST(
   request: NextRequest,
   { params }: { params: Promise<{ userId: string }> }
 ) {
-  const { userId } = await params;
-
-  // 1. Verify admin session
-  const cookieStore = await cookies();
-  const token = cookieStore.get(SESSION_COOKIE_NAME)?.value;
-  const session = token ? verifyJwt(token) : null;
-
-  if (!session || session.role !== "admin") {
-    return NextResponse.json({ error: "Forbidden" }, { status: 403 });
-  }
-
-  // 2. Parse and validate userId
-  const userId_num = parseInt(userId, 10);
-  if (isNaN(userId_num)) {
-    return NextResponse.json({ detail: "Invalid user ID" }, { status: 400 });
-  }
-
-  // 3. Fetch target user to get email (backend contract compatibility)
-  let userEmail: string | null = null;
   try {
-    const userResponse = await fetch(
-      `${
-        process.env.NEXTAUTH_URL || "http://localhost:3000"
-      }/api/proxy/admin/users/${userId_num}`,
-      {
-        method: "GET",
-        headers: {
-          cookie: `${SESSION_COOKIE_NAME}=${token}`,
-        },
-      }
+    const { userId } = await params;
+
+    // 1. Verify admin session
+    const cookieStore = await cookies();
+    const token = cookieStore.get(SESSION_COOKIE_NAME)?.value;
+    const session = token ? verifyJwt(token) : null;
+
+    if (!session || session.role !== "admin") {
+      return NextResponse.json({ detail: "Forbidden" }, { status: 403 });
+    }
+
+    // 2. Parse and validate userId
+    const numericUserId = Number.parseInt(userId, 10);
+    if (!Number.isFinite(numericUserId) || numericUserId <= 0) {
+      return NextResponse.json({ detail: "Invalid userId" }, { status: 400 });
+    }
+
+    // 3. Fetch target user through web proxy using request-derived absolute URL
+    const userUrl = new URL(
+      `/api/proxy/admin/users/${numericUserId}`,
+      request.url
     );
 
+    let userResponse: Response;
+    try {
+      userResponse = await fetch(userUrl, {
+        method: "GET",
+        headers: {
+          cookie: request.headers.get("cookie") ?? "",
+        },
+        cache: "no-store",
+      });
+    } catch (err) {
+      console.error("[admin view-as]", err);
+      return NextResponse.json(
+        { detail: "Failed to load target user from admin proxy" },
+        { status: 502 }
+      );
+    }
+
     if (userResponse.status === 404) {
-      return NextResponse.json({ detail: "User not found" }, { status: 404 });
+      return NextResponse.json(
+        { detail: "Target user not found" },
+        { status: 404 }
+      );
     }
 
-    if (userResponse.ok) {
-      const user = (await userResponse.json()) as { email?: string };
-      userEmail = user.email || null;
+    if (!userResponse.ok) {
+      const upstreamText = await userResponse.text().catch(() => "");
+      return NextResponse.json(
+        {
+          detail: `Failed to load target user (status ${userResponse.status})`,
+          upstream: upstreamText.slice(0, 500),
+        },
+        { status: 502 }
+      );
     }
+
+    const targetUser = (await userResponse.json().catch(() => null)) as {
+      id?: number;
+      email?: string;
+    } | null;
+
+    if (
+      !targetUser ||
+      typeof targetUser.email !== "string" ||
+      !targetUser.email.trim()
+    ) {
+      return NextResponse.json(
+        { detail: "Target user payload missing email" },
+        { status: 500 }
+      );
+    }
+
+    const targetUserId =
+      typeof targetUser.id === "number" && Number.isFinite(targetUser.id)
+        ? targetUser.id
+        : numericUserId;
+
+    // 4. Preserve current admin-view contract
+    const adminViewToken = signJwt({
+      sub: targetUser.email,
+      role: "user",
+      mode: "admin_view",
+      view_as_user_id: targetUserId,
+      read_only: true,
+      exp: Math.floor(Date.now() / 1000) + 900,
+    });
+
+    // 5. Set session cookie and redirect
+    const response = NextResponse.redirect(new URL("/portal", request.url));
+    response.cookies.set(SESSION_COOKIE_NAME, adminViewToken, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === "production",
+      sameSite: "lax",
+      path: "/",
+      maxAge: 900,
+    });
+
+    return response;
   } catch (err) {
-    console.error("Failed to fetch user:", err);
-  }
-
-  if (!userEmail) {
+    console.error("[admin view-as]", err);
     return NextResponse.json(
-      { detail: "Could not load user email" },
+      { detail: "Unexpected error in admin view-as route" },
       { status: 500 }
     );
   }
-
-  // 4. Create admin_view session with user's email as sub (backend compatibility)
-  // sub = email (for /me endpoint)
-  // view_as_user_id = numeric ID (for UI display)
-  const adminViewToken = signJwt({
-    sub: userEmail,
-    role: "user",
-    mode: "admin_view",
-    view_as_user_id: userId_num,
-    read_only: true,
-    exp: Math.floor(Date.now() / 1000) + 900, // 15 minute TTL
-  });
-
-  // 5. Set session cookie and redirect
-  const response = NextResponse.redirect(new URL("/portal", request.url));
-  response.cookies.set(SESSION_COOKIE_NAME, adminViewToken, {
-    httpOnly: true,
-    secure: process.env.NODE_ENV === "production",
-    sameSite: "lax",
-    path: "/",
-    maxAge: 900, // 15 minutes
-  });
-
-  return response;
 }
