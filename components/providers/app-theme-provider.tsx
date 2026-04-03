@@ -38,6 +38,7 @@ export function AppThemeProvider({ children }: AppThemeProviderProps) {
     const detectedTheme = detectTheme();
     setAppThemeState(detectedTheme);
     setCssTheme(themeToCSSClass(detectedTheme));
+    document.documentElement.setAttribute("data-theme", detectedTheme);
     setMounted(true);
   }, []);
 
@@ -45,6 +46,8 @@ export function AppThemeProvider({ children }: AppThemeProviderProps) {
     setAppThemeState(newTheme);
     setCssTheme(themeToCSSClass(newTheme));
     saveTheme(newTheme);
+    // Set data-theme for variant-specific CSS overrides
+    document.documentElement.setAttribute("data-theme", newTheme);
   };
 
   // Prevent hydration mismatch

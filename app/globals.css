@@ -188,3 +188,97 @@
     );
   }
 }
+
+/* ------------------------------------------------------------------ */
+/* Dark theme variants — override CSS vars via data-theme attribute   */
+/* ------------------------------------------------------------------ */
+
+/* Dark Blue variant */
+[data-theme="dark-blue"].dark {
+  --background: #0a0d14;
+  --card: #101520;
+  --muted: #1a2030;
+  --border: #1a2030;
+  --input: #101520;
+  --sidebar: #0c1018;
+  --sidebar-border: #1a2030;
+  --accent: #5b8af5;
+  --ring: #5b8af5;
+  --sidebar-accent: #5b8af5;
+  --chart-1: #5b8af5;
+}
+[data-theme="dark-blue"] .portal-surface {
+  background-color: #080b12;
+  background-image: radial-gradient(
+      ellipse 70% 50% at 50% 0%,
+      rgba(91, 138, 245, 0.1) 0%,
+      rgba(91, 138, 245, 0.04) 30%,
+      transparent 60%
+    ),
+    radial-gradient(
+      circle 600px at 80% 20%,
+      rgba(91, 138, 245, 0.05) 0%,
+      transparent 50%
+    ),
+    linear-gradient(180deg, rgba(8, 11, 18, 0.98) 0%, rgba(10, 13, 20, 1) 100%);
+}
+
+/* Dark Red variant */
+[data-theme="dark-red"].dark {
+  --background: #140a0a;
+  --card: #1c1010;
+  --muted: #2b1818;
+  --border: #2b1818;
+  --input: #1c1010;
+  --sidebar: #120c0c;
+  --sidebar-border: #2b1818;
+  --accent: #e05555;
+  --ring: #e05555;
+  --sidebar-accent: #e05555;
+  --chart-1: #e05555;
+}
+[data-theme="dark-red"] .portal-surface {
+  background-color: #100808;
+  background-image: radial-gradient(
+      ellipse 70% 50% at 50% 0%,
+      rgba(224, 85, 85, 0.1) 0%,
+      rgba(224, 85, 85, 0.04) 30%,
+      transparent 60%
+    ),
+    radial-gradient(
+      circle 600px at 80% 20%,
+      rgba(224, 85, 85, 0.05) 0%,
+      transparent 50%
+    ),
+    linear-gradient(180deg, rgba(16, 8, 8, 0.98) 0%, rgba(20, 10, 10, 1) 100%);
+}
+
+/* Dark Gold variant */
+[data-theme="dark-gold"].dark {
+  --background: #14110a;
+  --card: #1c1810;
+  --muted: #2b2418;
+  --border: #2b2418;
+  --input: #1c1810;
+  --sidebar: #120f0c;
+  --sidebar-border: #2b2418;
+  --accent: #e6b800;
+  --ring: #e6b800;
+  --sidebar-accent: #e6b800;
+  --chart-1: #e6b800;
+}
+[data-theme="dark-gold"] .portal-surface {
+  background-color: #100e08;
+  background-image: radial-gradient(
+      ellipse 70% 50% at 50% 0%,
+      rgba(230, 184, 0, 0.1) 0%,
+      rgba(230, 184, 0, 0.04) 30%,
+      transparent 60%
+    ),
+    radial-gradient(
+      circle 600px at 80% 20%,
+      rgba(230, 184, 0, 0.05) 0%,
+      transparent 50%
+    ),
+    linear-gradient(180deg, rgba(16, 14, 8, 0.98) 0%, rgba(20, 17, 10, 1) 100%);
+}

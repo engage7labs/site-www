@@ -2,6 +2,7 @@
 
 import { Logo } from "@/components/shared/logo";
 import {
+  Activity,
   LayoutDashboard,
   Lightbulb,
   PanelLeft,
@@ -25,6 +26,7 @@ const NAV_ITEMS: NavItem[] = [
   { label: "Overview", href: "/portal", icon: LayoutDashboard },
   { label: "My Uploads", href: "/portal/reports", icon: Upload },
   { label: "Trends", href: "/portal/trends", icon: TrendingUp },
+  { label: "Health", href: "/portal/health", icon: Activity },
   { label: "Insights", href: "/portal/insights", icon: Lightbulb },
 ];
 
@@ -54,8 +56,8 @@ export function PortalSidebar({
 
   const sidebarContent = (
     <div className="flex h-full flex-col">
-      {/* Brand */}
-      <div className="flex h-16 items-center gap-3 border-b border-border px-4">
+      {/* Brand + collapse toggle */}
+      <div className="flex h-16 items-center justify-between border-b border-border px-4">
         <Link
           href="/portal"
           className="flex items-center gap-2 text-foreground"
@@ -70,6 +72,17 @@ export function PortalSidebar({
             Engage7
           </span>
         </Link>
+        <button
+          onClick={onToggleCollapse}
+          className="hidden md:flex items-center justify-center rounded-lg p-1.5 text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+          aria-label={collapsed ? "Expand sidebar" : "Collapse sidebar"}
+        >
+          {collapsed ? (
+            <PanelLeft className="h-4 w-4" />
+          ) : (
+            <PanelLeftClose className="h-4 w-4" />
+          )}
+        </button>
       </div>
 
       {/* Main navigation */}
@@ -110,21 +123,7 @@ export function PortalSidebar({
         </span>
       </nav>
 
-      {/* Collapse toggle — Pipeboard-style bottom rail */}
-      <button
-        onClick={onToggleCollapse}
-        className="hidden md:flex items-center justify-center gap-2 border-t border-border px-4 py-3 text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
-        aria-label={collapsed ? "Expand sidebar" : "Collapse sidebar"}
-      >
-        {collapsed ? (
-          <PanelLeft className="h-4 w-4 shrink-0" />
-        ) : (
-          <>
-            <PanelLeftClose className="h-4 w-4 shrink-0" />
-            <span className="text-xs">Collapse</span>
-          </>
-        )}
-      </button>
+
     </div>
   );
 

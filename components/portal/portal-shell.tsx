@@ -1,10 +1,21 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
+import { usePathname } from "next/navigation";
 import { AdminViewBanner } from "../admin-view-banner";
 import { PasswordSetupAlert } from "./password-setup-alert";
 import { PortalHeader } from "./portal-header";
 import { PortalSidebar } from "./portal-sidebar";
+
+const SECTION_TITLES: Record<string, string> = {
+  "/portal": "Overview",
+  "/portal/reports": "My Uploads",
+  "/portal/trends": "Trends",
+  "/portal/insights": "Insights",
+  "/portal/settings": "Settings",
+  "/portal/upload": "Upload",
+  "/portal/health": "Health",
+};
 
 const STORAGE_KEY = "engage7_portal_sidebar_collapsed";
 
@@ -31,6 +42,12 @@ export function PortalShell({
     setMobileOpen((prev) => !prev);
   }, []);
 
+  const pathname = usePathname();
+  const sectionTitle =
+    SECTION_TITLES[pathname] ??
+    Object.entries(SECTION_TITLES).find(([k]) => pathname.startsWith(k + "/"))?.[1] ??
+    undefined;
+
   return (
     <div className="portal-surface flex min-h-screen text-foreground">
       <AdminViewBanner />
@@ -42,7 +59,7 @@ export function PortalShell({
       />
 
       <div className="flex flex-1 flex-col">
-        <PortalHeader onToggleMobile={toggleMobile} />
+        <PortalHeader onToggleMobile={toggleMobile} sectionTitle={sectionTitle} />
 
         <PasswordSetupAlert />
 

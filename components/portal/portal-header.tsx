@@ -1,19 +1,22 @@
 "use client";
 
-import { useAppTheme } from "@/components/providers/app-theme-provider";
 import { SESSION_COOKIE_NAME } from "@/lib/auth-edge";
-import { LogOut, Menu, Moon, Sun, Upload } from "lucide-react";
+import { LogOut, Menu, Upload } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
+import { PortalThemePicker } from "./portal-theme-picker";
 
 interface PortalHeaderProps {
   onToggleMobile: () => void;
+  sectionTitle?: string;
 }
 
-export function PortalHeader({ onToggleMobile }: PortalHeaderProps) {
+export function PortalHeader({
+  onToggleMobile,
+  sectionTitle,
+}: PortalHeaderProps) {
   const router = useRouter();
-  const { appTheme, setAppTheme } = useAppTheme();
   const [isAdminView, setIsAdminView] = useState(false);
 
   useEffect(() => {
@@ -39,13 +42,9 @@ export function PortalHeader({ onToggleMobile }: PortalHeaderProps) {
     router.refresh();
   };
 
-  const toggleTheme = () => {
-    setAppTheme(appTheme === "light" ? "black" : "light");
-  };
-
   return (
     <header className="sticky top-0 z-20 flex h-16 items-center justify-between border-b border-border bg-background/80 px-4 backdrop-blur sm:px-6">
-      {/* Left: mobile menu */}
+      {/* Left: mobile menu + section title */}
       <div className="flex items-center gap-3">
         <button
           onClick={onToggleMobile}
@@ -57,9 +56,14 @@ export function PortalHeader({ onToggleMobile }: PortalHeaderProps) {
         <span className="text-lg font-semibold text-foreground md:hidden">
           Engage7
         </span>
+        {sectionTitle && (
+          <span className="hidden md:inline text-sm font-medium text-muted-foreground">
+            {sectionTitle}
+          </span>
+        )}
       </div>
 
-      {/* Right: upload + theme + logout */}
+      {/* Right: upload + theme picker + logout */}
       <div className="flex items-center gap-2">
         {!isAdminView && (
           <Link
@@ -70,17 +74,7 @@ export function PortalHeader({ onToggleMobile }: PortalHeaderProps) {
             <span className="hidden sm:inline">Upload</span>
           </Link>
         )}
-        <button
-          onClick={toggleTheme}
-          className="rounded-lg p-2 text-muted-foreground hover:bg-muted hover:text-foreground"
-          aria-label="Toggle theme"
-        >
-          {appTheme === "light" ? (
-            <Moon className="h-5 w-5" />
-          ) : (
-            <Sun className="h-5 w-5" />
-          )}
-        </button>
+        <PortalThemePicker />
         <button
           onClick={handleLogout}
           className="flex items-center gap-2 rounded-lg px-3 py-2 text-sm text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"

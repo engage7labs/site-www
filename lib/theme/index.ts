@@ -8,6 +8,7 @@ export {
   DEFAULT_THEME,
   SUPPORTED_THEMES,
   THEME_NAMES,
+  THEME_SWATCHES,
   cssClassToTheme,
   themeToCSSClass,
   type AppTheme,

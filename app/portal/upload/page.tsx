@@ -127,13 +127,6 @@ export default function PortalUploadPage() {
           ) : (
             <>
               <div>
-                <p className="text-sm text-muted-foreground mb-4">
-                  Export from the Health app on your iPhone, then upload the
-                  .zip file below.
-                </p>
-              </div>
-
-              <div>
                 <div className="rounded-lg border border-border bg-card p-8 space-y-6">
                   <div className="space-y-2">
                     <h2 className="text-xl font-semibold text-foreground">

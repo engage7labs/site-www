@@ -27,22 +27,45 @@ function fmt(iso: string | null): string {
 }
 
 export default function AdminEventsPage() {
-  const [data, setData] = useState<EventsResponse | null>(null);
+  const [events, setEvents] = useState<UserEvent[]>([]);
+  const [total, setTotal] = useState(0);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
+  const [loadingMore, setLoadingMore] = useState(false);
+  const PAGE_SIZE = 50;
+
+  const fetchEvents = async (offset: number) => {
+    const res = await fetch(
+      `/api/proxy/admin/events?limit=${PAGE_SIZE}&offset=${offset}`
+    );
+    if (!res.ok) throw new Error(`${res.status}: ${await res.text()}`);
+    return res.json() as Promise<EventsResponse>;
+  };
 
   useEffect(() => {
-    fetch("/api/proxy/admin/events?limit=200")
-      .then(async (res) => {
-        if (!res.ok) throw new Error(`${res.status}: ${await res.text()}`);
-        return res.json() as Promise<EventsResponse>;
+    fetchEvents(0)
+      .then((data) => {
+        setEvents(data.events);
+        setTotal(data.total);
       })
-      .then(setData)
       .catch((err: unknown) =>
         setError(err instanceof Error ? err.message : String(err))
       )
       .finally(() => setLoading(false));
   }, []);
+
+  const handleLoadMore = async () => {
+    setLoadingMore(true);
+    try {
+      const data = await fetchEvents(events.length);
+      setEvents((prev) => [...prev, ...data.events]);
+      setTotal(data.total);
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : String(err));
+    } finally {
+      setLoadingMore(false);
+    }
+  };
 
   if (loading) {
     return (
@@ -65,7 +88,7 @@ export default function AdminEventsPage() {
       <div>
         <h1 className="text-2xl font-bold text-foreground">Events</h1>
         <p className="mt-1 text-sm text-muted-foreground">
-          {data?.total ?? 0} recent events
+          {events.length} of {total} events
         </p>
       </div>
 
@@ -84,7 +107,7 @@ export default function AdminEventsPage() {
             </tr>
           </thead>
           <tbody className="divide-y divide-border">
-            {(data?.events ?? []).map((e) => (
+            {events.map((e) => (
               <tr key={e.id} className="hover:bg-muted/20 transition-colors">
                 <td className="px-4 py-3 font-medium text-card-foreground">
                   {e.event_type}
@@ -100,7 +123,7 @@ export default function AdminEventsPage() {
                 </td>
               </tr>
             ))}
-            {(data?.events ?? []).length === 0 && (
+            {events.length === 0 && (
               <tr>
                 <td
                   colSpan={4}
@@ -113,6 +136,18 @@ export default function AdminEventsPage() {
           </tbody>
         </table>
       </div>
+
+      {events.length < total && (
+        <div className="flex justify-center">
+          <button
+            onClick={handleLoadMore}
+            disabled={loadingMore}
+            className="rounded-lg border border-border px-4 py-2 text-sm font-medium text-foreground transition-colors hover:bg-muted disabled:opacity-50"
+          >
+            {loadingMore ? "Loading…" : `Load more (${total - events.length} remaining)`}
+          </button>
+        </div>
+      )}
     </div>
   );
 }
