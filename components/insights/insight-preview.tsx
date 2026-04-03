@@ -58,6 +58,8 @@ interface InsightPreviewProps {
   theme?: string;
   /** Opens the post-analysis modal */
   onOpenModal?: () => void;
+  /** When true, omit the standalone page shell (header + min-h-screen wrapper) */
+  embedded?: boolean;
 }
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -103,6 +105,7 @@ export function InsightPreview({
   jobId,
   theme,
   onOpenModal,
+  embedded,
 }: Readonly<InsightPreviewProps>) {
   const { t } = useLocale();
   const isDark = useDarkMode(theme);
@@ -246,8 +249,9 @@ export function InsightPreview({
   // -----------------------------------------------------------------------
 
   return (
-    <div className="min-h-screen bg-background">
-      {/* Header bar */}
+    <div className={embedded ? "" : "min-h-screen bg-background"}>
+      {/* Header bar — hidden when embedded in portal */}
+      {!embedded && (
       <header className="border-b border-border bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 sticky top-0 z-50">
         <div className="max-w-6xl mx-auto px-6 py-4 flex items-center justify-between">
           <Link
@@ -262,8 +266,9 @@ export function InsightPreview({
           </span>
         </div>
       </header>
+      )}
 
-      <main className="max-w-6xl mx-auto px-6 pt-8 pb-16">
+      <main className={embedded ? "" : "max-w-6xl mx-auto px-6 pt-8 pb-16"}>
         {/* ============================================================= */}
         {/* DESKTOP LAYOUT — two-column hero + compact lower zone         */}
         {/* ============================================================= */}

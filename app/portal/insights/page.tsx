@@ -1,52 +1,20 @@
-import { Lightbulb, Minus, TrendingDown, TrendingUp } from "lucide-react";
-import type { Metadata } from "next";
+"use client";
 
-export const metadata: Metadata = {
-  title: "Portal — Insights",
-};
+import {
+  extractActivityInsights,
+  extractRecoveryInsights,
+  extractSleepInsights,
+  type InsightText,
+} from "@/lib/insights/extract";
+import { Lightbulb, Loader2, Minus, TrendingDown, TrendingUp } from "lucide-react";
+import { useEffect, useState } from "react";
 
-interface Insight {
-  id: string;
-  title: string;
-  confidence: "high" | "medium" | "low";
-  trend: "up" | "down" | "flat";
-  explanation: string;
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+type Sections = Record<string, any>;
+
+interface Analysis {
+  sections?: Sections;
 }
-
-const PLACEHOLDER_INSIGHTS: Insight[] = [
-  {
-    id: "i-1",
-    title: "Sleep consistency improving",
-    confidence: "high",
-    trend: "up",
-    explanation:
-      "Your bedtime variance decreased from ±48 min to ±22 min over the past two weeks. Consistent sleep timing is strongly associated with better recovery scores.",
-  },
-  {
-    id: "i-2",
-    title: "Resting heart rate trending lower",
-    confidence: "medium",
-    trend: "up",
-    explanation:
-      "Your average resting HR dropped from 62 to 58 bpm over the last 30 days. This often correlates with improved cardiovascular fitness.",
-  },
-  {
-    id: "i-3",
-    title: "Activity dip on weekends",
-    confidence: "high",
-    trend: "down",
-    explanation:
-      "Weekend active minutes average 18 min vs 42 min on weekdays. Even a short walk can help maintain consistency.",
-  },
-  {
-    id: "i-4",
-    title: "HRV stable but flat",
-    confidence: "low",
-    trend: "flat",
-    explanation:
-      "Your HRV has remained in the 40–48 ms range for 3 weeks. This is not concerning but may indicate a plateau in recovery adaptation.",
-  },
-];
 
 const CONFIDENCE_COLORS = {
   high: "bg-accent/10 text-accent",
@@ -54,7 +22,20 @@ const CONFIDENCE_COLORS = {
   low: "bg-muted text-muted-foreground",
 };
 
-function TrendIcon({ trend }: { trend: Insight["trend"] }) {
+function priorityToConfidence(p?: string): "high" | "medium" | "low" {
+  if (p === "high") return "high";
+  if (p === "medium") return "medium";
+  return "low";
+}
+
+function trendFromScore(score?: number): "up" | "down" | "flat" {
+  if (score == null) return "flat";
+  if (score >= 60) return "up";
+  if (score <= 30) return "down";
+  return "flat";
+}
+
+function TrendIcon({ trend }: { trend: "up" | "down" | "flat" }) {
   switch (trend) {
     case "up":
       return <TrendingUp className="h-4 w-4 text-accent" />;
@@ -65,7 +46,108 @@ function TrendIcon({ trend }: { trend: Insight["trend"] }) {
   }
 }
 
+function InsightCard({ insight }: { insight: InsightText }) {
+  const confidence = priorityToConfidence(insight.priority);
+  const trend = trendFromScore(insight.score);
+
+  return (
+    <div className="flex flex-col gap-3 rounded-xl border border-border bg-card p-5">
+      <div className="flex items-start justify-between">
+        <div className="flex items-center gap-2">
+          <Lightbulb className="h-4 w-4 text-accent" />
+          <h3 className="text-sm font-semibold text-card-foreground">
+            {insight.headline}
+          </h3>
+        </div>
+        <TrendIcon trend={trend} />
+      </div>
+      <p className="text-sm leading-relaxed text-muted-foreground">
+        {insight.body}
+      </p>
+      {insight.action && (
+        <p className="text-xs text-accent/80 italic">{insight.action}</p>
+      )}
+      <div className="flex items-center gap-2 flex-wrap">
+        <span
+          className={`inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-medium uppercase tracking-wider ${CONFIDENCE_COLORS[confidence]}`}
+        >
+          {confidence} confidence
+        </span>
+        {insight.pillar && (
+          <span className="inline-flex items-center rounded-full bg-muted px-2 py-0.5 text-[10px] font-medium uppercase tracking-wider text-muted-foreground">
+            {insight.pillar}
+          </span>
+        )}
+      </div>
+    </div>
+  );
+}
+
 export default function InsightsPage() {
+  const [insights, setInsights] = useState<InsightText[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [empty, setEmpty] = useState(false);
+
+  useEffect(() => {
+    fetch("/api/proxy/users/portal-analyses")
+      .then((r) => r.json())
+      .then((data) => {
+        const analyses: Analysis[] = data.analyses ?? [];
+        if (analyses.length === 0) {
+          setEmpty(true);
+          setLoading(false);
+          return;
+        }
+
+        // Use the most recent analysis with sections data
+        const latest = analyses.find((a) => a.sections) ?? analyses[0];
+        const sections = latest?.sections ?? null;
+
+        const all = [
+          ...extractSleepInsights(sections),
+          ...extractRecoveryInsights(sections),
+          ...extractActivityInsights(sections),
+        ];
+
+        // Sort by score descending
+        all.sort((a, b) => (b.score ?? 0) - (a.score ?? 0));
+
+        setInsights(all);
+        setLoading(false);
+      })
+      .catch(() => {
+        setEmpty(true);
+        setLoading(false);
+      });
+  }, []);
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center py-24">
+        <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+      </div>
+    );
+  }
+
+  if (empty || insights.length === 0) {
+    return (
+      <div className="flex flex-col gap-6">
+        <div>
+          <h1 className="text-2xl font-bold text-foreground">Insights</h1>
+          <p className="mt-1 text-sm text-muted-foreground">
+            Patterns detected from your data — based on your own history, not averages
+          </p>
+        </div>
+        <div className="flex flex-col items-center justify-center py-16 gap-4 text-center">
+          <Lightbulb className="h-10 w-10 text-muted-foreground/50" />
+          <p className="text-sm text-muted-foreground max-w-sm">
+            No insights yet. Upload your health data to start seeing patterns and recommendations.
+          </p>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="flex flex-col gap-6">
       <div>
@@ -77,33 +159,8 @@ export default function InsightsPage() {
       </div>
 
       <div className="grid gap-4 sm:grid-cols-2">
-        {PLACEHOLDER_INSIGHTS.map((insight) => (
-          <div
-            key={insight.id}
-            className="flex flex-col gap-3 rounded-xl border border-border bg-card p-5"
-          >
-            <div className="flex items-start justify-between">
-              <div className="flex items-center gap-2">
-                <Lightbulb className="h-4 w-4 text-accent" />
-                <h3 className="text-sm font-semibold text-card-foreground">
-                  {insight.title}
-                </h3>
-              </div>
-              <TrendIcon trend={insight.trend} />
-            </div>
-            <p className="text-sm leading-relaxed text-muted-foreground">
-              {insight.explanation}
-            </p>
-            <div className="flex items-center gap-2">
-              <span
-                className={`inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-medium uppercase tracking-wider ${
-                  CONFIDENCE_COLORS[insight.confidence]
-                }`}
-              >
-                {insight.confidence} confidence
-              </span>
-            </div>
-          </div>
+        {insights.map((insight, i) => (
+          <InsightCard key={`${insight.pillar}-${i}`} insight={insight} />
         ))}
       </div>
     </div>

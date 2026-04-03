@@ -1,5 +1,6 @@
 "use client";
 
+import { SESSION_COOKIE_NAME } from "@/lib/auth-edge";
 import { useLocale } from "@/components/providers/locale-provider";
 import { FileUpload } from "@/components/shared/file-upload";
 import { Turnstile } from "@/components/shared/turnstile";
@@ -13,14 +14,33 @@ import {
   trackUploadCompleted,
   trackUploadStarted,
 } from "@/lib/telemetry";
+import { Lock } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { toast } from "sonner";
+
+function useIsAdminView(): boolean {
+  const [isAdminView, setIsAdminView] = useState(false);
+  useEffect(() => {
+    try {
+      const cookies = document.cookie.split("; ");
+      const sc = cookies.find((c) => c.startsWith(SESSION_COOKIE_NAME));
+      if (!sc) return;
+      const token = sc.split("=")[1];
+      const parts = token.split(".");
+      if (parts.length !== 3) return;
+      const body = JSON.parse(atob(parts[1].replace(/-/g, "+").replace(/_/g, "/")));
+      if (body.mode === "admin_view") setIsAdminView(true);
+    } catch { /* ignore */ }
+  }, []);
+  return isAdminView;
+}
 
 export default function PortalUploadPage() {
   const { t, locale } = useLocale();
   const router = useRouter();
+  const isAdminView = useIsAdminView();
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [isUploading, setIsUploading] = useState(false);
   const [consentGiven, setConsentGiven] = useState(false);
@@ -89,6 +109,18 @@ export default function PortalUploadPage() {
             </p>
           </div>
 
+          {isAdminView ? (
+            <div className="rounded-lg border border-amber-500/30 bg-amber-500/5 p-8 text-center space-y-3">
+              <Lock className="mx-auto h-8 w-8 text-amber-500" />
+              <h2 className="text-lg font-semibold text-foreground">
+                Upload disabled
+              </h2>
+              <p className="text-sm text-muted-foreground">
+                Uploads are not available while viewing as another user (read-only mode).
+              </p>
+            </div>
+          ) : (
+          <>
           <div>
             <p className="text-sm text-muted-foreground mb-4">
               Export from the Health app on your iPhone, then upload the .zip
@@ -144,6 +176,8 @@ export default function PortalUploadPage() {
               />
             </div>
           </div>
+          </>
+          )}
         </div>
       </div>
     </div>

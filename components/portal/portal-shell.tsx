@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useState } from "react";
 import { AdminViewBanner } from "../admin-view-banner";
+import { PasswordSetupAlert } from "./password-setup-alert";
 import { PortalHeader } from "./portal-header";
 import { PortalSidebar } from "./portal-sidebar";
 
@@ -41,7 +42,13 @@ export function PortalShell({
       />
 
       <div className="flex flex-1 flex-col">
-        <PortalHeader onToggleMobile={toggleMobile} />
+        <PortalHeader
+          onToggleMobile={toggleMobile}
+          collapsed={collapsed}
+          onToggleCollapse={toggleCollapsed}
+        />
+
+        <PasswordSetupAlert />
 
         <main className="flex-1 p-4 sm:p-6 lg:p-8">
           <div className="mx-auto max-w-[1400px]">{children}</div>

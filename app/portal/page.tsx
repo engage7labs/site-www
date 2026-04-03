@@ -1,7 +1,54 @@
 "use client";
 
+import type { EChartsOption } from "echarts";
 import { Clock, Crown, ExternalLink, Heart, Moon, Upload } from "lucide-react";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
+
+// Lazy-load echarts
+async function getEcharts() {
+  const echarts = await import("echarts/core");
+  const { LineChart, BarChart, RadarChart } = await import("echarts/charts");
+  const {
+    GridComponent,
+    TooltipComponent,
+    LegendComponent,
+    RadarComponent,
+  } = await import("echarts/components");
+  const { CanvasRenderer } = await import("echarts/renderers");
+  echarts.use([
+    LineChart,
+    BarChart,
+    RadarChart,
+    GridComponent,
+    TooltipComponent,
+    LegendComponent,
+    RadarComponent,
+    CanvasRenderer,
+  ]);
+  return echarts;
+}
+
+const COLORS = {
+  sleep: "#3dbe73",
+  hr: "#e5a336",
+  hrv: "#6366f1",
+  steps: "#5eead4",
+};
+
+interface TrendPoint {
+  date: string;
+  value: number | null;
+}
+
+interface TrendsData {
+  trends: {
+    sleep: TrendPoint[];
+    hrv: TrendPoint[];
+    hr: TrendPoint[];
+    steps: TrendPoint[];
+  };
+  analysis_count: number;
+}
 
 interface OverviewData {
   plan: string;
@@ -10,6 +57,7 @@ interface OverviewData {
   sleep_score: number | null;
   recovery_trend: number | null;
   data_completeness: string | null;
+  has_password?: boolean;
   latest_analysis: {
     job_id: string;
     created_at: string | null;
@@ -78,17 +126,219 @@ function planLabel(plan: string): string {
   return plan;
 }
 
+function median(points?: TrendPoint[]): number | null {
+  if (!points) return null;
+  const vals = points.map((p) => p.value).filter((v): v is number => v != null).sort((a, b) => a - b);
+  if (vals.length === 0) return null;
+  const mid = Math.floor(vals.length / 2);
+  return vals.length % 2 === 0 ? (vals[mid - 1] + vals[mid]) / 2 : vals[mid];
+}
+
+// ---------------------------------------------------------------------------
+// Overview Charts — ECharts (Sprint 17.4)
+// ---------------------------------------------------------------------------
+
+function SleepTrendMini({ data }: Readonly<{ data: TrendPoint[] }>) {
+  const containerRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    let chart: ReturnType<Awaited<ReturnType<typeof getEcharts>>["init"]> | undefined;
+    let disposed = false;
+
+    (async () => {
+      const echarts = await getEcharts();
+      if (disposed || !containerRef.current) return;
+      chart = echarts.init(containerRef.current);
+      const isDark = document.documentElement.classList.contains("dark");
+      const axisColor = isDark ? "#E5E7EB" : "#5f6368";
+      const splitColor = isDark ? "rgba(229,231,235,0.09)" : "rgba(148,163,184,0.18)";
+
+      const recent = data.slice(-14);
+      const days = recent.map((p) => p.date.slice(5));
+      const values = recent.map((p) => p.value);
+
+      const option: EChartsOption = {
+        textStyle: { fontFamily: "Inter, sans-serif" },
+        tooltip: {
+          trigger: "axis",
+          backgroundColor: "#F9FAFB",
+          borderColor: "rgba(148,163,184,0.22)",
+          borderWidth: 1,
+          textStyle: { color: "#111827", fontSize: 12 },
+        },
+        grid: { left: 40, right: 16, top: 12, bottom: 24 },
+        xAxis: {
+          type: "category",
+          data: days,
+          axisLabel: { fontSize: 9, color: axisColor },
+          axisLine: { lineStyle: { color: "transparent" } },
+          axisTick: { show: false },
+        },
+        yAxis: {
+          type: "value",
+          name: "Hours",
+          nameTextStyle: { color: axisColor, fontSize: 9 },
+          axisLabel: { fontSize: 9, color: axisColor },
+          splitLine: { lineStyle: { color: splitColor, type: "dashed" } },
+        },
+        series: [
+          {
+            data: values,
+            type: "line",
+            smooth: true,
+            symbol: "circle",
+            symbolSize: 4,
+            lineStyle: { width: 2.5, color: COLORS.sleep },
+            itemStyle: { color: COLORS.sleep },
+            areaStyle: {
+              color: {
+                type: "linear",
+                x: 0, y: 0, x2: 0, y2: 1,
+                colorStops: [
+                  { offset: 0, color: `${COLORS.sleep}30` },
+                  { offset: 1, color: `${COLORS.sleep}05` },
+                ],
+              } as unknown as string,
+            },
+          },
+        ],
+      };
+
+      chart.setOption(option);
+      const observer = new ResizeObserver(() => chart?.resize());
+      observer.observe(containerRef.current);
+      return () => observer.disconnect();
+    })();
+
+    return () => {
+      disposed = true;
+      chart?.dispose();
+    };
+  }, [data]);
+
+  return (
+    <div className="portal-panel rounded-xl border border-border/70 bg-card/85 p-5">
+      <h3 className="text-sm font-semibold text-card-foreground mb-3">
+        Sleep — Last 14 Days
+      </h3>
+      <div ref={containerRef} className="w-full h-[180px]" />
+    </div>
+  );
+}
+
+function HealthRadar({
+  sleep,
+  hr,
+  hrv,
+  steps,
+}: Readonly<{
+  sleep: number | null;
+  hr: number | null;
+  hrv: number | null;
+  steps: number | null;
+}>) {
+  const containerRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (sleep == null && hr == null && hrv == null && steps == null) return;
+
+    let chart: ReturnType<Awaited<ReturnType<typeof getEcharts>>["init"]> | undefined;
+    let disposed = false;
+
+    (async () => {
+      const echarts = await getEcharts();
+      if (disposed || !containerRef.current) return;
+      chart = echarts.init(containerRef.current);
+      const isDark = document.documentElement.classList.contains("dark");
+      const labelColor = isDark ? "#E5E7EB" : "#5f6368";
+
+      // Normalize each value to a 0–100 scale for the radar
+      const normalize = (v: number | null, min: number, max: number) => {
+        if (v == null) return 0;
+        return Math.min(100, Math.max(0, ((v - min) / (max - min)) * 100));
+      };
+
+      const sleepN = normalize(sleep, 4, 10);
+      const hrN = 100 - normalize(hr, 45, 100); // lower HR is better
+      const hrvN = normalize(hrv, 10, 100);
+      const stepsN = normalize(steps, 0, 15000);
+
+      const option: EChartsOption = {
+        textStyle: { fontFamily: "Inter, sans-serif" },
+        tooltip: {
+          backgroundColor: "#F9FAFB",
+          borderColor: "rgba(148,163,184,0.22)",
+          borderWidth: 1,
+          textStyle: { color: "#111827", fontSize: 12 },
+        },
+        radar: {
+          indicator: [
+            { name: `Sleep\n${sleep != null ? sleep + "h" : "—"}`, max: 100 },
+            { name: `HR\n${hr != null ? Math.round(hr) + " bpm" : "—"}`, max: 100 },
+            { name: `HRV\n${hrv != null ? Math.round(hrv) + " ms" : "—"}`, max: 100 },
+            { name: `Steps\n${steps != null ? Math.round(steps).toLocaleString() : "—"}`, max: 100 },
+          ],
+          shape: "circle",
+          axisName: { color: labelColor, fontSize: 10 },
+          splitArea: { areaStyle: { color: isDark ? ["rgba(16,185,129,0.03)", "rgba(16,185,129,0.06)"] : ["rgba(61,190,115,0.03)", "rgba(61,190,115,0.06)"] } },
+          splitLine: { lineStyle: { color: isDark ? "rgba(229,231,235,0.08)" : "rgba(148,163,184,0.15)" } },
+          axisLine: { lineStyle: { color: isDark ? "rgba(229,231,235,0.08)" : "rgba(148,163,184,0.15)" } },
+        },
+        series: [
+          {
+            type: "radar",
+            data: [
+              {
+                value: [sleepN, hrN, hrvN, stepsN],
+                areaStyle: { color: `${COLORS.sleep}22` },
+                lineStyle: { color: COLORS.sleep, width: 2 },
+                itemStyle: { color: COLORS.sleep },
+                symbol: "circle",
+                symbolSize: 5,
+              },
+            ],
+          },
+        ],
+      };
+
+      chart.setOption(option);
+      const observer = new ResizeObserver(() => chart?.resize());
+      observer.observe(containerRef.current);
+      return () => observer.disconnect();
+    })();
+
+    return () => {
+      disposed = true;
+      chart?.dispose();
+    };
+  }, [sleep, hr, hrv, steps]);
+
+  if (sleep == null && hr == null && hrv == null && steps == null) return null;
+
+  return (
+    <div className="portal-panel rounded-xl border border-border/70 bg-card/85 p-5">
+      <h3 className="text-sm font-semibold text-card-foreground mb-3">
+        Health Balance
+      </h3>
+      <div ref={containerRef} className="w-full h-[220px]" />
+    </div>
+  );
+}
+
 export default function PortalOverviewPage() {
   const [data, setData] = useState<OverviewData | null>(null);
+  const [trends, setTrends] = useState<TrendsData | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     (async () => {
       try {
-        const res = await fetch("/api/proxy/users/portal-overview");
-        if (res.ok) {
-          setData(await res.json());
-        }
+        const [overviewRes, trendsRes] = await Promise.all([
+          fetch("/api/proxy/users/portal-overview"),
+          fetch("/api/proxy/users/portal-trends"),
+        ]);
+        if (overviewRes.ok) setData(await overviewRes.json());
+        if (trendsRes.ok) setTrends(await trendsRes.json());
       } catch {
         // silent — show empty state
       } finally {
@@ -163,6 +413,19 @@ export default function PortalOverviewPage() {
       </div>
 
       <ShareCard />
+
+      {/* ECharts — Sprint 17.4 */}
+      {(trends?.trends?.sleep?.length ?? 0) > 0 && (
+        <div className="grid gap-4 lg:grid-cols-2">
+          <SleepTrendMini data={trends!.trends.sleep} />
+          <HealthRadar
+            sleep={data?.sleep_score ?? null}
+            hr={median(trends?.trends?.hr)}
+            hrv={data?.recovery_trend ?? null}
+            steps={median(trends?.trends?.steps)}
+          />
+        </div>
+      )}
 
       {latest ? (
         <div className="portal-panel rounded-xl border border-border/70 bg-card/85 p-6">

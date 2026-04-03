@@ -4,8 +4,6 @@ import {
   FileText,
   LayoutDashboard,
   Lightbulb,
-  PanelLeft,
-  PanelLeftClose,
   Settings,
   TrendingUp,
   X,
@@ -101,21 +99,6 @@ export function PortalSidebar({
           />
         ))}
       </nav>
-
-      {/* Collapse toggle — desktop only */}
-      <div className="hidden border-t border-border p-3 md:block">
-        <button
-          onClick={onToggleCollapse}
-          className="flex w-full items-center justify-center rounded-lg p-2 text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
-          aria-label={collapsed ? "Expand sidebar" : "Collapse sidebar"}
-        >
-          {collapsed ? (
-            <PanelLeft className="h-5 w-5" />
-          ) : (
-            <PanelLeftClose className="h-5 w-5" />
-          )}
-        </button>
-      </div>
     </>
   );
 

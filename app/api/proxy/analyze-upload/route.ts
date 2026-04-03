@@ -5,6 +5,7 @@
  * Browser never calls the API directly for this sensitive endpoint.
  */
 
+import { checkReadOnlyMode } from "@/lib/api/read-only-check";
 import { signRequest } from "@/lib/api/signing";
 import { INTERNAL_API_BASE_URL } from "@/lib/server-config";
 import { NextRequest, NextResponse } from "next/server";
@@ -12,6 +13,11 @@ import { NextRequest, NextResponse } from "next/server";
 export const runtime = "nodejs";
 
 export async function POST(request: NextRequest) {
+  const { isReadOnly, error } = await checkReadOnlyMode();
+  if (isReadOnly) {
+    return NextResponse.json({ detail: error!.detail }, { status: error!.status });
+  }
+
   const path = "/api/analyze-upload";
   const sigHeaders = signRequest("POST", path);
 

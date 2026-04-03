@@ -168,7 +168,7 @@ export default function PortalReportPage({
   return (
     <div className="flex flex-col gap-6">
       {backLink}
-      <InsightPreview result={result} jobId={jobId} />
+      <InsightPreview result={result} jobId={jobId} embedded />
     </div>
   );
 }

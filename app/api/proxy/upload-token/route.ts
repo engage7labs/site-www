@@ -15,12 +15,18 @@
  *    is returned. Signatures expire within 5 minutes (API enforces this).
  */
 
+import { checkReadOnlyMode } from "@/lib/api/read-only-check";
 import { signRequest } from "@/lib/api/signing";
 import { NextResponse } from "next/server";
 
 export const runtime = "nodejs";
 
 export async function POST() {
+  const { isReadOnly, error } = await checkReadOnlyMode();
+  if (isReadOnly) {
+    return NextResponse.json({ detail: error!.detail }, { status: error!.status });
+  }
+
   const path = "/api/analyze-upload";
   const sigHeaders = signRequest("POST", path);
 
