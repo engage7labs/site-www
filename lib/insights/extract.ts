@@ -1,14 +1,31 @@
 /**
- * Insight Extraction — Sprint 11
+ * Insight Extraction — Sprint 11 + Sprint 17.0
  *
  * Derives deterministic, observational insight text from the existing
  * analysis payload sections. No ML, no fabricated inferences.
  * All text is calm, non-medical, non-alarmist.
  *
+ * Added in Sprint 17.0:
+ * - Insight scoring (0–100 scale)
+ * - Priority ranking (high/medium/low)
+ * - Pillar classification (sleep/recovery/activity)
+ * - Action hints (deterministic, human-friendly)
+ * - Lightweight benchmarks (personal baseline only)
+ *
  * The "sections" data comes from GET /api/result/{job_id} and includes:
  *   baseline, weekly_patterns, monthly_patterns, yearly_summary,
  *   volatility, regime_shifts, correlations, executive_summary
  */
+
+import {
+  getActionForInsight,
+  getBenchmarkForInsight,
+  getInsightPillar,
+  scoreInsight,
+  scoreToPriority,
+  type InsightPillar,
+  type InsightPriority,
+} from "./scoring";
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 type Sections = Record<string, any>;
@@ -28,6 +45,43 @@ function round1(n: number): number {
 }
 
 // ---------------------------------------------------------------------------
+// Insight enrichment helper (Sprint 17.0)
+// ---------------------------------------------------------------------------
+
+/**
+ * Enrich an insight with scoring, priority, action, and benchmark.
+ * Converts a basic insight into a fully-ranked, actionable insight.
+ */
+function enrichInsight(
+  insight: InsightText,
+  sections: Sections | null
+): InsightText {
+  // Compute score based on headline
+  const score = scoreInsight(insight.headline, sections);
+
+  // Determine pillar
+  const pillar = getInsightPillar(insight.headline);
+
+  // Convert score to priority
+  const priority = scoreToPriority(score);
+
+  // Get action hint
+  const action = getActionForInsight(insight.headline, sections);
+
+  // Get benchmark message
+  const benchmark = getBenchmarkForInsight(insight.headline, sections);
+
+  return {
+    ...insight,
+    score,
+    priority,
+    pillar,
+    action,
+    benchmark,
+  };
+}
+
+// ---------------------------------------------------------------------------
 // Sleep insight
 // ---------------------------------------------------------------------------
 
@@ -36,6 +90,16 @@ export interface InsightText {
   body: string;
   /** Short explanation of what this means for the user */
   meaning?: string;
+  /** Score from 0-100 (higher = more actionable) — Sprint 17.0 */
+  score?: number;
+  /** Priority bucket: high, medium, low — Sprint 17.0 */
+  priority?: InsightPriority;
+  /** Which pillar: sleep, recovery, activity — Sprint 17.0 */
+  pillar?: InsightPillar;
+  /** Action hint for the user (1 sentence, deterministic) — Sprint 17.0 */
+  action?: string;
+  /** Lightweight benchmark message (personal baseline only) — Sprint 17.0 */
+  benchmark?: string;
 }
 
 export function extractSleepInsights(sections: Sections | null): InsightText[] {
@@ -135,7 +199,7 @@ export function extractSleepInsights(sections: Sections | null): InsightText[] {
     }
   }
 
-  return insights.slice(0, 3);
+  return insights.slice(0, 3).map((ins) => enrichInsight(ins, sections));
 }
 
 // ---------------------------------------------------------------------------
@@ -211,7 +275,7 @@ export function extractRecoveryInsights(
     });
   }
 
-  return insights.slice(0, 3);
+  return insights.slice(0, 3).map((ins) => enrichInsight(ins, sections));
 }
 
 // ---------------------------------------------------------------------------
@@ -280,5 +344,56 @@ export function extractActivityInsights(
     }
   }
 
-  return insights.slice(0, 3);
+  return insights.slice(0, 3).map((ins) => enrichInsight(ins, sections));
+}
+
+// ---------------------------------------------------------------------------
+// Aggregation Helper — "What Matters Today" (Sprint 17.0)
+// ---------------------------------------------------------------------------
+
+/**
+ * Get the top 3 most actionable insights across all pillars.
+ *
+ * Rules:
+ * - Max 3 insights
+ * - At least 1 from sleep or recovery
+ * - Sorted by score (highest first)
+ *
+ * Useful for decision-support dashboards and "what matters today" views.
+ */
+export function getTopInsights(allInsights: InsightText[]): InsightText[] {
+  if (allInsights.length === 0) return [];
+
+  // Sort by score (highest first)
+  const sorted = [...allInsights].sort(
+    (a, b) => (b.score ?? 0) - (a.score ?? 0)
+  );
+
+  // Ensure at least one sleep or recovery insight
+  const result: InsightText[] = [];
+  let hasSleepOrRecovery = false;
+
+  for (const ins of sorted) {
+    if (result.length >= 3) break;
+
+    // First priority: include sleep/recovery if present
+    if (
+      (ins.pillar === "sleep" || ins.pillar === "recovery") &&
+      !hasSleepOrRecovery
+    ) {
+      result.push(ins);
+      hasSleepOrRecovery = true;
+    } else if (hasSleepOrRecovery) {
+      // After we have a sleep/recovery insight, accept any high-value insight
+      result.push(ins);
+    }
+  }
+
+  // If we somehow missed the rule (unlikely given 3 buckets + 1 requirement),
+  // ensure result is not empty
+  if (result.length === 0 && sorted.length > 0) {
+    result.push(sorted[0]);
+  }
+
+  return result;
 }

@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
+import { AdminViewBanner } from "../admin-view-banner";
 import { PortalHeader } from "./portal-header";
 import { PortalSidebar } from "./portal-sidebar";
 
@@ -31,6 +32,7 @@ export function PortalShell({
 
   return (
     <div className="portal-surface flex min-h-screen text-foreground">
+      <AdminViewBanner />
       <PortalSidebar
         collapsed={collapsed}
         mobileOpen={mobileOpen}

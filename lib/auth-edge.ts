@@ -33,6 +33,10 @@ export type SessionPayload = {
   role: "user" | "admin";
   iat: number;
   exp: number;
+  /** Admin viewing as user — Sprint 17.1 */
+  mode?: "admin_view";
+  /** Read-only mode flag — Sprint 17.1 */
+  read_only?: boolean;
 };
 
 // ---------------------------------------------------------------------------

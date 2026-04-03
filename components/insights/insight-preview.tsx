@@ -306,6 +306,12 @@ export function InsightPreview({
                           {ins.meaning}
                         </p>
                       )}
+                      {/* Action hint — Sprint 17.0 */}
+                      {ins.action && (
+                        <p className="text-xs text-accent/90 leading-relaxed font-medium mt-1">
+                          → {ins.action}
+                        </p>
+                      )}
                     </div>
                   ))}
                 </div>
@@ -424,6 +430,12 @@ export function InsightPreview({
                       {ins.meaning && (
                         <p className="text-xs text-muted-foreground/80 italic mt-0.5">
                           {ins.meaning}
+                        </p>
+                      )}
+                      {/* Action hint — Sprint 17.0 */}
+                      {ins.action && (
+                        <p className="text-xs text-accent/90 font-medium mt-1">
+                          → {ins.action}
                         </p>
                       )}
                     </div>

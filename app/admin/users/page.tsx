@@ -50,6 +50,7 @@ export default function AdminUsersPage() {
   const [data, setData] = useState<AdminUsersResponse | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
+  const [viewingAsUserId, setViewingAsUserId] = useState<number | null>(null);
 
   useEffect(() => {
     fetch("/api/proxy/admin/users")
@@ -63,6 +64,25 @@ export default function AdminUsersPage() {
       )
       .finally(() => setLoading(false));
   }, []);
+
+  const handleViewAsUser = async (userId: number) => {
+    setViewingAsUserId(userId);
+    try {
+      const response = await fetch(`/admin/view-as/${userId}`, {
+        method: "POST",
+      });
+      if (response.ok) {
+        // The route redirects, so if we get here, go to portal
+        window.location.href = "/portal";
+      } else {
+        setViewingAsUserId(null);
+        alert("Failed to view as user");
+      }
+    } catch (err) {
+      setViewingAsUserId(null);
+      console.error("Error viewing as user:", err);
+    }
+  };
 
   if (loading) {
     return (
@@ -101,7 +121,7 @@ export default function AdminUsersPage() {
                 "Created",
                 "Last login",
                 "Analyses",
-                "",
+                "Actions",
               ].map((h) => (
                 <th
                   key={h}
@@ -134,13 +154,24 @@ export default function AdminUsersPage() {
                 <td className="px-4 py-3 text-right tabular-nums text-muted-foreground">
                   {user.analyses_count}
                 </td>
-                <td className="px-4 py-3">
-                  <a
-                    href={`/admin/users/${user.id}`}
-                    className="text-xs text-accent hover:underline"
-                  >
-                    Detail
-                  </a>
+                <td className="px-4 py-3 text-right">
+                  <div className="flex items-center justify-end gap-2">
+                    <a
+                      href={`/admin/users/${user.id}`}
+                      className="text-xs text-accent hover:underline"
+                    >
+                      Detail
+                    </a>
+                    <button
+                      onClick={() => handleViewAsUser(user.id)}
+                      disabled={viewingAsUserId === user.id}
+                      className="text-xs px-2 py-1 rounded bg-accent/10 text-accent hover:bg-accent/20 disabled:opacity-50 transition-colors"
+                    >
+                      {viewingAsUserId === user.id
+                        ? "Switching…"
+                        : "View as User"}
+                    </button>
+                  </div>
                 </td>
               </tr>
             ))}

@@ -3,8 +3,9 @@
  */
 
 export {
-  extractSleepInsights,
-  extractRecoveryInsights,
   extractActivityInsights,
+  extractRecoveryInsights,
+  extractSleepInsights,
+  getTopInsights,
 } from "./extract";
 export type { InsightText } from "./extract";
