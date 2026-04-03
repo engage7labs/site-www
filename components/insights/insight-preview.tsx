@@ -29,6 +29,7 @@ import {
   extractActivityInsights,
   extractRecoveryInsights,
   extractSleepInsights,
+  getPreviewInsight,
 } from "@/lib/insights";
 import {
   trackActivityPreviewViewed,
@@ -41,7 +42,15 @@ import {
 } from "@/lib/telemetry";
 import type { AnalysisResult } from "@/lib/types/analysis";
 import { motion } from "framer-motion";
-import { ArrowLeft, Crown, Footprints, HeartPulse, Moon } from "lucide-react";
+import {
+  ArrowLeft,
+  Check,
+  Crown,
+  Footprints,
+  HeartPulse,
+  Moon,
+  Sparkles,
+} from "lucide-react";
 import Link from "next/link";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { EChart } from "./echart";
@@ -135,6 +144,9 @@ export function InsightPreview({
     () => extractActivityInsights(sections),
     [sections]
   );
+
+  // ---- Preview insight for Premium CTA (Sprint 17.6.2) ------------------
+  const previewInsight = useMemo(() => getPreviewInsight(sections), [sections]);
 
   // ---- Chart configs -----------------------------------------------------
   const monthly = sections?.monthly_patterns;
@@ -536,6 +548,55 @@ export function InsightPreview({
                   {t.result.preview.fullReport.downloadButton}
                 </button>
               </div>
+            </motion.div>
+
+            {/* Preview Insight — data-driven teaser (Sprint 17.6.2) */}
+            {previewInsight && (
+              <motion.div
+                initial={{ opacity: 0, y: 12 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.4, delay: 0.45 }}
+                className="mt-6 mx-auto max-w-lg rounded-lg border border-accent/15 bg-accent/[0.04] px-5 py-4 text-center"
+              >
+                <div className="flex items-center justify-center gap-2 mb-1">
+                  <Sparkles className="h-3.5 w-3.5 text-accent" />
+                  <span className="text-xs font-medium uppercase tracking-wider text-accent/80">
+                    From your data
+                  </span>
+                </div>
+                <p className="text-sm text-foreground/90 leading-relaxed">
+                  {previewInsight}
+                </p>
+              </motion.div>
+            )}
+
+            {/* Benefits list (Sprint 17.6.2) */}
+            <motion.div
+              initial={{ opacity: 0, y: 12 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.4, delay: 0.55 }}
+              className="mt-8 mx-auto max-w-md"
+            >
+              <p className="text-xs font-medium uppercase tracking-wider text-muted-foreground text-center mb-4">
+                What you unlock with Premium
+              </p>
+              <ul className="space-y-2.5">
+                {[
+                  "Longitudinal insights across sleep, recovery, and activity",
+                  "Personalized comparisons against your own baseline",
+                  "Clear, actionable improvement suggestions",
+                  "Full access to your private health dashboard",
+                  "Continuous tracking as your data evolves",
+                ].map((benefit) => (
+                  <li
+                    key={benefit}
+                    className="flex items-start gap-2.5 text-sm text-muted-foreground"
+                  >
+                    <Check className="h-4 w-4 mt-0.5 shrink-0 text-accent/70" />
+                    <span>{benefit}</span>
+                  </li>
+                ))}
+              </ul>
             </motion.div>
           </div>
         )}

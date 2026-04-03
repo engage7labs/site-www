@@ -2,7 +2,7 @@
 
 import type { EChartsOption } from "echarts";
 import { Activity, Heart, Moon } from "lucide-react";
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
 export const dynamic = "force-dynamic";
 
@@ -143,7 +143,12 @@ function LongitudinalChart({
   title: string;
   subtitle: string;
   dates: string[];
-  series: { name: string; data: number[]; color: string; yAxisIndex?: number }[];
+  series: {
+    name: string;
+    data: number[];
+    color: string;
+    yAxisIndex?: number;
+  }[];
 }>) {
   const containerRef = useRef<HTMLDivElement>(null);
 
@@ -269,7 +274,10 @@ function StatCard({
         {label}
       </span>
       <p className="text-lg font-bold text-card-foreground">
-        {value} <span className="text-sm font-normal text-muted-foreground">{unit}</span>
+        {value}{" "}
+        <span className="text-sm font-normal text-muted-foreground">
+          {unit}
+        </span>
       </p>
       <p className="text-[10px] text-muted-foreground">{count} data points</p>
     </div>
@@ -420,13 +428,9 @@ export default function HealthPage() {
             {sleepVals.length >= 3 && (
               <StatCard
                 label="Consistency"
-                value={(
-                  Math.sqrt(
-                    sleepVals.reduce(
-                      (a, v) => a + (v - avgSleep!) ** 2,
-                      0
-                    ) / sleepVals.length
-                  )
+                value={Math.sqrt(
+                  sleepVals.reduce((a, v) => a + (v - avgSleep!) ** 2, 0) /
+                    sleepVals.length
                 ).toFixed(2)}
                 unit="σ"
                 count={sleepVals.length}

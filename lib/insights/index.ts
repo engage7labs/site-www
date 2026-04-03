@@ -9,3 +9,4 @@ export {
   getTopInsights,
 } from "./extract";
 export type { InsightText } from "./extract";
+export { getPreviewInsight } from "./preview-insight";

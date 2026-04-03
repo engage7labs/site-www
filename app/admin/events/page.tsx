@@ -144,7 +144,9 @@ export default function AdminEventsPage() {
             disabled={loadingMore}
             className="rounded-lg border border-border px-4 py-2 text-sm font-medium text-foreground transition-colors hover:bg-muted disabled:opacity-50"
           >
-            {loadingMore ? "Loading…" : `Load more (${total - events.length} remaining)`}
+            {loadingMore
+              ? "Loading…"
+              : `Load more (${total - events.length} remaining)`}
           </button>
         </div>
       )}

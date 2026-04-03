@@ -1,7 +1,7 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
 import { usePathname } from "next/navigation";
+import { useCallback, useEffect, useState } from "react";
 import { AdminViewBanner } from "../admin-view-banner";
 import { PasswordSetupAlert } from "./password-setup-alert";
 import { PortalHeader } from "./portal-header";
@@ -45,7 +45,9 @@ export function PortalShell({
   const pathname = usePathname();
   const sectionTitle =
     SECTION_TITLES[pathname] ??
-    Object.entries(SECTION_TITLES).find(([k]) => pathname.startsWith(k + "/"))?.[1] ??
+    Object.entries(SECTION_TITLES).find(([k]) =>
+      pathname.startsWith(k + "/")
+    )?.[1] ??
     undefined;
 
   return (
@@ -59,7 +61,10 @@ export function PortalShell({
       />
 
       <div className="flex flex-1 flex-col">
-        <PortalHeader onToggleMobile={toggleMobile} sectionTitle={sectionTitle} />
+        <PortalHeader
+          onToggleMobile={toggleMobile}
+          sectionTitle={sectionTitle}
+        />
 
         <PasswordSetupAlert />
 
