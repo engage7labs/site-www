@@ -65,6 +65,40 @@ interface OverviewData {
   } | null;
 }
 
+function parseLatestSections(payload: unknown): Record<string, unknown> | null {
+  if (!payload) return null;
+
+  let list: unknown[] = [];
+  if (Array.isArray(payload)) {
+    list = payload;
+  } else {
+    const maybeItems = (payload as { items?: unknown[] })?.items;
+    if (Array.isArray(maybeItems)) {
+      list = maybeItems;
+    }
+  }
+
+  if (list.length === 0) return null;
+  const latest = list[0] as { sections_json?: unknown };
+  const raw = latest?.sections_json;
+  if (!raw) return null;
+
+  if (typeof raw === "string") {
+    try {
+      const parsed = JSON.parse(raw);
+      return parsed && typeof parsed === "object"
+        ? (parsed as Record<string, unknown>)
+        : null;
+    } catch {
+      return null;
+    }
+  }
+
+  return raw && typeof raw === "object"
+    ? (raw as Record<string, unknown>)
+    : null;
+}
+
 interface MetricCardProps {
   readonly label: string;
   readonly value: string;
@@ -367,33 +401,39 @@ function HealthRadar({
 export default function PortalOverviewPage() {
   const [data, setData] = useState<OverviewData | null>(null);
   const [trends, setTrends] = useState<TrendsData | null>(null);
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const [sections, setSections] = useState<Record<string, any> | null>(null);
+  const [sections, setSections] = useState<Record<string, unknown> | null>(
+    null
+  );
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     (async () => {
       try {
-        const [overviewRes, trendsRes, analysesRes] = await Promise.all([
+        const [overviewReq, trendsReq, analysesReq] = await Promise.allSettled([
           fetch("/api/proxy/users/portal-overview"),
           fetch("/api/proxy/users/portal-trends"),
           fetch("/api/proxy/users/portal-analyses"),
         ]);
-        if (overviewRes.ok) setData(await overviewRes.json());
-        if (trendsRes.ok) setTrends(await trendsRes.json());
-        if (analysesRes.ok) {
-          const analyses = await analysesRes.json();
-          // Use sections from the latest analysis
-          if (Array.isArray(analyses) && analyses.length > 0) {
-            const latest = analyses[0];
-            if (latest.sections_json) {
-              setSections(
-                typeof latest.sections_json === "string"
-                  ? JSON.parse(latest.sections_json)
-                  : latest.sections_json
-              );
-            }
-          }
+
+        if (overviewReq.status === "fulfilled" && overviewReq.value.ok) {
+          const overviewJson = (await overviewReq.value
+            .json()
+            .catch(() => null)) as OverviewData | null;
+          setData(overviewJson);
+        }
+
+        if (trendsReq.status === "fulfilled" && trendsReq.value.ok) {
+          const trendsJson = (await trendsReq.value
+            .json()
+            .catch(() => null)) as TrendsData | null;
+          setTrends(trendsJson);
+        }
+
+        if (analysesReq.status === "fulfilled" && analysesReq.value.ok) {
+          const analysesPayload = await analysesReq.value
+            .json()
+            .catch(() => null);
+          setSections(parseLatestSections(analysesPayload));
         }
       } catch {
         // silent — show empty state
@@ -402,6 +442,11 @@ export default function PortalOverviewPage() {
       }
     })();
   }, []);
+
+  const compareImprove = useMemo(
+    () => generateCompareImprove(data, trends, sections),
+    [data, trends, sections]
+  );
 
   if (loading) {
     return (
@@ -421,11 +466,6 @@ export default function PortalOverviewPage() {
     data?.recovery_trend != null ? `${data.recovery_trend} ms` : "—";
   const completeness = data?.data_completeness ?? "—";
   const latest = data?.latest_analysis;
-
-  const compareImprove = useMemo(
-    () => generateCompareImprove(data, trends, sections),
-    [data, trends, sections]
-  );
 
   return (
     <div className="flex flex-col gap-6">

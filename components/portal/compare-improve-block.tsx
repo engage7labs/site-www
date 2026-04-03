@@ -127,9 +127,19 @@ function ImproveSection({ items }: { items: ImproveItem[] }) {
 export function CompareImproveBlock({
   result,
 }: {
-  result: CompareImproveResult;
+  result: CompareImproveResult | null | undefined;
 }) {
-  if (!result.hasData) return null;
+  if (!result?.hasData) return null;
+
+  const comparisons = Array.isArray(result.comparisons)
+    ? result.comparisons
+    : [];
+  const interpretations = Array.isArray(result.interpretations)
+    ? result.interpretations
+    : [];
+  const improvements = Array.isArray(result.improvements)
+    ? result.improvements
+    : [];
 
   return (
     <div className="portal-panel rounded-xl border border-border/70 bg-card/85 p-5">
@@ -140,9 +150,9 @@ export function CompareImproveBlock({
         </h2>
       </div>
       <div className="grid gap-5 lg:grid-cols-3">
-        <CompareSection items={result.comparisons} />
-        <InterpretSection items={result.interpretations} />
-        <ImproveSection items={result.improvements} />
+        <CompareSection items={comparisons} />
+        <InterpretSection items={interpretations} />
+        <ImproveSection items={improvements} />
       </div>
     </div>
   );

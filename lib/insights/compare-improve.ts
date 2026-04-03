@@ -56,9 +56,17 @@ function safeNum(v: unknown): number | null {
   return isNaN(n) ? null : n;
 }
 
-function median(arr: { value: number }[] | undefined): number | null {
-  if (!arr || arr.length === 0) return null;
-  const sorted = arr.map((p) => p.value).sort((a, b) => a - b);
+function getTrendValues(input: unknown): number[] {
+  if (!Array.isArray(input)) return [];
+  return input
+    .map((entry) => safeNum((entry as { value?: unknown })?.value))
+    .filter((n): n is number => n != null);
+}
+
+function median(input: unknown): number | null {
+  const values = getTrendValues(input);
+  if (values.length === 0) return null;
+  const sorted = [...values].sort((a, b) => a - b);
   const mid = Math.floor(sorted.length / 2);
   return sorted.length % 2 !== 0
     ? sorted[mid]
@@ -366,9 +374,24 @@ export function generateCompareImprove(
   trends: AnyRecord | null,
   sections: AnyRecord | null
 ): CompareImproveResult {
-  const comparisons = buildComparisons(overview, trends);
-  const interpretations = buildInterpretations(overview, trends, sections);
-  const improvements = buildImprovements(overview, trends, sections);
+  const safeOverview =
+    overview && typeof overview === "object" ? overview : ({} as AnyRecord);
+  const safeTrends =
+    trends && typeof trends === "object" ? trends : ({} as AnyRecord);
+  const safeSections =
+    sections && typeof sections === "object" ? sections : ({} as AnyRecord);
+
+  const comparisons = buildComparisons(safeOverview, safeTrends);
+  const interpretations = buildInterpretations(
+    safeOverview,
+    safeTrends,
+    safeSections
+  );
+  const improvements = buildImprovements(
+    safeOverview,
+    safeTrends,
+    safeSections
+  );
 
   return {
     comparisons,
