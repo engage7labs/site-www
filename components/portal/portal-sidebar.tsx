@@ -58,23 +58,29 @@ export function PortalSidebar({
     <div className="flex h-full flex-col">
       {/* Brand + collapse toggle */}
       <div className="flex h-16 items-center justify-between border-b border-border px-4">
-        <Link
-          href="/portal"
-          className="flex items-center gap-2 text-foreground"
-          onClick={onCloseMobile}
-        >
-          <Logo size={32} className="rounded-lg shrink-0" />
-          <span
-            className={`overflow-hidden whitespace-nowrap font-semibold transition-all duration-300 ${
-              collapsed ? "w-0 opacity-0" : "w-auto opacity-100"
-            }`}
+        {collapsed ? (
+          // Collapsed: centered compact logo
+          <Link
+            href="/portal"
+            className="flex flex-1 items-center justify-center text-foreground"
+            onClick={onCloseMobile}
           >
-            Engage7
-          </span>
-        </Link>
+            <Logo size={28} compact className="rounded-lg shrink-0" />
+          </Link>
+        ) : (
+          // Expanded: full logo + text
+          <Link
+            href="/portal"
+            className="flex items-center gap-2 text-foreground"
+            onClick={onCloseMobile}
+          >
+            <Logo size={32} className="rounded-lg shrink-0" />
+            <span className="whitespace-nowrap font-semibold">Engage7</span>
+          </Link>
+        )}
         <button
           onClick={onToggleCollapse}
-          className="hidden md:flex items-center justify-center rounded-lg p-1.5 text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+          className="hidden md:flex flex-shrink-0 items-center justify-center rounded-lg p-1.5 text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
           aria-label={collapsed ? "Expand sidebar" : "Collapse sidebar"}
         >
           {collapsed ? (

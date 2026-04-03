@@ -4,10 +4,12 @@
  * Forwards user creation requests to the API backend.
  * Sprint 15.0: Passwordless user creation with trial plan.
  * Sprint 15.2: Sets session cookie so user lands authenticated in portal.
+ * Sprint 17.7: Sends premium welcome email on successful creation.
  */
 
 import { signRequest } from "@/lib/api/signing";
 import { SESSION_COOKIE_NAME, SESSION_HOURS, signJwt } from "@/lib/auth-server";
+import { premiumWelcomeEmail, sendEmail } from "@/lib/email";
 import { INTERNAL_API_BASE_URL } from "@/lib/server-config";
 import { NextRequest, NextResponse } from "next/server";
 
@@ -52,6 +54,16 @@ export async function POST(request: NextRequest) {
       path: "/",
       maxAge: SESSION_HOURS * 3600,
     });
+
+    // Sprint 17.7: Send premium welcome email (fire-and-forget)
+    const welcome = premiumWelcomeEmail();
+    void sendEmail({
+      to: data.email,
+      subject: welcome.subject,
+      html: welcome.html,
+    }).catch((err) =>
+      console.error("[create-or-get] Welcome email failed:", err)
+    );
   }
 
   return res;

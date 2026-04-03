@@ -1,8 +1,8 @@
 /**
- * Email delivery via Resend API — Sprint 17.4.
+ * Email delivery via Resend API — Sprint 17.4 / 17.7.
  *
  * Uses the Resend HTTP API directly (no SDK dependency) to send
- * transactional emails for password setup & recovery flows.
+ * transactional emails for password flows, premium welcome, and insight emails.
  *
  * Required env vars:
  *   RESEND_API_KEY     — Resend API key (re_...)
@@ -99,3 +99,68 @@ export function passwordResetEmail(resetUrl: string): {
 }
 
 export { APP_URL };
+
+// ---------------------------------------------------------------------------
+// Premium Welcome Email — Sprint 17.7
+// ---------------------------------------------------------------------------
+
+export function premiumWelcomeEmail(): { subject: string; html: string } {
+  const portalUrl = `${APP_URL}/portal`;
+  return {
+    subject: "Welcome to Engage7 Premium",
+    html: `
+      <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; max-width: 480px; margin: 0 auto; padding: 32px 24px;">
+        <h2 style="color: #111827; margin-bottom: 16px;">Welcome to Premium</h2>
+        <p style="color: #4b5563; line-height: 1.6; margin-bottom: 16px;">
+          Your Premium access is now active. You have full access to longitudinal
+          insights, personalized baselines, and your private health dashboard.
+        </p>
+        <p style="color: #4b5563; line-height: 1.6; margin-bottom: 24px;">
+          Upload your Apple Health data anytime to keep your insights up to date.
+          The more data you add, the clearer the patterns become.
+        </p>
+        <a href="${portalUrl}" style="display: inline-block; background-color: #e6b800; color: #1a1a1a; padding: 12px 28px; border-radius: 8px; text-decoration: none; font-weight: 600; font-size: 14px;">
+          Go to your Dashboard
+        </a>
+        <p style="color: #9ca3af; font-size: 12px; margin-top: 32px; line-height: 1.5;">
+          Engage7 — Personal health insights from your wearable data.
+        </p>
+      </div>
+    `,
+  };
+}
+
+// ---------------------------------------------------------------------------
+// Insight Email — Sprint 17.7
+// ---------------------------------------------------------------------------
+
+export function insightEmail(insight: string): {
+  subject: string;
+  html: string;
+} {
+  const portalUrl = `${APP_URL}/portal/health`;
+  return {
+    subject: "New insight from your health data — Engage7",
+    html: `
+      <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; max-width: 480px; margin: 0 auto; padding: 32px 24px;">
+        <h2 style="color: #111827; margin-bottom: 16px;">A new insight from your data</h2>
+        <div style="background-color: #f0fdf4; border: 1px solid #bbf7d0; border-radius: 8px; padding: 16px; margin-bottom: 24px;">
+          <p style="color: #166534; line-height: 1.6; margin: 0; font-size: 15px;">
+            ${insight}
+          </p>
+        </div>
+        <p style="color: #4b5563; line-height: 1.6; margin-bottom: 24px;">
+          Visit your dashboard to explore what this means and view your full
+          longitudinal trends.
+        </p>
+        <a href="${portalUrl}" style="display: inline-block; background-color: #10b981; color: #ffffff; padding: 12px 28px; border-radius: 8px; text-decoration: none; font-weight: 600; font-size: 14px;">
+          View in Dashboard
+        </a>
+        <p style="color: #9ca3af; font-size: 12px; margin-top: 32px; line-height: 1.5;">
+          You received this because your latest analysis revealed a meaningful insight.<br />
+          Engage7 — Personal health insights from your wearable data.
+        </p>
+      </div>
+    `,
+  };
+}
