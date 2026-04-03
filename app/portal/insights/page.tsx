@@ -138,13 +138,6 @@ export default function InsightsPage() {
   if (empty || insights.length === 0) {
     return (
       <div className="flex flex-col gap-6">
-        <div>
-          <h1 className="text-2xl font-bold text-foreground">Insights</h1>
-          <p className="mt-1 text-sm text-muted-foreground">
-            Patterns detected from your data — based on your own history, not
-            averages
-          </p>
-        </div>
         <div className="flex flex-col items-center justify-center py-16 gap-4 text-center">
           <Lightbulb className="h-10 w-10 text-muted-foreground/50" />
           <p className="text-sm text-muted-foreground max-w-sm">
@@ -158,14 +151,6 @@ export default function InsightsPage() {
 
   return (
     <div className="flex flex-col gap-6">
-      <div>
-        <h1 className="text-2xl font-bold text-foreground">Insights</h1>
-        <p className="mt-1 text-sm text-muted-foreground">
-          Patterns detected from your data — based on your own history, not
-          averages
-        </p>
-      </div>
-
       <div className="grid gap-4 sm:grid-cols-2">
         {insights.map((insight, i) => (
           <InsightCard key={`${insight.pillar}-${i}`} insight={insight} />

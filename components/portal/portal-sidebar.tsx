@@ -3,10 +3,10 @@
 import { Logo } from "@/components/shared/logo";
 import {
   Activity,
+  ChevronLeft,
+  ChevronRight,
   LayoutDashboard,
   Lightbulb,
-  PanelLeft,
-  PanelLeftClose,
   Settings,
   TrendingUp,
   Upload,
@@ -59,7 +59,7 @@ export function PortalSidebar({
       {/* Brand + collapse toggle */}
       <div className="flex h-16 items-center justify-between border-b border-border px-4">
         {collapsed ? (
-          // Collapsed: centered compact logo
+          // Collapsed: compact bully icon, centered
           <Link
             href="/portal"
             className="flex flex-1 items-center justify-center text-foreground"
@@ -68,14 +68,13 @@ export function PortalSidebar({
             <Logo size={28} compact className="rounded-lg shrink-0" />
           </Link>
         ) : (
-          // Expanded: full logo + text
+          // Expanded: full horizontal logo only (no text)
           <Link
             href="/portal"
-            className="flex items-center gap-2 text-foreground"
+            className="flex items-center text-foreground"
             onClick={onCloseMobile}
           >
-            <Logo size={32} className="rounded-lg shrink-0" />
-            <span className="whitespace-nowrap font-semibold">Engage7</span>
+            <Logo size={28} className="shrink-0" />
           </Link>
         )}
         <button
@@ -84,9 +83,9 @@ export function PortalSidebar({
           aria-label={collapsed ? "Expand sidebar" : "Collapse sidebar"}
         >
           {collapsed ? (
-            <PanelLeft className="h-4 w-4" />
+            <ChevronRight className="h-4 w-4" />
           ) : (
-            <PanelLeftClose className="h-4 w-4" />
+            <ChevronLeft className="h-4 w-4" />
           )}
         </button>
       </div>

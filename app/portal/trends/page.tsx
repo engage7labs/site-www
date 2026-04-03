@@ -782,12 +782,6 @@ function TrendChart({
 function EmptyTrendsState() {
   return (
     <div className="flex flex-col gap-6">
-      <div>
-        <h1 className="text-2xl font-bold text-foreground">Trends</h1>
-        <p className="mt-1 text-sm text-muted-foreground">
-          Multi-signal trends, correlations, baselines, and volatility
-        </p>
-      </div>
       <div className="portal-panel rounded-xl border border-border/70 bg-card/85 p-8 text-center">
         <p className="text-sm text-muted-foreground">
           No trend data available yet. Upload an Apple Health export to populate
@@ -836,10 +830,7 @@ export default function TrendsPage() {
   if (loading) {
     return (
       <div className="flex flex-col gap-6">
-        <div>
-          <h1 className="text-2xl font-bold text-foreground">Trends</h1>
-          <p className="mt-1 text-sm text-muted-foreground">Loading…</p>
-        </div>
+        <p className="text-sm text-muted-foreground">Loading…</p>
       </div>
     );
   }
@@ -893,13 +884,6 @@ export default function TrendsPage() {
 
   return (
     <div className="flex flex-col gap-6">
-      <div>
-        <h1 className="text-2xl font-bold text-foreground">Trends</h1>
-        <p className="mt-1 text-sm text-muted-foreground">
-          Multi-signal trends, correlations, baselines, and volatility
-        </p>
-      </div>
-
       {/* Summary Stats */}
       <div className="grid gap-3 grid-cols-2 lg:grid-cols-4">
         {avgSleep && (

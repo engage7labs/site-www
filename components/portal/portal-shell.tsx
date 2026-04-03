@@ -7,14 +7,36 @@ import { PasswordSetupAlert } from "./password-setup-alert";
 import { PortalHeader } from "./portal-header";
 import { PortalSidebar } from "./portal-sidebar";
 
-const SECTION_TITLES: Record<string, string> = {
-  "/portal": "Overview",
-  "/portal/reports": "My Uploads",
-  "/portal/trends": "Trends",
-  "/portal/insights": "Insights",
-  "/portal/settings": "Settings",
-  "/portal/upload": "Upload",
-  "/portal/health": "Health",
+const SECTION_TITLES: Record<string, { title: string; subtitle: string }> = {
+  "/portal": {
+    title: "Overview",
+    subtitle: "Your health data at a glance",
+  },
+  "/portal/reports": {
+    title: "My Uploads",
+    subtitle: "Review your generated health reports",
+  },
+  "/portal/trends": {
+    title: "Trends",
+    subtitle: "Multi-signal trends, correlations, baselines, and volatility",
+  },
+  "/portal/insights": {
+    title: "Insights",
+    subtitle:
+      "Patterns detected from your data — based on your own history, not averages",
+  },
+  "/portal/settings": {
+    title: "Settings",
+    subtitle: "Manage your portal preferences",
+  },
+  "/portal/upload": {
+    title: "Upload",
+    subtitle: "Upload your Apple Health export",
+  },
+  "/portal/health": {
+    title: "Health",
+    subtitle: "Longitudinal Sleep, Recovery & Activity",
+  },
 };
 
 const STORAGE_KEY = "engage7_portal_sidebar_collapsed";
@@ -43,7 +65,7 @@ export function PortalShell({
   }, []);
 
   const pathname = usePathname();
-  const sectionTitle =
+  const section =
     SECTION_TITLES[pathname] ??
     Object.entries(SECTION_TITLES).find(([k]) =>
       pathname.startsWith(k + "/")
@@ -63,7 +85,8 @@ export function PortalShell({
       <div className="flex flex-1 flex-col">
         <PortalHeader
           onToggleMobile={toggleMobile}
-          sectionTitle={sectionTitle}
+          sectionTitle={section?.title}
+          sectionSubtitle={section?.subtitle}
         />
 
         <PasswordSetupAlert />

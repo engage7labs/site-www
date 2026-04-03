@@ -152,6 +152,14 @@ export function LoginFormFields({
           required
           autoComplete={isRegister ? "new-password" : "current-password"}
         />
+        {!isRegister && (
+          <a
+            href="/auth/reset-password"
+            className="self-end text-xs text-muted-foreground hover:text-foreground transition-colors"
+          >
+            Forgot password?
+          </a>
+        )}
       </div>
 
       {isRegister && (

@@ -104,15 +104,6 @@ export default function PortalUploadPage() {
     <div className="flex justify-center">
       <div className="w-full max-w-2xl px-4 md:px-8 mt-10">
         <div className="flex flex-col gap-8">
-          <div>
-            <h1 className="text-2xl font-bold text-foreground">
-              {t.analyze.title}
-            </h1>
-            <p className="mt-1 text-sm text-muted-foreground">
-              {t.analyze.subtitle}
-            </p>
-          </div>
-
           {isAdminView ? (
             <div className="rounded-lg border border-amber-500/30 bg-amber-500/5 p-8 text-center space-y-3">
               <Lock className="mx-auto h-8 w-8 text-amber-500" />

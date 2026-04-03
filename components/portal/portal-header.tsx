@@ -10,11 +10,13 @@ import { PortalThemePicker } from "./portal-theme-picker";
 interface PortalHeaderProps {
   onToggleMobile: () => void;
   sectionTitle?: string;
+  sectionSubtitle?: string;
 }
 
 export function PortalHeader({
   onToggleMobile,
   sectionTitle,
+  sectionSubtitle,
 }: PortalHeaderProps) {
   const router = useRouter();
   const [isAdminView, setIsAdminView] = useState(false);
@@ -57,9 +59,16 @@ export function PortalHeader({
           Engage7
         </span>
         {sectionTitle && (
-          <span className="hidden md:inline text-sm font-medium text-muted-foreground">
-            {sectionTitle}
-          </span>
+          <div className="hidden md:flex md:flex-col md:gap-0.5">
+            <span className="text-lg font-semibold leading-tight text-foreground">
+              {sectionTitle}
+            </span>
+            {sectionSubtitle && (
+              <span className="text-xs leading-tight text-muted-foreground">
+                {sectionSubtitle}
+              </span>
+            )}
+          </div>
         )}
       </div>
 

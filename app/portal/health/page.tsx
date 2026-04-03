@@ -326,10 +326,7 @@ export default function HealthPage() {
   if (loading) {
     return (
       <div className="flex flex-col gap-6">
-        <div>
-          <h1 className="text-2xl font-bold text-foreground">Health</h1>
-          <p className="mt-1 text-sm text-muted-foreground">Loading…</p>
-        </div>
+        <p className="text-sm text-muted-foreground">Loading…</p>
       </div>
     );
   }
@@ -337,12 +334,6 @@ export default function HealthPage() {
   if (!trendsData || trendsData.analysis_count === 0) {
     return (
       <div className="flex flex-col gap-6">
-        <div>
-          <h1 className="text-2xl font-bold text-foreground">Health</h1>
-          <p className="mt-1 text-sm text-muted-foreground">
-            Longitudinal Sleep, Recovery &amp; Activity
-          </p>
-        </div>
         <EmptyState />
       </div>
     );
@@ -383,12 +374,6 @@ export default function HealthPage() {
     <div className="flex flex-col gap-6">
       {/* Header */}
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-        <div>
-          <h1 className="text-2xl font-bold text-foreground">Health</h1>
-          <p className="mt-1 text-sm text-muted-foreground">
-            Longitudinal Sleep, Recovery &amp; Activity
-          </p>
-        </div>
         <PeriodSwitcher period={period} onChange={setPeriod} />
       </div>
 

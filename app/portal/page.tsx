@@ -451,10 +451,7 @@ export default function PortalOverviewPage() {
   if (loading) {
     return (
       <div className="flex flex-col gap-6">
-        <div>
-          <h1 className="text-2xl font-bold text-foreground">Overview</h1>
-          <p className="mt-1 text-sm text-muted-foreground">Loading…</p>
-        </div>
+        <p className="text-sm text-muted-foreground">Loading…</p>
       </div>
     );
   }
@@ -469,13 +466,6 @@ export default function PortalOverviewPage() {
 
   return (
     <div className="flex flex-col gap-6">
-      <div>
-        <h1 className="text-2xl font-bold text-foreground">Overview</h1>
-        <p className="mt-1 text-sm text-muted-foreground">
-          Your health data at a glance
-        </p>
-      </div>
-
       {/* Compare & Improve — Sprint 17.5 */}
       <CompareImproveBlock result={compareImprove} />
 

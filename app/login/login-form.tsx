@@ -25,7 +25,7 @@ export function LoginForm() {
     <Card className="w-full max-w-sm">
       <CardHeader className="text-center">
         <div className="mx-auto mb-2">
-          <Logo size={48} href="/" />
+          <Logo size={48} compact href="/" />
         </div>
         <CardTitle className="text-2xl">
           {isAdmin ? "Admin Portal" : "Sign in to Engage7"}

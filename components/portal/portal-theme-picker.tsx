@@ -50,7 +50,7 @@ export function PortalThemePicker() {
               }}
               className={`group relative flex h-7 w-7 items-center justify-center rounded-md border transition-colors ${
                 appTheme === t
-                  ? "border-accent ring-1 ring-accent"
+                  ? "border-accent ring-2 ring-accent shadow-[0_0_6px_rgba(16,185,129,0.45)]"
                   : "border-border/50 hover:border-foreground/30"
               }`}
               title={THEME_NAMES[t]}

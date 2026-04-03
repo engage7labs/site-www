@@ -69,13 +69,6 @@ export default function SettingsPage() {
 
   return (
     <div className="flex flex-col gap-6">
-      <div>
-        <h1 className="text-2xl font-bold text-foreground">Settings</h1>
-        <p className="mt-1 text-sm text-muted-foreground">
-          Manage your portal preferences
-        </p>
-      </div>
-
       <div className="grid gap-4 sm:grid-cols-2">
         {/* Profile section */}
         <div className="rounded-xl border border-border bg-card p-5">
