@@ -129,7 +129,8 @@ function buildComparisons(
   }
 
   // HRV
-  const hrvMed = safeNum(overview?.recovery_trend) ?? median(trends?.trends?.hrv);
+  const hrvMed =
+    safeNum(overview?.recovery_trend) ?? median(trends?.trends?.hrv);
   if (hrvMed != null && hrvMed > 0) {
     const r = RANGES.hrv;
     const status = hrvMed >= r.low && hrvMed <= r.high ? "good" : "attention";
@@ -221,9 +222,11 @@ function buildInterpretations(
   }
 
   // Variability pattern (from trends or sections)
-  const sleepVol = safeNum(sections?.volatility?.sleep_hours?.cv) ??
+  const sleepVol =
+    safeNum(sections?.volatility?.sleep_hours?.cv) ??
     safeNum(trends?.trends?.volatility?.sleep_cv);
-  const stepsVol = safeNum(sections?.volatility?.total_steps?.cv) ??
+  const stepsVol =
+    safeNum(sections?.volatility?.total_steps?.cv) ??
     safeNum(trends?.trends?.volatility?.steps_cv);
   if (sleepVol != null && stepsVol != null) {
     if (sleepVol > 20 && stepsVol > 40) {
@@ -276,12 +279,17 @@ function buildImprovements(
   if (sleepVal != null && sleepVal < 6.5) {
     items.push({
       suggestion: "Try going to bed 20 minutes earlier this week",
-      reason: `Your median sleep is ${round1(sleepVal)}h — even a small shift toward ${round1(sleepVal + 0.3)}h can improve how you feel.`,
+      reason: `Your median sleep is ${round1(
+        sleepVal
+      )}h — even a small shift toward ${round1(
+        sleepVal + 0.3
+      )}h can improve how you feel.`,
     });
   } else if (sleepVol != null && sleepVol > 20) {
     items.push({
       suggestion: "Pick a consistent bedtime for the next 5 days",
-      reason: "Your sleep timing varies quite a bit. A fixed bedtime, even on weekends, helps stabilize your energy.",
+      reason:
+        "Your sleep timing varies quite a bit. A fixed bedtime, even on weekends, helps stabilize your energy.",
     });
   }
 
@@ -289,12 +297,20 @@ function buildImprovements(
   if (stepsMed != null && stepsMed < 5000) {
     items.push({
       suggestion: "Add a 10-minute walk after lunch",
-      reason: `Your daily steps average around ${Math.round(stepsMed).toLocaleString()}. A short walk is the easiest way to boost that.`,
+      reason: `Your daily steps average around ${Math.round(
+        stepsMed
+      ).toLocaleString()}. A short walk is the easiest way to boost that.`,
     });
-  } else if (stepsMed != null && stepsMed > 12000 && hrMed != null && hrMed > 75) {
+  } else if (
+    stepsMed != null &&
+    stepsMed > 12000 &&
+    hrMed != null &&
+    hrMed > 75
+  ) {
     items.push({
       suggestion: "Balance high activity with deliberate recovery time",
-      reason: "You move a lot but your resting heart rate suggests your body may need more downtime.",
+      reason:
+        "You move a lot but your resting heart rate suggests your body may need more downtime.",
     });
   }
 
@@ -302,12 +318,20 @@ function buildImprovements(
   if (hrvVal != null && hrvVal < 25) {
     items.push({
       suggestion: "Try 5 minutes of slow breathing before bed",
-      reason: "Your HRV is on the lower side. Breathwork can activate your parasympathetic system and support recovery.",
+      reason:
+        "Your HRV is on the lower side. Breathwork can activate your parasympathetic system and support recovery.",
     });
-  } else if (hrvVal != null && hrvVal > 60 && sleepVal != null && sleepVal >= 7) {
+  } else if (
+    hrvVal != null &&
+    hrvVal > 60 &&
+    sleepVal != null &&
+    sleepVal >= 7
+  ) {
     items.push({
-      suggestion: "Maintain what you're doing — your recovery signals are strong",
-      reason: "Good sleep and healthy HRV suggest your current routine works well.",
+      suggestion:
+        "Maintain what you're doing — your recovery signals are strong",
+      reason:
+        "Good sleep and healthy HRV suggest your current routine works well.",
     });
   }
 
@@ -315,7 +339,9 @@ function buildImprovements(
   if (hrMed != null && hrMed > 80) {
     items.push({
       suggestion: "Check hydration and stress levels this week",
-      reason: `A resting heart rate of ${Math.round(hrMed)} bpm is on the higher side. Hydration and stress management can help.`,
+      reason: `A resting heart rate of ${Math.round(
+        hrMed
+      )} bpm is on the higher side. Hydration and stress management can help.`,
     });
   }
 
@@ -323,7 +349,8 @@ function buildImprovements(
   if (items.length === 0 && (overview?.uploads ?? 0) > 0) {
     items.push({
       suggestion: "Keep uploading data regularly for richer insights",
-      reason: "More data points allow us to spot trends and give you better, more personalized suggestions.",
+      reason:
+        "More data points allow us to spot trends and give you better, more personalized suggestions.",
     });
   }
 
@@ -347,6 +374,9 @@ export function generateCompareImprove(
     comparisons,
     interpretations,
     improvements,
-    hasData: comparisons.length > 0 || interpretations.length > 0 || improvements.length > 0,
+    hasData:
+      comparisons.length > 0 ||
+      interpretations.length > 0 ||
+      improvements.length > 0,
   };
 }

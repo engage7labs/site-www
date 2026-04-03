@@ -27,12 +27,7 @@ export function Logo({
       role="img"
       aria-label="Engage7 logo"
     >
-      <rect
-        width="96"
-        height="96"
-        rx="20"
-        className="fill-accent"
-      />
+      <rect width="96" height="96" rx="20" className="fill-accent" />
       <text
         x="48"
         y="56"
