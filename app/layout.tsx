@@ -1,6 +1,8 @@
 import { AppThemeProvider } from "@/components/providers/app-theme-provider";
 import { LocaleProvider } from "@/components/providers/locale-provider";
 import { PostHogProvider } from "@/components/providers/posthog-provider";
+import { DevEnvironmentMarker } from "@/components/shared/dev-environment-marker";
+import { isDevEnvironment } from "@/lib/env";
 import { Analytics } from "@vercel/analytics/next";
 import type { Metadata } from "next";
 import { Geist_Mono, Inter } from "next/font/google";
@@ -11,10 +13,12 @@ import "./globals.css";
 const inter = Inter({ subsets: ["latin"] });
 const _geistMono = Geist_Mono({ subsets: ["latin"] });
 
+const titlePrefix = isDevEnvironment ? "[DEV] " : "";
+
 export const metadata: Metadata = {
   title: {
-    default: "Engage7 — See What Your Body Is Telling You",
-    template: "%s | Engage7",
+    default: `${titlePrefix}Engage7 — See What Your Body Is Telling You`,
+    template: `${titlePrefix}%s | Engage7`,
   },
   description:
     "Turn your wearable data into clear insights about sleep, recovery, and movement. Based on your own patterns, not averages.",
@@ -109,6 +113,7 @@ export default function RootLayout({
             <PostHogProvider>{children}</PostHogProvider>
           </LocaleProvider>
         </AppThemeProvider>
+        <DevEnvironmentMarker />
         <Analytics />
         <Toaster richColors position="top-center" />
       </body>
