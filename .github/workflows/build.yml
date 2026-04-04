@@ -1,17 +1,18 @@
-name: Web Build Check
+name: Web CI
 
 on:
   push:
-    branches: [main]
+    branches: [main, dev]
   pull_request:
-    branches: [main]
+    branches: [main, dev]
   workflow_dispatch:
 
 permissions:
   contents: read
 
 jobs:
-  build:
+  ci:
+    name: Lint, Type-check & Build
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -32,6 +33,9 @@ jobs:
 
       - name: Dependency audit (advisory)
         run: pnpm audit --prod || true
+
+      - name: TypeScript check
+        run: pnpm exec tsc --noEmit
 
       - name: Build
         env:
