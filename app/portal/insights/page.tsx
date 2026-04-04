@@ -144,9 +144,14 @@ function getSparklineData(
   if (!trends || !pillar) return [];
   let points: TrendPoint[] = [];
   if (pillar === "sleep") points = trends.sleep;
-  else if (pillar === "recovery") points = trends.hrv?.length > 0 ? trends.hrv : trends.hr;
-  else if (pillar === "activity") points = trends.steps?.length > 0 ? trends.steps : trends.activity;
-  return (points ?? []).filter((p) => p.value != null).map((p) => p.value as number).slice(-30);
+  else if (pillar === "recovery")
+    points = trends.hrv?.length > 0 ? trends.hrv : trends.hr;
+  else if (pillar === "activity")
+    points = trends.steps?.length > 0 ? trends.steps : trends.activity;
+  return (points ?? [])
+    .filter((p) => p.value != null)
+    .map((p) => p.value as number)
+    .slice(-30);
 }
 
 function getSignalLabel(pillar: string | undefined): string {
@@ -303,7 +308,9 @@ export default function InsightsPage() {
           <InsightCard
             key={`${insight.pillar}-${i}`}
             insight={insight}
-            sparkData={sparklines[insight.pillar as keyof typeof sparklines] ?? []}
+            sparkData={
+              sparklines[insight.pillar as keyof typeof sparklines] ?? []
+            }
           />
         ))}
       </div>

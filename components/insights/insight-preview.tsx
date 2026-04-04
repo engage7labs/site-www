@@ -583,37 +583,87 @@ export function InsightPreview({
               <div className="grid gap-4 sm:grid-cols-3">
                 {/* Free */}
                 <div className="rounded-xl border border-border bg-card p-5 text-left">
-                  <h3 className="text-sm font-semibold text-foreground mb-1">Free</h3>
-                  <p className="text-xs text-muted-foreground mb-3">Get started with your data</p>
+                  <h3 className="text-sm font-semibold text-foreground mb-1">
+                    Free
+                  </h3>
+                  <p className="text-xs text-muted-foreground mb-3">
+                    Get started with your data
+                  </p>
                   <ul className="space-y-1.5 text-xs text-muted-foreground">
-                    <li className="flex items-start gap-2"><Check className="h-3.5 w-3.5 mt-0.5 shrink-0 text-accent/60" /><span>Single analysis upload</span></li>
-                    <li className="flex items-start gap-2"><Check className="h-3.5 w-3.5 mt-0.5 shrink-0 text-accent/60" /><span>Preview insights (sleep, recovery, activity)</span></li>
-                    <li className="flex items-start gap-2"><Check className="h-3.5 w-3.5 mt-0.5 shrink-0 text-accent/60" /><span>Basic trend visualization</span></li>
+                    <li className="flex items-start gap-2">
+                      <Check className="h-3.5 w-3.5 mt-0.5 shrink-0 text-accent/60" />
+                      <span>Single analysis upload</span>
+                    </li>
+                    <li className="flex items-start gap-2">
+                      <Check className="h-3.5 w-3.5 mt-0.5 shrink-0 text-accent/60" />
+                      <span>Preview insights (sleep, recovery, activity)</span>
+                    </li>
+                    <li className="flex items-start gap-2">
+                      <Check className="h-3.5 w-3.5 mt-0.5 shrink-0 text-accent/60" />
+                      <span>Basic trend visualization</span>
+                    </li>
                   </ul>
                 </div>
                 {/* Premium — emphasized */}
                 <div className="rounded-xl border-2 border-accent bg-accent/5 p-5 text-left ring-1 ring-accent/20 shadow-sm">
-                  <h3 className="text-sm font-semibold text-accent mb-1">Premium</h3>
-                  <p className="text-xs text-muted-foreground mb-3">Full insight experience</p>
+                  <h3 className="text-sm font-semibold text-accent mb-1">
+                    Premium
+                  </h3>
+                  <p className="text-xs text-muted-foreground mb-3">
+                    Full insight experience
+                  </p>
                   <ul className="space-y-1.5 text-xs text-muted-foreground">
-                    <li className="flex items-start gap-2"><Check className="h-3.5 w-3.5 mt-0.5 shrink-0 text-accent" /><span>Longitudinal insights across all signals</span></li>
-                    <li className="flex items-start gap-2"><Check className="h-3.5 w-3.5 mt-0.5 shrink-0 text-accent" /><span>Personalized baseline comparisons</span></li>
-                    <li className="flex items-start gap-2"><Check className="h-3.5 w-3.5 mt-0.5 shrink-0 text-accent" /><span>Actionable improvement suggestions</span></li>
-                    <li className="flex items-start gap-2"><Check className="h-3.5 w-3.5 mt-0.5 shrink-0 text-accent" /><span>Full private health dashboard</span></li>
-                    <li className="flex items-start gap-2"><Check className="h-3.5 w-3.5 mt-0.5 shrink-0 text-accent" /><span>PDF & CSV report export</span></li>
+                    <li className="flex items-start gap-2">
+                      <Check className="h-3.5 w-3.5 mt-0.5 shrink-0 text-accent" />
+                      <span>Longitudinal insights across all signals</span>
+                    </li>
+                    <li className="flex items-start gap-2">
+                      <Check className="h-3.5 w-3.5 mt-0.5 shrink-0 text-accent" />
+                      <span>Personalized baseline comparisons</span>
+                    </li>
+                    <li className="flex items-start gap-2">
+                      <Check className="h-3.5 w-3.5 mt-0.5 shrink-0 text-accent" />
+                      <span>Actionable improvement suggestions</span>
+                    </li>
+                    <li className="flex items-start gap-2">
+                      <Check className="h-3.5 w-3.5 mt-0.5 shrink-0 text-accent" />
+                      <span>Full private health dashboard</span>
+                    </li>
+                    <li className="flex items-start gap-2">
+                      <Check className="h-3.5 w-3.5 mt-0.5 shrink-0 text-accent" />
+                      <span>PDF & CSV report export</span>
+                    </li>
                   </ul>
                 </div>
                 {/* Super Premium */}
                 <div className="rounded-xl border border-border bg-card p-5 text-left">
-                  <h3 className="text-sm font-semibold text-foreground mb-1">Super Premium</h3>
-                  <p className="text-xs text-muted-foreground mb-3">Deep analysis modules</p>
+                  <h3 className="text-sm font-semibold text-foreground mb-1">
+                    Super Premium
+                  </h3>
+                  <p className="text-xs text-muted-foreground mb-3">
+                    Deep analysis modules
+                  </p>
                   <ul className="space-y-1.5 text-xs text-muted-foreground">
-                    <li className="flex items-start gap-2"><Check className="h-3.5 w-3.5 mt-0.5 shrink-0 text-accent/60" /><span>Everything in Premium</span></li>
-                    <li className="flex items-start gap-2"><Check className="h-3.5 w-3.5 mt-0.5 shrink-0 text-accent/60" /><span>Advanced recovery analysis</span></li>
-                    <li className="flex items-start gap-2"><Check className="h-3.5 w-3.5 mt-0.5 shrink-0 text-accent/60" /><span>Circadian rhythm mapping</span></li>
-                    <li className="flex items-start gap-2"><Check className="h-3.5 w-3.5 mt-0.5 shrink-0 text-accent/60" /><span>Multi-period trend comparison</span></li>
+                    <li className="flex items-start gap-2">
+                      <Check className="h-3.5 w-3.5 mt-0.5 shrink-0 text-accent/60" />
+                      <span>Everything in Premium</span>
+                    </li>
+                    <li className="flex items-start gap-2">
+                      <Check className="h-3.5 w-3.5 mt-0.5 shrink-0 text-accent/60" />
+                      <span>Advanced recovery analysis</span>
+                    </li>
+                    <li className="flex items-start gap-2">
+                      <Check className="h-3.5 w-3.5 mt-0.5 shrink-0 text-accent/60" />
+                      <span>Circadian rhythm mapping</span>
+                    </li>
+                    <li className="flex items-start gap-2">
+                      <Check className="h-3.5 w-3.5 mt-0.5 shrink-0 text-accent/60" />
+                      <span>Multi-period trend comparison</span>
+                    </li>
                   </ul>
-                  <p className="mt-3 text-[10px] text-muted-foreground/60 italic">* Advanced modules in development</p>
+                  <p className="mt-3 text-[10px] text-muted-foreground/60 italic">
+                    * Advanced modules in development
+                  </p>
                 </div>
               </div>
             </motion.div>

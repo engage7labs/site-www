@@ -434,10 +434,12 @@ export default function HealthPage() {
       ) : (
         <div className="portal-panel rounded-xl border border-border/70 bg-card/85 p-8 text-center">
           <Moon className="h-8 w-8 text-muted-foreground/30 mx-auto mb-2" />
-          <p className="text-sm font-medium text-muted-foreground">No sleep data for this period</p>
+          <p className="text-sm font-medium text-muted-foreground">
+            No sleep data for this period
+          </p>
           <p className="text-xs text-muted-foreground/70 mt-1 max-w-xs mx-auto">
-            Sleep duration and quality metrics appear here once your Apple Health
-            export includes sleep data. Try selecting a wider time range.
+            Sleep duration and quality metrics appear here once your Apple
+            Health export includes sleep data. Try selecting a wider time range.
           </p>
         </div>
       )}
@@ -500,7 +502,9 @@ export default function HealthPage() {
       ) : (
         <div className="portal-panel rounded-xl border border-border/70 bg-card/85 p-8 text-center">
           <Heart className="h-8 w-8 text-muted-foreground/30 mx-auto mb-2" />
-          <p className="text-sm font-medium text-muted-foreground">No recovery data for this period</p>
+          <p className="text-sm font-medium text-muted-foreground">
+            No recovery data for this period
+          </p>
           <p className="text-xs text-muted-foreground/70 mt-1 max-w-xs mx-auto">
             HRV and resting heart rate trends appear here when your export
             contains heart-related metrics. Try selecting a wider time range.
@@ -570,7 +574,9 @@ export default function HealthPage() {
       ) : (
         <div className="portal-panel rounded-xl border border-border/70 bg-card/85 p-8 text-center">
           <Activity className="h-8 w-8 text-muted-foreground/30 mx-auto mb-2" />
-          <p className="text-sm font-medium text-muted-foreground">No activity data for this period</p>
+          <p className="text-sm font-medium text-muted-foreground">
+            No activity data for this period
+          </p>
           <p className="text-xs text-muted-foreground/70 mt-1 max-w-xs mx-auto">
             Steps and active minutes appear here once your export includes
             activity data. Try selecting a wider time range.
