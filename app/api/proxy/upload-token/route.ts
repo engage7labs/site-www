@@ -16,6 +16,7 @@
  */
 
 import { checkReadOnlyMode } from "@/lib/api/read-only-check";
+import { ensureProtocol } from "@/lib/config";
 import { signRequest } from "@/lib/api/signing";
 import { NextResponse } from "next/server";
 
@@ -35,9 +36,9 @@ export async function POST() {
 
   // NEXT_PUBLIC_API_BASE_URL is the public API URL.
   // The browser will POST the FormData directly to this URL.
-  const uploadUrl = `${
+  const uploadUrl = `${ensureProtocol(
     process.env.NEXT_PUBLIC_API_BASE_URL ?? "http://localhost:8000"
-  }${path}`;
+  )}${path}`;
 
   return NextResponse.json({
     uploadUrl,

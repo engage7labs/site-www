@@ -5,11 +5,14 @@
  * in Next.js API routes and server components.
  */
 
+import { ensureProtocol } from "@/lib/config";
+
 /** Internal API base URL for server-side proxy calls (no NEXT_PUBLIC_ prefix). */
-export const INTERNAL_API_BASE_URL =
+export const INTERNAL_API_BASE_URL = ensureProtocol(
   process.env.API_BASE_URL ??
-  process.env.NEXT_PUBLIC_API_BASE_URL ??
-  "http://localhost:8000";
+    process.env.NEXT_PUBLIC_API_BASE_URL ??
+    "http://localhost:8000"
+);
 
 /** HMAC signing secret shared with the API. */
 export const SIGNING_SECRET = process.env.ENGAGE7_SIGNING_SECRET ?? "";
