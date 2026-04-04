@@ -52,11 +52,17 @@ export async function POST(req: NextRequest) {
 
     const emailResult = await sendEmail({ to: email, subject, html });
     if (!emailResult.ok) {
-      console.error("[forgot-password] email delivery failed:", emailResult.error);
+      console.error(
+        "[forgot-password] email delivery failed:",
+        emailResult.error
+      );
     }
   } catch (err) {
     console.error("[forgot-password] internal error:", err);
-    return NextResponse.json({ error: "Something went wrong" }, { status: 500 });
+    return NextResponse.json(
+      { error: "Something went wrong" },
+      { status: 500 }
+    );
   }
 
   return NextResponse.json({ ok: true });
