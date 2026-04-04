@@ -36,3 +36,4 @@ Thumbs.db
 !.vscode/extensions.json
 # Claude temporary files
 tmpclaude-*
+.env*.local
