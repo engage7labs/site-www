@@ -378,7 +378,7 @@ export default function HealthPage() {
       </div>
 
       {/* ─── Sleep Section ─── */}
-      <div className="flex items-center gap-2 mt-2">
+      <div id="sleep" className="flex items-center gap-2 mt-2 scroll-mt-20">
         <Moon className="h-4 w-4 text-[#3dbe73]" />
         <h2 className="text-sm font-semibold uppercase tracking-wider text-muted-foreground">
           Sleep
@@ -445,7 +445,7 @@ export default function HealthPage() {
       )}
 
       {/* ─── Recovery Section ─── */}
-      <div className="flex items-center gap-2 mt-2">
+      <div id="recovery" className="flex items-center gap-2 mt-2 scroll-mt-20">
         <Heart className="h-4 w-4 text-[#6366f1]" />
         <h2 className="text-sm font-semibold uppercase tracking-wider text-muted-foreground">
           Recovery
@@ -513,7 +513,7 @@ export default function HealthPage() {
       )}
 
       {/* ─── Activity Section ─── */}
-      <div className="flex items-center gap-2 mt-2">
+      <div id="activity" className="flex items-center gap-2 mt-2 scroll-mt-20">
         <Activity className="h-4 w-4 text-[#f59e0b]" />
         <h2 className="text-sm font-semibold uppercase tracking-wider text-muted-foreground">
           Activity

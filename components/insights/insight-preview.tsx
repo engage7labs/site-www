@@ -30,6 +30,7 @@ import {
   extractRecoveryInsights,
   extractSleepInsights,
   getPreviewInsight,
+  getSurprisingInsight,
 } from "@/lib/insights";
 import {
   trackActivityPreviewViewed,
@@ -147,6 +148,12 @@ export function InsightPreview({
 
   // ---- Preview insight for Premium CTA (Sprint 17.6.2) ------------------
   const previewInsight = useMemo(() => getPreviewInsight(sections), [sections]);
+
+  // ---- Surprising personal insight (Sprint 19.0) ------------------------
+  const surprisingInsight = useMemo(
+    () => getSurprisingInsight(sections),
+    [sections]
+  );
 
   // ---- Chart configs -----------------------------------------------------
   const monthly = sections?.monthly_patterns;
@@ -281,6 +288,29 @@ export function InsightPreview({
       )}
 
       <main className={embedded ? "" : "max-w-6xl mx-auto px-6 pt-8 pb-16"}>
+        {/* ============================================================= */}
+        {/* SURPRISING PERSONAL INSIGHT — Sprint 19.0                     */}
+        {/* Appears BEFORE charts to create curiosity and perceived value  */}
+        {/* ============================================================= */}
+        {surprisingInsight && (
+          <motion.div
+            initial={{ opacity: 0, y: 12 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.4 }}
+            className="mb-6 mx-auto max-w-2xl rounded-xl border border-accent/20 bg-accent/[0.04] px-5 py-4 text-center"
+          >
+            <div className="flex items-center justify-center gap-2 mb-1.5">
+              <Sparkles className="h-3.5 w-3.5 text-accent" />
+              <span className="text-[10px] font-semibold uppercase tracking-wider text-accent/80">
+                Your data reveals
+              </span>
+            </div>
+            <p className="text-sm text-foreground/90 leading-relaxed">
+              {surprisingInsight}
+            </p>
+          </motion.div>
+        )}
+
         {/* ============================================================= */}
         {/* DESKTOP LAYOUT — two-column hero + compact lower zone         */}
         {/* ============================================================= */}

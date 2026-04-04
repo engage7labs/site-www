@@ -1,6 +1,7 @@
 "use client";
 
 import { CompareImproveBlock } from "@/components/portal/compare-improve-block";
+import { DailyBriefing } from "@/components/portal/daily-briefing";
 import { generateCompareImprove } from "@/lib/insights/compare-improve";
 import type { EChartsOption } from "echarts";
 import { Clock, Crown, ExternalLink, Heart, Moon, Upload } from "lucide-react";
@@ -466,6 +467,9 @@ export default function PortalOverviewPage() {
 
   return (
     <div className="flex flex-col gap-6">
+      {/* Daily Briefing — Sprint 19.0 */}
+      <DailyBriefing />
+
       {/* Compare & Improve — Sprint 17.5 */}
       <CompareImproveBlock result={compareImprove} />
 
