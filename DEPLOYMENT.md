@@ -16,11 +16,13 @@ dev branch  → development → deploy to: dev.engage7.ie
 Both **Production** and **Preview** deployments must set these variables:
 
 #### Production (main branch)
+
 - `NEXT_PUBLIC_APP_ENV=production`
 - `NEXT_PUBLIC_SITE_URL=https://www.engage7.ie`
 - `NEXT_PUBLIC_API_BASE_URL=https://api.engage7.ie`
 
 #### Preview / DEV (dev branch)
+
 - `NEXT_PUBLIC_APP_ENV=development`
 - `NEXT_PUBLIC_SITE_URL=https://dev.engage7.ie` (or leave unset for automatic default)
 - `NEXT_PUBLIC_API_BASE_URL=https://api-dev.engage7.ie` (or appropriate DEV API endpoint)
@@ -28,6 +30,7 @@ Both **Production** and **Preview** deployments must set these variables:
 ## Why This Matters
 
 The `NEXT_PUBLIC_APP_ENV` variable controls:
+
 - **DEV badge visibility** — Shows on all pages when in DEV
 - **Page title prefix** — `[DEV]` appears in browser tab only in DEV
 - **Social sharing URLs** — Open Graph metadata points to correct domain
@@ -83,10 +86,12 @@ vercel   # (without --prod flag)
 ### Verify These Settings in Vercel Dashboard
 
 1. **Project > Domains**
+
    - Production: `www.engage7.ie`, `engage7.ie` (apex redirect)
    - Preview: `dev.engage7.ie` (assigned to `dev` branch)
 
 2. **Project > Integrations > Git > Deployments**
+
    - Production branch: `main`
    - Preview deployments: enabled for all branches
    - PR previews: enabled
@@ -100,11 +105,13 @@ vercel   # (without --prod flag)
 After any deployment:
 
 ### On www.engage7.ie (Production)
+
 - [ ] No DEV badge in bottom-left corner
 - [ ] Browser tab title: `Engage7 — ...` (no `[DEV]` prefix)
 - [ ] Open Graph image meta tag points to `www.engage7.ie`
 
 ### On dev.engage7.ie (DEV)
+
 - [ ] DEV badge visible in bottom-left corner (pulsing amber dot + "DEV" text)
 - [ ] Browser tab title: `[DEV] Engage7 — ...`
 - [ ] Open Graph image meta tag points to `dev.engage7.ie`
@@ -112,16 +119,19 @@ After any deployment:
 ## Troubleshooting
 
 ### "www.engage7.ie shows DEV badge"
+
 - Check Vercel environment variables for Production
 - `NEXT_PUBLIC_APP_ENV` should be `production`, not `dev`
 - Redeploy after fixing
 
 ### "dev.engage7.ie behaves like production"
+
 - Check `NEXT_PUBLIC_APP_ENV` is set to `development` in Preview env vars
 - Check Vercel domain assignment: `dev.engage7.ie` should be assigned to `dev` branch
 - Verify social shared links point to `dev.engage7.ie`, not `www.engage7.ie`
 
 ### "Social shares show wrong domain"
+
 - Verify `NEXT_PUBLIC_SITE_URL` is set correctly per environment
 - Or ensure `NEXT_PUBLIC_APP_ENV` is set (falls back to environment-aware default)
 - Wait for new deployment to be built and deployed
