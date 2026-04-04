@@ -16,7 +16,7 @@ function getDefaultSiteUrl(appEnv: string): string {
   return isDev ? "https://dev.engage7.ie" : "https://www.engage7.ie";
 }
 
-const appEnv = process.env.NEXT_PUBLIC_APP_ENV ?? "dev";
+const appEnv = process.env.NEXT_PUBLIC_APP_ENV ?? "production";
 
 export const config = {
   appEnv,
