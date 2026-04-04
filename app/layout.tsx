@@ -1,6 +1,9 @@
 import { AppThemeProvider } from "@/components/providers/app-theme-provider";
 import { LocaleProvider } from "@/components/providers/locale-provider";
 import { PostHogProvider } from "@/components/providers/posthog-provider";
+import { DevEnvironmentMarker } from "@/components/shared/dev-environment-marker";
+import { isDevEnvironment } from "@/lib/env";
+import { config } from "@/lib/config";
 import { Analytics } from "@vercel/analytics/next";
 import type { Metadata } from "next";
 import { Geist_Mono, Inter } from "next/font/google";
@@ -11,10 +14,13 @@ import "./globals.css";
 const inter = Inter({ subsets: ["latin"] });
 const _geistMono = Geist_Mono({ subsets: ["latin"] });
 
+const titlePrefix = isDevEnvironment ? "[DEV] " : "";
+const baseUrl = config.siteUrl;
+
 export const metadata: Metadata = {
   title: {
-    default: "Engage7 — See What Your Body Is Telling You",
-    template: "%s | Engage7",
+    default: `${titlePrefix}Engage7 \u2014 See What Your Body Is Telling You`,
+    template: `${titlePrefix}%s | Engage7`,
   },
   description:
     "Turn your wearable data into clear insights about sleep, recovery, and movement. Based on your own patterns, not averages.",
@@ -30,11 +36,11 @@ export const metadata: Metadata = {
   ],
   authors: [{ name: "Engage7 Labs" }],
   creator: "Engage7 Labs",
-  metadataBase: new URL("https://www.engage7.ie"),
+  metadataBase: new URL(baseUrl),
   openGraph: {
     type: "website",
     locale: "en_IE",
-    url: "https://www.engage7.ie",
+    url: baseUrl,
     siteName: "Engage7",
     title: "Engage7 — See What Your Body Is Telling You",
     description:
@@ -109,6 +115,7 @@ export default function RootLayout({
             <PostHogProvider>{children}</PostHogProvider>
           </LocaleProvider>
         </AppThemeProvider>
+        <DevEnvironmentMarker />
         <Analytics />
         <Toaster richColors position="top-center" />
       </body>
