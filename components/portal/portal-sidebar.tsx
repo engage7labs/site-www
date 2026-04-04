@@ -74,7 +74,7 @@ export function PortalSidebar({
             className="flex items-center text-foreground"
             onClick={onCloseMobile}
           >
-            <Logo size={28} className="shrink-0" />
+            <Logo size={36} className="shrink-0" />
           </Link>
         )}
         <button

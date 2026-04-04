@@ -550,7 +550,7 @@ export function InsightPreview({
               </div>
             </motion.div>
 
-            {/* Preview Insight — data-driven teaser (Sprint 17.6.2) */}
+            {/* Preview Insight — data-driven teaser (Sprint 17.6.2, refined 18.6.5) */}
             {previewInsight && (
               <motion.div
                 initial={{ opacity: 0, y: 12 }}
@@ -561,7 +561,7 @@ export function InsightPreview({
                 <div className="flex items-center justify-center gap-2 mb-1">
                   <Sparkles className="h-3.5 w-3.5 text-accent" />
                   <span className="text-xs font-medium uppercase tracking-wider text-accent/80">
-                    From your data
+                    Based on your analysis
                   </span>
                 </div>
                 <p className="text-sm text-foreground/90 leading-relaxed">
@@ -570,33 +570,52 @@ export function InsightPreview({
               </motion.div>
             )}
 
-            {/* Benefits list (Sprint 17.6.2) */}
+            {/* Plan comparison cards (Sprint 18.6.5) */}
             <motion.div
               initial={{ opacity: 0, y: 12 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.4, delay: 0.55 }}
-              className="mt-8 mx-auto max-w-md"
+              className="mt-8 mx-auto max-w-3xl"
             >
-              <p className="text-xs font-medium uppercase tracking-wider text-muted-foreground text-center mb-4">
-                What you unlock with Premium
+              <p className="text-xs font-medium uppercase tracking-wider text-muted-foreground text-center mb-5">
+                Compare plans
               </p>
-              <ul className="space-y-2.5">
-                {[
-                  "Longitudinal insights across sleep, recovery, and activity",
-                  "Personalized comparisons against your own baseline",
-                  "Clear, actionable improvement suggestions",
-                  "Full access to your private health dashboard",
-                  "Continuous tracking as your data evolves",
-                ].map((benefit) => (
-                  <li
-                    key={benefit}
-                    className="flex items-start gap-2.5 text-sm text-muted-foreground"
-                  >
-                    <Check className="h-4 w-4 mt-0.5 shrink-0 text-accent/70" />
-                    <span>{benefit}</span>
-                  </li>
-                ))}
-              </ul>
+              <div className="grid gap-4 sm:grid-cols-3">
+                {/* Free */}
+                <div className="rounded-xl border border-border bg-card p-5 text-left">
+                  <h3 className="text-sm font-semibold text-foreground mb-1">Free</h3>
+                  <p className="text-xs text-muted-foreground mb-3">Get started with your data</p>
+                  <ul className="space-y-1.5 text-xs text-muted-foreground">
+                    <li className="flex items-start gap-2"><Check className="h-3.5 w-3.5 mt-0.5 shrink-0 text-accent/60" /><span>Single analysis upload</span></li>
+                    <li className="flex items-start gap-2"><Check className="h-3.5 w-3.5 mt-0.5 shrink-0 text-accent/60" /><span>Preview insights (sleep, recovery, activity)</span></li>
+                    <li className="flex items-start gap-2"><Check className="h-3.5 w-3.5 mt-0.5 shrink-0 text-accent/60" /><span>Basic trend visualization</span></li>
+                  </ul>
+                </div>
+                {/* Premium — emphasized */}
+                <div className="rounded-xl border-2 border-accent bg-accent/5 p-5 text-left ring-1 ring-accent/20 shadow-sm">
+                  <h3 className="text-sm font-semibold text-accent mb-1">Premium</h3>
+                  <p className="text-xs text-muted-foreground mb-3">Full insight experience</p>
+                  <ul className="space-y-1.5 text-xs text-muted-foreground">
+                    <li className="flex items-start gap-2"><Check className="h-3.5 w-3.5 mt-0.5 shrink-0 text-accent" /><span>Longitudinal insights across all signals</span></li>
+                    <li className="flex items-start gap-2"><Check className="h-3.5 w-3.5 mt-0.5 shrink-0 text-accent" /><span>Personalized baseline comparisons</span></li>
+                    <li className="flex items-start gap-2"><Check className="h-3.5 w-3.5 mt-0.5 shrink-0 text-accent" /><span>Actionable improvement suggestions</span></li>
+                    <li className="flex items-start gap-2"><Check className="h-3.5 w-3.5 mt-0.5 shrink-0 text-accent" /><span>Full private health dashboard</span></li>
+                    <li className="flex items-start gap-2"><Check className="h-3.5 w-3.5 mt-0.5 shrink-0 text-accent" /><span>PDF & CSV report export</span></li>
+                  </ul>
+                </div>
+                {/* Super Premium */}
+                <div className="rounded-xl border border-border bg-card p-5 text-left">
+                  <h3 className="text-sm font-semibold text-foreground mb-1">Super Premium</h3>
+                  <p className="text-xs text-muted-foreground mb-3">Deep analysis modules</p>
+                  <ul className="space-y-1.5 text-xs text-muted-foreground">
+                    <li className="flex items-start gap-2"><Check className="h-3.5 w-3.5 mt-0.5 shrink-0 text-accent/60" /><span>Everything in Premium</span></li>
+                    <li className="flex items-start gap-2"><Check className="h-3.5 w-3.5 mt-0.5 shrink-0 text-accent/60" /><span>Advanced recovery analysis</span></li>
+                    <li className="flex items-start gap-2"><Check className="h-3.5 w-3.5 mt-0.5 shrink-0 text-accent/60" /><span>Circadian rhythm mapping</span></li>
+                    <li className="flex items-start gap-2"><Check className="h-3.5 w-3.5 mt-0.5 shrink-0 text-accent/60" /><span>Multi-period trend comparison</span></li>
+                  </ul>
+                  <p className="mt-3 text-[10px] text-muted-foreground/60 italic">* Advanced modules in development</p>
+                </div>
+              </div>
             </motion.div>
           </div>
         )}
