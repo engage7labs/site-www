@@ -16,8 +16,8 @@
  */
 
 import { checkReadOnlyMode } from "@/lib/api/read-only-check";
-import { ensureProtocol } from "@/lib/config";
 import { signRequest } from "@/lib/api/signing";
+import { ensureProtocol } from "@/lib/config";
 import { NextResponse } from "next/server";
 
 export const runtime = "nodejs";
