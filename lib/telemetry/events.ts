@@ -189,10 +189,7 @@ export function trackPremiumUnlocked(jobId?: string): void {
   });
 }
 
-export function trackInsightViewed(
-  insightType: string,
-  jobId?: string
-): void {
+export function trackInsightViewed(insightType: string, jobId?: string): void {
   capture("insight_viewed", {
     ...getUserContext(),
     insight_type: insightType,
