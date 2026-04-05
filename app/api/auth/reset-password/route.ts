@@ -21,7 +21,9 @@ export async function POST(req: NextRequest) {
     );
   }
 
-  const apiBaseUrl = ensureProtocol(process.env.API_BASE_URL ?? INTERNAL_API_BASE_URL);
+  const apiBaseUrl = ensureProtocol(
+    process.env.API_BASE_URL ?? INTERNAL_API_BASE_URL
+  );
   const path = "/auth/reset-password";
 
   let upstream: Response;
