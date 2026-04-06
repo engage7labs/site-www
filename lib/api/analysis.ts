@@ -9,16 +9,26 @@ import type { AnalysisResult, UploadResponse } from "@/lib/types/analysis";
 import { ApiClientError, get } from "./client";
 import { API_ENDPOINTS } from "./config";
 
+/** Extract a human-readable error message from an API error response. */
+function extractErrorMessage(
+  response: Response,
+  errorData: Record<string, unknown>
+): string {
+  if (typeof errorData.message === "string") return errorData.message;
+  if (typeof errorData.error === "string") return errorData.error;
+  if (typeof errorData.detail === "string") return errorData.detail;
+  return `HTTP ${response.status}`;
+}
+
 /**
  * Submits an Apple Health ZIP export for analysis.
  *
- * Uses a two-step direct-upload strategy to bypass the Vercel 4.5 MB
- * serverless function body size limit:
- *   1. Fetch pre-signed HMAC headers from /api/proxy/upload-token (tiny req).
- *   2. POST the FormData directly to the API backend using those headers.
+ * Uses a three-step direct-to-blob strategy:
+ *   1. POST consent/locale to /api/proxy/upload-token → gets SAS URL + job_id.
+ *   2. PUT the file directly to Azure Blob Storage via SAS URL (bypasses ACA proxy).
+ *   3. POST to API /confirm-upload → creates job and triggers ACA executor.
  *
- * The HMAC secret never leaves the Next.js server. The browser only receives
- * the computed signature which expires within 5 minutes.
+ * Falls back to the legacy direct-to-API POST if SAS is unavailable.
  *
  * @param file          Apple Health ZIP export file.
  * @param consent       User consent flag — must be true to proceed.
@@ -31,12 +41,6 @@ export async function submitAnalysisUpload(
   locale: string,
   turnstileToken?: string
 ): Promise<UploadResponse> {
-  const formData = new FormData();
-  formData.append("file", file);
-  formData.append("consent", String(consent));
-  formData.append("locale", locale);
-  if (turnstileToken) formData.append("cf_turnstile_response", turnstileToken);
-
   console.info("[upload-debug] formdata_created", {
     fileName: file.name,
     fileSize: file.size,
@@ -45,54 +49,104 @@ export async function submitAnalysisUpload(
     hasTurnstileToken: Boolean(turnstileToken),
   });
 
-  // Step 1 — obtain pre-signed upload headers from the Next.js server.
-  // This is a tiny JSON request (no file body) — safe within Vercel limits.
-  const tokenRes = await fetch("/api/proxy/upload-token", { method: "POST" });
+  // Step 1 — obtain SAS URL + job_id from the Next.js server.
+  const tokenForm = new FormData();
+  tokenForm.append("consent", String(consent));
+  tokenForm.append("locale", locale);
+  if (turnstileToken) tokenForm.append("cf_turnstile_response", turnstileToken);
+
+  const tokenRes = await fetch("/api/proxy/upload-token", {
+    method: "POST",
+    body: tokenForm,
+  });
   if (!tokenRes.ok) {
     throw new ApiClientError(tokenRes.status, "Failed to obtain upload token");
   }
-  const { uploadUrl, headers: sigHeaders } = (await tokenRes.json()) as {
+
+  const tokenData = (await tokenRes.json()) as {
+    mode?: string;
+    job_id?: string;
+    sas_url?: string;
+    confirmUrl?: string;
+    confirmHeaders?: Record<string, string>;
+    // Legacy fallback
     uploadUrl: string;
     headers: Record<string, string>;
   };
 
-  console.info("[upload-debug] upload_token_obtained", {
-    uploadUrl,
-    hasSigHeaders: Boolean(sigHeaders && Object.keys(sigHeaders).length),
-  });
+  // Direct-to-blob path (preferred)
+  if (
+    tokenData.mode === "direct-blob" &&
+    tokenData.sas_url &&
+    tokenData.confirmUrl
+  ) {
+    console.info("[upload-debug] direct_blob_mode job_id=%s", tokenData.job_id);
 
-  // Step 2 — POST FormData directly to the API (bypasses Vercel body limit).
-  const controller = new AbortController();
-  const response = await fetch(uploadUrl, {
+    // Step 2 — PUT file directly to Azure Blob Storage via SAS URL.
+    const blobRes = await fetch(tokenData.sas_url, {
+      method: "PUT",
+      headers: {
+        "x-ms-blob-type": "BlockBlob",
+        "Content-Type": "application/zip",
+      },
+      body: file,
+    });
+
+    if (!blobRes.ok) {
+      const errText = await blobRes.text().catch(() => "");
+      console.error("[upload-debug] blob_put_failed", blobRes.status, errText);
+      throw new ApiClientError(blobRes.status, "File upload to storage failed");
+    }
+
+    console.info("[upload-debug] blob_put_ok job_id=%s", tokenData.job_id);
+
+    // Step 3 — Confirm upload with the API to create job + dispatch ACA.
+    const confirmForm = new FormData();
+    confirmForm.append("job_id", tokenData.job_id!);
+    confirmForm.append("locale", locale);
+
+    const confirmRes = await fetch(tokenData.confirmUrl, {
+      method: "POST",
+      headers: tokenData.confirmHeaders ?? {},
+      body: confirmForm,
+    });
+
+    if (!confirmRes.ok) {
+      const errData = await confirmRes
+        .json()
+        .catch(() => ({ detail: "Confirm failed" }));
+      throw new ApiClientError(
+        confirmRes.status,
+        typeof errData.detail === "string"
+          ? errData.detail
+          : `HTTP ${confirmRes.status}`
+      );
+    }
+
+    console.info("[upload-debug] confirm_ok job_id=%s", tokenData.job_id);
+    return confirmRes.json() as Promise<UploadResponse>;
+  }
+
+  // Legacy fallback — POST file directly to API
+  console.info("[upload-debug] legacy_mode uploadUrl=%s", tokenData.uploadUrl);
+
+  const formData = new FormData();
+  formData.append("file", file);
+  formData.append("consent", String(consent));
+  formData.append("locale", locale);
+  if (turnstileToken) formData.append("cf_turnstile_response", turnstileToken);
+
+  const response = await fetch(tokenData.uploadUrl, {
     method: "POST",
-    headers: sigHeaders, // HMAC + key-id + timestamp — no Content-Type (browser sets boundary)
+    headers: tokenData.headers,
     body: formData,
-    signal: controller.signal,
-  });
-
-  console.info("[upload-debug] direct_upload_returned", {
-    uploadUrl,
-    status: response.status,
-    ok: response.ok,
   });
 
   if (!response.ok) {
-    let errorData: { message?: string; error?: string; detail?: unknown };
-    try {
-      errorData = await response.json();
-    } catch {
-      errorData = { message: `Upload failed with status ${response.status}` };
-    }
-    let message: string;
-    if (typeof errorData.message === "string") {
-      message = errorData.message;
-    } else if (typeof errorData.error === "string") {
-      message = errorData.error;
-    } else if (typeof errorData.detail === "string") {
-      message = errorData.detail;
-    } else {
-      message = `HTTP ${response.status}`;
-    }
+    const errorData = await response.json().catch(() => ({
+      message: `Upload failed with status ${response.status}`,
+    }));
+    const message = extractErrorMessage(response, errorData);
     throw new ApiClientError(response.status, message, errorData.detail);
   }
 
