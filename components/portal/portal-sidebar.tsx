@@ -3,30 +3,45 @@
 import { Logo } from "@/components/shared/logo";
 import {
   Activity,
+  ChevronDown,
   ChevronLeft,
   ChevronRight,
+  Heart,
   LayoutDashboard,
   Lightbulb,
+  Moon,
   Settings,
   TrendingUp,
   Upload,
   X,
+  Zap,
 } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { useState } from "react";
 import { PortalSidebarItem } from "./portal-sidebar-item";
 
 interface NavItem {
   label: string;
   href: string;
   icon: React.ElementType;
+  children?: NavItem[];
 }
 
 const NAV_ITEMS: NavItem[] = [
   { label: "Overview", href: "/portal", icon: LayoutDashboard },
   { label: "My Uploads", href: "/portal/reports", icon: Upload },
   { label: "Trends", href: "/portal/trends", icon: TrendingUp },
-  { label: "Health", href: "/portal/health", icon: Activity },
+  {
+    label: "Health",
+    href: "/portal/health",
+    icon: Activity,
+    children: [
+      { label: "Sleep", href: "/portal/health#sleep", icon: Moon },
+      { label: "Recovery", href: "/portal/health#recovery", icon: Heart },
+      { label: "Activity", href: "/portal/health#activity", icon: Zap },
+    ],
+  },
   { label: "Insights", href: "/portal/insights", icon: Lightbulb },
 ];
 
@@ -53,6 +68,9 @@ export function PortalSidebar({
   onCloseMobile,
 }: PortalSidebarProps) {
   const pathname = usePathname();
+  const [healthOpen, setHealthOpen] = useState(
+    pathname.startsWith("/portal/health")
+  );
 
   const sidebarContent = (
     <div className="flex h-full flex-col">
@@ -74,7 +92,7 @@ export function PortalSidebar({
             className="flex items-center text-foreground"
             onClick={onCloseMobile}
           >
-            <Logo size={28} className="shrink-0" />
+            <Logo size={36} className="shrink-0" />
           </Link>
         )}
         <button
@@ -92,17 +110,72 @@ export function PortalSidebar({
 
       {/* Main navigation */}
       <nav className="flex flex-1 flex-col gap-1 px-3 py-4">
-        {NAV_ITEMS.map((item) => (
-          <PortalSidebarItem
-            key={item.href}
-            href={item.href}
-            icon={item.icon}
-            label={item.label}
-            active={isActivePath(pathname, item.href)}
-            collapsed={collapsed}
-            onClick={onCloseMobile}
-          />
-        ))}
+        {NAV_ITEMS.map((item) =>
+          item.children ? (
+            <div key={item.href}>
+              {/* Parent: Health with toggle */}
+              <button
+                type="button"
+                onClick={() => {
+                  if (collapsed) {
+                    // When collapsed, just navigate
+                    window.location.href = item.href;
+                    onCloseMobile();
+                  } else {
+                    setHealthOpen((prev) => !prev);
+                  }
+                }}
+                className={`group flex w-full items-center gap-3 rounded-2xl px-3 py-2.5 text-sm font-medium transition-all ${
+                  isActivePath(pathname, item.href)
+                    ? "bg-accent/10 text-accent shadow-sm"
+                    : "text-muted-foreground hover:bg-muted hover:text-foreground"
+                }`}
+              >
+                <item.icon className="h-5 w-5 shrink-0" />
+                <span
+                  className={`overflow-hidden whitespace-nowrap transition-all duration-300 flex-1 text-left ${
+                    collapsed ? "w-0 opacity-0" : "w-auto opacity-100"
+                  }`}
+                >
+                  {item.label}
+                </span>
+                {!collapsed && (
+                  <ChevronDown
+                    className={`h-3.5 w-3.5 shrink-0 transition-transform duration-200 ${
+                      healthOpen ? "rotate-180" : ""
+                    }`}
+                  />
+                )}
+              </button>
+              {/* Children: Sleep, Recovery, Activity */}
+              {!collapsed && healthOpen && (
+                <div className="ml-4 mt-0.5 flex flex-col gap-0.5 border-l border-border/50 pl-2">
+                  {item.children.map((child) => (
+                    <Link
+                      key={child.href}
+                      href={child.href}
+                      onClick={onCloseMobile}
+                      className="flex items-center gap-2.5 rounded-lg px-2.5 py-1.5 text-xs font-medium transition-colors text-muted-foreground hover:text-foreground hover:bg-muted/50"
+                    >
+                      <child.icon className="h-3.5 w-3.5 shrink-0" />
+                      {child.label}
+                    </Link>
+                  ))}
+                </div>
+              )}
+            </div>
+          ) : (
+            <PortalSidebarItem
+              key={item.href}
+              href={item.href}
+              icon={item.icon}
+              label={item.label}
+              active={isActivePath(pathname, item.href)}
+              collapsed={collapsed}
+              onClick={onCloseMobile}
+            />
+          )
+        )}
 
         <div className="my-4 border-t border-border" />
 

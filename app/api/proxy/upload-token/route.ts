@@ -1,27 +1,28 @@
 /**
  * POST /api/proxy/upload-token
  *
- * Returns pre-signed HMAC headers for a direct browser-to-API upload.
+ * Returns a pre-signed SAS URL for direct browser-to-blob upload,
+ * plus an API confirm URL to finalize the job after the blob upload.
  *
  * WHY THIS EXISTS:
- * The web layer is hosted on Vercel, which has a hard 4.5 MB serverless
- * function body size limit. Real Apple Health exports are typically 5–150 MB,
- * so routing the upload through the Next.js proxy causes a 413.
+ * Azure Container Apps has an Envoy proxy that stalls on large uploads.
+ * By uploading directly to Azure Blob Storage via SAS URL, we bypass
+ * both the Vercel 4.5 MB limit and the ACA proxy entirely.
  *
- * SOLUTION:
- * 1. Browser calls this endpoint (tiny request) → gets pre-signed headers.
- * 2. Browser POSTs the FormData directly to the API using those headers.
- * 3. The HMAC secret never leaves this server — only the computed signature
- *    is returned. Signatures expire within 5 minutes (API enforces this).
+ * FLOW:
+ * 1. Browser calls this endpoint → gets SAS URL + job_id + confirm URL.
+ * 2. Browser PUTs the file directly to Azure Blob Storage via SAS URL.
+ * 3. Browser POSTs to confirm URL to create the job and trigger analysis.
  */
 
 import { checkReadOnlyMode } from "@/lib/api/read-only-check";
 import { signRequest } from "@/lib/api/signing";
-import { NextResponse } from "next/server";
+import { ensureProtocol } from "@/lib/config";
+import { NextRequest, NextResponse } from "next/server";
 
 export const runtime = "nodejs";
 
-export async function POST() {
+export async function POST(req: NextRequest) {
   const { isReadOnly, error } = await checkReadOnlyMode();
   if (isReadOnly) {
     return NextResponse.json(
@@ -30,17 +31,61 @@ export async function POST() {
     );
   }
 
-  const path = "/api/analyze-upload";
-  const sigHeaders = signRequest("POST", path);
-
-  // NEXT_PUBLIC_API_BASE_URL is the public API URL.
-  // The browser will POST the FormData directly to this URL.
-  const uploadUrl = `${
+  const apiBase = ensureProtocol(
     process.env.NEXT_PUBLIC_API_BASE_URL ?? "http://localhost:8000"
-  }${path}`;
+  );
+
+  // Forward consent/locale/turnstile to the API's upload-sas endpoint
+  // to get a SAS URL for direct blob upload.
+  const body = await req.formData().catch(() => null);
+  const rawConsent = body?.get("consent");
+  const rawLocale = body?.get("locale");
+  const rawTurnstile = body?.get("cf_turnstile_response");
+  const consent = typeof rawConsent === "string" ? rawConsent : "true";
+  const locale = typeof rawLocale === "string" ? rawLocale : "en-IE";
+  const turnstile = typeof rawTurnstile === "string" ? rawTurnstile : "";
+
+  const sasPath = "/api/upload-sas";
+  const sigHeaders = signRequest("POST", sasPath);
+
+  const formData = new FormData();
+  formData.append("consent", consent);
+  formData.append("locale", locale);
+  if (turnstile) formData.append("cf_turnstile_response", turnstile);
+
+  const sasRes = await fetch(`${apiBase}${sasPath}`, {
+    method: "POST",
+    headers: sigHeaders,
+    body: formData,
+  });
+
+  if (!sasRes.ok) {
+    const err = await sasRes
+      .json()
+      .catch(() => ({ detail: "Failed to get upload URL" }));
+    return NextResponse.json(err, { status: sasRes.status });
+  }
+
+  const { job_id, sas_url, blob_path } = (await sasRes.json()) as {
+    job_id: string;
+    sas_url: string;
+    blob_path: string;
+  };
+
+  // Build the confirm URL with signing headers
+  const confirmPath = "/api/confirm-upload";
+  const confirmSigHeaders = signRequest("POST", confirmPath);
+  const confirmUrl = `${apiBase}${confirmPath}`;
 
   return NextResponse.json({
-    uploadUrl,
-    headers: sigHeaders,
+    mode: "direct-blob",
+    job_id,
+    sas_url,
+    blob_path,
+    confirmUrl,
+    confirmHeaders: confirmSigHeaders,
+    // Legacy fallback fields for backwards compat
+    uploadUrl: `${apiBase}/api/analyze-upload`,
+    headers: signRequest("POST", "/api/analyze-upload"),
   });
 }

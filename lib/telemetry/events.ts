@@ -172,3 +172,27 @@ export function trackErrorOccurred(
     ...context,
   });
 }
+
+// ---- Sprint 20 Phase 5 — Disciplined PostHog events -----------------------
+
+export function trackDailyBriefingViewed(jobId?: string): void {
+  capture("daily_briefing_viewed", {
+    ...getUserContext(),
+    job_id: jobId,
+  });
+}
+
+export function trackPremiumUnlocked(jobId?: string): void {
+  capture("premium_unlocked", {
+    ...getUserContext(),
+    job_id: jobId,
+  });
+}
+
+export function trackInsightViewed(insightType: string, jobId?: string): void {
+  capture("insight_viewed", {
+    ...getUserContext(),
+    insight_type: insightType,
+    job_id: jobId,
+  });
+}

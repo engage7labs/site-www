@@ -1,12 +1,16 @@
 /**
  * POST /api/auth/reset-password
  *
- * Verifies a password-reset JWT token and sets the new password
- * via the backend API. Sprint 17.4.
+ * Proxies reset-password requests to the backend API.
+ *
+ * Backward compatibility:
+ * - Preferred upstream: /auth/reset-password
+ * - Fallback (when upstream is 404): verify reset token here and call /auth/set-password
  */
 
 import { signRequest } from "@/lib/api/signing";
 import { verifyJwt } from "@/lib/auth-server";
+import { ensureProtocol } from "@/lib/config";
 import { INTERNAL_API_BASE_URL } from "@/lib/server-config";
 import { NextRequest, NextResponse } from "next/server";
 
@@ -21,6 +25,29 @@ export async function POST(req: NextRequest) {
       { error: "Invalid request body" },
       { status: 400 }
     );
+  }
+
+  const apiBaseUrl = ensureProtocol(
+    process.env.API_BASE_URL ?? INTERNAL_API_BASE_URL
+  );
+  const path = "/auth/reset-password";
+
+  let upstream: Response;
+  try {
+    upstream = await fetch(`${apiBaseUrl}${path}`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(body),
+    });
+  } catch {
+    return NextResponse.json({ error: "Service unavailable" }, { status: 503 });
+  }
+
+  if (upstream.status !== 404) {
+    const data = await upstream
+      .json()
+      .catch(() => ({ error: "Upstream error" }));
+    return NextResponse.json(data, { status: upstream.status });
   }
 
   if (!body.token || typeof body.token !== "string") {
@@ -46,18 +73,17 @@ export async function POST(req: NextRequest) {
     );
   }
 
-  // Verify this is actually a password_reset token
   const purposeField = (payload as Record<string, unknown>).purpose;
   if (purposeField !== "password_reset") {
     return NextResponse.json({ error: "Invalid reset token" }, { status: 401 });
   }
 
-  const path = "/auth/set-password";
-  const sigHeaders = signRequest("POST", path);
+  const fallbackPath = "/auth/set-password";
+  const sigHeaders = signRequest("POST", fallbackPath);
 
-  let upstream: Response;
+  let fallbackUpstream: Response;
   try {
-    upstream = await fetch(`${INTERNAL_API_BASE_URL}${path}`, {
+    fallbackUpstream = await fetch(`${apiBaseUrl}${fallbackPath}`, {
       method: "POST",
       headers: { ...sigHeaders, "Content-Type": "application/json" },
       body: JSON.stringify({ email: payload.sub, password: body.password }),
@@ -66,6 +92,8 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "Service unavailable" }, { status: 503 });
   }
 
-  const data = await upstream.json().catch(() => ({ error: "Upstream error" }));
-  return NextResponse.json(data, { status: upstream.status });
+  const fallbackData = await fallbackUpstream
+    .json()
+    .catch(() => ({ error: "Upstream error" }));
+  return NextResponse.json(fallbackData, { status: fallbackUpstream.status });
 }

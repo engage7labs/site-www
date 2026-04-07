@@ -1,11 +1,12 @@
 "use client";
 
+import { LocaleSwitcher } from "@/components/shared/locale-switcher";
+import { ThemeSwitcher } from "@/components/shared/theme-switcher";
 import { SESSION_COOKIE_NAME } from "@/lib/auth-edge";
 import { LogOut, Menu, Upload } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
-import { PortalThemePicker } from "./portal-theme-picker";
 
 interface PortalHeaderProps {
   onToggleMobile: () => void;
@@ -72,8 +73,8 @@ export function PortalHeader({
         )}
       </div>
 
-      {/* Right: upload + theme picker + logout */}
-      <div className="flex items-center gap-2">
+      {/* Right: upload + theme + language + logout */}
+      <div className="flex items-center gap-1.5">
         {!isAdminView && (
           <Link
             href="/portal/upload"
@@ -83,7 +84,8 @@ export function PortalHeader({
             <span className="hidden sm:inline">Upload</span>
           </Link>
         )}
-        <PortalThemePicker />
+        <ThemeSwitcher />
+        <LocaleSwitcher />
         <button
           onClick={handleLogout}
           className="flex items-center gap-2 rounded-lg px-3 py-2 text-sm text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"

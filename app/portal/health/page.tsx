@@ -378,7 +378,7 @@ export default function HealthPage() {
       </div>
 
       {/* ─── Sleep Section ─── */}
-      <div className="flex items-center gap-2 mt-2">
+      <div id="sleep" className="flex items-center gap-2 mt-2 scroll-mt-20">
         <Moon className="h-4 w-4 text-[#3dbe73]" />
         <h2 className="text-sm font-semibold uppercase tracking-wider text-muted-foreground">
           Sleep
@@ -432,13 +432,20 @@ export default function HealthPage() {
           />
         </>
       ) : (
-        <div className="portal-panel rounded-xl border border-border/70 bg-card/85 p-6 text-center text-sm text-muted-foreground">
-          No sleep data available for this period.
+        <div className="portal-panel rounded-xl border border-border/70 bg-card/85 p-8 text-center">
+          <Moon className="h-8 w-8 text-muted-foreground/30 mx-auto mb-2" />
+          <p className="text-sm font-medium text-muted-foreground">
+            No sleep data for this period
+          </p>
+          <p className="text-xs text-muted-foreground/70 mt-1 max-w-xs mx-auto">
+            Sleep duration and quality metrics appear here once your Apple
+            Health export includes sleep data. Try selecting a wider time range.
+          </p>
         </div>
       )}
 
       {/* ─── Recovery Section ─── */}
-      <div className="flex items-center gap-2 mt-2">
+      <div id="recovery" className="flex items-center gap-2 mt-2 scroll-mt-20">
         <Heart className="h-4 w-4 text-[#6366f1]" />
         <h2 className="text-sm font-semibold uppercase tracking-wider text-muted-foreground">
           Recovery
@@ -493,13 +500,20 @@ export default function HealthPage() {
           />
         </>
       ) : (
-        <div className="portal-panel rounded-xl border border-border/70 bg-card/85 p-6 text-center text-sm text-muted-foreground">
-          No recovery data available for this period.
+        <div className="portal-panel rounded-xl border border-border/70 bg-card/85 p-8 text-center">
+          <Heart className="h-8 w-8 text-muted-foreground/30 mx-auto mb-2" />
+          <p className="text-sm font-medium text-muted-foreground">
+            No recovery data for this period
+          </p>
+          <p className="text-xs text-muted-foreground/70 mt-1 max-w-xs mx-auto">
+            HRV and resting heart rate trends appear here when your export
+            contains heart-related metrics. Try selecting a wider time range.
+          </p>
         </div>
       )}
 
       {/* ─── Activity Section ─── */}
-      <div className="flex items-center gap-2 mt-2">
+      <div id="activity" className="flex items-center gap-2 mt-2 scroll-mt-20">
         <Activity className="h-4 w-4 text-[#f59e0b]" />
         <h2 className="text-sm font-semibold uppercase tracking-wider text-muted-foreground">
           Activity
@@ -558,8 +572,15 @@ export default function HealthPage() {
           </div>
         </>
       ) : (
-        <div className="portal-panel rounded-xl border border-border/70 bg-card/85 p-6 text-center text-sm text-muted-foreground">
-          No activity data available for this period.
+        <div className="portal-panel rounded-xl border border-border/70 bg-card/85 p-8 text-center">
+          <Activity className="h-8 w-8 text-muted-foreground/30 mx-auto mb-2" />
+          <p className="text-sm font-medium text-muted-foreground">
+            No activity data for this period
+          </p>
+          <p className="text-xs text-muted-foreground/70 mt-1 max-w-xs mx-auto">
+            Steps and active minutes appear here once your export includes
+            activity data. Try selecting a wider time range.
+          </p>
         </div>
       )}
     </div>
