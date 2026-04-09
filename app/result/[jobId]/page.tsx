@@ -579,7 +579,17 @@ export default function ResultPage({
     return <FailedView error={result.error} />;
   }
 
-  if (result.status === "queued" || result.status === "processing") {
+  // --- SPRINT 22.0.5: Only show teaser/insight when payload is truly ready ---
+  const isTeaserReady =
+    result.status === "completed" &&
+    result.sections &&
+    typeof result.sections === "object" &&
+    Object.keys(result.sections).length > 0 &&
+    result.summary &&
+    result.highlights && Array.isArray(result.highlights);
+
+  if (!isTeaserReady) {
+    // Show processing state until teaser payload is truly ready
     return <ProcessingView result={result} elapsedSeconds={elapsedSeconds} />;
   }
 
