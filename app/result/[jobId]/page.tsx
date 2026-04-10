@@ -251,6 +251,24 @@ function FetchErrorView({ message }: Readonly<{ message: string }>) {
   );
 }
 
+function TeaserWrapper({
+  children,
+}: Readonly<{ children: React.ReactNode }>) {
+  const [visible, setVisible] = useState(false);
+  useEffect(() => {
+    setVisible(true);
+  }, []);
+  return (
+    <div
+      className={`transition-all duration-500 ease-out ${
+        visible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-2"
+      }`}
+    >
+      {children}
+    </div>
+  );
+}
+
 function CompletedView({
   result,
   jobId,
@@ -262,12 +280,14 @@ function CompletedView({
 }>) {
   const { appTheme } = useAppTheme();
   return (
-    <InsightPreview
-      result={result}
-      jobId={jobId}
-      theme={appTheme}
-      onOpenModal={onOpenModal}
-    />
+    <TeaserWrapper>
+      <InsightPreview
+        result={result}
+        jobId={jobId}
+        theme={appTheme}
+        onOpenModal={onOpenModal}
+      />
+    </TeaserWrapper>
   );
 }
 

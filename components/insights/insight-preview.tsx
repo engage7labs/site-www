@@ -117,7 +117,7 @@ export function InsightPreview({
   onOpenModal,
   embedded,
 }: Readonly<InsightPreviewProps>) {
-  const { t } = useLocale();
+  const { t, locale } = useLocale();
   const isDark = useDarkMode(theme);
   const sections: Sections | null = result.sections ?? null;
   const summary = result.summary;
@@ -202,6 +202,21 @@ export function InsightPreview({
     trackAnalysisPreviewLoaded(meta);
     trackSleepPreviewViewed(meta);
   }, [jobId, durationInfo]);
+
+  // ---- Progressive section reveal (Sprint 24.0) -------------------------
+  const [sleepVisible, setSleepVisible] = useState(false);
+  const [recoveryVisible, setRecoveryVisible] = useState(false);
+  const [activityVisible, setActivityVisible] = useState(false);
+
+  useEffect(() => {
+    setSleepVisible(true);
+    const t2 = setTimeout(() => setRecoveryVisible(true), 150);
+    const t3 = setTimeout(() => setActivityVisible(true), 300);
+    return () => {
+      clearTimeout(t2);
+      clearTimeout(t3);
+    };
+  }, []);
 
   // ---- Expanded state for mobile cards -----------------------------------
   const [activeStage, setActiveStage] = useState<
@@ -316,7 +331,7 @@ export function InsightPreview({
         {/* ============================================================= */}
         <div className="hidden md:block">
           {/* Hero: Sleep */}
-          <section className="grid grid-cols-2 gap-8 items-start">
+          <section className={`grid grid-cols-2 gap-8 items-start transition-all duration-500 ease-out ${sleepVisible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-2"}`}>
             {/* Left column — text */}
             <motion.div
               initial={{ opacity: 0, y: 20 }}
@@ -384,6 +399,11 @@ export function InsightPreview({
                   {t.result.preview.sections.sleepPattern}
                 </span>
               </div>
+              {locale !== "en-IE" && (
+                <p className="text-xs text-muted-foreground mt-1 italic">
+                  {t.result.preview.insightsInEnglish}
+                </p>
+              )}
               {sleepChartOption ? (
                 <EChart
                   option={sleepChartOption}
@@ -401,7 +421,7 @@ export function InsightPreview({
           {/* Lower compact zone— Recovery + Activity */}
           <section className="grid grid-cols-2 gap-6 mt-6">
             {/* Recovery card */}
-            <div id="recovery-desktop" className="scroll-mt-28 h-full">
+            <div id="recovery-desktop" className={`scroll-mt-28 h-full transition-all duration-500 ease-out ${recoveryVisible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-2"}`}>
               <InsightCard
                 title={t.result.preview.sections.recovery}
                 icon={<HeartPulse className="h-4 w-4" />}
@@ -420,7 +440,7 @@ export function InsightPreview({
             </div>
 
             {/* Activity card */}
-            <div id="activity-desktop" className="scroll-mt-28 h-full">
+            <div id="activity-desktop" className={`scroll-mt-28 h-full transition-all duration-500 ease-out ${activityVisible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-2"}`}>
               <InsightCard
                 title={t.result.preview.sections.activityMobility}
                 icon={<Footprints className="h-4 w-4" />}
@@ -449,6 +469,7 @@ export function InsightPreview({
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.4 }}
+            className={`transition-all duration-500 ease-out ${sleepVisible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-2"}`}
           >
             <div className="rounded-xl border border-border bg-card p-5">
               <h1 className="text-2xl font-semibold text-foreground leading-tight mb-2">
@@ -496,6 +517,11 @@ export function InsightPreview({
                   {t.result.preview.sections.sleepPattern}
                 </span>
               </div>
+              {locale !== "en-IE" && (
+                <p className="text-xs text-muted-foreground mt-1 italic">
+                  {t.result.preview.insightsInEnglish}
+                </p>
+              )}
               {sleepChartOption ? (
                 <EChart
                   option={sleepChartOption}
@@ -510,7 +536,7 @@ export function InsightPreview({
             </div>
           </motion.div>
 
-          <section id="recovery-mobile" className="scroll-mt-28">
+          <section id="recovery-mobile" className={`scroll-mt-28 transition-all duration-500 ease-out ${recoveryVisible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-2"}`}>
             <InsightCard
               title={t.result.preview.sections.recovery}
               icon={<HeartPulse className="h-4 w-4" />}
@@ -529,7 +555,7 @@ export function InsightPreview({
             />
           </section>
 
-          <section id="activity-mobile" className="scroll-mt-28">
+          <section id="activity-mobile" className={`scroll-mt-28 transition-all duration-500 ease-out ${activityVisible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-2"}`}>
             <InsightCard
               title={t.result.preview.sections.activityMobility}
               icon={<Footprints className="h-4 w-4" />}

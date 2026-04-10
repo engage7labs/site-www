@@ -299,6 +299,7 @@ export const enIE = {
       },
       emptyChart: "Not enough data to visualize.",
       emptyInsights: "Not enough data to generate this insight yet.",
+      insightsInEnglish: "Insights generated in English",
       fullReport: {
         title: "Go deeper with Premium",
         description:

@@ -303,6 +303,7 @@ export const ptBR: Dictionary = {
       },
       emptyChart: "Dados insuficientes para visualizar.",
       emptyInsights: "Dados insuficientes para gerar este insight ainda.",
+      insightsInEnglish: "Insights gerados em inglês",
       fullReport: {
         title: "Vá mais fundo com o Premium",
         description:

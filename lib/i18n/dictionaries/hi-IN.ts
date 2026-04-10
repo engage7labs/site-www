@@ -304,6 +304,7 @@ export const hiIN: Dictionary = {
       },
       emptyChart: "विज़ुअलाइज़ करने के लिए पर्याप्त डेटा नहीं है।",
       emptyInsights: "इस अंतर्दृष्टि के लिए अभी पर्याप्त डेटा नहीं है।",
+      insightsInEnglish: "अंग्रेज़ी में जेनरेट किए गए इनसाइट्स",
       fullReport: {
         title: "Premium के साथ गहराई से समझें",
         description:
