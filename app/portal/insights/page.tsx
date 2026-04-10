@@ -47,6 +47,12 @@ const CONFIDENCE_COLORS = {
   low: "bg-muted text-muted-foreground",
 };
 
+const CONFIDENCE_EXPLANATIONS: Record<"high" | "medium" | "low", string> = {
+  high: "Strong pattern detected with consistent data",
+  medium: "Some pattern detected, but with moderate confidence",
+  low: "Limited data or weak pattern",
+};
+
 const PILLAR_ICON: Record<string, React.ReactNode> = {
   sleep: <Moon className="h-3.5 w-3.5 text-[#3dbe73]" />,
   recovery: <Heart className="h-3.5 w-3.5 text-[#6366f1]" />,
@@ -206,18 +212,23 @@ function InsightCard({
         </div>
       )}
 
-      <div className="flex items-center gap-2 flex-wrap">
-        <span
-          className={`inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-medium uppercase tracking-wider ${CONFIDENCE_COLORS[confidence]}`}
-        >
-          {confidence} confidence
-        </span>
-        {insight.pillar && (
-          <span className="inline-flex items-center gap-1 rounded-full bg-muted px-2 py-0.5 text-[10px] font-medium uppercase tracking-wider text-muted-foreground">
-            {icon}
-            {insight.pillar}
+      <div className="flex flex-col gap-1.5">
+        <div className="flex items-center gap-2 flex-wrap">
+          <span
+            className={`inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-medium uppercase tracking-wider ${CONFIDENCE_COLORS[confidence]}`}
+          >
+            {confidence} confidence
           </span>
-        )}
+          {insight.pillar && (
+            <span className="inline-flex items-center gap-1 rounded-full bg-muted px-2 py-0.5 text-[10px] font-medium uppercase tracking-wider text-muted-foreground">
+              {icon}
+              {insight.pillar}
+            </span>
+          )}
+        </div>
+        <p className="text-xs text-muted-foreground">
+          {CONFIDENCE_EXPLANATIONS[confidence]}
+        </p>
       </div>
     </div>
   );

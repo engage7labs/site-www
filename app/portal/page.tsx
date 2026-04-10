@@ -262,7 +262,7 @@ function SleepTrendMini({ data }: Readonly<{ data: TrendPoint[] }>) {
   return (
     <div className="portal-panel rounded-xl border border-border/70 bg-card/85 p-5">
       <h3 className="text-sm font-semibold text-card-foreground mb-3">
-        Sleep — Last 14 Days
+        Sleep — Last 14 Days with Data
       </h3>
       <div ref={containerRef} className="w-full h-[180px]" />
     </div>
@@ -488,13 +488,21 @@ export default function PortalOverviewPage() {
           label="Sleep Score"
           value={sleepScore}
           icon={Moon}
-          subtitle={uploads > 0 ? "Median from latest" : "Upload data to see"}
+          subtitle={
+            data?.sleep_score == null
+              ? "Not enough recent data to assess this yet"
+              : "Median from latest"
+          }
         />
         <MetricCard
           label="Recovery (HRV)"
           value={recoveryTrend}
           icon={Heart}
-          subtitle={uploads > 0 ? "Median HRV from latest" : "Requires uploads"}
+          subtitle={
+            data?.recovery_trend == null
+              ? "Not enough recent data to assess this yet"
+              : "Median HRV from latest"
+          }
         />
         <MetricCard
           label="Data Completeness"
