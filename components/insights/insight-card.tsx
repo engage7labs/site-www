@@ -70,54 +70,62 @@ export function InsightCard({
 
       {/* Insights */}
       {insights.length > 0 && (
-        <div className={`space-y-2 ${compact ? "mb-3" : "mb-4"}`}>
-          {insights.map((insight, i) => (
-            <div key={`insight-${insight.headline.slice(0, 20)}-${i}`}>
-              <div className="flex items-start gap-2">
-                {/* Priority indicator (Sprint 17.0) */}
-                {!compact && insight.priority && (
-                  <div
-                    className={`mt-0.5 h-2 w-2 rounded-full flex-shrink-0 ${
-                      insight.priority === "high"
-                        ? "bg-amber-500"
-                        : insight.priority === "medium"
-                        ? "bg-blue-400"
-                        : "bg-gray-400"
-                    }`}
-                  />
-                )}
-                <p
-                  className={`font-medium text-foreground ${
-                    compact ? "text-xs" : "text-sm"
-                  }`}
-                >
-                  {insight.headline}
-                </p>
-              </div>
-              {!compact && (
-                <p className="text-xs text-muted-foreground mt-0.5 leading-relaxed">
-                  {insight.body}
-                </p>
-              )}
-              {!compact && insight.meaning && (
-                <p className="text-xs text-muted-foreground/80 mt-0.5 italic leading-relaxed">
-                  {insight.meaning}
-                </p>
-              )}
-              {/* Action hint (Sprint 17.0) */}
-              {!compact && insight.action && (
-                <p className="text-xs text-accent/90 mt-1 leading-relaxed font-medium">
-                  → {insight.action}
-                </p>
-              )}
-              {/* Benchmark message (Sprint 17.0) */}
-              {!compact && insight.benchmark && (
-                <p className="text-xs text-muted-foreground/70 mt-0.5 leading-relaxed">
-                  {insight.benchmark}
+        <div className={compact ? "mb-3" : "space-y-2 mb-4"}>
+          {compact ? (
+            /* Compact: single interpretive text above chart (Sprint 24.0.1) */
+            <div>
+              <p className="text-xs font-medium text-foreground leading-relaxed">
+                {insights[0].headline}
+              </p>
+              {insights[0].body && (
+                <p className="text-xs text-muted-foreground mt-0.5 leading-relaxed line-clamp-2">
+                  {insights[0].body}
                 </p>
               )}
             </div>
-          ))}
+          ) : (
+            insights.map((insight, i) => (
+              <div key={`insight-${insight.headline.slice(0, 20)}-${i}`}>
+                <div className="flex items-start gap-2">
+                  {/* Priority indicator (Sprint 17.0) */}
+                  {insight.priority && (
+                    <div
+                      className={`mt-0.5 h-2 w-2 rounded-full flex-shrink-0 ${
+                        insight.priority === "high"
+                          ? "bg-amber-500"
+                          : insight.priority === "medium"
+                          ? "bg-blue-400"
+                          : "bg-gray-400"
+                      }`}
+                    />
+                  )}
+                  <p className="text-sm font-medium text-foreground">
+                    {insight.headline}
+                  </p>
+                </div>
+                <p className="text-xs text-muted-foreground mt-0.5 leading-relaxed">
+                  {insight.body}
+                </p>
+                {insight.meaning && (
+                  <p className="text-xs text-muted-foreground/80 mt-0.5 italic leading-relaxed">
+                    {insight.meaning}
+                  </p>
+                )}
+                {/* Action hint (Sprint 17.0) */}
+                {insight.action && (
+                  <p className="text-xs text-accent/90 mt-1 leading-relaxed font-medium">
+                    → {insight.action}
+                  </p>
+                )}
+                {/* Benchmark message (Sprint 17.0) */}
+                {insight.benchmark && (
+                  <p className="text-xs text-muted-foreground/70 mt-0.5 leading-relaxed">
+                    {insight.benchmark}
+                  </p>
+                )}
+              </div>
+            ))
+          )}
         </div>
       )}
 

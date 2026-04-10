@@ -21,7 +21,6 @@ import {
   buildSleepWeeklyChart,
 } from "@/lib/charts";
 import {
-  buildDurationMessage,
   formatDatasetDuration,
   type DurationInfo,
 } from "@/lib/formatting";
@@ -127,10 +126,19 @@ export function InsightPreview({
     () => formatDatasetDuration(summary?.days ?? null),
     [summary?.days]
   );
-  const durationMessage = useMemo(
-    () => buildDurationMessage(summary?.days ?? null),
-    [summary?.days]
-  );
+
+  // Adaptive headline — based on sleep consistency (Sprint 24.0.1)
+  const adaptiveHeadline = useMemo((): string => {
+    const cv = sections?.volatility?.sleep_hours?.cv;
+    const cvNum = cv != null ? Number(cv) : null;
+    if (cvNum == null || isNaN(cvNum)) {
+      return "Your body is showing clear patterns — here's what stands out";
+    }
+    if (cvNum < 20) {
+      return "Your sleep is steady — your body is maintaining a stable rhythm";
+    }
+    return "Your patterns are shifting — your body is adapting";
+  }, [sections]);
 
   // ---- Extract insights (deterministic) ----------------------------------
   const sleepInsights = useMemo(
@@ -340,15 +348,14 @@ export function InsightPreview({
               className="flex flex-col justify-center py-4"
             >
               <h1 className="text-3xl lg:text-4xl font-semibold text-foreground leading-tight mb-3">
-                {t.result.preview.sleepHero.title}{" "}
-                <span className="text-accent">
-                  {t.result.preview.sleepHero.titleHighlight}
-                </span>
+                {adaptiveHeadline}
               </h1>
 
-              {durationMessage && (
+              {durationInfo && (
                 <p className="text-sm text-muted-foreground mb-6">
-                  {durationMessage}
+                  Built from{" "}
+                  <span className="font-semibold text-foreground">{durationInfo.label}</span>{" "}
+                  of your personal data
                 </p>
               )}
 
@@ -473,15 +480,14 @@ export function InsightPreview({
           >
             <div className="rounded-xl border border-border bg-card p-5">
               <h1 className="text-2xl font-semibold text-foreground leading-tight mb-2">
-                {t.result.preview.sleepHero.title}{" "}
-                <span className="text-accent">
-                  {t.result.preview.sleepHero.titleHighlight}
-                </span>
+                {adaptiveHeadline}
               </h1>
 
-              {durationMessage && (
+              {durationInfo && (
                 <p className="text-xs text-muted-foreground mb-4">
-                  {durationMessage}
+                  Built from{" "}
+                  <span className="font-semibold text-foreground">{durationInfo.label}</span>{" "}
+                  of your personal data
                 </p>
               )}
 

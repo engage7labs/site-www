@@ -320,26 +320,49 @@ export function extractActivityInsights(
     }
   }
 
-  // Weekly pattern — most vs least active day
-  const weekly = sections.weekly_patterns;
-  if (Array.isArray(weekly) && weekly.length === 7) {
-    const withSteps = weekly.filter(
-      (d: { total_steps: number }) => d.total_steps != null && d.total_steps > 0
+  // Monthly OR weekly — peak activity period (monthly preferred, Sprint 24.0.1)
+  const monthly = sections.monthly_patterns;
+  if (Array.isArray(monthly) && monthly.length > 0) {
+    const withMonthlySteps = monthly.filter(
+      (d: { total_steps?: number }) => d.total_steps != null && d.total_steps > 0
     );
-    if (withSteps.length >= 5) {
-      const sorted = [...withSteps].sort(
+    if (withMonthlySteps.length >= 3) {
+      const sortedMonthly = [...withMonthlySteps].sort(
         (a: { total_steps: number }, b: { total_steps: number }) =>
           b.total_steps - a.total_steps
       );
-      const most = sorted[0];
-      const least = sorted[sorted.length - 1];
-      if (most.day_name && least.day_name) {
+      const peakMonth = sortedMonthly[0];
+      if (peakMonth.month_name) {
         insights.push({
-          headline: `${most.day_name} is your most active day`,
-          body: `You tend to move most on ${most.day_name} and least on ${least.day_name}. Knowing your weekly rhythm can help you stay consistent.`,
+          headline: `Your activity peaks around ${peakMonth.month_name}`,
+          body: `${peakMonth.month_name} tends to be your most active month. Your seasonal movement pattern shows a clear rhythm across the year.`,
           meaning:
-            "Understanding your activity pattern helps you plan for consistent movement throughout the week.",
+            "Knowing your peak month helps you plan consistent movement throughout the year.",
         });
+      }
+    }
+  } else {
+    // Fallback: weekly pattern — most vs least active day
+    const weekly = sections.weekly_patterns;
+    if (Array.isArray(weekly) && weekly.length === 7) {
+      const withSteps = weekly.filter(
+        (d: { total_steps: number }) => d.total_steps != null && d.total_steps > 0
+      );
+      if (withSteps.length >= 5) {
+        const sorted = [...withSteps].sort(
+          (a: { total_steps: number }, b: { total_steps: number }) =>
+            b.total_steps - a.total_steps
+        );
+        const most = sorted[0];
+        const least = sorted[sorted.length - 1];
+        if (most.day_name && least.day_name) {
+          insights.push({
+            headline: `${most.day_name} is your most active day`,
+            body: `You tend to move most on ${most.day_name} and least on ${least.day_name}. Knowing your weekly rhythm can help you stay consistent.`,
+            meaning:
+              "Understanding your activity pattern helps you plan for consistent movement throughout the week.",
+          });
+        }
       }
     }
   }
