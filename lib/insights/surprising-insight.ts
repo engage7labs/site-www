@@ -17,6 +17,43 @@
 type Sections = Record<string, any>;
 
 // ---------------------------------------------------------------------------
+// Sprint 24.3: New signal strategies (prepended — highest priority)
+// ---------------------------------------------------------------------------
+
+function tryRecoveryCompositeScore(sections: Sections): string | null {
+  const score = sections.recovery_signals?.recovery_composite_score;
+  if (score == null || typeof score !== "number") return null;
+  const rounded = Math.round(score);
+  if (rounded >= 80) {
+    return `Your recovery score is ${rounded}/100 — your body is handling stress exceptionally well right now.`;
+  }
+  if (rounded <= 40) {
+    return `Your recovery score is ${rounded}/100 — your body is signalling it needs more rest.`;
+  }
+  return null;
+}
+
+function trySleepStageImbalance(sections: Sections): string | null {
+  const ss = sections.sleep_stages;
+  if (!ss?.has_stage_data) return null;
+  const deepPct = ss.percentages?.deep_pct;
+  const remPct  = ss.percentages?.rem_pct;
+  if (typeof deepPct === "number" && deepPct < 10) {
+    return `Only ${deepPct.toFixed(0)}% of your sleep is deep sleep — the most restorative phase.`;
+  }
+  if (typeof remPct === "number" && remPct < 15) {
+    return `Your REM sleep is at ${remPct.toFixed(0)}% — lower than the typical 20–25% range.`;
+  }
+  return null;
+}
+
+function trySpO2Concern(sections: Sections): string | null {
+  const spo2 = sections.recovery_signals?.metrics?.spo2_mean;
+  if (typeof spo2 !== "number" || spo2 >= 95) return null;
+  return `Your average blood oxygen is ${spo2.toFixed(1)}% — slightly below the typical healthy range.`;
+}
+
+// ---------------------------------------------------------------------------
 // Strategy functions — each returns an insight string or null
 // ---------------------------------------------------------------------------
 
@@ -128,8 +165,11 @@ function tryActivityConsistency(sections: Sections): string | null {
 export function getSurprisingInsight(sections: Sections | null): string | null {
   if (!sections) return null;
 
-  // Try strategies in priority order
+  // Try strategies in priority order — Sprint 24.3 new signals first
   return (
+    tryRecoveryCompositeScore(sections) ??
+    trySleepStageImbalance(sections) ??
+    trySpO2Concern(sections) ??
     trySleepResilience(sections) ??
     tryWeekendSleepGap(sections) ??
     tryHrHrvRelationship(sections) ??

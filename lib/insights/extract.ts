@@ -371,6 +371,157 @@ export function extractActivityInsights(
 }
 
 // ---------------------------------------------------------------------------
+// Sprint 24.3: New signal extraction functions
+// ---------------------------------------------------------------------------
+
+/**
+ * Extract insights from sleep stage data (Sprint 24.2 sleep_stages section).
+ * Uses actual backend shape: { has_stage_data, percentages.{deep_pct,rem_pct}, stage_trend }
+ */
+export function extractSleepStageInsights(
+  sections: Sections | null
+): InsightText[] {
+  if (!sections) return [];
+  const ss = sections.sleep_stages;
+  if (!ss || !ss.has_stage_data) return [];
+
+  const insights: InsightText[] = [];
+  const deepPct = safeNum(ss.percentages?.deep_pct);
+  const remPct  = safeNum(ss.percentages?.rem_pct);
+  const trend   = ss.stage_trend as string | null | undefined;
+
+  if (deepPct !== null && deepPct < 15) {
+    insights.push({
+      headline: "Your deep sleep is lower than typical",
+      body: "Deep sleep is when your body does most of its physical repair. Getting more of it can improve how rested you feel.",
+      pillar: "sleep",
+    });
+  }
+
+  if (remPct !== null && remPct < 20) {
+    insights.push({
+      headline: "Your REM sleep is on the lower side",
+      body: "REM is when your brain consolidates memories and processes emotions. It typically makes up 20–25% of sleep.",
+      pillar: "sleep",
+    });
+  }
+
+  if (trend === "improving") {
+    insights.push({
+      headline: "Your sleep quality has been improving",
+      body: "Your deep sleep trend over the past weeks has been moving in the right direction.",
+      pillar: "sleep",
+    });
+  } else if (trend === "declining") {
+    insights.push({
+      headline: "Your sleep quality shows a declining trend",
+      body: "Your sleep stage pattern has been shifting downward recently — worth paying attention to.",
+      pillar: "sleep",
+    });
+  }
+
+  return insights.slice(0, 3).map((ins) => enrichInsight(ins, sections));
+}
+
+/**
+ * Extract insights from recovery signal data (Sprint 24.2 recovery_signals section).
+ * Uses actual backend shape: { recovery_composite_score, metrics.{spo2_mean, respiratory_rate} }
+ */
+export function extractRecoverySignalInsights(
+  sections: Sections | null
+): InsightText[] {
+  if (!sections) return [];
+  const rs = sections.recovery_signals;
+  if (!rs) return [];
+
+  const insights: InsightText[] = [];
+  const score   = safeNum(rs.recovery_composite_score);
+  const spo2    = safeNum(rs.metrics?.spo2_mean);
+  const respRate = safeNum(rs.metrics?.respiratory_rate);
+
+  if (score !== null) {
+    if (score >= 75) {
+      insights.push({
+        headline: `Your recovery score is strong (${Math.round(score)}/100)`,
+        body: "Your HRV, resting heart rate, and blood oxygen signals suggest your body is handling stress well.",
+        pillar: "recovery",
+      });
+    } else if (score >= 50) {
+      insights.push({
+        headline: `Your recovery score is moderate (${Math.round(score)}/100)`,
+        body: "There's room to improve with consistent sleep and movement. Recovery scores tend to respond quickly to lifestyle changes.",
+        pillar: "recovery",
+      });
+    } else {
+      insights.push({
+        headline: `Your recovery score is lower than ideal (${Math.round(score)}/100)`,
+        body: "Your body may need more rest. A lower score often reflects accumulated stress or disrupted sleep.",
+        pillar: "recovery",
+      });
+    }
+  }
+
+  if (spo2 !== null && spo2 < 95) {
+    insights.push({
+      headline: "Your blood oxygen levels are worth watching",
+      body: `Your average SpO₂ is around ${round1(spo2)}% — slightly below the typical healthy range of 95–100%. Worth discussing with a doctor.`,
+      pillar: "recovery",
+    });
+  }
+
+  if (respRate !== null && respRate > 18) {
+    insights.push({
+      headline: "Your resting respiratory rate is slightly elevated",
+      body: `Your average resting respiratory rate is around ${round1(respRate)} breaths/min. Elevated rates can sometimes reflect stress or poor sleep quality.`,
+      pillar: "recovery",
+    });
+  }
+
+  return insights.slice(0, 3).map((ins) => enrichInsight(ins, sections));
+}
+
+/**
+ * Extract insights from activity signal data (Sprint 24.2 activity_signals section).
+ * Uses actual backend shape: { total_energy_cal.{mean}, basal_energy_cal.{mean}, flights_climbed.{mean} }
+ */
+export function extractActivitySignalInsights(
+  sections: Sections | null
+): InsightText[] {
+  if (!sections) return [];
+  const as_ = sections.activity_signals;
+  if (!as_) return [];
+
+  const insights: InsightText[] = [];
+  const totalEnergy  = safeNum(as_.total_energy_cal?.mean);
+  const basalEnergy  = safeNum(as_.basal_energy_cal?.mean);
+  const flightsMean  = safeNum(as_.flights_climbed?.mean);
+
+  if (totalEnergy !== null) {
+    insights.push({
+      headline: "Your daily energy picture",
+      body: `Your body burns around ${Math.round(totalEnergy).toLocaleString()} kcal per day on average — combining rest and movement.`,
+      pillar: "activity",
+    });
+  } else if (basalEnergy !== null) {
+    insights.push({
+      headline: "Your resting energy output",
+      body: `Your basal metabolism burns around ${Math.round(basalEnergy).toLocaleString()} kcal per day — the energy your body uses just to function.`,
+      pillar: "activity",
+    });
+  }
+
+  if (flightsMean !== null && flightsMean > 0) {
+    insights.push({
+      headline: "You're regularly climbing floors",
+      body: `You average around ${Math.round(flightsMean)} flights of stairs per day — a simple but meaningful indicator of daily movement.`,
+      pillar: "activity",
+    });
+  }
+
+  return insights.slice(0, 3).map((ins) => enrichInsight(ins, sections));
+}
+
+// ---------------------------------------------------------------------------
 // Aggregation Helper — "What Matters Today" (Sprint 17.0)
 // ---------------------------------------------------------------------------
 

@@ -26,11 +26,17 @@ import {
 } from "@/lib/formatting";
 import {
   extractActivityInsights,
+  extractActivitySignalInsights,
   extractRecoveryInsights,
+  extractRecoverySignalInsights,
   extractSleepInsights,
+  extractSleepStageInsights,
   getPreviewInsight,
   getSurprisingInsight,
 } from "@/lib/insights";
+import { DailyEnergyChart } from "./daily-energy-chart";
+import { RecoveryScoreChart } from "./recovery-score-chart";
+import { SleepStageChart } from "./sleep-stage-chart";
 import {
   trackActivityPreviewViewed,
   trackAnalysisPreviewLoaded,
@@ -153,6 +159,36 @@ export function InsightPreview({
     () => extractActivityInsights(sections),
     [sections]
   );
+
+  // ---- Sprint 24.3: New signal insights from expanded sections ----------
+  const sleepStageInsights = useMemo(
+    () => extractSleepStageInsights(sections),
+    [sections]
+  );
+  const recoverySignalInsights = useMemo(
+    () => extractRecoverySignalInsights(sections),
+    [sections]
+  );
+  const activitySignalInsights = useMemo(
+    () => extractActivitySignalInsights(sections),
+    [sections]
+  );
+
+  // Combined new insights — max 4, highest score first
+  const newSignalInsights = useMemo(() => {
+    const all = [
+      ...sleepStageInsights,
+      ...recoverySignalInsights,
+      ...activitySignalInsights,
+    ].sort((a, b) => (b.score ?? 0) - (a.score ?? 0));
+    return all.slice(0, 4);
+  }, [sleepStageInsights, recoverySignalInsights, activitySignalInsights]);
+
+  // Is any new signal data available?
+  const hasNewSignals =
+    (sections?.sleep_stages?.has_stage_data === true) ||
+    (sections?.recovery_signals?.recovery_composite_score != null) ||
+    (sections?.activity_signals?.basal_energy_cal != null);
 
   // ---- Preview insight for Premium CTA (Sprint 17.6.2) ------------------
   const previewInsight = useMemo(() => getPreviewInsight(sections), [sections]);
@@ -331,6 +367,44 @@ export function InsightPreview({
             <p className="text-sm text-foreground/90 leading-relaxed">
               {surprisingInsight}
             </p>
+          </motion.div>
+        )}
+
+        {/* ============================================================= */}
+        {/* NEW SIGNALS BLOCK — Sprint 24.3                               */}
+        {/* Rendered BEFORE existing sections when new data is available  */}
+        {/* ============================================================= */}
+        {hasNewSignals && (
+          <motion.div
+            initial={{ opacity: 0, y: 12 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.4 }}
+            className="mb-6"
+          >
+            {newSignalInsights.length > 0 && (
+              <div className="grid gap-3 sm:grid-cols-2 mb-6">
+                {newSignalInsights.map((insight) => (
+                  <InsightCard key={insight.headline} title={insight.pillar ?? "Signal"} insights={[insight]} compact />
+                ))}
+              </div>
+            )}
+            <div className="grid gap-4 sm:grid-cols-3">
+              {sections?.sleep_stages?.has_stage_data && (
+                <div className="rounded-xl border border-border bg-card p-4">
+                  <SleepStageChart data={sections.sleep_stages} height={200} />
+                </div>
+              )}
+              {sections?.recovery_signals?.recovery_composite_score != null && (
+                <div className="rounded-xl border border-border bg-card p-4">
+                  <RecoveryScoreChart score={sections.recovery_signals.recovery_composite_score} height={200} />
+                </div>
+              )}
+              {sections?.activity_signals?.basal_energy_cal != null && (
+                <div className="rounded-xl border border-border bg-card p-4">
+                  <DailyEnergyChart data={sections.activity_signals} height={200} />
+                </div>
+              )}
+            </div>
           </motion.div>
         )}
 

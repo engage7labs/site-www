@@ -4,8 +4,11 @@
 
 export {
   extractActivityInsights,
+  extractActivitySignalInsights,
   extractRecoveryInsights,
+  extractRecoverySignalInsights,
   extractSleepInsights,
+  extractSleepStageInsights,
   getTopInsights,
 } from "./extract";
 export type { InsightText } from "./extract";
