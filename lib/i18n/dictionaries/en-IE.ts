@@ -301,7 +301,7 @@ export const enIE = {
       emptyInsights: "Not enough data to generate this insight yet.",
       insightsInEnglish: "Insights generated in English",
       fullReport: {
-        title: "Go deeper with Premium",
+        title: "Unlock your complete analysis",
         description:
           "See trends over time, correlations between your signals, and access your personal portal — free for 90 days.",
         downloadButton: "Unlock Premium (90 days free)",

@@ -18,9 +18,11 @@ type ActivitySignals = Record<string, any>;
 interface DailyEnergyChartProps {
   data: ActivitySignals;
   height?: number;
+  /** Override default header text — pass locale-aware label with period info */
+  label?: string;
 }
 
-export function DailyEnergyChart({ data, height = 200 }: Readonly<DailyEnergyChartProps>) {
+export function DailyEnergyChart({ data, height = 200, label }: Readonly<DailyEnergyChartProps>) {
   const basalMean = data?.basal_energy_cal?.mean ?? null;
   const totalMean = data?.total_energy_cal?.mean ?? null;
 
@@ -105,7 +107,7 @@ export function DailyEnergyChart({ data, height = 200 }: Readonly<DailyEnergyCha
   return (
     <div>
       <p className="text-[10px] font-medium text-muted-foreground uppercase tracking-wider mb-2">
-        Your daily energy — avg kcal
+        {label ?? "Daily energy — avg kcal"}
       </p>
       <EChart option={option} height={height} />
     </div>

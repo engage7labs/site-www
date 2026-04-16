@@ -18,9 +18,11 @@ type SleepStages = Record<string, any>;
 interface SleepStageChartProps {
   data: SleepStages;
   height?: number;
+  /** Override default header text — pass locale-aware label with period info */
+  label?: string;
 }
 
-export function SleepStageChart({ data, height = 220 }: Readonly<SleepStageChartProps>) {
+export function SleepStageChart({ data, height = 220, label }: Readonly<SleepStageChartProps>) {
   if (!data?.has_stage_data) return null;
 
   const core  = data.averages?.core_hours ?? 0;
@@ -30,13 +32,13 @@ export function SleepStageChart({ data, height = 220 }: Readonly<SleepStageChart
 
   if (total <= 0) return null;
 
-  return <SleepStageDonut core={core} deep={deep} rem={rem} total={total} height={height} />;
+  return <SleepStageDonut core={core} deep={deep} rem={rem} total={total} height={height} label={label} />;
 }
 
 function SleepStageDonut({
-  core, deep, rem, total, height,
+  core, deep, rem, total, height, label,
 }: {
-  core: number; deep: number; rem: number; total: number; height: number;
+  core: number; deep: number; rem: number; total: number; height: number; label?: string;
 }) {
   const containerRef = useRef<HTMLDivElement>(null);
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -80,7 +82,7 @@ function SleepStageDonut({
   return (
     <div>
       <p className="text-[10px] font-medium text-muted-foreground uppercase tracking-wider mb-2">
-        Your sleep stages — avg per night
+        {label ?? "Sleep stages — avg per night"}
       </p>
       <div
         ref={containerRef}

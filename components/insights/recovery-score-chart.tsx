@@ -15,15 +15,17 @@ import { useCallback, useEffect, useRef } from "react";
 interface RecoveryScoreChartProps {
   score: number;
   height?: number;
+  /** Override default header text — pass locale-aware label with period info */
+  label?: string;
 }
 
-export function RecoveryScoreChart({ score, height = 200 }: Readonly<RecoveryScoreChartProps>) {
+export function RecoveryScoreChart({ score, height = 200, label }: Readonly<RecoveryScoreChartProps>) {
   if (score == null || typeof score !== "number") return null;
 
-  return <RecoveryGauge score={Math.round(score)} height={height} />;
+  return <RecoveryGauge score={Math.round(score)} height={height} label={label} />;
 }
 
-function RecoveryGauge({ score, height }: { score: number; height: number }) {
+function RecoveryGauge({ score, height, label }: { score: number; height: number; label?: string }) {
   const containerRef = useRef<HTMLDivElement>(null);
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const chartRef = useRef<any>(null);
@@ -64,7 +66,7 @@ function RecoveryGauge({ score, height }: { score: number; height: number }) {
   return (
     <div>
       <p className="text-[10px] font-medium text-muted-foreground uppercase tracking-wider mb-2">
-        Recovery score
+        {label ?? "Readiness — overall score"}
       </p>
       <div
         ref={containerRef}

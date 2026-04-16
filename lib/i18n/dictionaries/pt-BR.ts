@@ -305,10 +305,10 @@ export const ptBR: Dictionary = {
       emptyInsights: "Dados insuficientes para gerar este insight ainda.",
       insightsInEnglish: "Insights gerados em inglês",
       fullReport: {
-        title: "Vá mais fundo com o Premium",
+        title: "Veja sua evolução completa",
         description:
           "Veja tendências ao longo do tempo, correlações entre seus sinais e acesse seu portal pessoal — grátis por 90 dias.",
-        downloadButton: "Desbloquear Premium (90 dias grátis)",
+        downloadButton: "Desbloquear análise completa (90 dias grátis)",
         runAnother: "Executar outra análise",
       },
     },

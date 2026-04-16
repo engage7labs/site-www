@@ -113,6 +113,59 @@ function useDarkMode(theme?: string) {
 }
 
 // ---------------------------------------------------------------------------
+// Locale helpers (Sprint 25.2)
+// ---------------------------------------------------------------------------
+
+function translatePillar(pillar: string, locale: string): string {
+  if (locale === "pt-BR") {
+    const map: Record<string, string> = {
+      sleep: "sono",
+      recovery: "prontidão",
+      activity: "atividade",
+    };
+    return map[pillar] ?? pillar;
+  }
+  return pillar;
+}
+
+/**
+ * Returns a locale-aware period string for chart headers.
+ * Uses the dataset days from the summary (total dataset duration).
+ */
+function chartPeriodSuffix(days: number | null | undefined, locale: string): string {
+  const isPt = locale === "pt-BR";
+  if (days == null || days <= 0) {
+    return isPt ? "média geral" : "all-time avg";
+  }
+  const d = Math.round(days);
+  return isPt ? `${d} dias` : `${d} days`;
+}
+
+function sleepStageLabel(days: number | null | undefined, locale: string): string {
+  const isPt = locale === "pt-BR";
+  const period = chartPeriodSuffix(days, locale);
+  return isPt
+    ? `Estágios do sono — média por noite (${period})`
+    : `Sleep stages — avg per night (${period})`;
+}
+
+function recoveryLabel(days: number | null | undefined, locale: string): string {
+  const isPt = locale === "pt-BR";
+  const period = chartPeriodSuffix(days, locale);
+  return isPt
+    ? `Prontidão — pontuação geral (${period})`
+    : `Readiness — overall score (${period})`;
+}
+
+function energyLabel(days: number | null | undefined, locale: string): string {
+  const isPt = locale === "pt-BR";
+  const period = chartPeriodSuffix(days, locale);
+  return isPt
+    ? `Energia diária — média kcal (${period})`
+    : `Daily energy — avg kcal (${period})`;
+}
+
+// ---------------------------------------------------------------------------
 // Component
 // ---------------------------------------------------------------------------
 
@@ -375,8 +428,9 @@ export function InsightPreview({
         )}
 
         {/* ============================================================= */}
-        {/* ENGINE INSIGHTS — Sprint 25.0 / Hardened Sprint 25.1          */}
-        {/* Hero (first) + secondary grid. Contract-validated. Max 3.     */}
+        {/* ENGINE INSIGHTS — Sprint 25.0 / 25.1 / 25.2                  */}
+        {/* Hero (first) + secondary grid. Locale-aware pillar badges.   */}
+        {/* HRV tooltip when applicable. Max 3. Contract-validated.      */}
         {/* ============================================================= */}
         {engineInsights.length > 0 && (
           <motion.div
@@ -388,6 +442,7 @@ export function InsightPreview({
             {/* Hero — highest-scoring insight */}
             {(() => {
               const hero = engineInsights[0];
+              const isHrv = hero.metrics_used.includes("hrv_sdnn_mean_median");
               return (
                 <div
                   className={`rounded-xl border p-5 mb-3 ${
@@ -405,7 +460,7 @@ export function InsightPreview({
                       }`}
                     />
                     <span className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
-                      {hero.pillar}
+                      {translatePillar(hero.pillar, locale)}
                     </span>
                   </div>
                   <p className="text-base font-bold text-foreground leading-snug mb-1.5">
@@ -417,6 +472,13 @@ export function InsightPreview({
                   <p className="text-[11px] text-muted-foreground/60 font-mono leading-relaxed">
                     {hero.evidence}
                   </p>
+                  {isHrv && (
+                    <p className="text-[10px] text-muted-foreground/50 italic mt-2 leading-relaxed">
+                      {locale === "pt-BR"
+                        ? "VFC: indica como seu corpo está se recuperando. Valores mais altos geralmente significam melhor recuperação."
+                        : "HRV: reflects how well your body is recovering. Higher values generally mean better recovery."}
+                    </p>
+                  )}
                 </div>
               );
             })()}
@@ -424,38 +486,48 @@ export function InsightPreview({
             {/* Secondary grid — remaining insights */}
             {engineInsights.length > 1 && (
               <div className="grid gap-3 sm:grid-cols-2">
-                {engineInsights.slice(1).map((ins) => (
-                  <div
-                    key={ins.id}
-                    className={`rounded-xl border p-4 ${
-                      ins.severity === "critical"
-                        ? "border-destructive/30 bg-destructive/[0.04]"
-                        : "border-border bg-card"
-                    }`}
-                  >
-                    <div className="flex items-center gap-2 mb-2">
-                      <span
-                        className={`inline-block h-1.5 w-1.5 rounded-full shrink-0 ${
-                          ins.severity === "critical"
-                            ? "bg-destructive"
-                            : "bg-accent"
-                        }`}
-                      />
-                      <span className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
-                        {ins.pillar}
-                      </span>
+                {engineInsights.slice(1).map((ins) => {
+                  const isHrv = ins.metrics_used.includes("hrv_sdnn_mean_median");
+                  return (
+                    <div
+                      key={ins.id}
+                      className={`rounded-xl border p-4 ${
+                        ins.severity === "critical"
+                          ? "border-destructive/30 bg-destructive/[0.04]"
+                          : "border-border bg-card"
+                      }`}
+                    >
+                      <div className="flex items-center gap-2 mb-2">
+                        <span
+                          className={`inline-block h-1.5 w-1.5 rounded-full shrink-0 ${
+                            ins.severity === "critical"
+                              ? "bg-destructive"
+                              : "bg-accent"
+                          }`}
+                        />
+                        <span className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
+                          {translatePillar(ins.pillar, locale)}
+                        </span>
+                      </div>
+                      <p className="text-sm font-semibold text-foreground leading-snug mb-1">
+                        {ins.action}
+                      </p>
+                      <p className="text-xs text-muted-foreground leading-relaxed mb-2">
+                        {ins.insight}
+                      </p>
+                      <p className="text-[10px] text-muted-foreground/60 font-mono leading-relaxed">
+                        {ins.evidence}
+                      </p>
+                      {isHrv && (
+                        <p className="text-[10px] text-muted-foreground/50 italic mt-1.5 leading-relaxed">
+                          {locale === "pt-BR"
+                            ? "VFC: indica como seu corpo está se recuperando. Valores mais altos geralmente significam melhor recuperação."
+                            : "HRV: reflects how well your body is recovering. Higher values generally mean better recovery."}
+                        </p>
+                      )}
                     </div>
-                    <p className="text-sm font-semibold text-foreground leading-snug mb-1">
-                      {ins.action}
-                    </p>
-                    <p className="text-xs text-muted-foreground leading-relaxed mb-2">
-                      {ins.insight}
-                    </p>
-                    <p className="text-[10px] text-muted-foreground/60 font-mono leading-relaxed">
-                      {ins.evidence}
-                    </p>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
             )}
           </motion.div>
@@ -472,27 +544,33 @@ export function InsightPreview({
             transition={{ duration: 0.4 }}
             className="mb-6"
           >
-            {newSignalInsights.length > 0 && (
-              <div className="grid gap-3 sm:grid-cols-2 mb-6">
-                {newSignalInsights.map((insight) => (
-                  <InsightCard key={insight.headline} title={insight.pillar ?? "Signal"} insights={[insight]} compact />
-                ))}
-              </div>
-            )}
+            {/* Charts only — InsightCards removed (engine block above covers insights) */}
             <div className="grid gap-4 sm:grid-cols-3">
               {sections?.sleep_stages?.has_stage_data && (
                 <div className="rounded-xl border border-border bg-card p-4">
-                  <SleepStageChart data={sections.sleep_stages} height={200} />
+                  <SleepStageChart
+                    data={sections.sleep_stages}
+                    height={200}
+                    label={sleepStageLabel(summary?.days, locale)}
+                  />
                 </div>
               )}
               {sections?.recovery_signals?.recovery_composite_score != null && (
                 <div className="rounded-xl border border-border bg-card p-4">
-                  <RecoveryScoreChart score={sections.recovery_signals.recovery_composite_score} height={200} />
+                  <RecoveryScoreChart
+                    score={sections.recovery_signals.recovery_composite_score}
+                    height={200}
+                    label={recoveryLabel(summary?.days, locale)}
+                  />
                 </div>
               )}
               {sections?.activity_signals?.basal_energy_cal != null && (
                 <div className="rounded-xl border border-border bg-card p-4">
-                  <DailyEnergyChart data={sections.activity_signals} height={200} />
+                  <DailyEnergyChart
+                    data={sections.activity_signals}
+                    height={200}
+                    label={energyLabel(summary?.days, locale)}
+                  />
                 </div>
               )}
             </div>
