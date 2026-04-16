@@ -2,6 +2,7 @@
 
 import { CompareImproveBlock } from "@/components/portal/compare-improve-block";
 import { DailyBriefing } from "@/components/portal/daily-briefing";
+import { ChartEmptyState } from "@/components/insights/chart-empty-state";
 import { useLocale } from "@/components/providers/locale-provider";
 import { generateCompareImprove } from "@/lib/insights/compare-improve";
 import type { EChartsOption } from "echarts";
@@ -177,8 +178,11 @@ function median(points?: TrendPoint[]): number | null {
 
 function SleepTrendMini({ data, title }: Readonly<{ data: TrendPoint[]; title: string }>) {
   const containerRef = useRef<HTMLDivElement>(null);
+  const hasData = data.some((p) => p.value != null);
 
   useEffect(() => {
+    if (!hasData) return; // empty state rendered in JSX
+
     let chart:
       | ReturnType<Awaited<ReturnType<typeof getEcharts>>["init"]>
       | undefined;
@@ -258,14 +262,22 @@ function SleepTrendMini({ data, title }: Readonly<{ data: TrendPoint[]; title: s
       disposed = true;
       chart?.dispose();
     };
-  }, [data]);
+  }, [data, hasData]);
 
   return (
     <div className="portal-panel rounded-xl border border-border/70 bg-card/85 p-5">
       <h3 className="text-sm font-semibold text-card-foreground mb-3">
         {title}
       </h3>
-      <div ref={containerRef} className="w-full h-[180px]" />
+      {hasData ? (
+        <div ref={containerRef} className="w-full h-[180px]" />
+      ) : (
+        <ChartEmptyState
+          height={180}
+          title="Sleep trend still building"
+          message="Your sleep pattern appears once enough data is available"
+        />
+      )}
     </div>
   );
 }
@@ -390,14 +402,22 @@ function HealthRadar({
     };
   }, [sleep, hr, hrv, steps]);
 
-  if (sleep == null && hr == null && hrv == null && steps == null) return null;
+  const hasAnyValue = sleep != null || hr != null || hrv != null || steps != null;
 
   return (
     <div className="portal-panel rounded-xl border border-border/70 bg-card/85 p-5">
       <h3 className="text-sm font-semibold text-card-foreground mb-3">
         {title}
       </h3>
-      <div ref={containerRef} className="w-full h-[220px]" />
+      {hasAnyValue ? (
+        <div ref={containerRef} className="w-full h-[220px]" />
+      ) : (
+        <ChartEmptyState
+          height={220}
+          title="Health balance forming"
+          message="This view appears once enough recovery data is available"
+        />
+      )}
     </div>
   );
 }
@@ -528,19 +548,17 @@ export default function PortalOverviewPage() {
         button={t.portal.shareCard.button}
       />
 
-      {/* ECharts — Sprint 17.4 */}
-      {(trends?.trends?.sleep?.length ?? 0) > 0 && (
-        <div className="grid gap-4 lg:grid-cols-2">
-          <SleepTrendMini data={trends!.trends.sleep} title={t.portal.sleepTrend} />
-          <HealthRadar
-            sleep={data?.sleep_score ?? null}
-            hr={median(trends?.trends?.hr)}
-            hrv={data?.recovery_trend ?? null}
-            steps={median(trends?.trends?.steps)}
-            title={t.portal.healthBalance}
-          />
-        </div>
-      )}
+      {/* ECharts — Sprint 17.4 / Sprint 25.9: always rendered, empty states when no data */}
+      <div className="grid gap-4 lg:grid-cols-2">
+        <SleepTrendMini data={trends?.trends?.sleep ?? []} title={t.portal.sleepTrend} />
+        <HealthRadar
+          sleep={data?.sleep_score ?? null}
+          hr={median(trends?.trends?.hr)}
+          hrv={data?.recovery_trend ?? null}
+          steps={median(trends?.trends?.steps)}
+          title={t.portal.healthBalance}
+        />
+      </div>
 
       {latest ? (
         <div className="portal-panel rounded-xl border border-border/70 bg-card/85 p-6">

@@ -54,6 +54,7 @@ import {
 } from "lucide-react";
 import Link from "next/link";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { ChartEmptyState } from "./chart-empty-state";
 import { DailyEnergyChart } from "./daily-energy-chart";
 import { EChart } from "./echart";
 import { InsightCard } from "./insight-card";
@@ -242,12 +243,6 @@ export function InsightPreview({
 
   // ---- Sprint 25.0: Deterministic Insight Engine ---------------------------
   const engineInsights = useMemo(() => generateInsights(result), [result]);
-
-  // Is any new signal data available?
-  const hasNewSignals =
-    sections?.sleep_stages?.has_stage_data === true ||
-    sections?.recovery_signals?.recovery_composite_score != null ||
-    sections?.activity_signals?.basal_energy_cal != null;
 
   // ---- Preview insight for Premium CTA (Sprint 17.6.2) ------------------
   const previewInsight = useMemo(() => getPreviewInsight(sections), [sections]);
@@ -569,75 +564,113 @@ export function InsightPreview({
           </motion.div>
         )}
 
-        {/* 4. New signals block */}
-        {hasNewSignals && (
-          <motion.div
-            initial={{ opacity: 0, y: 12 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.4 }}
-            className="mb-6"
-          >
-            <div className="text-[10px] uppercase opacity-60 mb-1">NEW: hasNewSignals</div>
-            {/* Sprint 25.5: narrative connector hidden */}
-            {false && engineInsights.length > 0 && (
-              <div className="flex items-center gap-3 mb-4">
-                <div className="h-px flex-1 bg-border/25" />
-                <span className="text-[10px] text-muted-foreground/40 uppercase tracking-wider shrink-0">
-                  {locale === "pt-BR"
-                    ? "o que isso significa"
-                    : "what this means"}
-                </span>
-                <div className="h-px flex-1 bg-border/25" />
-              </div>
-            )}
+        {/* 4. New signals block — Sprint 25.9: always rendered; empty state when data absent */}
+        <motion.div
+          initial={{ opacity: 0, y: 12 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.4 }}
+          className="mb-6"
+        >
+          <div className="text-[10px] uppercase opacity-60 mb-1">NEW: hasNewSignals</div>
 
-            {/* Charts with narrative roles — Evidence → Impact → Possible cause */}
-            <div className="grid gap-4 sm:grid-cols-3">
-              {/* Sleep Stages — premium composition chart (Deep / REM / Core / Awake) */}
-              {sections?.sleep_stages != null && (
+          {/* Charts with narrative roles — Evidence → Impact → Possible cause */}
+          {/* Sprint 25.9: all 3 slots always render; ChartEmptyState when data is absent */}
+          <div className="grid gap-4 sm:grid-cols-3">
+            {/* Sleep Stages — Evidence */}
+            {(() => {
+              const stageData = sections?.sleep_stages;
+              const hasStages =
+                stageData?.has_stage_data === true &&
+                ((stageData.averages?.core_hours ?? 0) +
+                  (stageData.averages?.deep_hours ?? 0) +
+                  (stageData.averages?.rem_hours ?? 0)) > 0;
+              return (
                 <div className="flex flex-col gap-1.5">
                   <div className="rounded-xl border border-accent/30 bg-card p-4">
-                    <SleepStageChart
-                      data={sections.sleep_stages}
-                      height={200}
-                      label={sleepStageLabel(summary?.days, locale)}
-                    />
+                    {hasStages ? (
+                      <SleepStageChart
+                        data={stageData}
+                        height={200}
+                        label={sleepStageLabel(summary?.days, locale)}
+                      />
+                    ) : (
+                      <>
+                        <p className="text-[10px] font-medium text-muted-foreground uppercase tracking-wider mb-2">
+                          {sleepStageLabel(summary?.days, locale)}
+                        </p>
+                        <ChartEmptyState
+                          height={200}
+                          title="Sleep stage pattern forming"
+                          message="More consistent sleep tracking will unlock this view"
+                        />
+                      </>
+                    )}
                   </div>
                 </div>
-              )}
-              {/* Readiness — Impact */}
-              {sections?.recovery_signals?.recovery_composite_score != null && (
+              );
+            })()}
+
+            {/* Readiness — Impact */}
+            {(() => {
+              const score = sections?.recovery_signals?.recovery_composite_score;
+              const hasScore = score != null && typeof score === "number";
+              return (
                 <div className="flex flex-col gap-1.5">
-                  {false && <p className="text-xs text-muted-foreground/50 uppercase tracking-wider">
-                    {locale === "pt-BR" ? "Impacto" : "Impact"}
-                  </p>}
                   <div className="rounded-xl border border-border bg-card p-4">
-                    <RecoveryScoreChart
-                      score={sections.recovery_signals.recovery_composite_score}
-                      height={200}
-                      label={recoveryLabel(summary?.days, locale)}
-                    />
+                    {hasScore ? (
+                      <RecoveryScoreChart
+                        score={score}
+                        height={200}
+                        label={recoveryLabel(summary?.days, locale)}
+                      />
+                    ) : (
+                      <>
+                        <p className="text-[10px] font-medium text-muted-foreground uppercase tracking-wider mb-2">
+                          {recoveryLabel(summary?.days, locale)}
+                        </p>
+                        <ChartEmptyState
+                          height={200}
+                          title="Recovery pattern still building"
+                          message="We need a few active days to understand this pattern"
+                        />
+                      </>
+                    )}
                   </div>
                 </div>
-              )}
-              {/* Activity — Possible cause */}
-              {sections?.activity_signals?.basal_energy_cal != null && (
+              );
+            })()}
+
+            {/* Daily Energy — Possible cause */}
+            {(() => {
+              const activitySignals = sections?.activity_signals;
+              const hasEnergy = activitySignals?.basal_energy_cal?.mean != null;
+              return (
                 <div className="flex flex-col gap-1.5">
-                  {false && <p className="text-xs text-muted-foreground/50 uppercase tracking-wider">
-                    {locale === "pt-BR" ? "Possível causa" : "Possible cause"}
-                  </p>}
                   <div className="rounded-xl border border-border bg-card p-4">
-                    <DailyEnergyChart
-                      data={sections.activity_signals}
-                      height={200}
-                      label={energyLabel(summary?.days, locale)}
-                    />
+                    {hasEnergy ? (
+                      <DailyEnergyChart
+                        data={activitySignals}
+                        height={200}
+                        label={energyLabel(summary?.days, locale)}
+                      />
+                    ) : (
+                      <>
+                        <p className="text-[10px] font-medium text-muted-foreground uppercase tracking-wider mb-2">
+                          {energyLabel(summary?.days, locale)}
+                        </p>
+                        <ChartEmptyState
+                          height={200}
+                          title="Energy pattern forming"
+                          message="Your energy view appears once enough activity data is available"
+                        />
+                      </>
+                    )}
                   </div>
                 </div>
-              )}
-            </div>
-          </motion.div>
-        )}
+              );
+            })()}
+          </div>
+        </motion.div>
 
         {/* 5. Preview insight (before CTA) */}
         {previewInsight && (
