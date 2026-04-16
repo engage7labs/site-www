@@ -20,10 +20,7 @@ import {
   buildSleepMonthlyChart,
   buildSleepWeeklyChart,
 } from "@/lib/charts";
-import {
-  formatDatasetDuration,
-  type DurationInfo,
-} from "@/lib/formatting";
+import { formatDatasetDuration, type DurationInfo } from "@/lib/formatting";
 import {
   extractActivityInsights,
   extractActivitySignalInsights,
@@ -35,9 +32,6 @@ import {
   getSurprisingInsight,
 } from "@/lib/insights";
 import { generateInsights } from "@/lib/insights/engine";
-import { DailyEnergyChart } from "./daily-energy-chart";
-import { RecoveryScoreChart } from "./recovery-score-chart";
-import { SleepStageChart } from "./sleep-stage-chart";
 import {
   trackActivityPreviewViewed,
   trackAnalysisPreviewLoaded,
@@ -60,8 +54,11 @@ import {
 } from "lucide-react";
 import Link from "next/link";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { DailyEnergyChart } from "./daily-energy-chart";
 import { EChart } from "./echart";
 import { InsightCard } from "./insight-card";
+import { RecoveryScoreChart } from "./recovery-score-chart";
+import { SleepStageChart } from "./sleep-stage-chart";
 
 // ---------------------------------------------------------------------------
 // Types
@@ -132,12 +129,18 @@ function translatePillar(pillar: string, locale: string): string {
  * Returns a locale-aware period string for chart headers.
  * Charts show full-dataset averages — use "historical average" label.
  */
-function chartPeriodSuffix(_days: number | null | undefined, locale: string): string {
+function chartPeriodSuffix(
+  _days: number | null | undefined,
+  locale: string
+): string {
   const isPt = locale === "pt-BR";
   return isPt ? "média histórica" : "historical average";
 }
 
-function sleepStageLabel(days: number | null | undefined, locale: string): string {
+function sleepStageLabel(
+  days: number | null | undefined,
+  locale: string
+): string {
   const isPt = locale === "pt-BR";
   const period = chartPeriodSuffix(days, locale);
   return isPt
@@ -145,7 +148,10 @@ function sleepStageLabel(days: number | null | undefined, locale: string): strin
     : `Sleep stages — avg per night (${period})`;
 }
 
-function recoveryLabel(days: number | null | undefined, locale: string): string {
+function recoveryLabel(
+  days: number | null | undefined,
+  locale: string
+): string {
   const isPt = locale === "pt-BR";
   const period = chartPeriodSuffix(days, locale);
   return isPt
@@ -239,9 +245,9 @@ export function InsightPreview({
 
   // Is any new signal data available?
   const hasNewSignals =
-    (sections?.sleep_stages?.has_stage_data === true) ||
-    (sections?.recovery_signals?.recovery_composite_score != null) ||
-    (sections?.activity_signals?.basal_energy_cal != null);
+    sections?.sleep_stages?.has_stage_data === true ||
+    sections?.recovery_signals?.recovery_composite_score != null ||
+    sections?.activity_signals?.basal_energy_cal != null;
 
   // ---- Preview insight for Premium CTA (Sprint 17.6.2) ------------------
   const previewInsight = useMemo(() => getPreviewInsight(sections), [sections]);
@@ -400,10 +406,7 @@ export function InsightPreview({
       )}
 
       <main className={embedded ? "" : "max-w-6xl mx-auto px-6 pt-8 pb-16"}>
-        {/* ============================================================= */}
-        {/* SURPRISING PERSONAL INSIGHT — Sprint 19.0                     */}
-        {/* Appears BEFORE charts to create curiosity and perceived value  */}
-        {/* ============================================================= */}
+        {/* 1. Surprising personal insight */}
         {surprisingInsight && (
           <motion.div
             initial={{ opacity: 0, y: 12 }}
@@ -423,11 +426,36 @@ export function InsightPreview({
           </motion.div>
         )}
 
-        {/* ============================================================= */}
-        {/* ENGINE INSIGHTS — Sprint 25.0 / 25.1 / 25.2                  */}
-        {/* Hero (first) + secondary grid. Locale-aware pillar badges.   */}
-        {/* HRV tooltip when applicable. Max 3. Contract-validated.      */}
-        {/* ============================================================= */}
+        {/* 2. Provenance card (gold) */}
+        {(durationInfo || summary?.dataset_start) && (
+          <motion.div
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.35 }}
+            className="rounded-xl border border-[#e6b800] bg-[#e6b800]/5 p-4 mb-6 flex items-center gap-4"
+          >
+            <div className="flex-1 min-w-0">
+              <p className="text-[10px] font-semibold uppercase tracking-wider mb-1 text-[#e6b800]">
+                {t.result.preview.provenanceLabel}
+              </p>
+              {durationInfo && (
+                <p className="text-sm font-bold text-foreground">
+                  {t.result.preview.builtFromPrefix}{" "}
+                  <span className="text-[#e6b800]">{durationInfo.label}</span>{" "}
+                  {t.result.preview.builtFromSuffix}
+                </p>
+              )}
+              {summary?.dataset_start && summary?.dataset_end && (
+                <p className="text-xs text-muted-foreground mt-0.5">
+                  {String(summary.dataset_start)} →{" "}
+                  {String(summary.dataset_end)}
+                </p>
+              )}
+            </div>
+          </motion.div>
+        )}
+
+        {/* 3. Engine insights */}
         {engineInsights.length > 0 && (
           <motion.div
             initial={{ opacity: 0, y: 12 }}
@@ -488,7 +516,9 @@ export function InsightPreview({
             {engineInsights.length > 1 && (
               <div className="grid gap-3 sm:grid-cols-2">
                 {engineInsights.slice(1).map((ins) => {
-                  const isHrv = ins.metrics_used.includes("hrv_sdnn_mean_median");
+                  const isHrv = ins.metrics_used.includes(
+                    "hrv_sdnn_mean_median"
+                  );
                   return (
                     <div
                       key={ins.id}
@@ -534,41 +564,7 @@ export function InsightPreview({
           </motion.div>
         )}
 
-        {/* ============================================================= */}
-        {/* PROVENANCE CARD — Sprint 25.4                                 */}
-        {/* Gold styling. Shows dataset duration + date range.            */}
-        {/* ============================================================= */}
-        {(durationInfo || summary?.dataset_start) && (
-          <motion.div
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.35 }}
-            className="rounded-xl border border-[#e6b800] bg-[#e6b800]/5 p-4 mb-6 flex items-center gap-4"
-          >
-            <div className="flex-1 min-w-0">
-              <p className="text-[10px] font-semibold uppercase tracking-wider mb-1 text-[#e6b800]">
-                {t.result.preview.provenanceLabel}
-              </p>
-              {durationInfo && (
-                <p className="text-sm font-bold text-foreground">
-                  {t.result.preview.builtFromPrefix}{" "}
-                  <span className="text-[#e6b800]">{durationInfo.label}</span>{" "}
-                  {t.result.preview.builtFromSuffix}
-                </p>
-              )}
-              {summary?.dataset_start && summary?.dataset_end && (
-                <p className="text-xs text-muted-foreground mt-0.5">
-                  {String(summary.dataset_start)} → {String(summary.dataset_end)}
-                </p>
-              )}
-            </div>
-          </motion.div>
-        )}
-
-        {/* ============================================================= */}
-        {/* NEW SIGNALS BLOCK — Sprint 24.3                               */}
-        {/* Rendered BEFORE existing sections when new data is available  */}
-        {/* ============================================================= */}
+        {/* 4. New signals block */}
         {hasNewSignals && (
           <motion.div
             initial={{ opacity: 0, y: 12 }}
@@ -581,7 +577,9 @@ export function InsightPreview({
               <div className="flex items-center gap-3 mb-4">
                 <div className="h-px flex-1 bg-border/25" />
                 <span className="text-[10px] text-muted-foreground/40 uppercase tracking-wider shrink-0">
-                  {locale === "pt-BR" ? "o que isso significa" : "what this means"}
+                  {locale === "pt-BR"
+                    ? "o que isso significa"
+                    : "what this means"}
                 </span>
                 <div className="h-px flex-1 bg-border/25" />
               </div>
@@ -638,12 +636,177 @@ export function InsightPreview({
           </motion.div>
         )}
 
-        {/* ============================================================= */}
-        {/* DESKTOP LAYOUT — two-column hero + compact lower zone         */}
-        {/* ============================================================= */}
+        {/* 5. Preview insight (before CTA) */}
+        {previewInsight && (
+          <motion.div
+            initial={{ opacity: 0, y: 12 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.4, delay: 0.35 }}
+            className="mt-4 mx-auto max-w-lg rounded-lg border border-accent/15 bg-accent/[0.04] px-5 py-4 text-center"
+          >
+            <div className="flex items-center justify-center gap-2 mb-1">
+              <Sparkles className="h-3.5 w-3.5 text-accent" />
+              <span className="text-xs font-medium uppercase tracking-wider text-accent/80">
+                {t.result.preview.basedOnAnalysis}
+              </span>
+            </div>
+            <p className="text-sm text-foreground/90 leading-relaxed">
+              {previewInsight}
+            </p>
+          </motion.div>
+        )}
+
+        {/* 6. Full Report CTA — hidden when embedded in portal */}
+        {!embedded && (
+          <div ref={fullReportRef} className="mt-10">
+            <motion.div
+              initial={{ opacity: 0, y: 16 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.4, delay: 0.3 }}
+              className="rounded-xl border border-accent/20 bg-accent/5 p-6 text-center"
+            >
+              <h2 className="text-lg font-semibold text-foreground mb-2">
+                {t.result.preview.fullReport.title}
+              </h2>
+              <p className="text-sm text-muted-foreground mb-4 max-w-md mx-auto">
+                {t.result.preview.fullReport.description}
+              </p>
+            </motion.div>
+            {/* CTA button — Sprint 25.4: now appears AFTER previewInsight */}
+            <motion.div
+              initial={{ opacity: 0, y: 12 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.4, delay: 0.45 }}
+              className="mt-5 flex flex-col sm:flex-row items-center justify-center gap-3"
+            >
+              <button
+                type="button"
+                onClick={() => {
+                  trackReportUnlockClicked("bottom");
+                  onOpenModal?.();
+                }}
+                className="inline-flex items-center gap-2 px-5 py-2.5 rounded-lg bg-[#e6b800] text-[#1a1a1a] text-sm font-medium shadow-sm transition-colors duration-200 hover:bg-[#f2c94c] active:bg-[#c99a00]"
+              >
+                <Crown className="h-4 w-4" />
+                {t.result.preview.fullReport.downloadButton}
+              </button>
+            </motion.div>
+            {/* 7. Plan comparison cards (Sprint 18.6.5, localized Sprint 25.4) */}
+            <motion.div
+              initial={{ opacity: 0, y: 12 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.4, delay: 0.55 }}
+              className="mt-8 mx-auto max-w-3xl"
+            >
+              <p className="text-xs font-medium uppercase tracking-wider text-muted-foreground text-center mb-5">
+                {t.result.preview.comparePlans}
+              </p>
+              <div className="grid gap-4 sm:grid-cols-3">
+                {/* Free */}
+                <div className="rounded-xl border border-border bg-card p-5 text-left">
+                  <h3 className="text-sm font-semibold text-foreground mb-1">
+                    {t.result.preview.plans.free.name}
+                  </h3>
+                  <p className="text-xs text-muted-foreground mb-3">
+                    {t.result.preview.plans.free.tagline}
+                  </p>
+                  <ul className="space-y-1.5 text-xs text-muted-foreground">
+                    <li className="flex items-start gap-2">
+                      <Check className="h-3.5 w-3.5 mt-0.5 shrink-0 text-accent/60" />
+                      <span>{t.result.preview.plans.free.singleUpload}</span>
+                    </li>
+                    <li className="flex items-start gap-2">
+                      <Check className="h-3.5 w-3.5 mt-0.5 shrink-0 text-accent/60" />
+                      <span>{t.result.preview.plans.free.previewInsights}</span>
+                    </li>
+                    <li className="flex items-start gap-2">
+                      <Check className="h-3.5 w-3.5 mt-0.5 shrink-0 text-accent/60" />
+                      <span>{t.result.preview.plans.free.basicTrend}</span>
+                    </li>
+                  </ul>
+                </div>
+                {/* Premium — gold highlight (Sprint 25.4) */}
+                <div className="rounded-xl border-2 border-[#e6b800] bg-[#e6b800]/5 p-5 text-left ring-1 ring-[#e6b800]/20 shadow-sm">
+                  <h3 className="text-sm font-semibold text-[#e6b800] mb-1">
+                    {t.result.preview.plans.premium.name}
+                  </h3>
+                  <p className="text-xs text-muted-foreground mb-3">
+                    {t.result.preview.plans.premium.tagline}
+                  </p>
+                  <ul className="space-y-1.5 text-xs text-muted-foreground">
+                    <li className="flex items-start gap-2">
+                      <Check className="h-3.5 w-3.5 mt-0.5 shrink-0 text-[#e6b800]" />
+                      <span>{t.result.preview.plans.premium.longitudinal}</span>
+                    </li>
+                    <li className="flex items-start gap-2">
+                      <Check className="h-3.5 w-3.5 mt-0.5 shrink-0 text-[#e6b800]" />
+                      <span>{t.result.preview.plans.premium.baseline}</span>
+                    </li>
+                    <li className="flex items-start gap-2">
+                      <Check className="h-3.5 w-3.5 mt-0.5 shrink-0 text-[#e6b800]" />
+                      <span>{t.result.preview.plans.premium.actionable}</span>
+                    </li>
+                    <li className="flex items-start gap-2">
+                      <Check className="h-3.5 w-3.5 mt-0.5 shrink-0 text-[#e6b800]" />
+                      <span>{t.result.preview.plans.premium.dashboard}</span>
+                    </li>
+                    <li className="flex items-start gap-2">
+                      <Check className="h-3.5 w-3.5 mt-0.5 shrink-0 text-[#e6b800]" />
+                      <span>{t.result.preview.plans.premium.export}</span>
+                    </li>
+                  </ul>
+                </div>
+                {/* Super Premium */}
+                <div className="rounded-xl border border-border bg-card p-5 text-left">
+                  <h3 className="text-sm font-semibold text-foreground mb-1">
+                    {t.result.preview.plans.superPremium.name}
+                  </h3>
+                  <p className="text-xs text-muted-foreground mb-3">
+                    {t.result.preview.plans.superPremium.tagline}
+                  </p>
+                  <ul className="space-y-1.5 text-xs text-muted-foreground">
+                    <li className="flex items-start gap-2">
+                      <Check className="h-3.5 w-3.5 mt-0.5 shrink-0 text-accent/60" />
+                      <span>
+                        {t.result.preview.plans.superPremium.everything}
+                      </span>
+                    </li>
+                    <li className="flex items-start gap-2">
+                      <Check className="h-3.5 w-3.5 mt-0.5 shrink-0 text-accent/60" />
+                      <span>
+                        {t.result.preview.plans.superPremium.advancedRecovery}
+                      </span>
+                    </li>
+                    <li className="flex items-start gap-2">
+                      <Check className="h-3.5 w-3.5 mt-0.5 shrink-0 text-accent/60" />
+                      <span>
+                        {t.result.preview.plans.superPremium.circadian}
+                      </span>
+                    </li>
+                    <li className="flex items-start gap-2">
+                      <Check className="h-3.5 w-3.5 mt-0.5 shrink-0 text-accent/60" />
+                      <span>
+                        {t.result.preview.plans.superPremium.multiPeriod}
+                      </span>
+                    </li>
+                  </ul>
+                  <p className="mt-3 text-[10px] text-muted-foreground/60 italic">
+                    {t.result.preview.plans.superPremium.comingSoon}
+                  </p>
+                </div>
+              </div>
+            </motion.div>
+          </div>
+        )}
         <div className="hidden md:block">
           {/* Hero: Sleep */}
-          <section className={`grid grid-cols-2 gap-8 items-start transition-all duration-500 ease-out ${sleepVisible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-2"}`}>
+          <section
+            className={`grid grid-cols-2 gap-8 items-start transition-all duration-500 ease-out ${
+              sleepVisible
+                ? "opacity-100 translate-y-0"
+                : "opacity-0 translate-y-2"
+            }`}
+          >
             {/* Left column — text */}
             <motion.div
               initial={{ opacity: 0, y: 20 }}
@@ -658,7 +821,9 @@ export function InsightPreview({
               {durationInfo && (
                 <p className="text-sm text-muted-foreground mb-6">
                   {t.result.preview.builtFromPrefix}{" "}
-                  <span className="font-semibold text-foreground">{durationInfo.label}</span>{" "}
+                  <span className="font-semibold text-foreground">
+                    {durationInfo.label}
+                  </span>{" "}
                   {t.result.preview.builtFromSuffix}
                 </p>
               )}
@@ -732,7 +897,14 @@ export function InsightPreview({
           {/* Lower compact zone— Recovery + Activity */}
           <section className="grid grid-cols-2 gap-6 mt-6">
             {/* Recovery card */}
-            <div id="recovery-desktop" className={`scroll-mt-28 h-full transition-all duration-500 ease-out ${recoveryVisible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-2"}`}>
+            <div
+              id="recovery-desktop"
+              className={`scroll-mt-28 h-full transition-all duration-500 ease-out ${
+                recoveryVisible
+                  ? "opacity-100 translate-y-0"
+                  : "opacity-0 translate-y-2"
+              }`}
+            >
               <InsightCard
                 title={t.result.preview.sections.recovery}
                 icon={<HeartPulse className="h-4 w-4" />}
@@ -751,7 +923,14 @@ export function InsightPreview({
             </div>
 
             {/* Activity card */}
-            <div id="activity-desktop" className={`scroll-mt-28 h-full transition-all duration-500 ease-out ${activityVisible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-2"}`}>
+            <div
+              id="activity-desktop"
+              className={`scroll-mt-28 h-full transition-all duration-500 ease-out ${
+                activityVisible
+                  ? "opacity-100 translate-y-0"
+                  : "opacity-0 translate-y-2"
+              }`}
+            >
               <InsightCard
                 title={t.result.preview.sections.activityMobility}
                 icon={<Footprints className="h-4 w-4" />}
@@ -780,7 +959,11 @@ export function InsightPreview({
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.4 }}
-            className={`transition-all duration-500 ease-out ${sleepVisible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-2"}`}
+            className={`transition-all duration-500 ease-out ${
+              sleepVisible
+                ? "opacity-100 translate-y-0"
+                : "opacity-0 translate-y-2"
+            }`}
           >
             <div className="rounded-xl border border-border bg-card p-5">
               <h1 className="text-2xl font-semibold text-foreground leading-tight mb-2">
@@ -790,7 +973,9 @@ export function InsightPreview({
               {durationInfo && (
                 <p className="text-xs text-muted-foreground mb-4">
                   {t.result.preview.builtFromPrefix}{" "}
-                  <span className="font-semibold text-foreground">{durationInfo.label}</span>{" "}
+                  <span className="font-semibold text-foreground">
+                    {durationInfo.label}
+                  </span>{" "}
                   {t.result.preview.builtFromSuffix}
                 </p>
               )}
@@ -846,7 +1031,14 @@ export function InsightPreview({
             </div>
           </motion.div>
 
-          <section id="recovery-mobile" className={`scroll-mt-28 transition-all duration-500 ease-out ${recoveryVisible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-2"}`}>
+          <section
+            id="recovery-mobile"
+            className={`scroll-mt-28 transition-all duration-500 ease-out ${
+              recoveryVisible
+                ? "opacity-100 translate-y-0"
+                : "opacity-0 translate-y-2"
+            }`}
+          >
             <InsightCard
               title={t.result.preview.sections.recovery}
               icon={<HeartPulse className="h-4 w-4" />}
@@ -865,7 +1057,14 @@ export function InsightPreview({
             />
           </section>
 
-          <section id="activity-mobile" className={`scroll-mt-28 transition-all duration-500 ease-out ${activityVisible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-2"}`}>
+          <section
+            id="activity-mobile"
+            className={`scroll-mt-28 transition-all duration-500 ease-out ${
+              activityVisible
+                ? "opacity-100 translate-y-0"
+                : "opacity-0 translate-y-2"
+            }`}
+          >
             <InsightCard
               title={t.result.preview.sections.activityMobility}
               icon={<Footprints className="h-4 w-4" />}
@@ -1018,19 +1217,27 @@ export function InsightPreview({
                   <ul className="space-y-1.5 text-xs text-muted-foreground">
                     <li className="flex items-start gap-2">
                       <Check className="h-3.5 w-3.5 mt-0.5 shrink-0 text-accent/60" />
-                      <span>{t.result.preview.plans.superPremium.everything}</span>
+                      <span>
+                        {t.result.preview.plans.superPremium.everything}
+                      </span>
                     </li>
                     <li className="flex items-start gap-2">
                       <Check className="h-3.5 w-3.5 mt-0.5 shrink-0 text-accent/60" />
-                      <span>{t.result.preview.plans.superPremium.advancedRecovery}</span>
+                      <span>
+                        {t.result.preview.plans.superPremium.advancedRecovery}
+                      </span>
                     </li>
                     <li className="flex items-start gap-2">
                       <Check className="h-3.5 w-3.5 mt-0.5 shrink-0 text-accent/60" />
-                      <span>{t.result.preview.plans.superPremium.circadian}</span>
+                      <span>
+                        {t.result.preview.plans.superPremium.circadian}
+                      </span>
                     </li>
                     <li className="flex items-start gap-2">
                       <Check className="h-3.5 w-3.5 mt-0.5 shrink-0 text-accent/60" />
-                      <span>{t.result.preview.plans.superPremium.multiPeriod}</span>
+                      <span>
+                        {t.result.preview.plans.superPremium.multiPeriod}
+                      </span>
                     </li>
                   </ul>
                   <p className="mt-3 text-[10px] text-muted-foreground/60 italic">
