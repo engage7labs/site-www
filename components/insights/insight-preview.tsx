@@ -822,10 +822,12 @@ export function InsightPreview({
               transition={{ duration: 0.5 }}
               className="flex flex-col justify-center py-4"
             >
+              <div className="text-[10px] uppercase opacity-60 mb-1">LEGACY: desktopHero: headline</div>
               <h1 className="text-3xl lg:text-4xl font-semibold text-foreground leading-tight mb-3">
                 {adaptiveHeadline}
               </h1>
 
+              <div className="text-[10px] uppercase opacity-60 mb-1">LEGACY: desktopHero: metadata</div>
               {durationInfo && (
                 <p className="text-sm text-muted-foreground mb-6">
                   {t.result.preview.builtFromPrefix}{" "}
@@ -837,6 +839,7 @@ export function InsightPreview({
               )}
 
               {/* Primary sleep insight */}
+              <div className="text-[10px] uppercase opacity-60 mb-1">LEGACY: desktopHero: description</div>
               {sleepInsights.length > 0 && (
                 <div className="space-y-3 mb-6">
                   {sleepInsights.slice(0, 2).map((ins) => (
@@ -863,6 +866,7 @@ export function InsightPreview({
                 </div>
               )}
 
+              <div className="text-[10px] uppercase opacity-60 mb-1">LEGACY: desktopHero: subtext</div>
               {sleepInsights.length === 0 && (
                 <p className="text-sm text-muted-foreground mb-6">
                   {t.result.preview.sleepHero.emptyState}
@@ -871,6 +875,7 @@ export function InsightPreview({
             </motion.div>
 
             {/* Right column — chart */}
+            <div className="text-[10px] uppercase opacity-60 mb-1">LEGACY: desktopHero: chart</div>
             <motion.div
               initial={{ opacity: 0, scale: 0.97 }}
               animate={{ opacity: 1, scale: 1 }}
@@ -976,10 +981,12 @@ export function InsightPreview({
             }`}
           >
             <div className="rounded-xl border border-border bg-card p-5">
+              <div className="text-[10px] uppercase opacity-60 mb-1">LEGACY: mobileHero: headline</div>
               <h1 className="text-2xl font-semibold text-foreground leading-tight mb-2">
                 {adaptiveHeadline}
               </h1>
 
+              <div className="text-[10px] uppercase opacity-60 mb-1">LEGACY: mobileHero: metadata</div>
               {durationInfo && (
                 <p className="text-xs text-muted-foreground mb-4">
                   {t.result.preview.builtFromPrefix}{" "}
@@ -990,6 +997,7 @@ export function InsightPreview({
                 </p>
               )}
 
+              <div className="text-[10px] uppercase opacity-60 mb-1">LEGACY: mobileHero: description</div>
               {sleepInsights.length > 0 && (
                 <div className="space-y-2 mb-4">
                   {sleepInsights.slice(0, 2).map((ins) => (
@@ -1016,6 +1024,7 @@ export function InsightPreview({
                 </div>
               )}
 
+              <div className="text-[10px] uppercase opacity-60 mb-1">LEGACY: mobileHero: chart</div>
               <div className="flex items-center gap-2 mb-2">
                 <Moon className="h-4 w-4 text-accent" />
                 <span className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
