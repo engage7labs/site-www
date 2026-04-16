@@ -808,6 +808,7 @@ export function InsightPreview({
           </div>
         )}
         <div className="hidden md:block">
+          {false && (<>
           <div className="text-[10px] uppercase opacity-60 mb-1">LEGACY: legacyDesktopHero</div>
           {/* Hero: Sleep */}
           <section
@@ -835,7 +836,7 @@ export function InsightPreview({
                 <p className="text-sm text-muted-foreground mb-6">
                   {t.result.preview.builtFromPrefix}{" "}
                   <span className="font-semibold text-foreground">
-                    {durationInfo.label}
+                    {durationInfo?.label}
                   </span>{" "}
                   {t.result.preview.builtFromSuffix}
                 </p>
@@ -898,7 +899,7 @@ export function InsightPreview({
               )}
               {sleepChartOption ? (
                 <EChart
-                  option={sleepChartOption}
+                  option={sleepChartOption!}
                   height={280}
                   onInteraction={() => handleChartInteraction("sleep")}
                 />
@@ -909,6 +910,7 @@ export function InsightPreview({
               )}
             </motion.div>
           </section>
+          </>)}
 
           <div className="text-[10px] uppercase opacity-60 mt-4 mb-1">LEGACY: legacyDesktopRecoveryActivity</div>
           {/* Lower compact zone— Recovery + Activity */}
@@ -925,7 +927,7 @@ export function InsightPreview({
               <InsightCard
                 title={t.result.preview.sections.recovery}
                 icon={<HeartPulse className="h-4 w-4" />}
-                insights={recoveryInsights}
+                insights={recoveryInsights.slice(0, 1)}
                 compact
                 chart={
                   recoveryChartOption ? (
@@ -951,7 +953,7 @@ export function InsightPreview({
               <InsightCard
                 title={t.result.preview.sections.activityMobility}
                 icon={<Footprints className="h-4 w-4" />}
-                insights={activityInsights}
+                insights={activityInsights.slice(0, 1)}
                 compact
                 chart={
                   activityChartOption ? (
@@ -971,6 +973,7 @@ export function InsightPreview({
         {/* MOBILE LAYOUT — stacked scrollable cards                       */}
         {/* ============================================================= */}
         <div className="md:hidden space-y-6">
+          {false && (<>
           <div className="text-[10px] uppercase opacity-60">LEGACY: legacyMobileHero</div>
           {/* Sleep card */}
           <motion.div
@@ -995,7 +998,7 @@ export function InsightPreview({
                 <p className="text-xs text-muted-foreground mb-4">
                   {t.result.preview.builtFromPrefix}{" "}
                   <span className="font-semibold text-foreground">
-                    {durationInfo.label}
+                    {durationInfo?.label}
                   </span>{" "}
                   {t.result.preview.builtFromSuffix}
                 </p>
@@ -1042,7 +1045,7 @@ export function InsightPreview({
               )}
               {sleepChartOption ? (
                 <EChart
-                  option={sleepChartOption}
+                  option={sleepChartOption!}
                   height={220}
                   onInteraction={() => handleChartInteraction("sleep")}
                 />
@@ -1053,6 +1056,7 @@ export function InsightPreview({
               )}
             </div>
           </motion.div>
+          </>)}
 
           <div className="text-[10px] uppercase opacity-60">LEGACY: legacyMobileRecoveryActivity</div>
           <section
@@ -1066,7 +1070,7 @@ export function InsightPreview({
             <InsightCard
               title={t.result.preview.sections.recovery}
               icon={<HeartPulse className="h-4 w-4" />}
-              insights={recoveryInsights}
+              insights={recoveryInsights.slice(0, 1)}
               chart={
                 recoveryChartOption ? (
                   <EChart
@@ -1092,7 +1096,7 @@ export function InsightPreview({
             <InsightCard
               title={t.result.preview.sections.activityMobility}
               icon={<Footprints className="h-4 w-4" />}
-              insights={activityInsights}
+              insights={activityInsights.slice(0, 1)}
               chart={
                 activityChartOption ? (
                   <EChart
