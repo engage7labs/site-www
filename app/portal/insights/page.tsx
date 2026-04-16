@@ -6,6 +6,7 @@ import {
   extractSleepInsights,
   type InsightText,
 } from "@/lib/insights/extract";
+import { useLocale } from "@/components/providers/locale-provider";
 import {
   Activity,
   Heart,
@@ -45,12 +46,6 @@ const CONFIDENCE_COLORS = {
   high: "bg-accent/10 text-accent",
   medium: "bg-yellow-500/10 text-yellow-600",
   low: "bg-muted text-muted-foreground",
-};
-
-const CONFIDENCE_EXPLANATIONS: Record<"high" | "medium" | "low", string> = {
-  high: "Strong pattern detected with consistent data",
-  medium: "Some pattern detected, but with moderate confidence",
-  low: "Limited data or weak pattern",
 };
 
 const PILLAR_ICON: Record<string, React.ReactNode> = {
@@ -160,24 +155,39 @@ function getSparklineData(
     .slice(-30);
 }
 
-function getSignalLabel(pillar: string | undefined): string {
-  if (pillar === "sleep") return "Sleep duration";
-  if (pillar === "recovery") return "HRV / Heart rate";
-  if (pillar === "activity") return "Steps / Active minutes";
-  return "Health signals";
-}
-
 function InsightCard({
   insight,
   sparkData,
+  strings,
 }: {
   insight: InsightText;
   sparkData: number[];
+  strings: {
+    signals: { sleep: string; recovery: string; activity: string; default: string };
+    lastDataPoints: string;
+    confidence: { high: string; medium: string; low: string };
+    confidenceExplanations: { high: string; medium: string; low: string };
+    pillar: { sleep: string; recovery: string; activity: string };
+  };
 }) {
   const confidence = priorityToConfidence(insight.priority);
   const trend = trendFromScore(insight.score);
   const color = PILLAR_COLOR[insight.pillar ?? "sleep"] ?? "#3dbe73";
   const icon = PILLAR_ICON[insight.pillar ?? "sleep"];
+
+  function getSignalLabel(pillar: string | undefined): string {
+    if (pillar === "sleep") return strings.signals.sleep;
+    if (pillar === "recovery") return strings.signals.recovery;
+    if (pillar === "activity") return strings.signals.activity;
+    return strings.signals.default;
+  }
+
+  function getPillarLabel(pillar: string | undefined): string {
+    if (pillar === "sleep") return strings.pillar.sleep;
+    if (pillar === "recovery") return strings.pillar.recovery;
+    if (pillar === "activity") return strings.pillar.activity;
+    return pillar ?? "";
+  }
 
   return (
     <div className="flex flex-col gap-3 rounded-xl border border-border bg-card p-5">
@@ -206,7 +216,7 @@ function InsightCard({
               {getSignalLabel(insight.pillar)}
             </span>
             <span className="text-[10px] text-muted-foreground">
-              Last {sparkData.length} data points
+              {strings.lastDataPoints.replace("{n}", String(sparkData.length))}
             </span>
           </div>
         </div>
@@ -217,17 +227,17 @@ function InsightCard({
           <span
             className={`inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-medium uppercase tracking-wider ${CONFIDENCE_COLORS[confidence]}`}
           >
-            {confidence} confidence
+            {strings.confidence[confidence]}
           </span>
           {insight.pillar && (
             <span className="inline-flex items-center gap-1 rounded-full bg-muted px-2 py-0.5 text-[10px] font-medium uppercase tracking-wider text-muted-foreground">
               {icon}
-              {insight.pillar}
+              {getPillarLabel(insight.pillar)}
             </span>
           )}
         </div>
         <p className="text-xs text-muted-foreground">
-          {CONFIDENCE_EXPLANATIONS[confidence]}
+          {strings.confidenceExplanations[confidence]}
         </p>
       </div>
     </div>
@@ -235,6 +245,7 @@ function InsightCard({
 }
 
 export default function InsightsPage() {
+  const { t } = useLocale();
   const [insights, setInsights] = useState<InsightText[]>([]);
   const [trends, setTrends] = useState<TrendsData["trends"] | null>(null);
   const [loading, setLoading] = useState(true);
@@ -298,14 +309,21 @@ export default function InsightsPage() {
     );
   }
 
+  const insightStrings = {
+    signals: t.portal.insightsPage.signals,
+    lastDataPoints: t.portal.insightsPage.lastDataPoints,
+    confidence: t.portal.insightsPage.confidence,
+    confidenceExplanations: t.portal.insightsPage.confidenceExplanations,
+    pillar: t.portal.insightsPage.pillar,
+  };
+
   if (empty || insights.length === 0) {
     return (
       <div className="flex flex-col gap-6">
         <div className="flex flex-col items-center justify-center py-16 gap-4 text-center">
           <Lightbulb className="h-10 w-10 text-muted-foreground/50" />
           <p className="text-sm text-muted-foreground max-w-sm">
-            No insights yet. Upload your health data to start seeing patterns
-            and recommendations.
+            {t.portal.insightsPage.noInsights}
           </p>
         </div>
       </div>
@@ -322,6 +340,7 @@ export default function InsightsPage() {
             sparkData={
               sparklines[insight.pillar as keyof typeof sparklines] ?? []
             }
+            strings={insightStrings}
           />
         ))}
       </div>

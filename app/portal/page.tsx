@@ -2,6 +2,7 @@
 
 import { CompareImproveBlock } from "@/components/portal/compare-improve-block";
 import { DailyBriefing } from "@/components/portal/daily-briefing";
+import { useLocale } from "@/components/providers/locale-provider";
 import { generateCompareImprove } from "@/lib/insights/compare-improve";
 import type { EChartsOption } from "echarts";
 import { Clock, Crown, ExternalLink, Heart, Moon, Upload } from "lucide-react";
@@ -124,17 +125,17 @@ function MetricCard({ label, value, icon: Icon, subtitle }: MetricCardProps) {
   );
 }
 
-function ShareCard() {
+function ShareCard({ title, description, button }: Readonly<{ title: string; description: string; button: string }>) {
   return (
     <div className="portal-panel rounded-xl border border-border/70 bg-card/85 p-6">
       <div className="flex items-center gap-3">
         <ExternalLink className="h-5 w-5 text-accent" />
         <div>
           <h3 className="text-sm font-semibold text-card-foreground">
-            Share Engage7
+            {title}
           </h3>
           <p className="text-xs text-muted-foreground">
-            Share the product homepage with friends — not your data.
+            {description}
           </p>
         </div>
         <a
@@ -144,18 +145,18 @@ function ShareCard() {
           className="ml-auto inline-flex items-center gap-1.5 rounded-lg border border-border px-3 py-1.5 text-xs font-medium text-foreground hover:bg-muted/40 transition-colors"
         >
           <ExternalLink className="h-3 w-3" />
-          Share
+          {button}
         </a>
       </div>
     </div>
   );
 }
 
-function planLabel(plan: string): string {
-  if (plan === "trial_start") return "Getting Started";
-  if (plan === "trial") return "Premium Trial";
-  if (plan === "premium") return "Premium";
-  if (plan === "expired") return "Expired";
+function planLabel(plan: string, labels: { trialStart: string; trial: string; premium: string; expired: string }): string {
+  if (plan === "trial_start") return labels.trialStart;
+  if (plan === "trial") return labels.trial;
+  if (plan === "premium") return labels.premium;
+  if (plan === "expired") return labels.expired;
   return plan;
 }
 
@@ -174,7 +175,7 @@ function median(points?: TrendPoint[]): number | null {
 // Overview Charts — ECharts (Sprint 17.4)
 // ---------------------------------------------------------------------------
 
-function SleepTrendMini({ data }: Readonly<{ data: TrendPoint[] }>) {
+function SleepTrendMini({ data, title }: Readonly<{ data: TrendPoint[]; title: string }>) {
   const containerRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -262,7 +263,7 @@ function SleepTrendMini({ data }: Readonly<{ data: TrendPoint[] }>) {
   return (
     <div className="portal-panel rounded-xl border border-border/70 bg-card/85 p-5">
       <h3 className="text-sm font-semibold text-card-foreground mb-3">
-        Sleep — Last 14 Days with Data
+        {title}
       </h3>
       <div ref={containerRef} className="w-full h-[180px]" />
     </div>
@@ -274,11 +275,13 @@ function HealthRadar({
   hr,
   hrv,
   steps,
+  title,
 }: Readonly<{
   sleep: number | null;
   hr: number | null;
   hrv: number | null;
   steps: number | null;
+  title: string;
 }>) {
   const containerRef = useRef<HTMLDivElement>(null);
 
@@ -392,7 +395,7 @@ function HealthRadar({
   return (
     <div className="portal-panel rounded-xl border border-border/70 bg-card/85 p-5">
       <h3 className="text-sm font-semibold text-card-foreground mb-3">
-        Health Balance
+        {title}
       </h3>
       <div ref={containerRef} className="w-full h-[220px]" />
     </div>
@@ -400,6 +403,7 @@ function HealthRadar({
 }
 
 export default function PortalOverviewPage() {
+  const { t } = useLocale();
   const [data, setData] = useState<OverviewData | null>(null);
   const [trends, setTrends] = useState<TrendsData | null>(null);
   const [sections, setSections] = useState<Record<string, unknown> | null>(
@@ -452,7 +456,7 @@ export default function PortalOverviewPage() {
   if (loading) {
     return (
       <div className="flex flex-col gap-6">
-        <p className="text-sm text-muted-foreground">Loading…</p>
+        <p className="text-sm text-muted-foreground">{t.portal.loading}</p>
       </div>
     );
   }
@@ -475,60 +479,65 @@ export default function PortalOverviewPage() {
 
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5">
         <MetricCard
-          label="Plan"
-          value={planLabel(plan)}
+          label={t.portal.metrics.plan}
+          value={planLabel(plan, t.portal.planLabels)}
           icon={Crown}
           subtitle={
             data?.trial_end_at
-              ? `Until ${new Date(data.trial_end_at).toLocaleDateString()}`
+              ? `${t.portal.metrics.until} ${new Date(data.trial_end_at).toLocaleDateString()}`
               : undefined
           }
         />
         <MetricCard
-          label="Sleep Score"
+          label={t.portal.metrics.sleepScore}
           value={sleepScore}
           icon={Moon}
           subtitle={
             data?.sleep_score == null
-              ? "Not enough recent data to assess this yet"
-              : "Median from latest"
+              ? t.portal.metrics.noRecentData
+              : t.portal.metrics.medianFromLatest
           }
         />
         <MetricCard
-          label="Recovery (HRV)"
+          label={t.portal.metrics.recovery}
           value={recoveryTrend}
           icon={Heart}
           subtitle={
             data?.recovery_trend == null
-              ? "Not enough recent data to assess this yet"
-              : "Median HRV from latest"
+              ? t.portal.metrics.noRecentData
+              : t.portal.metrics.medianHrvFromLatest
           }
         />
         <MetricCard
-          label="Data Completeness"
+          label={t.portal.metrics.dataCompleteness}
           value={completeness}
           icon={Clock}
-          subtitle={uploads > 0 ? "Signal coverage" : "No uploads yet"}
+          subtitle={uploads > 0 ? t.portal.metrics.signalCoverage : t.portal.metrics.noUploads}
         />
         <MetricCard
-          label="Uploads"
+          label={t.portal.metrics.uploads}
           value={String(uploads)}
           icon={Upload}
-          subtitle={uploads > 0 ? "Total analyses" : "Start by uploading"}
+          subtitle={uploads > 0 ? t.portal.metrics.totalAnalyses : t.portal.metrics.startByUploading}
         />
       </div>
 
-      <ShareCard />
+      <ShareCard
+        title={t.portal.shareCard.title}
+        description={t.portal.shareCard.description}
+        button={t.portal.shareCard.button}
+      />
 
       {/* ECharts — Sprint 17.4 */}
       {(trends?.trends?.sleep?.length ?? 0) > 0 && (
         <div className="grid gap-4 lg:grid-cols-2">
-          <SleepTrendMini data={trends!.trends.sleep} />
+          <SleepTrendMini data={trends!.trends.sleep} title={t.portal.sleepTrend} />
           <HealthRadar
             sleep={data?.sleep_score ?? null}
             hr={median(trends?.trends?.hr)}
             hrv={data?.recovery_trend ?? null}
             steps={median(trends?.trends?.steps)}
+            title={t.portal.healthBalance}
           />
         </div>
       )}
@@ -536,7 +545,7 @@ export default function PortalOverviewPage() {
       {latest ? (
         <div className="portal-panel rounded-xl border border-border/70 bg-card/85 p-6">
           <h2 className="text-lg font-semibold text-card-foreground">
-            Latest Analysis
+            {t.portal.latestAnalysis.title}
           </h2>
           {latest.created_at && (
             <p className="mt-1 text-xs text-muted-foreground">
@@ -561,7 +570,7 @@ export default function PortalOverviewPage() {
             </ul>
           ) : (
             <p className="mt-2 text-sm text-muted-foreground">
-              Analysis data available. Explore Trends and Reports for details.
+              {t.portal.latestAnalysis.dataAvailable}
             </p>
           )}
           {latest.summary && (
@@ -570,7 +579,7 @@ export default function PortalOverviewPage() {
                 !!latest.summary.dataset_end && (
                   <div className="text-xs text-muted-foreground">
                     <span className="font-medium text-card-foreground">
-                      Period:{" "}
+                      {t.portal.latestAnalysis.period}:{" "}
                     </span>
                     {String(latest.summary.dataset_start)} →{" "}
                     {String(latest.summary.dataset_end)}
@@ -579,7 +588,7 @@ export default function PortalOverviewPage() {
               {latest.summary.days != null && (
                 <div className="text-xs text-muted-foreground">
                   <span className="font-medium text-card-foreground">
-                    Days:{" "}
+                    {t.portal.latestAnalysis.days}:{" "}
                   </span>
                   {String(latest.summary.days)}
                 </div>
@@ -587,7 +596,7 @@ export default function PortalOverviewPage() {
               {latest.summary.total_rows != null && (
                 <div className="text-xs text-muted-foreground">
                   <span className="font-medium text-card-foreground">
-                    Records:{" "}
+                    {t.portal.latestAnalysis.records}:{" "}
                   </span>
                   {Number(latest.summary.total_rows).toLocaleString()}
                 </div>
@@ -598,10 +607,10 @@ export default function PortalOverviewPage() {
       ) : (
         <div className="portal-panel rounded-xl border border-border/70 bg-card/85 p-6">
           <h2 className="text-lg font-semibold text-card-foreground">
-            Recent Analyses
+            {t.portal.latestAnalysis.noDataTitle}
           </h2>
           <p className="mt-2 text-sm text-muted-foreground">
-            No analyses yet. Upload an Apple Health export to get started.
+            {t.portal.latestAnalysis.noDataText}
           </p>
         </div>
       )}

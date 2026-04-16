@@ -130,15 +130,11 @@ function translatePillar(pillar: string, locale: string): string {
 
 /**
  * Returns a locale-aware period string for chart headers.
- * Uses the dataset days from the summary (total dataset duration).
+ * Charts show full-dataset averages — use "historical average" label.
  */
-function chartPeriodSuffix(days: number | null | undefined, locale: string): string {
+function chartPeriodSuffix(_days: number | null | undefined, locale: string): string {
   const isPt = locale === "pt-BR";
-  if (days == null || days <= 0) {
-    return isPt ? "média geral" : "all-time avg";
-  }
-  const d = Math.round(days);
-  return isPt ? `últimos ${d} dias` : `last ${d} days`;
+  return isPt ? "média histórica" : "historical average";
 }
 
 function sleepStageLabel(days: number | null | undefined, locale: string): string {
@@ -418,7 +414,7 @@ export function InsightPreview({
             <div className="flex items-center justify-center gap-2 mb-1.5">
               <Sparkles className="h-3.5 w-3.5 text-accent" />
               <span className="text-[10px] font-semibold uppercase tracking-wider text-accent/80">
-                Your data reveals
+                {t.result.preview.dataReveals}
               </span>
             </div>
             <p className="text-sm text-foreground/90 leading-relaxed">
@@ -539,6 +535,37 @@ export function InsightPreview({
         )}
 
         {/* ============================================================= */}
+        {/* PROVENANCE CARD — Sprint 25.4                                 */}
+        {/* Gold styling. Shows dataset duration + date range.            */}
+        {/* ============================================================= */}
+        {(durationInfo || summary?.dataset_start) && (
+          <motion.div
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.35 }}
+            className="rounded-xl border border-[#e6b800] bg-[#e6b800]/5 p-4 mb-6 flex items-center gap-4"
+          >
+            <div className="flex-1 min-w-0">
+              <p className="text-[10px] font-semibold uppercase tracking-wider mb-1 text-[#e6b800]">
+                {t.result.preview.provenanceLabel}
+              </p>
+              {durationInfo && (
+                <p className="text-sm font-bold text-foreground">
+                  {t.result.preview.builtFromPrefix}{" "}
+                  <span className="text-[#e6b800]">{durationInfo.label}</span>{" "}
+                  {t.result.preview.builtFromSuffix}
+                </p>
+              )}
+              {summary?.dataset_start && summary?.dataset_end && (
+                <p className="text-xs text-muted-foreground mt-0.5">
+                  {String(summary.dataset_start)} → {String(summary.dataset_end)}
+                </p>
+              )}
+            </div>
+          </motion.div>
+        )}
+
+        {/* ============================================================= */}
         {/* NEW SIGNALS BLOCK — Sprint 24.3                               */}
         {/* Rendered BEFORE existing sections when new data is available  */}
         {/* ============================================================= */}
@@ -630,9 +657,9 @@ export function InsightPreview({
 
               {durationInfo && (
                 <p className="text-sm text-muted-foreground mb-6">
-                  Built from{" "}
+                  {t.result.preview.builtFromPrefix}{" "}
                   <span className="font-semibold text-foreground">{durationInfo.label}</span>{" "}
-                  of your personal data
+                  {t.result.preview.builtFromSuffix}
                 </p>
               )}
 
@@ -762,9 +789,9 @@ export function InsightPreview({
 
               {durationInfo && (
                 <p className="text-xs text-muted-foreground mb-4">
-                  Built from{" "}
+                  {t.result.preview.builtFromPrefix}{" "}
                   <span className="font-semibold text-foreground">{durationInfo.label}</span>{" "}
-                  of your personal data
+                  {t.result.preview.builtFromSuffix}
                 </p>
               )}
 
@@ -873,34 +900,20 @@ export function InsightPreview({
               <p className="text-sm text-muted-foreground mb-4 max-w-md mx-auto">
                 {t.result.preview.fullReport.description}
               </p>
-
-              <div className="flex flex-col sm:flex-row items-center justify-center gap-3">
-                <button
-                  type="button"
-                  onClick={() => {
-                    trackReportUnlockClicked("bottom");
-                    onOpenModal?.();
-                  }}
-                  className="inline-flex items-center gap-2 px-5 py-2.5 rounded-lg bg-[#e6b800] text-[#1a1a1a] text-sm font-medium shadow-sm transition-colors duration-200 hover:bg-[#f2c94c] active:bg-[#c99a00]"
-                >
-                  <Crown className="h-4 w-4" />
-                  {t.result.preview.fullReport.downloadButton}
-                </button>
-              </div>
             </motion.div>
 
-            {/* Preview Insight — data-driven teaser (Sprint 17.6.2, refined 18.6.5) */}
+            {/* Preview Insight — data-driven teaser (moved BEFORE CTA button — Sprint 25.4) */}
             {previewInsight && (
               <motion.div
                 initial={{ opacity: 0, y: 12 }}
                 animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.4, delay: 0.45 }}
-                className="mt-6 mx-auto max-w-lg rounded-lg border border-accent/15 bg-accent/[0.04] px-5 py-4 text-center"
+                transition={{ duration: 0.4, delay: 0.35 }}
+                className="mt-4 mx-auto max-w-lg rounded-lg border border-accent/15 bg-accent/[0.04] px-5 py-4 text-center"
               >
                 <div className="flex items-center justify-center gap-2 mb-1">
                   <Sparkles className="h-3.5 w-3.5 text-accent" />
                   <span className="text-xs font-medium uppercase tracking-wider text-accent/80">
-                    Based on your analysis
+                    {t.result.preview.basedOnAnalysis}
                   </span>
                 </div>
                 <p className="text-sm text-foreground/90 leading-relaxed">
@@ -909,7 +922,27 @@ export function InsightPreview({
               </motion.div>
             )}
 
-            {/* Plan comparison cards (Sprint 18.6.5) */}
+            {/* CTA button — Sprint 25.4: now appears AFTER previewInsight */}
+            <motion.div
+              initial={{ opacity: 0, y: 12 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.4, delay: 0.45 }}
+              className="mt-5 flex flex-col sm:flex-row items-center justify-center gap-3"
+            >
+              <button
+                type="button"
+                onClick={() => {
+                  trackReportUnlockClicked("bottom");
+                  onOpenModal?.();
+                }}
+                className="inline-flex items-center gap-2 px-5 py-2.5 rounded-lg bg-[#e6b800] text-[#1a1a1a] text-sm font-medium shadow-sm transition-colors duration-200 hover:bg-[#f2c94c] active:bg-[#c99a00]"
+              >
+                <Crown className="h-4 w-4" />
+                {t.result.preview.fullReport.downloadButton}
+              </button>
+            </motion.div>
+
+            {/* Plan comparison cards (Sprint 18.6.5, localized Sprint 25.4) */}
             <motion.div
               initial={{ opacity: 0, y: 12 }}
               animate={{ opacity: 1, y: 0 }}
@@ -917,91 +950,91 @@ export function InsightPreview({
               className="mt-8 mx-auto max-w-3xl"
             >
               <p className="text-xs font-medium uppercase tracking-wider text-muted-foreground text-center mb-5">
-                Compare plans
+                {t.result.preview.comparePlans}
               </p>
               <div className="grid gap-4 sm:grid-cols-3">
                 {/* Free */}
                 <div className="rounded-xl border border-border bg-card p-5 text-left">
                   <h3 className="text-sm font-semibold text-foreground mb-1">
-                    Free
+                    {t.result.preview.plans.free.name}
                   </h3>
                   <p className="text-xs text-muted-foreground mb-3">
-                    Get started with your data
+                    {t.result.preview.plans.free.tagline}
                   </p>
                   <ul className="space-y-1.5 text-xs text-muted-foreground">
                     <li className="flex items-start gap-2">
                       <Check className="h-3.5 w-3.5 mt-0.5 shrink-0 text-accent/60" />
-                      <span>Single analysis upload</span>
+                      <span>{t.result.preview.plans.free.singleUpload}</span>
                     </li>
                     <li className="flex items-start gap-2">
                       <Check className="h-3.5 w-3.5 mt-0.5 shrink-0 text-accent/60" />
-                      <span>Preview insights (sleep, recovery, activity)</span>
+                      <span>{t.result.preview.plans.free.previewInsights}</span>
                     </li>
                     <li className="flex items-start gap-2">
                       <Check className="h-3.5 w-3.5 mt-0.5 shrink-0 text-accent/60" />
-                      <span>Basic trend visualization</span>
+                      <span>{t.result.preview.plans.free.basicTrend}</span>
                     </li>
                   </ul>
                 </div>
-                {/* Premium — emphasized */}
-                <div className="rounded-xl border-2 border-accent bg-accent/5 p-5 text-left ring-1 ring-accent/20 shadow-sm">
-                  <h3 className="text-sm font-semibold text-accent mb-1">
-                    Premium
+                {/* Premium — gold highlight (Sprint 25.4) */}
+                <div className="rounded-xl border-2 border-[#e6b800] bg-[#e6b800]/5 p-5 text-left ring-1 ring-[#e6b800]/20 shadow-sm">
+                  <h3 className="text-sm font-semibold text-[#e6b800] mb-1">
+                    {t.result.preview.plans.premium.name}
                   </h3>
                   <p className="text-xs text-muted-foreground mb-3">
-                    Full insight experience
+                    {t.result.preview.plans.premium.tagline}
                   </p>
                   <ul className="space-y-1.5 text-xs text-muted-foreground">
                     <li className="flex items-start gap-2">
-                      <Check className="h-3.5 w-3.5 mt-0.5 shrink-0 text-accent" />
-                      <span>Longitudinal insights across all signals</span>
+                      <Check className="h-3.5 w-3.5 mt-0.5 shrink-0 text-[#e6b800]" />
+                      <span>{t.result.preview.plans.premium.longitudinal}</span>
                     </li>
                     <li className="flex items-start gap-2">
-                      <Check className="h-3.5 w-3.5 mt-0.5 shrink-0 text-accent" />
-                      <span>Personalized baseline comparisons</span>
+                      <Check className="h-3.5 w-3.5 mt-0.5 shrink-0 text-[#e6b800]" />
+                      <span>{t.result.preview.plans.premium.baseline}</span>
                     </li>
                     <li className="flex items-start gap-2">
-                      <Check className="h-3.5 w-3.5 mt-0.5 shrink-0 text-accent" />
-                      <span>Actionable improvement suggestions</span>
+                      <Check className="h-3.5 w-3.5 mt-0.5 shrink-0 text-[#e6b800]" />
+                      <span>{t.result.preview.plans.premium.actionable}</span>
                     </li>
                     <li className="flex items-start gap-2">
-                      <Check className="h-3.5 w-3.5 mt-0.5 shrink-0 text-accent" />
-                      <span>Full private health dashboard</span>
+                      <Check className="h-3.5 w-3.5 mt-0.5 shrink-0 text-[#e6b800]" />
+                      <span>{t.result.preview.plans.premium.dashboard}</span>
                     </li>
                     <li className="flex items-start gap-2">
-                      <Check className="h-3.5 w-3.5 mt-0.5 shrink-0 text-accent" />
-                      <span>PDF & CSV report export</span>
+                      <Check className="h-3.5 w-3.5 mt-0.5 shrink-0 text-[#e6b800]" />
+                      <span>{t.result.preview.plans.premium.export}</span>
                     </li>
                   </ul>
                 </div>
                 {/* Super Premium */}
                 <div className="rounded-xl border border-border bg-card p-5 text-left">
                   <h3 className="text-sm font-semibold text-foreground mb-1">
-                    Super Premium
+                    {t.result.preview.plans.superPremium.name}
                   </h3>
                   <p className="text-xs text-muted-foreground mb-3">
-                    Deep analysis modules
+                    {t.result.preview.plans.superPremium.tagline}
                   </p>
                   <ul className="space-y-1.5 text-xs text-muted-foreground">
                     <li className="flex items-start gap-2">
                       <Check className="h-3.5 w-3.5 mt-0.5 shrink-0 text-accent/60" />
-                      <span>Everything in Premium</span>
+                      <span>{t.result.preview.plans.superPremium.everything}</span>
                     </li>
                     <li className="flex items-start gap-2">
                       <Check className="h-3.5 w-3.5 mt-0.5 shrink-0 text-accent/60" />
-                      <span>Advanced recovery analysis</span>
+                      <span>{t.result.preview.plans.superPremium.advancedRecovery}</span>
                     </li>
                     <li className="flex items-start gap-2">
                       <Check className="h-3.5 w-3.5 mt-0.5 shrink-0 text-accent/60" />
-                      <span>Circadian rhythm mapping</span>
+                      <span>{t.result.preview.plans.superPremium.circadian}</span>
                     </li>
                     <li className="flex items-start gap-2">
                       <Check className="h-3.5 w-3.5 mt-0.5 shrink-0 text-accent/60" />
-                      <span>Multi-period trend comparison</span>
+                      <span>{t.result.preview.plans.superPremium.multiPeriod}</span>
                     </li>
                   </ul>
                   <p className="mt-3 text-[10px] text-muted-foreground/60 italic">
-                    * Advanced modules in development
+                    {t.result.preview.plans.superPremium.comingSoon}
                   </p>
                 </div>
               </div>
