@@ -34,6 +34,7 @@ import {
   getPreviewInsight,
   getSurprisingInsight,
 } from "@/lib/insights";
+import { generateInsights } from "@/lib/insights/engine";
 import { DailyEnergyChart } from "./daily-energy-chart";
 import { RecoveryScoreChart } from "./recovery-score-chart";
 import { SleepStageChart } from "./sleep-stage-chart";
@@ -183,6 +184,9 @@ export function InsightPreview({
     ].sort((a, b) => (b.score ?? 0) - (a.score ?? 0));
     return all.slice(0, 4);
   }, [sleepStageInsights, recoverySignalInsights, activitySignalInsights]);
+
+  // ---- Sprint 25.0: Deterministic Insight Engine ---------------------------
+  const engineInsights = useMemo(() => generateInsights(result), [result]);
 
   // Is any new signal data available?
   const hasNewSignals =
@@ -367,6 +371,52 @@ export function InsightPreview({
             <p className="text-sm text-foreground/90 leading-relaxed">
               {surprisingInsight}
             </p>
+          </motion.div>
+        )}
+
+        {/* ============================================================= */}
+        {/* ENGINE INSIGHTS — Sprint 25.0                                 */}
+        {/* Strong action + emotional hook + data evidence, BEFORE charts */}
+        {/* ============================================================= */}
+        {engineInsights.length > 0 && (
+          <motion.div
+            initial={{ opacity: 0, y: 12 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.4 }}
+            className="mb-6 grid gap-3 sm:grid-cols-2 lg:grid-cols-3"
+          >
+            {engineInsights.map((ins) => (
+              <div
+                key={ins.id}
+                className={`rounded-xl border p-4 ${
+                  ins.severity === "critical"
+                    ? "border-destructive/30 bg-destructive/[0.04]"
+                    : "border-border bg-card"
+                }`}
+              >
+                <div className="flex items-center gap-2 mb-2">
+                  <span
+                    className={`inline-block h-1.5 w-1.5 rounded-full shrink-0 ${
+                      ins.severity === "critical"
+                        ? "bg-destructive"
+                        : "bg-accent"
+                    }`}
+                  />
+                  <span className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
+                    {ins.pillar}
+                  </span>
+                </div>
+                <p className="text-sm font-semibold text-foreground leading-snug mb-1">
+                  {ins.action}
+                </p>
+                <p className="text-xs text-muted-foreground leading-relaxed mb-2">
+                  {ins.insight}
+                </p>
+                <p className="text-[10px] text-muted-foreground/60 font-mono leading-relaxed">
+                  {ins.evidence}
+                </p>
+              </div>
+            ))}
           </motion.div>
         )}
 
