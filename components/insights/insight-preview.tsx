@@ -14,6 +14,11 @@
 
 import { useLocale } from "@/components/providers/locale-provider";
 import {
+  getDarthPresentation,
+  selectDarthCopy,
+  selectDarthCta,
+} from "@/lib/darth";
+import {
   buildActivityChart,
   buildActivityWeeklyChart,
   buildRecoveryChart,
@@ -129,10 +134,34 @@ export function InsightPreview({
   onOpenModal,
   embedded,
 }: Readonly<InsightPreviewProps>) {
-  const { t } = useLocale();
+  const { t, locale } = useLocale();
   const isDark = useDarkMode(theme);
   const sections: Sections | null = result.sections ?? null;
   const summary = result.summary;
+  const darthPresentation = useMemo(
+    () => getDarthPresentation(result.sections),
+    [result.sections]
+  );
+  const usesDarth = Boolean(darthPresentation?.hero);
+  const darthHeroCopy = useMemo(
+    () =>
+      darthPresentation?.hero
+        ? selectDarthCopy(darthPresentation.hero.copy, locale)
+        : null,
+    [darthPresentation, locale]
+  );
+  const darthSupporting = useMemo(
+    () =>
+      (darthPresentation?.supporting ?? []).map((block) => ({
+        block,
+        copy: selectDarthCopy(block.copy, locale),
+      })),
+    [darthPresentation, locale]
+  );
+  const darthCta = useMemo(
+    () => selectDarthCta(darthPresentation?.cta, locale),
+    [darthPresentation, locale]
+  );
 
   // ---- Duration ---------------------------------------------------------
   const durationInfo: DurationInfo | null = useMemo(
@@ -326,6 +355,95 @@ export function InsightPreview({
     return () => obs.disconnect();
   }, []);
 
+  function renderDarthChartCard(bindingKey: string) {
+    if (bindingKey === "sleep_stages") {
+      const stageData = sections?.sleep_stages;
+      const hasStages =
+        stageData?.has_stage_data === true &&
+        ((stageData.averages?.core_hours ?? 0) +
+          (stageData.averages?.deep_hours ?? 0) +
+          (stageData.averages?.rem_hours ?? 0)) > 0;
+      return (
+        <div className="rounded-xl border border-accent/30 bg-card p-4">
+          {hasStages ? (
+            <SleepStageChart
+              data={stageData}
+              height={200}
+              label={t.teaser.charts.sleepStages}
+            />
+          ) : (
+            <>
+              <p className="text-[10px] font-medium text-muted-foreground uppercase tracking-wider mb-2">
+                {t.teaser.charts.sleepStages}
+              </p>
+              <ChartEmptyState
+                height={200}
+                title={t.teaser.empty.sleep.title}
+                message={t.teaser.empty.sleep.message}
+              />
+            </>
+          )}
+        </div>
+      );
+    }
+
+    if (bindingKey === "recovery_score") {
+      const score = sections?.recovery_signals?.recovery_composite_score;
+      const hasScore = score != null && typeof score === "number";
+      return (
+        <div className="rounded-xl border border-border bg-card p-4">
+          {hasScore ? (
+            <RecoveryScoreChart
+              score={score}
+              height={200}
+              label={t.teaser.charts.recovery}
+            />
+          ) : (
+            <>
+              <p className="text-[10px] font-medium text-muted-foreground uppercase tracking-wider mb-2">
+                {t.teaser.charts.recovery}
+              </p>
+              <ChartEmptyState
+                height={200}
+                title={t.teaser.empty.recovery.title}
+                message={t.teaser.empty.recovery.message}
+              />
+            </>
+          )}
+        </div>
+      );
+    }
+
+    if (bindingKey === "daily_energy") {
+      const activitySignals = sections?.activity_signals;
+      const hasEnergy = activitySignals?.basal_energy_cal?.mean != null;
+      return (
+        <div className="rounded-xl border border-border bg-card p-4">
+          {hasEnergy ? (
+            <DailyEnergyChart
+              data={activitySignals}
+              height={200}
+              label={t.teaser.charts.energy}
+            />
+          ) : (
+            <>
+              <p className="text-[10px] font-medium text-muted-foreground uppercase tracking-wider mb-2">
+                {t.teaser.charts.energy}
+              </p>
+              <ChartEmptyState
+                height={200}
+                title={t.teaser.empty.energy.title}
+                message={t.teaser.empty.energy.message}
+              />
+            </>
+          )}
+        </div>
+      );
+    }
+
+    return null;
+  }
+
   // -----------------------------------------------------------------------
   // RENDER
   // -----------------------------------------------------------------------
@@ -356,7 +474,7 @@ export function InsightPreview({
         </h1>
 
         {/* 2. Surprising personal insight */}
-        {surprisingInsight && (
+        {!usesDarth && surprisingInsight && (
           <motion.div
             initial={{ opacity: 0, y: 12 }}
             animate={{ opacity: 1, y: 0 }}
@@ -401,7 +519,67 @@ export function InsightPreview({
         )}
 
         {/* 3. Engine insights */}
-        {engineInsights.length > 0 && (
+        {usesDarth && darthPresentation && darthHeroCopy && (
+          <motion.div
+            initial={{ opacity: 0, y: 12 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.4 }}
+            className="mb-6"
+          >
+            <div className="rounded-xl border border-accent/30 bg-accent/[0.04] p-5 mb-3">
+              <div className="flex items-center gap-2 mb-2">
+                <span className="inline-block h-2 w-2 rounded-full shrink-0 bg-accent" />
+                <span className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
+                  {t.portal.insightsPage.pillar[
+                    darthPresentation.hero.domain as keyof typeof t.portal.insightsPage.pillar
+                  ] ?? darthPresentation.hero.domain}
+                </span>
+              </div>
+              <p className="text-base font-bold text-foreground leading-snug mb-1.5">
+                {darthHeroCopy.action}
+              </p>
+              <p className="text-sm text-muted-foreground leading-relaxed mb-2.5">
+                {darthHeroCopy.body}
+              </p>
+              <p className="text-[11px] text-muted-foreground/60 font-mono leading-relaxed">
+                {darthHeroCopy.evidence}
+              </p>
+            </div>
+
+            {darthSupporting.length > 0 && (
+              <div className="grid gap-3 sm:grid-cols-2">
+                {darthSupporting.map(({ block, copy }) =>
+                  copy ? (
+                    <div
+                      key={block.id}
+                      className="rounded-xl border border-border bg-card p-4"
+                    >
+                      <div className="flex items-center gap-2 mb-2">
+                        <span className="inline-block h-1.5 w-1.5 rounded-full shrink-0 bg-accent" />
+                        <span className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
+                          {t.portal.insightsPage.pillar[
+                            block.domain as keyof typeof t.portal.insightsPage.pillar
+                          ] ?? block.domain}
+                        </span>
+                      </div>
+                      <p className="text-sm font-semibold text-foreground leading-snug mb-1">
+                        {copy.action}
+                      </p>
+                      <p className="text-xs text-muted-foreground leading-relaxed mb-2">
+                        {copy.body}
+                      </p>
+                      <p className="text-[10px] text-muted-foreground/60 font-mono leading-relaxed">
+                        {copy.evidence}
+                      </p>
+                    </div>
+                  ) : null
+                )}
+              </div>
+            )}
+          </motion.div>
+        )}
+
+        {!usesDarth && engineInsights.length > 0 && (
           <motion.div
             initial={{ opacity: 0, y: 12 }}
             animate={{ opacity: 1, y: 0 }}
@@ -504,15 +682,33 @@ export function InsightPreview({
         )}
 
         {/* 4. New signals block — Sprint 25.9: always rendered; empty state when data absent */}
-        <motion.div
-          initial={{ opacity: 0, y: 12 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.4 }}
-          className="mb-6"
-        >
-          {/* Charts with narrative roles — Evidence → Impact → Possible cause */}
-          {/* Sprint 25.9: all 3 slots always render; ChartEmptyState when data is absent */}
-          <div className="grid gap-4 sm:grid-cols-3">
+        {usesDarth && darthPresentation && (
+          <motion.div
+            initial={{ opacity: 0, y: 12 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.4 }}
+            className="mb-6"
+          >
+            <div className="grid gap-4 sm:grid-cols-3">
+              {darthPresentation.chart_bindings.map((binding) => (
+                <div key={binding.key} className="flex flex-col gap-1.5">
+                  {renderDarthChartCard(binding.key)}
+                </div>
+              ))}
+            </div>
+          </motion.div>
+        )}
+
+        {!usesDarth && (
+          <motion.div
+            initial={{ opacity: 0, y: 12 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.4 }}
+            className="mb-6"
+          >
+            {/* Charts with narrative roles — Evidence → Impact → Possible cause */}
+            {/* Sprint 25.9: all 3 slots always render; ChartEmptyState when data is absent */}
+            <div className="grid gap-4 sm:grid-cols-3">
             {/* Sleep Stages — Evidence */}
             {(() => {
               const stageData = sections?.sleep_stages;
@@ -606,11 +802,12 @@ export function InsightPreview({
                 </div>
               );
             })()}
-          </div>
-        </motion.div>
+            </div>
+          </motion.div>
+        )}
 
         {/* 5. Preview insight (before CTA) */}
-        {previewInsight && (
+        {!usesDarth && previewInsight && (
           <motion.div
             initial={{ opacity: 0, y: 12 }}
             animate={{ opacity: 1, y: 0 }}
@@ -629,7 +826,7 @@ export function InsightPreview({
           </motion.div>
         )}
 
-        <div className="hidden md:block">
+        {!usesDarth && <div className="hidden md:block">
 
           {/* Lower compact zone— Sleep + Recovery + Activity */}
           <section className="grid grid-cols-3 gap-6 mt-2">
@@ -711,12 +908,12 @@ export function InsightPreview({
               />
             </div>
           </section>
-        </div>
+        </div>}
 
         {/* ============================================================= */}
         {/* MOBILE LAYOUT — stacked scrollable cards                       */}
         {/* ============================================================= */}
-        <div className="md:hidden space-y-6">
+        {!usesDarth && <div className="md:hidden space-y-6">
 
           <section
             className={`scroll-mt-28 transition-all duration-500 ease-out ${
@@ -790,7 +987,7 @@ export function InsightPreview({
               }
             />
           </section>
-        </div>
+        </div>}
 
         {/* ============================================================= */}
         {/* Full Report CTA — hidden when embedded in portal               */}
@@ -828,7 +1025,7 @@ export function InsightPreview({
                 className="inline-flex items-center gap-2 px-5 py-2.5 rounded-lg bg-[#e6b800] text-[#1a1a1a] text-sm font-medium shadow-sm transition-colors duration-200 hover:bg-[#f2c94c] active:bg-[#c99a00]"
               >
                 <Crown className="h-4 w-4" />
-                {t.result.preview.fullReport.downloadButton}
+                {darthCta ?? t.result.preview.fullReport.downloadButton}
               </button>
             </motion.div>
 
