@@ -594,17 +594,25 @@ export function InsightPreview({
             {/* Charts with narrative roles — Evidence → Impact → Possible cause */}
             <div className="grid gap-4 sm:grid-cols-3">
               {/* Sleep — Evidence (primary, stronger border as "proof") */}
-              {sections?.sleep_stages?.has_stage_data && (
+              {(sections?.sleep_stages?.has_stage_data === true || sleepChartOption != null) && (
                 <div className="flex flex-col gap-1.5">
                   {false && <p className="text-xs text-muted-foreground/50 uppercase tracking-wider">
                     {locale === "pt-BR" ? "Evidência" : "Evidence"}
                   </p>}
                   <div className="rounded-xl border border-accent/30 bg-card p-4">
-                    <SleepStageChart
-                      data={sections.sleep_stages}
-                      height={200}
-                      label={sleepStageLabel(summary?.days, locale)}
-                    />
+                    {sections?.sleep_stages?.has_stage_data ? (
+                      <SleepStageChart
+                        data={sections.sleep_stages}
+                        height={200}
+                        label={sleepStageLabel(summary?.days, locale)}
+                      />
+                    ) : (
+                      <EChart
+                        option={sleepChartOption!}
+                        height={200}
+                        onInteraction={() => handleChartInteraction("sleep")}
+                      />
+                    )}
                   </div>
                 </div>
               )}
@@ -913,8 +921,34 @@ export function InsightPreview({
           </>)}
 
           <div className="text-[10px] uppercase opacity-60 mt-4 mb-1">LEGACY: legacyDesktopRecoveryActivity</div>
-          {/* Lower compact zone— Recovery + Activity */}
-          <section className="grid grid-cols-2 gap-6 mt-2">
+          {/* Lower compact zone— Sleep + Recovery + Activity */}
+          <section className="grid grid-cols-3 gap-6 mt-2">
+            {/* Sleep card */}
+            <div
+              id="sleep-desktop"
+              className={`scroll-mt-28 h-full transition-all duration-500 ease-out ${
+                sleepVisible
+                  ? "opacity-100 translate-y-0"
+                  : "opacity-0 translate-y-2"
+              }`}
+            >
+              <InsightCard
+                title={t.result.preview.sections.sleepPattern}
+                icon={<Moon className="h-4 w-4" />}
+                insights={sleepInsights.slice(0, 1)}
+                compact
+                chart={
+                  sleepChartOption ? (
+                    <EChart
+                      option={sleepChartOption}
+                      height={180}
+                      onInteraction={() => handleChartInteraction("sleep")}
+                    />
+                  ) : undefined
+                }
+              />
+            </div>
+
             {/* Recovery card */}
             <div
               id="recovery-desktop"
@@ -1059,6 +1093,29 @@ export function InsightPreview({
           </>)}
 
           <div className="text-[10px] uppercase opacity-60">LEGACY: legacyMobileRecoveryActivity</div>
+          <section
+            className={`scroll-mt-28 transition-all duration-500 ease-out ${
+              sleepVisible
+                ? "opacity-100 translate-y-0"
+                : "opacity-0 translate-y-2"
+            }`}
+          >
+            <InsightCard
+              title={t.result.preview.sections.sleepPattern}
+              icon={<Moon className="h-4 w-4" />}
+              insights={sleepInsights.slice(0, 1)}
+              chart={
+                sleepChartOption ? (
+                  <EChart
+                    option={sleepChartOption}
+                    height={200}
+                    onInteraction={() => handleChartInteraction("sleep")}
+                  />
+                ) : undefined
+              }
+            />
+          </section>
+
           <section
             id="recovery-mobile"
             className={`scroll-mt-28 transition-all duration-500 ease-out ${
