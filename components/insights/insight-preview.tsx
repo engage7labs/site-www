@@ -375,48 +375,89 @@ export function InsightPreview({
         )}
 
         {/* ============================================================= */}
-        {/* ENGINE INSIGHTS — Sprint 25.0                                 */}
-        {/* Strong action + emotional hook + data evidence, BEFORE charts */}
+        {/* ENGINE INSIGHTS — Sprint 25.0 / Hardened Sprint 25.1          */}
+        {/* Hero (first) + secondary grid. Contract-validated. Max 3.     */}
         {/* ============================================================= */}
         {engineInsights.length > 0 && (
           <motion.div
             initial={{ opacity: 0, y: 12 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.4 }}
-            className="mb-6 grid gap-3 sm:grid-cols-2 lg:grid-cols-3"
+            className="mb-6"
           >
-            {engineInsights.map((ins) => (
-              <div
-                key={ins.id}
-                className={`rounded-xl border p-4 ${
-                  ins.severity === "critical"
-                    ? "border-destructive/30 bg-destructive/[0.04]"
-                    : "border-border bg-card"
-                }`}
-              >
-                <div className="flex items-center gap-2 mb-2">
-                  <span
-                    className={`inline-block h-1.5 w-1.5 rounded-full shrink-0 ${
-                      ins.severity === "critical"
-                        ? "bg-destructive"
-                        : "bg-accent"
-                    }`}
-                  />
-                  <span className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
-                    {ins.pillar}
-                  </span>
+            {/* Hero — highest-scoring insight */}
+            {(() => {
+              const hero = engineInsights[0];
+              return (
+                <div
+                  className={`rounded-xl border p-5 mb-3 ${
+                    hero.severity === "critical"
+                      ? "border-destructive/40 bg-destructive/[0.06]"
+                      : "border-accent/30 bg-accent/[0.04]"
+                  }`}
+                >
+                  <div className="flex items-center gap-2 mb-2">
+                    <span
+                      className={`inline-block h-2 w-2 rounded-full shrink-0 ${
+                        hero.severity === "critical"
+                          ? "bg-destructive"
+                          : "bg-accent"
+                      }`}
+                    />
+                    <span className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
+                      {hero.pillar}
+                    </span>
+                  </div>
+                  <p className="text-base font-bold text-foreground leading-snug mb-1.5">
+                    {hero.action}
+                  </p>
+                  <p className="text-sm text-muted-foreground leading-relaxed mb-2.5">
+                    {hero.insight}
+                  </p>
+                  <p className="text-[11px] text-muted-foreground/60 font-mono leading-relaxed">
+                    {hero.evidence}
+                  </p>
                 </div>
-                <p className="text-sm font-semibold text-foreground leading-snug mb-1">
-                  {ins.action}
-                </p>
-                <p className="text-xs text-muted-foreground leading-relaxed mb-2">
-                  {ins.insight}
-                </p>
-                <p className="text-[10px] text-muted-foreground/60 font-mono leading-relaxed">
-                  {ins.evidence}
-                </p>
+              );
+            })()}
+
+            {/* Secondary grid — remaining insights */}
+            {engineInsights.length > 1 && (
+              <div className="grid gap-3 sm:grid-cols-2">
+                {engineInsights.slice(1).map((ins) => (
+                  <div
+                    key={ins.id}
+                    className={`rounded-xl border p-4 ${
+                      ins.severity === "critical"
+                        ? "border-destructive/30 bg-destructive/[0.04]"
+                        : "border-border bg-card"
+                    }`}
+                  >
+                    <div className="flex items-center gap-2 mb-2">
+                      <span
+                        className={`inline-block h-1.5 w-1.5 rounded-full shrink-0 ${
+                          ins.severity === "critical"
+                            ? "bg-destructive"
+                            : "bg-accent"
+                        }`}
+                      />
+                      <span className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
+                        {ins.pillar}
+                      </span>
+                    </div>
+                    <p className="text-sm font-semibold text-foreground leading-snug mb-1">
+                      {ins.action}
+                    </p>
+                    <p className="text-xs text-muted-foreground leading-relaxed mb-2">
+                      {ins.insight}
+                    </p>
+                    <p className="text-[10px] text-muted-foreground/60 font-mono leading-relaxed">
+                      {ins.evidence}
+                    </p>
+                  </div>
+                ))}
               </div>
-            ))}
+            )}
           </motion.div>
         )}
 

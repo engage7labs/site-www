@@ -1,26 +1,27 @@
 /**
- * Insight Engine — Sprint 25.0
+ * Insight Engine — Sprint 25.0 / Hardened Sprint 25.1
  *
- * Deterministic rule-based engine that generates strong, actionable insights
- * with emotional hooks and data-backed evidence. No AI, no randomness.
+ * Deterministic rule-based engine generating:
+ *   action   — strong directive, no hedging language
+ *   insight  — felt experience or physiological consequence
+ *   evidence — interpolated number + target
  *
- * Output model:
- *   id         — stable identifier for dedup/tracking
- *   pillar     — sleep | recovery | activity
- *   severity   — critical | warning | info
- *   score      — 0–100 (higher = more urgent/actionable)
- *   action     — strong directive (no "could", "might")
- *   insight    — emotional hook (why this matters now)
- *   evidence   — data-backed explanation with numbers
- *   metrics_used — list of signal names that fired this rule
+ * Contract enforcement (Sprint 25.1):
+ *   - Each insight is validated by validateInsight() from contract.ts
+ *   - Invalid insights are dropped, not returned weakly
+ *   - Output: max 3 insights, at least 1 critical if any exist
  *
- * Language rules:
- *   Action  = strong directive ("Fix your sleep schedule")
- *   Insight = emotional hook  ("Your deep sleep has collapsed")
- *   Evidence = data grounded  ("Deep sleep: 7% (target: ≥15%)")
+ * Strict template rule:
+ *   action  = fixed string, no synonym variation
+ *   insight = fixed string, no synonym variation
+ *   evidence = interpolated with actual measured value + target
+ *
+ * Language rules (ENFORCED):
+ *   Banned in action: "improve", "optimize", "enhance", "try to", "consider"
  */
 
 import type { AnalysisResult } from "@/lib/types/analysis";
+import { validateInsight } from "./contract";
 
 export type InsightPillar = "sleep" | "recovery" | "activity";
 export type InsightSeverity = "critical" | "warning" | "info";
@@ -31,13 +32,13 @@ export interface Insight {
   severity: InsightSeverity;
   /** 0–100, higher = more actionable/urgent. Used for ranking. */
   score: number;
-  /** Strong directive — no hedging language */
+  /** Strong directive — no hedging language. Fixed template. */
   action: string;
-  /** Emotional hook — why this matters now */
+  /** Felt experience or physiological consequence. Fixed template. */
   insight: string;
-  /** Data-backed explanation with specific numbers */
+  /** Interpolated with actual measured value and target. */
   evidence: string;
-  /** Signal names that contributed to this insight */
+  /** Signal names that fired this rule. */
   metrics_used: string[];
 }
 
@@ -59,7 +60,7 @@ function round1(n: number): number {
 }
 
 // ---------------------------------------------------------------------------
-// Sleep rules
+// Sleep rules — strict templates
 // ---------------------------------------------------------------------------
 
 function evaluateSleepRules(sections: Sections): Insight[] {
@@ -78,9 +79,9 @@ function evaluateSleepRules(sections: Sections): Insight[] {
       pillar: "sleep",
       severity: "critical",
       score: Math.min(99, 90 + (10 - deepPct) * 0.5),
-      action: "Cut alcohol, late screens, and irregular bedtimes — all three suppress deep sleep.",
-      insight: "Your deep sleep has nearly disappeared — your body is not repairing itself each night.",
-      evidence: `Deep sleep: ${round1(deepPct)}% (target: ≥15%)`,
+      action: "Reduce intensity today",
+      insight: "Your body is not entering deep recovery",
+      evidence: `Deep sleep: ${round1(deepPct)}% (target: >15%)`,
       metrics_used: ["deep_pct"],
     });
   // Rule: deep sleep below optimal (10–15%)
@@ -90,9 +91,9 @@ function evaluateSleepRules(sections: Sections): Insight[] {
       pillar: "sleep",
       severity: "warning",
       score: Math.min(89, 70 + (15 - deepPct) * 0.5),
-      action: "Move exercise to mornings and maintain a fixed wake time to protect deep sleep.",
-      insight: "Your deep sleep is below optimal — physical recovery is being cut short every night.",
-      evidence: `Deep sleep: ${round1(deepPct)}% (target: ≥15%)`,
+      action: "Move workouts to mornings and keep a fixed wake time",
+      insight: "Your deep sleep is below the repair threshold",
+      evidence: `Deep sleep: ${round1(deepPct)}% (target: >15%)`,
       metrics_used: ["deep_pct"],
     });
   }
@@ -104,9 +105,9 @@ function evaluateSleepRules(sections: Sections): Insight[] {
       pillar: "sleep",
       severity: "critical",
       score: Math.min(99, 85 + (15 - remPct) * 0.5),
-      action: "Eliminate stimulants after 2pm and fix your sleep schedule — REM loss is cumulative.",
-      insight: "Your REM sleep is critically low — memory consolidation and emotional processing are impaired.",
-      evidence: `REM sleep: ${round1(remPct)}% (target: ≥20%)`,
+      action: "Cut stimulants after 2pm and fix your sleep schedule",
+      insight: "Your brain is not consolidating memory or processing emotion",
+      evidence: `REM sleep: ${round1(remPct)}% (target: >20%)`,
       metrics_used: ["rem_pct"],
     });
   // Rule: REM below optimal (15–20%)
@@ -116,9 +117,9 @@ function evaluateSleepRules(sections: Sections): Insight[] {
       pillar: "sleep",
       severity: "warning",
       score: Math.min(84, 65 + (20 - remPct) * 0.5),
-      action: "Reduce alcohol and build a consistent wind-down routine to recover REM sleep.",
-      insight: "Your REM sleep is lower than it should be — your brain is not getting full nightly recovery.",
-      evidence: `REM sleep: ${round1(remPct)}% (target: ≥20%)`,
+      action: "Reduce alcohol and set a consistent wind-down time",
+      insight: "Your REM cycle is being cut short each night",
+      evidence: `REM sleep: ${round1(remPct)}% (target: >20%)`,
       metrics_used: ["rem_pct"],
     });
   }
@@ -130,9 +131,9 @@ function evaluateSleepRules(sections: Sections): Insight[] {
       pillar: "sleep",
       severity: "critical",
       score: Math.min(99, 88 + (6 - sleepMedian) * 2),
-      action: "Move your bedtime 30 minutes earlier starting tonight — every hour of lost sleep compounds.",
-      insight: "You are chronically sleep-deprived — your brain is operating at a cognitive deficit every day.",
-      evidence: `Typical sleep: ${round1(sleepMedian)}h (target: ≥7h)`,
+      action: "Prioritize a full night of sleep tonight",
+      insight: "Your sleep duration is too low to sustain recovery",
+      evidence: `Median sleep: ${round1(sleepMedian)}h (target: >7h)`,
       metrics_used: ["sleep_hours_median"],
     });
   // Rule: sleep duration short (6–6.5h)
@@ -142,9 +143,9 @@ function evaluateSleepRules(sections: Sections): Insight[] {
       pillar: "sleep",
       severity: "warning",
       score: Math.min(87, 60 + (6.5 - sleepMedian) * 3),
-      action: "Shift your bedtime 20 minutes earlier — small consistent gains compound into real recovery.",
-      insight: "Your sleep is consistently short — recovery time is being cut before your body finishes the job.",
-      evidence: `Typical sleep: ${round1(sleepMedian)}h (target: ≥7h)`,
+      action: "Shift your bedtime 20 minutes earlier starting this week",
+      insight: "Recovery is being cut before your body finishes the job",
+      evidence: `Median sleep: ${round1(sleepMedian)}h (target: >7h)`,
       metrics_used: ["sleep_hours_median"],
     });
   }
@@ -156,9 +157,9 @@ function evaluateSleepRules(sections: Sections): Insight[] {
       pillar: "sleep",
       severity: "warning",
       score: Math.min(75, 40 + (sleepCv - 30) * 0.7),
-      action: "Lock in a fixed wake time every day — timing consistency outperforms duration for recovery quality.",
-      insight: "Your sleep is erratic — your body cannot build a stable rhythm with this much nightly variation.",
-      evidence: `Sleep variability (CV): ${round1(sleepCv)}% (target: <20%)`,
+      action: "Set a fixed wake time and hold it every day this week",
+      insight: "Erratic sleep is preventing your body from building a rhythm",
+      evidence: `Sleep variability: ${round1(sleepCv)}% CV (target: <20%)`,
       metrics_used: ["sleep_hours_cv"],
     });
   }
@@ -167,7 +168,7 @@ function evaluateSleepRules(sections: Sections): Insight[] {
 }
 
 // ---------------------------------------------------------------------------
-// Recovery rules
+// Recovery rules — strict templates
 // ---------------------------------------------------------------------------
 
 function evaluateRecoveryRules(sections: Sections): Insight[] {
@@ -186,9 +187,9 @@ function evaluateRecoveryRules(sections: Sections): Insight[] {
       pillar: "recovery",
       severity: "critical",
       score: Math.min(99, 92 + (40 - recoveryScore) * 0.1),
-      action: "Reduce training load, add sleep, and eliminate stressors today — your body is past its limit.",
-      insight: "Your body is struggling to recover — stress signals are dominating your physiology right now.",
-      evidence: `Recovery score: ${Math.round(recoveryScore)}/100 (target: ≥60)`,
+      action: "Cut training load and add one extra hour of sleep today",
+      insight: "Your body is past its recovery limit",
+      evidence: `Recovery score: ${Math.round(recoveryScore)}/100 (target: >60)`,
       metrics_used: ["recovery_composite_score"],
     });
   // Rule: recovery score below optimal (40–60)
@@ -198,9 +199,9 @@ function evaluateRecoveryRules(sections: Sections): Insight[] {
       pillar: "recovery",
       severity: "warning",
       score: Math.min(91, 68 + (60 - recoveryScore) * 0.3),
-      action: "Ease training intensity this week — your body needs consistent recovery before you push harder.",
-      insight: "Your recovery is incomplete — you are carrying more accumulated fatigue than your output shows.",
-      evidence: `Recovery score: ${Math.round(recoveryScore)}/100 (target: ≥60)`,
+      action: "Lower your training intensity for the next 3 days",
+      insight: "You are carrying accumulated fatigue your output does not show",
+      evidence: `Recovery score: ${Math.round(recoveryScore)}/100 (target: >60)`,
       metrics_used: ["recovery_composite_score"],
     });
   }
@@ -212,9 +213,9 @@ function evaluateRecoveryRules(sections: Sections): Insight[] {
       pillar: "recovery",
       severity: "critical",
       score: 95,
-      action: "See a doctor this week — blood oxygen at this level requires medical evaluation.",
-      insight: "Your blood oxygen is dangerously low — this level demands immediate medical attention.",
-      evidence: `Average SpO₂: ${round1(spo2)}% (healthy range: ≥95%)`,
+      action: "See a doctor this week",
+      insight: "Your blood oxygen is at a level that requires medical evaluation",
+      evidence: `SpO₂: ${round1(spo2)}% (healthy range: >95%)`,
       metrics_used: ["spo2_mean"],
     });
   // Rule: SpO2 below threshold (93–95%)
@@ -224,9 +225,9 @@ function evaluateRecoveryRules(sections: Sections): Insight[] {
       pillar: "recovery",
       severity: "warning",
       score: Math.min(94, 72 + (95 - spo2) * 2),
-      action: "Discuss your SpO₂ readings with a doctor — sustained low oxygen affects energy and recovery.",
-      insight: "Your blood oxygen is below the healthy range — your cells are working harder than they should be.",
-      evidence: `Average SpO₂: ${round1(spo2)}% (target: ≥95%)`,
+      action: "Discuss your SpO₂ trend with a doctor",
+      insight: "Your cells are running on less oxygen than they need",
+      evidence: `SpO₂: ${round1(spo2)}% (target: >95%)`,
       metrics_used: ["spo2_mean"],
     });
   }
@@ -238,8 +239,8 @@ function evaluateRecoveryRules(sections: Sections): Insight[] {
       pillar: "recovery",
       severity: "critical",
       score: Math.min(94, 82 + (hrMedian - 90) * 0.3),
-      action: "Reduce training load immediately and prioritize sleep — your heart is under chronic strain.",
-      insight: "Your resting heart rate is elevated — your cardiovascular system is not recovering between efforts.",
+      action: "Stop high-intensity training until your heart rate drops",
+      insight: "Your cardiovascular system is not recovering between sessions",
       evidence: `Resting HR: ${Math.round(hrMedian)} bpm (target: <80 bpm)`,
       metrics_used: ["hr_mean_median"],
     });
@@ -250,8 +251,8 @@ function evaluateRecoveryRules(sections: Sections): Insight[] {
       pillar: "recovery",
       severity: "warning",
       score: Math.min(81, 55 + (hrMedian - 80) * 0.5),
-      action: "Add a daily walk or light session — consistent aerobic work lowers resting heart rate within weeks.",
-      insight: "Your resting heart rate is higher than optimal — cardiovascular recovery has room to improve.",
+      action: "Add a 20-minute walk daily for the next week",
+      insight: "Your resting heart rate is elevated beyond the aerobic baseline",
       evidence: `Resting HR: ${Math.round(hrMedian)} bpm (target: <80 bpm)`,
       metrics_used: ["hr_mean_median"],
     });
@@ -264,9 +265,9 @@ function evaluateRecoveryRules(sections: Sections): Insight[] {
       pillar: "recovery",
       severity: "critical",
       score: 86,
-      action: "Address recovery urgently — very low HRV means your nervous system is in chronic overdrive.",
-      insight: "Your HRV is critically low — your nervous system cannot balance stress and recovery at this level.",
-      evidence: `HRV (SDNN): ${Math.round(hrvMedian)} ms (typical healthy range: 40–100 ms)`,
+      action: "Stop all training and prioritize sleep and rest today",
+      insight: "Your nervous system is in chronic overdrive",
+      evidence: `HRV (SDNN): ${Math.round(hrvMedian)} ms (target: >40 ms)`,
       metrics_used: ["hrv_sdnn_mean_median"],
     });
   // Rule: HRV below optimal (20–40 ms)
@@ -276,9 +277,9 @@ function evaluateRecoveryRules(sections: Sections): Insight[] {
       pillar: "recovery",
       severity: "warning",
       score: 62,
-      action: "Protect recovery windows — low HRV responds directly to better sleep and reduced stress load.",
-      insight: "Your HRV is below the healthy range — your body is struggling to shift out of stress mode.",
-      evidence: `HRV (SDNN): ${Math.round(hrvMedian)} ms (typical healthy range: 40–100 ms)`,
+      action: "Protect your next two nights of sleep",
+      insight: "Your body cannot exit stress mode at this HRV level",
+      evidence: `HRV (SDNN): ${Math.round(hrvMedian)} ms (target: >40 ms)`,
       metrics_used: ["hrv_sdnn_mean_median"],
     });
   }
@@ -287,7 +288,7 @@ function evaluateRecoveryRules(sections: Sections): Insight[] {
 }
 
 // ---------------------------------------------------------------------------
-// Activity rules
+// Activity rules — strict templates
 // ---------------------------------------------------------------------------
 
 function evaluateActivityRules(sections: Sections): Insight[] {
@@ -305,9 +306,9 @@ function evaluateActivityRules(sections: Sections): Insight[] {
       pillar: "activity",
       severity: "critical",
       score: 80,
-      action: "Move for 30 minutes every day this week — your body needs consistent physical stress to function.",
-      insight: "Your daily energy output is alarmingly low — your body is barely moving from day to day.",
-      evidence: `Daily energy: ${Math.round(totalEnergy).toLocaleString()} kcal (target: ≥1,800 kcal)`,
+      action: "Walk for 30 minutes every day this week",
+      insight: "Your body is not getting the physical stress it needs to stay functional",
+      evidence: `Daily energy: ${Math.round(totalEnergy).toLocaleString()} kcal (target: >1,800 kcal)`,
       metrics_used: ["total_energy_cal_mean"],
     });
   // Rule: daily energy below optimal (1,500–1,800 kcal)
@@ -317,9 +318,9 @@ function evaluateActivityRules(sections: Sections): Insight[] {
       pillar: "activity",
       severity: "warning",
       score: 52,
-      action: "Add a 20-minute walk to your daily routine — small consistent movement compounds into real health gains.",
-      insight: "Your daily energy burn is below optimal — your movement habit needs rebuilding.",
-      evidence: `Daily energy: ${Math.round(totalEnergy).toLocaleString()} kcal (target: ≥1,800 kcal)`,
+      action: "Add a 20-minute walk to your daily routine",
+      insight: "Your daily movement is below the baseline your metabolism requires",
+      evidence: `Daily energy: ${Math.round(totalEnergy).toLocaleString()} kcal (target: >1,800 kcal)`,
       metrics_used: ["total_energy_cal_mean"],
     });
   }
@@ -331,9 +332,9 @@ function evaluateActivityRules(sections: Sections): Insight[] {
       pillar: "activity",
       severity: "critical",
       score: 78,
-      action: "Walk every day this week without exception — start with 15 minutes and build from there.",
-      insight: "Your daily steps are critically low — sedentary behavior at this level affects every system in your body.",
-      evidence: `Typical steps: ${Math.round(stepsMedian).toLocaleString()} (target: ≥7,000)`,
+      action: "Walk for 15 minutes before 10am every day this week",
+      insight: "Your body is sedentary at a level that affects every system",
+      evidence: `Daily steps: ${Math.round(stepsMedian).toLocaleString()} (target: >7,000)`,
       metrics_used: ["total_steps_median"],
     });
   // Rule: steps below optimal (3,000–5,000)
@@ -343,9 +344,9 @@ function evaluateActivityRules(sections: Sections): Insight[] {
       pillar: "activity",
       severity: "warning",
       score: 52,
-      action: "Add 2,000 steps to your daily target — park farther away, take stairs, walk during every call.",
-      insight: "Your step count is well below what your body needs for baseline metabolic health.",
-      evidence: `Typical steps: ${Math.round(stepsMedian).toLocaleString()} (target: ≥7,000)`,
+      action: "Park farther away and take every staircase you encounter",
+      insight: "Your daily step count falls below the metabolic floor",
+      evidence: `Daily steps: ${Math.round(stepsMedian).toLocaleString()} (target: >7,000)`,
       metrics_used: ["total_steps_median"],
     });
   }
@@ -357,9 +358,9 @@ function evaluateActivityRules(sections: Sections): Insight[] {
       pillar: "activity",
       severity: "warning",
       score: Math.min(65, 35 + (stepsCv - 50) * 0.3),
-      action: "Set a minimum daily step floor — commit to at least 5,000 steps every day regardless of schedule.",
-      insight: "Your activity swings wildly from day to day — feast-or-famine movement does not build fitness.",
-      evidence: `Step variability (CV): ${round1(stepsCv)}% (target: <30%)`,
+      action: "Commit to a 5,000-step floor every day regardless of schedule",
+      insight: "Feast-or-famine movement prevents your body from adapting",
+      evidence: `Step variability: ${round1(stepsCv)}% CV (target: <30%)`,
       metrics_used: ["total_steps_cv"],
     });
   }
@@ -372,9 +373,15 @@ function evaluateActivityRules(sections: Sections): Insight[] {
 // ---------------------------------------------------------------------------
 
 /**
- * Generate ranked, actionable insights from analysis data.
+ * Generate ranked, validated insights from analysis data.
  *
- * Pipeline: extract signals → evaluate rules → rank by score → top 5.
+ * Pipeline:
+ *   1. Evaluate rules across all pillars
+ *   2. Validate each insight against the contract (invalid = dropped)
+ *   3. Sort by score DESC
+ *   4. Enforce: at least 1 critical if any exist
+ *   5. Return max 3
+ *
  * Fully deterministic — same input always produces the same output.
  */
 export function generateInsights(data: AnalysisResult): Insight[] {
@@ -382,12 +389,30 @@ export function generateInsights(data: AnalysisResult): Insight[] {
   const sections = (data.sections as Record<string, any>) ?? null;
   if (!sections) return [];
 
-  const all: Insight[] = [
+  const validated = [
     ...evaluateSleepRules(sections),
     ...evaluateRecoveryRules(sections),
     ...evaluateActivityRules(sections),
-  ];
+  ]
+    .filter(validateInsight)
+    .sort((a, b) => b.score - a.score);
 
-  // Sort descending by score, return top 5
-  return all.sort((a, b) => b.score - a.score).slice(0, 5);
+  if (validated.length === 0) return [];
+
+  const result: Insight[] = [];
+
+  // Guarantee: include at least 1 critical if any exist
+  const firstCritical = validated.find((i) => i.severity === "critical");
+  if (firstCritical) {
+    result.push(firstCritical);
+  }
+
+  // Fill remaining slots (max 3 total) with highest-scoring remaining insights
+  for (const ins of validated) {
+    if (result.length >= 3) break;
+    if (result.includes(ins)) continue;
+    result.push(ins);
+  }
+
+  return result;
 }
