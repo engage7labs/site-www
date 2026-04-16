@@ -414,6 +414,7 @@ export function InsightPreview({
             transition={{ duration: 0.4 }}
             className="mb-6 mx-auto max-w-2xl rounded-xl border border-accent/20 bg-accent/[0.04] px-5 py-4 text-center"
           >
+            <div className="text-[10px] uppercase opacity-60 mb-1">NEW: surprisingInsight</div>
             <div className="flex items-center justify-center gap-2 mb-1.5">
               <Sparkles className="h-3.5 w-3.5 text-accent" />
               <span className="text-[10px] font-semibold uppercase tracking-wider text-accent/80">
@@ -432,8 +433,9 @@ export function InsightPreview({
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.35 }}
-            className="rounded-xl border border-[#e6b800] bg-[#e6b800]/5 p-4 mb-6 flex items-center gap-4"
+            className="rounded-xl border border-[#e6b800] bg-[#e6b800]/5 p-4 mb-6 flex flex-col gap-1"
           >
+            <div className="text-[10px] uppercase opacity-60">NEW: dataProvenance</div>
             <div className="flex-1 min-w-0">
               <p className="text-[10px] font-semibold uppercase tracking-wider mb-1 text-[#e6b800]">
                 {t.result.preview.provenanceLabel}
@@ -463,6 +465,7 @@ export function InsightPreview({
             transition={{ duration: 0.4 }}
             className="mb-6"
           >
+            <div className="text-[10px] uppercase opacity-60 mb-1">NEW: engineInsights</div>
             {/* Hero — highest-scoring insight */}
             {(() => {
               const hero = engineInsights[0];
@@ -572,6 +575,7 @@ export function InsightPreview({
             transition={{ duration: 0.4 }}
             className="mb-6"
           >
+            <div className="text-[10px] uppercase opacity-60 mb-1">NEW: hasNewSignals</div>
             {/* Narrative connector — only shown when engine insights are also visible */}
             {engineInsights.length > 0 && (
               <div className="flex items-center gap-3 mb-4">
@@ -644,6 +648,7 @@ export function InsightPreview({
             transition={{ duration: 0.4, delay: 0.35 }}
             className="mt-4 mx-auto max-w-lg rounded-lg border border-accent/15 bg-accent/[0.04] px-5 py-4 text-center"
           >
+            <div className="text-[10px] uppercase opacity-60 mb-1">NEW: previewInsight</div>
             <div className="flex items-center justify-center gap-2 mb-1">
               <Sparkles className="h-3.5 w-3.5 text-accent" />
               <span className="text-xs font-medium uppercase tracking-wider text-accent/80">
@@ -673,11 +678,12 @@ export function InsightPreview({
               </p>
             </motion.div>
             {/* CTA button — Sprint 25.4: now appears AFTER previewInsight */}
+            <div className="text-[10px] uppercase opacity-60 mt-4 mb-1">NEW: ctaPrimary</div>
             <motion.div
               initial={{ opacity: 0, y: 12 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.4, delay: 0.45 }}
-              className="mt-5 flex flex-col sm:flex-row items-center justify-center gap-3"
+              className="mt-1 flex flex-col sm:flex-row items-center justify-center gap-3"
             >
               <button
                 type="button"
@@ -692,11 +698,12 @@ export function InsightPreview({
               </button>
             </motion.div>
             {/* 7. Plan comparison cards (Sprint 18.6.5, localized Sprint 25.4) */}
+            <div className="text-[10px] uppercase opacity-60 mt-6 mb-1">NEW: planComparison</div>
             <motion.div
               initial={{ opacity: 0, y: 12 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.4, delay: 0.55 }}
-              className="mt-8 mx-auto max-w-3xl"
+              className="mt-2 mx-auto max-w-3xl"
             >
               <p className="text-xs font-medium uppercase tracking-wider text-muted-foreground text-center mb-5">
                 {t.result.preview.comparePlans}
@@ -799,6 +806,7 @@ export function InsightPreview({
           </div>
         )}
         <div className="hidden md:block">
+          <div className="text-[10px] uppercase opacity-60 mb-1">LEGACY: legacyDesktopHero</div>
           {/* Hero: Sleep */}
           <section
             className={`grid grid-cols-2 gap-8 items-start transition-all duration-500 ease-out ${
@@ -894,8 +902,9 @@ export function InsightPreview({
             </motion.div>
           </section>
 
+          <div className="text-[10px] uppercase opacity-60 mt-4 mb-1">LEGACY: legacyDesktopRecoveryActivity</div>
           {/* Lower compact zone— Recovery + Activity */}
-          <section className="grid grid-cols-2 gap-6 mt-6">
+          <section className="grid grid-cols-2 gap-6 mt-2">
             {/* Recovery card */}
             <div
               id="recovery-desktop"
@@ -954,6 +963,7 @@ export function InsightPreview({
         {/* MOBILE LAYOUT — stacked scrollable cards                       */}
         {/* ============================================================= */}
         <div className="md:hidden space-y-6">
+          <div className="text-[10px] uppercase opacity-60">LEGACY: legacyMobileHero</div>
           {/* Sleep card */}
           <motion.div
             initial={{ opacity: 0, y: 20 }}
@@ -1031,6 +1041,7 @@ export function InsightPreview({
             </div>
           </motion.div>
 
+          <div className="text-[10px] uppercase opacity-60">LEGACY: legacyMobileRecoveryActivity</div>
           <section
             id="recovery-mobile"
             className={`scroll-mt-28 transition-all duration-500 ease-out ${
