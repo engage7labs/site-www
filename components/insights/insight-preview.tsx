@@ -138,7 +138,7 @@ function chartPeriodSuffix(days: number | null | undefined, locale: string): str
     return isPt ? "média geral" : "all-time avg";
   }
   const d = Math.round(days);
-  return isPt ? `${d} dias` : `${d} days`;
+  return isPt ? `últimos ${d} dias` : `last ${d} days`;
 }
 
 function sleepStageLabel(days: number | null | undefined, locale: string): string {
@@ -153,8 +153,8 @@ function recoveryLabel(days: number | null | undefined, locale: string): string 
   const isPt = locale === "pt-BR";
   const period = chartPeriodSuffix(days, locale);
   return isPt
-    ? `Prontidão — pontuação geral (${period})`
-    : `Readiness — overall score (${period})`;
+    ? `Prontidão — tendência (${period})`
+    : `Readiness — trend (${period})`;
 }
 
 function energyLabel(days: number | null | undefined, locale: string): string {
@@ -479,6 +479,11 @@ export function InsightPreview({
                         : "HRV: reflects how well your body is recovering. Higher values generally mean better recovery."}
                     </p>
                   )}
+                  <p className="text-xs text-muted-foreground/40 mt-3 pt-3 border-t border-border/20">
+                    {locale === "pt-BR"
+                      ? "Baseado nos seus padrões recentes"
+                      : "This is based on your recent patterns"}
+                  </p>
                 </div>
               );
             })()}
@@ -544,33 +549,62 @@ export function InsightPreview({
             transition={{ duration: 0.4 }}
             className="mb-6"
           >
-            {/* Charts only — InsightCards removed (engine block above covers insights) */}
+            {/* Narrative connector — only shown when engine insights are also visible */}
+            {engineInsights.length > 0 && (
+              <div className="flex items-center gap-3 mb-4">
+                <div className="h-px flex-1 bg-border/25" />
+                <span className="text-[10px] text-muted-foreground/40 uppercase tracking-wider shrink-0">
+                  {locale === "pt-BR" ? "o que isso significa" : "what this means"}
+                </span>
+                <div className="h-px flex-1 bg-border/25" />
+              </div>
+            )}
+
+            {/* Charts with narrative roles — Evidence → Impact → Possible cause */}
             <div className="grid gap-4 sm:grid-cols-3">
+              {/* Sleep — Evidence (primary, stronger border as "proof") */}
               {sections?.sleep_stages?.has_stage_data && (
-                <div className="rounded-xl border border-border bg-card p-4">
-                  <SleepStageChart
-                    data={sections.sleep_stages}
-                    height={200}
-                    label={sleepStageLabel(summary?.days, locale)}
-                  />
+                <div className="flex flex-col gap-1.5">
+                  <p className="text-xs text-muted-foreground/50 uppercase tracking-wider">
+                    {locale === "pt-BR" ? "Evidência" : "Evidence"}
+                  </p>
+                  <div className="rounded-xl border border-accent/30 bg-card p-4">
+                    <SleepStageChart
+                      data={sections.sleep_stages}
+                      height={200}
+                      label={sleepStageLabel(summary?.days, locale)}
+                    />
+                  </div>
                 </div>
               )}
+              {/* Readiness — Impact */}
               {sections?.recovery_signals?.recovery_composite_score != null && (
-                <div className="rounded-xl border border-border bg-card p-4">
-                  <RecoveryScoreChart
-                    score={sections.recovery_signals.recovery_composite_score}
-                    height={200}
-                    label={recoveryLabel(summary?.days, locale)}
-                  />
+                <div className="flex flex-col gap-1.5">
+                  <p className="text-xs text-muted-foreground/50 uppercase tracking-wider">
+                    {locale === "pt-BR" ? "Impacto" : "Impact"}
+                  </p>
+                  <div className="rounded-xl border border-border bg-card p-4">
+                    <RecoveryScoreChart
+                      score={sections.recovery_signals.recovery_composite_score}
+                      height={200}
+                      label={recoveryLabel(summary?.days, locale)}
+                    />
+                  </div>
                 </div>
               )}
+              {/* Activity — Possible cause */}
               {sections?.activity_signals?.basal_energy_cal != null && (
-                <div className="rounded-xl border border-border bg-card p-4">
-                  <DailyEnergyChart
-                    data={sections.activity_signals}
-                    height={200}
-                    label={energyLabel(summary?.days, locale)}
-                  />
+                <div className="flex flex-col gap-1.5">
+                  <p className="text-xs text-muted-foreground/50 uppercase tracking-wider">
+                    {locale === "pt-BR" ? "Possível causa" : "Possible cause"}
+                  </p>
+                  <div className="rounded-xl border border-border bg-card p-4">
+                    <DailyEnergyChart
+                      data={sections.activity_signals}
+                      height={200}
+                      label={energyLabel(summary?.days, locale)}
+                    />
+                  </div>
                 </div>
               )}
             </div>
