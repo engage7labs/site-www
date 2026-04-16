@@ -593,26 +593,15 @@ export function InsightPreview({
 
             {/* Charts with narrative roles — Evidence → Impact → Possible cause */}
             <div className="grid gap-4 sm:grid-cols-3">
-              {/* Sleep — Evidence (primary, stronger border as "proof") */}
-              {(sections?.sleep_stages?.has_stage_data === true || sleepChartOption != null) && (
+              {/* Sleep Stages — premium composition chart (Deep / REM / Core / Awake) */}
+              {sections?.sleep_stages != null && (
                 <div className="flex flex-col gap-1.5">
-                  {false && <p className="text-xs text-muted-foreground/50 uppercase tracking-wider">
-                    {locale === "pt-BR" ? "Evidência" : "Evidence"}
-                  </p>}
                   <div className="rounded-xl border border-accent/30 bg-card p-4">
-                    {sections?.sleep_stages?.has_stage_data ? (
-                      <SleepStageChart
-                        data={sections.sleep_stages}
-                        height={200}
-                        label={sleepStageLabel(summary?.days, locale)}
-                      />
-                    ) : (
-                      <EChart
-                        option={sleepChartOption!}
-                        height={200}
-                        onInteraction={() => handleChartInteraction("sleep")}
-                      />
-                    )}
+                    <SleepStageChart
+                      data={sections.sleep_stages}
+                      height={200}
+                      label={sleepStageLabel(summary?.days, locale)}
+                    />
                   </div>
                 </div>
               )}
