@@ -406,7 +406,13 @@ export function InsightPreview({
       )}
 
       <main className={embedded ? "" : "max-w-6xl mx-auto px-6 pt-8 pb-16"}>
-        {/* 1. Surprising personal insight */}
+        {/* Sprint 25.5: 1. HERO HEADLINE — adaptive headline extracted from legacy hero */}
+        <div className="text-[10px] uppercase opacity-60 mb-1">SPRINT25.5: heroHeadline</div>
+        <h1 className="text-3xl lg:text-4xl font-semibold text-foreground leading-tight mb-6">
+          {adaptiveHeadline}
+        </h1>
+
+        {/* 2. Surprising personal insight */}
         {surprisingInsight && (
           <motion.div
             initial={{ opacity: 0, y: 12 }}
@@ -437,16 +443,12 @@ export function InsightPreview({
           >
             <div className="text-[10px] uppercase opacity-60">NEW: dataProvenance</div>
             <div className="flex-1 min-w-0">
-              <p className="text-[10px] font-semibold uppercase tracking-wider mb-1 text-[#e6b800]">
-                {t.result.preview.provenanceLabel}
+              {/* Sprint 25.5: Option A provenance text */}
+              <p className="text-sm font-bold text-foreground">
+                Built from{" "}
+                <span className="text-[#e6b800]">7 years</span>{" "}
+                of your real-life data
               </p>
-              {durationInfo && (
-                <p className="text-sm font-bold text-foreground">
-                  {t.result.preview.builtFromPrefix}{" "}
-                  <span className="text-[#e6b800]">{durationInfo.label}</span>{" "}
-                  {t.result.preview.builtFromSuffix}
-                </p>
-              )}
               {summary?.dataset_start && summary?.dataset_end && (
                 <p className="text-xs text-muted-foreground mt-0.5">
                   {String(summary.dataset_start)} →{" "}
@@ -576,8 +578,8 @@ export function InsightPreview({
             className="mb-6"
           >
             <div className="text-[10px] uppercase opacity-60 mb-1">NEW: hasNewSignals</div>
-            {/* Narrative connector — only shown when engine insights are also visible */}
-            {engineInsights.length > 0 && (
+            {/* Sprint 25.5: narrative connector hidden */}
+            {false && engineInsights.length > 0 && (
               <div className="flex items-center gap-3 mb-4">
                 <div className="h-px flex-1 bg-border/25" />
                 <span className="text-[10px] text-muted-foreground/40 uppercase tracking-wider shrink-0">
@@ -594,9 +596,9 @@ export function InsightPreview({
               {/* Sleep — Evidence (primary, stronger border as "proof") */}
               {sections?.sleep_stages?.has_stage_data && (
                 <div className="flex flex-col gap-1.5">
-                  <p className="text-xs text-muted-foreground/50 uppercase tracking-wider">
+                  {false && <p className="text-xs text-muted-foreground/50 uppercase tracking-wider">
                     {locale === "pt-BR" ? "Evidência" : "Evidence"}
-                  </p>
+                  </p>}
                   <div className="rounded-xl border border-accent/30 bg-card p-4">
                     <SleepStageChart
                       data={sections.sleep_stages}
@@ -609,9 +611,9 @@ export function InsightPreview({
               {/* Readiness — Impact */}
               {sections?.recovery_signals?.recovery_composite_score != null && (
                 <div className="flex flex-col gap-1.5">
-                  <p className="text-xs text-muted-foreground/50 uppercase tracking-wider">
+                  {false && <p className="text-xs text-muted-foreground/50 uppercase tracking-wider">
                     {locale === "pt-BR" ? "Impacto" : "Impact"}
-                  </p>
+                  </p>}
                   <div className="rounded-xl border border-border bg-card p-4">
                     <RecoveryScoreChart
                       score={sections.recovery_signals.recovery_composite_score}
@@ -624,9 +626,9 @@ export function InsightPreview({
               {/* Activity — Possible cause */}
               {sections?.activity_signals?.basal_energy_cal != null && (
                 <div className="flex flex-col gap-1.5">
-                  <p className="text-xs text-muted-foreground/50 uppercase tracking-wider">
+                  {false && <p className="text-xs text-muted-foreground/50 uppercase tracking-wider">
                     {locale === "pt-BR" ? "Possível causa" : "Possible cause"}
-                  </p>
+                  </p>}
                   <div className="rounded-xl border border-border bg-card p-4">
                     <DailyEnergyChart
                       data={sections.activity_signals}
@@ -661,8 +663,8 @@ export function InsightPreview({
           </motion.div>
         )}
 
-        {/* 6. Full Report CTA — hidden when embedded in portal */}
-        {!embedded && (
+        {/* Sprint 25.5: first mid-page CTA hidden — moved to end after core blocks */}
+        {false && !embedded && (
           <div ref={fullReportRef} className="mt-10">
             <motion.div
               initial={{ opacity: 0, y: 16 }}
@@ -828,7 +830,8 @@ export function InsightPreview({
               </h1>
 
               <div className="text-[10px] uppercase opacity-60 mb-1">LEGACY: desktopHero: metadata</div>
-              {durationInfo && (
+              {/* Sprint 25.5: metadata hidden — shown in dataProvenance block */}
+              {false && durationInfo && (
                 <p className="text-sm text-muted-foreground mb-6">
                   {t.result.preview.builtFromPrefix}{" "}
                   <span className="font-semibold text-foreground">
@@ -987,7 +990,8 @@ export function InsightPreview({
               </h1>
 
               <div className="text-[10px] uppercase opacity-60 mb-1">LEGACY: mobileHero: metadata</div>
-              {durationInfo && (
+              {/* Sprint 25.5: metadata hidden — shown in dataProvenance block */}
+              {false && durationInfo && (
                 <p className="text-xs text-muted-foreground mb-4">
                   {t.result.preview.builtFromPrefix}{" "}
                   <span className="font-semibold text-foreground">
@@ -1121,8 +1125,8 @@ export function InsightPreview({
               </p>
             </motion.div>
 
-            {/* Preview Insight — data-driven teaser (moved BEFORE CTA button — Sprint 25.4) */}
-            {previewInsight && (
+            {/* Sprint 25.5: previewInsight duplicate hidden — shown at position 6 above core blocks */}
+            {false && previewInsight && (
               <motion.div
                 initial={{ opacity: 0, y: 12 }}
                 animate={{ opacity: 1, y: 0 }}
