@@ -514,6 +514,16 @@ export const enIE = {
       days: "Days",
       records: "Records",
     },
+    charts: {
+      sleepTrendEmpty: {
+        title: "Sleep trend still building",
+        message: "Your sleep pattern appears once enough data is available",
+      },
+      healthBalanceEmpty: {
+        title: "Health balance forming",
+        message: "This view appears once enough recovery data is available",
+      },
+    },
     insightsPage: {
       noInsights: "No insights yet. Upload your health data to start seeing patterns and recommendations.",
       lastDataPoints: "Last {n} data points",
@@ -537,6 +547,49 @@ export const enIE = {
         sleep: "sleep",
         recovery: "recovery",
         activity: "activity",
+      },
+    },
+  },
+
+  // Teaser (insight-preview)
+  teaser: {
+    hero: {
+      // Adaptive headline — driven by sleep consistency CV
+      adaptiveClear: "Your body is showing clear patterns — here's what stands out",
+      adaptiveSteady: "Your sleep is steady — your body is maintaining a stable rhythm",
+      adaptiveShifting: "Your patterns are shifting — your body is adapting",
+    },
+    provenance: {
+      // Three parts compose the provenance card headline (spans a highlighted year count)
+      builtFrom: "Built from",
+      yearsHighlight: "7 years",
+      realLifeData: "of your real-life data",
+    },
+    insights: {
+      // HRV footnote shown when insight uses hrv_sdnn_mean_median metric
+      hrvExplanation: "HRV: reflects how well your body is recovering. Higher values generally mean better recovery.",
+      // Footer line under each engine insight card
+      basedOnPatterns: "This is based on your recent patterns",
+    },
+    charts: {
+      // Full chart header labels — include period descriptor inline
+      sleepStages: "Sleep stages — avg per night (historical average)",
+      recovery: "Readiness — trend (historical average)",
+      energy: "Daily energy — avg kcal (historical average)",
+    },
+    empty: {
+      // ChartEmptyState copy for each of the three teaser chart slots
+      sleep: {
+        title: "Sleep stage pattern forming",
+        message: "More consistent sleep tracking will unlock this view",
+      },
+      recovery: {
+        title: "Recovery pattern still building",
+        message: "We need a few active days to understand this pattern",
+      },
+      energy: {
+        title: "Energy pattern forming",
+        message: "Your energy view appears once enough activity data is available",
       },
     },
   },

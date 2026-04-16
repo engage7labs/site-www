@@ -519,6 +519,16 @@ export const ptBR: Dictionary = {
       days: "Dias",
       records: "Registros",
     },
+    charts: {
+      sleepTrendEmpty: {
+        title: "Tendência de sono ainda em formação",
+        message: "Seu padrão de sono aparece quando houver dados suficientes",
+      },
+      healthBalanceEmpty: {
+        title: "Equilíbrio de saúde em formação",
+        message: "Esta visualização aparece quando houver dados de recuperação suficientes",
+      },
+    },
     insightsPage: {
       noInsights: "Nenhum insight ainda. Envie seus dados de saúde para começar a ver padrões e recomendações.",
       lastDataPoints: "Últimos {n} pontos de dados",
@@ -542,6 +552,43 @@ export const ptBR: Dictionary = {
         sleep: "sono",
         recovery: "recuperação",
         activity: "atividade",
+      },
+    },
+  },
+
+  // Teaser (insight-preview)
+  teaser: {
+    hero: {
+      adaptiveClear: "Seu corpo está mostrando padrões claros — aqui está o que se destaca",
+      adaptiveSteady: "Seu sono está estável — seu corpo está mantendo um ritmo regular",
+      adaptiveShifting: "Seus padrões estão mudando — seu corpo está se adaptando",
+    },
+    provenance: {
+      builtFrom: "Construído a partir de",
+      yearsHighlight: "7 anos",
+      realLifeData: "dos seus dados reais",
+    },
+    insights: {
+      hrvExplanation: "VFC: indica como seu corpo está se recuperando. Valores mais altos geralmente significam melhor recuperação.",
+      basedOnPatterns: "Baseado nos seus padrões recentes",
+    },
+    charts: {
+      sleepStages: "Estágios do sono — média por noite (média histórica)",
+      recovery: "Prontidão — tendência (média histórica)",
+      energy: "Energia diária — média kcal (média histórica)",
+    },
+    empty: {
+      sleep: {
+        title: "Padrão de estágios do sono em formação",
+        message: "Rastreamento de sono mais consistente desbloqueará esta visualização",
+      },
+      recovery: {
+        title: "Padrão de recuperação ainda sendo construído",
+        message: "Precisamos de alguns dias ativos para entender este padrão",
+      },
+      energy: {
+        title: "Padrão de energia em formação",
+        message: "Sua visualização de energia aparece quando houver dados de atividade suficientes",
       },
     },
   },

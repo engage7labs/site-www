@@ -176,7 +176,7 @@ function median(points?: TrendPoint[]): number | null {
 // Overview Charts — ECharts (Sprint 17.4)
 // ---------------------------------------------------------------------------
 
-function SleepTrendMini({ data, title }: Readonly<{ data: TrendPoint[]; title: string }>) {
+function SleepTrendMini({ data, title, emptyTitle, emptyMessage }: Readonly<{ data: TrendPoint[]; title: string; emptyTitle: string; emptyMessage: string }>) {
   const containerRef = useRef<HTMLDivElement>(null);
   const hasData = data.some((p) => p.value != null);
 
@@ -274,8 +274,8 @@ function SleepTrendMini({ data, title }: Readonly<{ data: TrendPoint[]; title: s
       ) : (
         <ChartEmptyState
           height={180}
-          title="Sleep trend still building"
-          message="Your sleep pattern appears once enough data is available"
+          title={emptyTitle}
+          message={emptyMessage}
         />
       )}
     </div>
@@ -288,12 +288,16 @@ function HealthRadar({
   hrv,
   steps,
   title,
+  emptyTitle,
+  emptyMessage,
 }: Readonly<{
   sleep: number | null;
   hr: number | null;
   hrv: number | null;
   steps: number | null;
   title: string;
+  emptyTitle: string;
+  emptyMessage: string;
 }>) {
   const containerRef = useRef<HTMLDivElement>(null);
 
@@ -414,8 +418,8 @@ function HealthRadar({
       ) : (
         <ChartEmptyState
           height={220}
-          title="Health balance forming"
-          message="This view appears once enough recovery data is available"
+          title={emptyTitle}
+          message={emptyMessage}
         />
       )}
     </div>
@@ -550,13 +554,20 @@ export default function PortalOverviewPage() {
 
       {/* ECharts — Sprint 17.4 / Sprint 25.9: always rendered, empty states when no data */}
       <div className="grid gap-4 lg:grid-cols-2">
-        <SleepTrendMini data={trends?.trends?.sleep ?? []} title={t.portal.sleepTrend} />
+        <SleepTrendMini
+          data={trends?.trends?.sleep ?? []}
+          title={t.portal.sleepTrend}
+          emptyTitle={t.portal.charts.sleepTrendEmpty.title}
+          emptyMessage={t.portal.charts.sleepTrendEmpty.message}
+        />
         <HealthRadar
           sleep={data?.sleep_score ?? null}
           hr={median(trends?.trends?.hr)}
           hrv={data?.recovery_trend ?? null}
           steps={median(trends?.trends?.steps)}
           title={t.portal.healthBalance}
+          emptyTitle={t.portal.charts.healthBalanceEmpty.title}
+          emptyMessage={t.portal.charts.healthBalanceEmpty.message}
         />
       </div>
 

@@ -114,59 +114,9 @@ function useDarkMode(theme?: string) {
 // Locale helpers (Sprint 25.2)
 // ---------------------------------------------------------------------------
 
-function translatePillar(pillar: string, locale: string): string {
-  if (locale === "pt-BR") {
-    const map: Record<string, string> = {
-      sleep: "sono",
-      recovery: "prontidão",
-      activity: "atividade",
-    };
-    return map[pillar] ?? pillar;
-  }
-  return pillar;
-}
+// translatePillar removed in Sprint 25.11 — pillar labels now come from t.portal.insightsPage.pillar.*
 
-/**
- * Returns a locale-aware period string for chart headers.
- * Charts show full-dataset averages — use "historical average" label.
- */
-function chartPeriodSuffix(
-  _days: number | null | undefined,
-  locale: string
-): string {
-  const isPt = locale === "pt-BR";
-  return isPt ? "média histórica" : "historical average";
-}
-
-function sleepStageLabel(
-  days: number | null | undefined,
-  locale: string
-): string {
-  const isPt = locale === "pt-BR";
-  const period = chartPeriodSuffix(days, locale);
-  return isPt
-    ? `Estágios do sono — média por noite (${period})`
-    : `Sleep stages — avg per night (${period})`;
-}
-
-function recoveryLabel(
-  days: number | null | undefined,
-  locale: string
-): string {
-  const isPt = locale === "pt-BR";
-  const period = chartPeriodSuffix(days, locale);
-  return isPt
-    ? `Prontidão — tendência (${period})`
-    : `Readiness — trend (${period})`;
-}
-
-function energyLabel(days: number | null | undefined, locale: string): string {
-  const isPt = locale === "pt-BR";
-  const period = chartPeriodSuffix(days, locale);
-  return isPt
-    ? `Energia diária — média kcal (${period})`
-    : `Daily energy — avg kcal (${period})`;
-}
+// Chart label helpers removed in Sprint 25.11 — replaced by t.teaser.charts.* dictionary keys
 
 // ---------------------------------------------------------------------------
 // Component
@@ -179,7 +129,7 @@ export function InsightPreview({
   onOpenModal,
   embedded,
 }: Readonly<InsightPreviewProps>) {
-  const { t, locale } = useLocale();
+  const { t } = useLocale();
   const isDark = useDarkMode(theme);
   const sections: Sections | null = result.sections ?? null;
   const summary = result.summary;
@@ -195,13 +145,13 @@ export function InsightPreview({
     const cv = sections?.volatility?.sleep_hours?.cv;
     const cvNum = cv != null ? Number(cv) : null;
     if (cvNum == null || isNaN(cvNum)) {
-      return "Your body is showing clear patterns — here's what stands out";
+      return t.teaser.hero.adaptiveClear;
     }
     if (cvNum < 20) {
-      return "Your sleep is steady — your body is maintaining a stable rhythm";
+      return t.teaser.hero.adaptiveSteady;
     }
-    return "Your patterns are shifting — your body is adapting";
-  }, [sections]);
+    return t.teaser.hero.adaptiveShifting;
+  }, [sections, t]);
 
   // ---- Extract insights (deterministic) ----------------------------------
   const sleepInsights = useMemo(
@@ -434,11 +384,11 @@ export function InsightPreview({
             className="rounded-xl border border-[#e6b800] bg-[#e6b800]/5 p-4 mb-6 flex flex-col gap-1"
           >
             <div className="flex-1 min-w-0">
-              {/* Sprint 25.5: Option A provenance text */}
+              {/* Sprint 25.5: Option A provenance text — Sprint 25.11: localized */}
               <p className="text-sm font-bold text-foreground">
-                Built from{" "}
-                <span className="text-[#e6b800]">7 years</span>{" "}
-                of your real-life data
+                {t.teaser.provenance.builtFrom}{" "}
+                <span className="text-[#e6b800]">{t.teaser.provenance.yearsHighlight}</span>{" "}
+                {t.teaser.provenance.realLifeData}
               </p>
               {summary?.dataset_start && summary?.dataset_end && (
                 <p className="text-xs text-muted-foreground mt-0.5">
@@ -479,7 +429,7 @@ export function InsightPreview({
                       }`}
                     />
                     <span className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
-                      {translatePillar(hero.pillar, locale)}
+                      {t.portal.insightsPage.pillar[hero.pillar as keyof typeof t.portal.insightsPage.pillar] ?? hero.pillar}
                     </span>
                   </div>
                   <p className="text-base font-bold text-foreground leading-snug mb-1.5">
@@ -493,15 +443,11 @@ export function InsightPreview({
                   </p>
                   {isHrv && (
                     <p className="text-[10px] text-muted-foreground/50 italic mt-2 leading-relaxed">
-                      {locale === "pt-BR"
-                        ? "VFC: indica como seu corpo está se recuperando. Valores mais altos geralmente significam melhor recuperação."
-                        : "HRV: reflects how well your body is recovering. Higher values generally mean better recovery."}
+                      {t.teaser.insights.hrvExplanation}
                     </p>
                   )}
                   <p className="text-xs text-muted-foreground/40 mt-3 pt-3 border-t border-border/20">
-                    {locale === "pt-BR"
-                      ? "Baseado nos seus padrões recentes"
-                      : "This is based on your recent patterns"}
+                    {t.teaser.insights.basedOnPatterns}
                   </p>
                 </div>
               );
@@ -532,7 +478,7 @@ export function InsightPreview({
                           }`}
                         />
                         <span className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
-                          {translatePillar(ins.pillar, locale)}
+                          {t.portal.insightsPage.pillar[ins.pillar as keyof typeof t.portal.insightsPage.pillar] ?? ins.pillar}
                         </span>
                       </div>
                       <p className="text-sm font-semibold text-foreground leading-snug mb-1">
@@ -546,9 +492,7 @@ export function InsightPreview({
                       </p>
                       {isHrv && (
                         <p className="text-[10px] text-muted-foreground/50 italic mt-1.5 leading-relaxed">
-                          {locale === "pt-BR"
-                            ? "VFC: indica como seu corpo está se recuperando. Valores mais altos geralmente significam melhor recuperação."
-                            : "HRV: reflects how well your body is recovering. Higher values generally mean better recovery."}
+                          {t.teaser.insights.hrvExplanation}
                         </p>
                       )}
                     </div>
@@ -584,17 +528,17 @@ export function InsightPreview({
                       <SleepStageChart
                         data={stageData}
                         height={200}
-                        label={sleepStageLabel(summary?.days, locale)}
+                        label={t.teaser.charts.sleepStages}
                       />
                     ) : (
                       <>
                         <p className="text-[10px] font-medium text-muted-foreground uppercase tracking-wider mb-2">
-                          {sleepStageLabel(summary?.days, locale)}
+                          {t.teaser.charts.sleepStages}
                         </p>
                         <ChartEmptyState
                           height={200}
-                          title="Sleep stage pattern forming"
-                          message="More consistent sleep tracking will unlock this view"
+                          title={t.teaser.empty.sleep.title}
+                          message={t.teaser.empty.sleep.message}
                         />
                       </>
                     )}
@@ -614,17 +558,17 @@ export function InsightPreview({
                       <RecoveryScoreChart
                         score={score}
                         height={200}
-                        label={recoveryLabel(summary?.days, locale)}
+                        label={t.teaser.charts.recovery}
                       />
                     ) : (
                       <>
                         <p className="text-[10px] font-medium text-muted-foreground uppercase tracking-wider mb-2">
-                          {recoveryLabel(summary?.days, locale)}
+                          {t.teaser.charts.recovery}
                         </p>
                         <ChartEmptyState
                           height={200}
-                          title="Recovery pattern still building"
-                          message="We need a few active days to understand this pattern"
+                          title={t.teaser.empty.recovery.title}
+                          message={t.teaser.empty.recovery.message}
                         />
                       </>
                     )}
@@ -644,17 +588,17 @@ export function InsightPreview({
                       <DailyEnergyChart
                         data={activitySignals}
                         height={200}
-                        label={energyLabel(summary?.days, locale)}
+                        label={t.teaser.charts.energy}
                       />
                     ) : (
                       <>
                         <p className="text-[10px] font-medium text-muted-foreground uppercase tracking-wider mb-2">
-                          {energyLabel(summary?.days, locale)}
+                          {t.teaser.charts.energy}
                         </p>
                         <ChartEmptyState
                           height={200}
-                          title="Energy pattern forming"
-                          message="Your energy view appears once enough activity data is available"
+                          title={t.teaser.empty.energy.title}
+                          message={t.teaser.empty.energy.message}
                         />
                       </>
                     )}
