@@ -53,6 +53,24 @@ export interface DarthChartBinding {
   evidence_refs: string[];
 }
 
+export interface DarthChartAnnotation {
+  title: string;
+  insight: string;
+  proof_statement: string;
+}
+
+export interface DarthProofChart {
+  id: string;
+  role: "evidence" | "impact" | "supporting";
+  proves: "state" | "trajectory" | "conflict";
+  metric: string;
+  window: "last_7d" | "last_30d" | "baseline_30d";
+  priority: number;
+  type?: "divergence";
+  signals?: string[];
+  annotation: DarthChartAnnotation;
+}
+
 export interface DarthPresentation {
   hero: DarthInsightBlock;
   supporting: DarthInsightBlock[];
@@ -94,6 +112,13 @@ export interface DarthGuidance {
   suggested_action: string;
 }
 
+export interface DarthEvidence {
+  strength: number;
+  consistency: number;
+  coverage: number;
+  confidence_adjusted: number;
+}
+
 export interface DarthPayload {
   state?:
     | "RECOVERING"
@@ -104,6 +129,8 @@ export interface DarthPayload {
   trajectory?: DarthTrajectory;
   conflict?: DarthConflict;
   guidance?: DarthGuidance;
+  evidence?: DarthEvidence;
+  charts?: DarthProofChart[];
   confidence?: number;
   explanation?: string;
   time_windows?: Record<string, { name: string; start: string; end: string }>;

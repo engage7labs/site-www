@@ -14,8 +14,8 @@
 
 import { useLocale } from "@/components/providers/locale-provider";
 import {
-  type DarthChartBinding,
   type DarthPayload,
+  type DarthProofChart,
   getDarthPayload,
   getDarthPresentation,
   selectDarthCopy,
@@ -61,6 +61,7 @@ import {
   Sparkles,
 } from "lucide-react";
 import Link from "next/link";
+import type { ReactNode } from "react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { ChartEmptyState } from "./chart-empty-state";
 import { DailyEnergyChart } from "./daily-energy-chart";
@@ -121,26 +122,38 @@ function useDarkMode(theme?: string) {
 function darthStateHeadline(darth: DarthPayload | null, fallback: string): string {
   const state = darth?.state;
   const direction = darth?.trajectory?.direction;
+  const strength = darth?.evidence?.strength ?? 0;
+  const consistency = darth?.evidence?.consistency ?? 0;
+  const evidenceTone =
+    strength >= 0.75
+      ? "with high evidence strength"
+      : strength >= 0.45
+        ? "with clear evidence"
+        : "with emerging evidence";
+  const consistencyTone =
+    consistency >= 0.75
+      ? "high consistency across the last 7 days"
+      : "mixed consistency across the last 7 days";
   if (state === "MISALIGNED_RECOVERY") {
     return direction === "deteriorating"
-      ? "Your recovery is deteriorating despite improving support signals"
-      : "Your signals are misaligned across recovery and support";
+      ? `Your recovery is deteriorating despite improving support signals, ${evidenceTone}`
+      : `Your signals are misaligned across recovery and support with ${consistencyTone}`;
   }
   if (state === "OVERREACHED") {
     return direction === "deteriorating"
-      ? "Your system is overreached and still deteriorating"
-      : "Your system is overreached against baseline";
+      ? `Your system is overreached and still deteriorating with ${consistencyTone}`
+      : `Your system is overreached against baseline, ${evidenceTone}`;
   }
   if (state === "STRAIN_ACCUMULATING") {
     return direction === "deteriorating"
-      ? "Your system is accumulating strain against baseline"
-      : "Your strain is rising faster than recovery";
+      ? `Your system is accumulating strain with ${consistencyTone}`
+      : `Your strain is rising faster than recovery, ${evidenceTone}`;
   }
   if (state === "RECOVERING") {
-    return "Your system is recovering across the latest 7-day window";
+    return `Your system is recovering across the last 7 days with ${evidenceTone}`;
   }
   if (state === "STABLE") {
-    return "Your system is stable against baseline";
+    return `Your system is stable against baseline with ${consistencyTone}`;
   }
   return fallback;
 }
@@ -207,6 +220,24 @@ export function InsightPreview({
   const darthCta = useMemo(
     () => selectDarthCta(darthPresentation?.cta, locale),
     [darthPresentation, locale]
+  );
+  const darthProofCharts = useMemo(() => {
+    const roleOrder: Record<DarthProofChart["role"], number> = {
+      evidence: 0,
+      impact: 1,
+      supporting: 2,
+    };
+    return [...(darthPayload?.charts ?? [])].sort((a, b) => {
+      const roleDelta = roleOrder[a.role] - roleOrder[b.role];
+      if (roleDelta !== 0) return roleDelta;
+      const priorityDelta = a.priority - b.priority;
+      if (priorityDelta !== 0) return priorityDelta;
+      return (darthPayload?.evidence?.strength ?? 0) * -1;
+    });
+  }, [darthPayload]);
+  const topEvidenceCharts = useMemo(
+    () => darthProofCharts.filter((chart) => chart.role === "evidence").slice(0, 2),
+    [darthProofCharts]
   );
 
   // ---- Duration ---------------------------------------------------------
@@ -409,116 +440,127 @@ export function InsightPreview({
     return () => obs.disconnect();
   }, []);
 
-  function renderChartRole(role: DarthChartBinding["role"] | undefined) {
+  function renderChartRole(role: DarthProofChart["role"] | "support" | undefined) {
     if (role === "impact") return t.teaser.chartRoles.impact;
-    if (role === "support") return t.teaser.chartRoles.support;
+    if (role === "support" || role === "supporting") return t.teaser.chartRoles.support;
     return t.teaser.chartRoles.evidence;
   }
 
-  function renderDarthChartCard(binding: DarthChartBinding) {
-    const bindingKey = binding.key;
-    const isPrimary = binding.emphasis === "primary";
-    const cardClass = `rounded-xl border ${
-      isPrimary ? "border-[#e6b800]/45 bg-[#e6b800]/[0.035]" : "border-border bg-card"
-    } p-4 shadow-sm`;
-    const roleLabel = renderChartRole(binding.role);
-    const evidenceWindow = darthPayload?.trajectory?.window ?? "last_7d vs baseline_30d";
+  function renderDivergenceChart(chart: DarthProofChart) {
+    const signals = chart.signals?.slice(0, 2) ?? [];
+    return (
+      <div className="h-[200px] rounded-lg border border-[#e6b800]/25 bg-background/40 px-4 py-5">
+        <div className="grid h-full grid-cols-[1fr_auto_1fr] items-center gap-3">
+          <div className="flex h-full flex-col justify-end rounded-lg border border-emerald-500/25 bg-emerald-500/[0.06] p-3">
+            <div className="h-2/3 rounded-md bg-emerald-500/35" />
+            <p className="mt-3 text-[10px] font-semibold uppercase tracking-wider text-emerald-600 dark:text-emerald-300">
+              {(signals[0] ?? "support signal").replaceAll("_", " ")}
+            </p>
+          </div>
+          <div className="flex h-full flex-col items-center justify-center">
+            <div className="h-full w-px bg-[#e6b800]/35" />
+            <span className="my-2 rounded-full border border-[#e6b800]/35 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-[#e6b800]">
+              Divergence
+            </span>
+            <div className="h-full w-px bg-[#e6b800]/35" />
+          </div>
+          <div className="flex h-full flex-col justify-start rounded-lg border border-rose-500/25 bg-rose-500/[0.06] p-3">
+            <div className="h-2/3 rounded-md bg-rose-500/35" />
+            <p className="mt-3 text-[10px] font-semibold uppercase tracking-wider text-rose-600 dark:text-rose-300">
+              {(signals[1] ?? "recovery signal").replaceAll("_", " ")}
+            </p>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
-    if (bindingKey === "sleep_stages") {
+  function renderDarthProofChartCard(chart: DarthProofChart) {
+    const chartId = chart.id.split("_2")[0].split("_3")[0];
+    const cardClass =
+      "rounded-xl border border-[#e6b800]/45 bg-[#e6b800]/[0.035] p-4 shadow-sm";
+    const roleLabel = renderChartRole(chart.role);
+
+    let visual: ReactNode = null;
+    if (chart.type === "divergence") {
+      visual = renderDivergenceChart(chart);
+    } else if (chartId === "sleep_stages") {
       const stageData = sections?.sleep_stages;
       const hasStages =
         stageData?.has_stage_data === true &&
         ((stageData.averages?.core_hours ?? 0) +
           (stageData.averages?.deep_hours ?? 0) +
           (stageData.averages?.rem_hours ?? 0)) > 0;
-      return (
-        <div className={cardClass}>
-          <p className="mb-2 text-[10px] font-semibold uppercase tracking-wider text-[#e6b800]">
-            {roleLabel} · {evidenceWindow}
-          </p>
-          {hasStages ? (
-            <SleepStageChart
-              data={stageData}
-              height={200}
-              label={t.teaser.charts.sleepStages}
-            />
-          ) : (
-            <>
-              <p className="text-[10px] font-medium text-muted-foreground uppercase tracking-wider mb-2">
-                {t.teaser.charts.sleepStages}
-              </p>
-              <ChartEmptyState
-                height={200}
-                title={t.teaser.empty.sleep.title}
-                message={t.teaser.empty.sleep.message}
-              />
-            </>
-          )}
-        </div>
+      visual = hasStages ? (
+        <SleepStageChart
+          data={stageData}
+          height={200}
+          label={t.teaser.charts.sleepStages}
+        />
+      ) : (
+        <ChartEmptyState
+          height={200}
+          title={t.teaser.empty.sleep.title}
+          message={t.teaser.empty.sleep.message}
+        />
       );
-    }
-
-    if (bindingKey === "recovery_score") {
+    } else if (chartId === "recovery_score") {
       const score = sections?.recovery_signals?.recovery_composite_score;
       const hasScore = score != null && typeof score === "number";
-      return (
-        <div className={cardClass}>
-          <p className="mb-2 text-[10px] font-semibold uppercase tracking-wider text-[#e6b800]">
-            {roleLabel} · {evidenceWindow}
-          </p>
-          {hasScore ? (
-            <RecoveryScoreChart
-              score={score}
-              height={200}
-              label={t.teaser.charts.recovery}
-            />
-          ) : (
-            <>
-              <p className="text-[10px] font-medium text-muted-foreground uppercase tracking-wider mb-2">
-                {t.teaser.charts.recovery}
-              </p>
-              <ChartEmptyState
-                height={200}
-                title={t.teaser.empty.recovery.title}
-                message={t.teaser.empty.recovery.message}
-              />
-            </>
-          )}
-        </div>
+      visual = hasScore ? (
+        <RecoveryScoreChart
+          score={score}
+          height={200}
+          label={t.teaser.charts.recovery}
+        />
+      ) : (
+        <ChartEmptyState
+          height={200}
+          title={t.teaser.empty.recovery.title}
+          message={t.teaser.empty.recovery.message}
+        />
       );
-    }
-
-    if (bindingKey === "daily_energy") {
+    } else if (chartId === "daily_energy") {
       const activitySignals = sections?.activity_signals;
       const hasEnergy = activitySignals?.basal_energy_cal?.mean != null;
-      return (
-        <div className={cardClass}>
-          <p className="mb-2 text-[10px] font-semibold uppercase tracking-wider text-[#e6b800]">
-            {roleLabel} · {evidenceWindow}
-          </p>
-          {hasEnergy ? (
-            <DailyEnergyChart
-              data={activitySignals}
-              height={200}
-              label={t.teaser.charts.energy}
-            />
-          ) : (
-            <>
-              <p className="text-[10px] font-medium text-muted-foreground uppercase tracking-wider mb-2">
-                {t.teaser.charts.energy}
-              </p>
-              <ChartEmptyState
-                height={200}
-                title={t.teaser.empty.energy.title}
-                message={t.teaser.empty.energy.message}
-              />
-            </>
-          )}
-        </div>
+      visual = hasEnergy ? (
+        <DailyEnergyChart
+          data={activitySignals}
+          height={200}
+          label={t.teaser.charts.energy}
+        />
+      ) : (
+        <ChartEmptyState
+          height={200}
+          title={t.teaser.empty.energy.title}
+          message={t.teaser.empty.energy.message}
+        />
       );
     }
 
-    return null;
+    if (!visual) return null;
+
+    return (
+      <div className={cardClass}>
+        <div className="mb-3 flex flex-wrap items-center gap-2">
+          <span className="text-[10px] font-semibold uppercase tracking-wider text-[#e6b800]">
+            {roleLabel} · proves {chart.proves}
+          </span>
+          <span className="rounded-full border border-border/70 px-2 py-0.5 text-[10px] font-medium uppercase tracking-wider text-muted-foreground">
+            {chart.window.replaceAll("_", " ")}
+          </span>
+        </div>
+        {visual}
+        <div className="mt-3 border-t border-border/50 pt-3">
+          <p className="text-sm font-semibold leading-snug text-foreground">
+            {chart.annotation.insight}
+          </p>
+          <p className="mt-1 text-xs leading-relaxed text-muted-foreground">
+            {chart.annotation.proof_statement}
+          </p>
+        </div>
+      </div>
+    );
   }
 
   // -----------------------------------------------------------------------
@@ -809,18 +851,28 @@ export function InsightPreview({
           </motion.div>
         )}
 
-        {/* 4. New signals block — Sprint 25.9: always rendered; empty state when data absent */}
-        {usesDarth && darthPresentation && (
+        {/* 4. PROOF — evidence charts only, bound directly to DARTH reasoning */}
+        {usesDarth && topEvidenceCharts.length > 0 && (
           <motion.div
             initial={{ opacity: 0, y: 12 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.4 }}
             className="mb-6"
           >
-            <div className="grid gap-4 sm:grid-cols-3">
-              {darthPresentation.chart_bindings.map((binding) => (
-                <div key={binding.key} className="flex flex-col gap-1.5">
-                  {renderDarthChartCard(binding)}
+            <div className="mb-3 flex items-center justify-between gap-3">
+              <p className="text-[10px] font-semibold uppercase tracking-wider text-[#e6b800]">
+                PROOF
+              </p>
+              {darthPayload?.evidence && (
+                <p className="text-[10px] font-medium uppercase tracking-wider text-muted-foreground">
+                  {Math.round(darthPayload.evidence.confidence_adjusted * 100)}% adjusted confidence
+                </p>
+              )}
+            </div>
+            <div className="grid gap-4 sm:grid-cols-2">
+              {topEvidenceCharts.map((chart) => (
+                <div key={chart.id} className="flex flex-col gap-1.5">
+                  {renderDarthProofChartCard(chart)}
                 </div>
               ))}
             </div>
