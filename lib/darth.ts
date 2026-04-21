@@ -76,7 +76,37 @@ export interface DarthPresentation {
   };
 }
 
+export interface DarthTrajectory {
+  direction: "improving" | "deteriorating" | "unstable";
+  window: string;
+  confidence: number;
+}
+
+export interface DarthConflict {
+  exists: boolean;
+  signals: string[];
+  explanation: string;
+}
+
+export interface DarthGuidance {
+  decision_window_hours: number;
+  risk_type: string;
+  suggested_action: string;
+}
+
 export interface DarthPayload {
+  state?:
+    | "RECOVERING"
+    | "STRAIN_ACCUMULATING"
+    | "OVERREACHED"
+    | "STABLE"
+    | "MISALIGNED_RECOVERY";
+  trajectory?: DarthTrajectory;
+  conflict?: DarthConflict;
+  guidance?: DarthGuidance;
+  confidence?: number;
+  explanation?: string;
+  time_windows?: Record<string, { name: string; start: string; end: string }>;
   narrative_state?: {
     primary_theme: string;
     tone: string;

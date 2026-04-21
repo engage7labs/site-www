@@ -15,6 +15,8 @@
 import { useLocale } from "@/components/providers/locale-provider";
 import {
   type DarthChartBinding,
+  type DarthPayload,
+  getDarthPayload,
   getDarthPresentation,
   selectDarthCopy,
   selectDarthCta,
@@ -116,6 +118,45 @@ function useDarkMode(theme?: string) {
   return theme === "black";
 }
 
+function darthStateHeadline(darth: DarthPayload | null, fallback: string): string {
+  const state = darth?.state;
+  const direction = darth?.trajectory?.direction;
+  if (state === "MISALIGNED_RECOVERY") {
+    return direction === "deteriorating"
+      ? "Your recovery is deteriorating despite improving support signals"
+      : "Your signals are misaligned across recovery and support";
+  }
+  if (state === "OVERREACHED") {
+    return direction === "deteriorating"
+      ? "Your system is overreached and still deteriorating"
+      : "Your system is overreached against baseline";
+  }
+  if (state === "STRAIN_ACCUMULATING") {
+    return direction === "deteriorating"
+      ? "Your system is accumulating strain against baseline"
+      : "Your strain is rising faster than recovery";
+  }
+  if (state === "RECOVERING") {
+    return "Your system is recovering across the latest 7-day window";
+  }
+  if (state === "STABLE") {
+    return "Your system is stable against baseline";
+  }
+  return fallback;
+}
+
+function darthSurprisingInsight(darth: DarthPayload | null): string | null {
+  if (!darth) return null;
+  if (darth.conflict?.exists) return darth.conflict.explanation;
+  if (darth.trajectory?.direction === "deteriorating") {
+    return `The ${darth.trajectory.window} trajectory is deteriorating, so this is not a snapshot issue.`;
+  }
+  if (darth.trajectory?.direction === "improving") {
+    return `The ${darth.trajectory.window} trajectory is improving, so the useful move is controlled load.`;
+  }
+  return darth.explanation ?? null;
+}
+
 // ---------------------------------------------------------------------------
 // Locale helpers (Sprint 25.2)
 // ---------------------------------------------------------------------------
@@ -139,11 +180,15 @@ export function InsightPreview({
   const isDark = useDarkMode(theme);
   const sections: Sections | null = result.sections ?? null;
   const summary = result.summary;
+  const darthPayload = useMemo(
+    () => getDarthPayload(result.sections),
+    [result.sections]
+  );
   const darthPresentation = useMemo(
     () => getDarthPresentation(result.sections),
     [result.sections]
   );
-  const usesDarth = Boolean(darthPresentation?.hero);
+  const usesDarth = Boolean(darthPayload?.state && darthPresentation?.hero);
   const darthHeroCopy = useMemo(
     () =>
       darthPresentation?.hero
@@ -182,6 +227,14 @@ export function InsightPreview({
     }
     return t.teaser.hero.adaptiveShifting;
   }, [sections, t]);
+  const stateHeadline = useMemo(
+    () => darthStateHeadline(darthPayload, adaptiveHeadline),
+    [adaptiveHeadline, darthPayload]
+  );
+  const darthSurprise = useMemo(
+    () => darthSurprisingInsight(darthPayload),
+    [darthPayload]
+  );
 
   // ---- Extract insights (deterministic) ----------------------------------
   const sleepInsights = useMemo(
@@ -369,6 +422,7 @@ export function InsightPreview({
       isPrimary ? "border-[#e6b800]/45 bg-[#e6b800]/[0.035]" : "border-border bg-card"
     } p-4 shadow-sm`;
     const roleLabel = renderChartRole(binding.role);
+    const evidenceWindow = darthPayload?.trajectory?.window ?? "last_7d vs baseline_30d";
 
     if (bindingKey === "sleep_stages") {
       const stageData = sections?.sleep_stages;
@@ -380,7 +434,7 @@ export function InsightPreview({
       return (
         <div className={cardClass}>
           <p className="mb-2 text-[10px] font-semibold uppercase tracking-wider text-[#e6b800]">
-            {roleLabel}
+            {roleLabel} · {evidenceWindow}
           </p>
           {hasStages ? (
             <SleepStageChart
@@ -410,7 +464,7 @@ export function InsightPreview({
       return (
         <div className={cardClass}>
           <p className="mb-2 text-[10px] font-semibold uppercase tracking-wider text-[#e6b800]">
-            {roleLabel}
+            {roleLabel} · {evidenceWindow}
           </p>
           {hasScore ? (
             <RecoveryScoreChart
@@ -440,7 +494,7 @@ export function InsightPreview({
       return (
         <div className={cardClass}>
           <p className="mb-2 text-[10px] font-semibold uppercase tracking-wider text-[#e6b800]">
-            {roleLabel}
+            {roleLabel} · {evidenceWindow}
           </p>
           {hasEnergy ? (
             <DailyEnergyChart
@@ -493,10 +547,28 @@ export function InsightPreview({
 
       <main className={embedded ? "" : "max-w-6xl mx-auto px-6 pt-8 pb-16"}>
         <h1 className="text-3xl lg:text-4xl font-semibold text-foreground leading-tight mb-6">
-          {usesDarth && darthHeroCopy ? darthHeroCopy.title : adaptiveHeadline}
+          {stateHeadline}
         </h1>
 
         {/* 2. Surprising personal insight */}
+        {usesDarth && darthSurprise && (
+          <motion.div
+            initial={{ opacity: 0, y: 12 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.4 }}
+            className="mb-6 mx-auto max-w-2xl rounded-xl border border-accent/20 bg-accent/[0.04] px-5 py-4 text-center"
+          >
+            <div className="flex items-center justify-center gap-2 mb-1.5">
+              <Sparkles className="h-3.5 w-3.5 text-accent" />
+              <span className="text-[10px] font-semibold uppercase tracking-wider text-accent/80">
+                {darthPayload?.conflict?.exists ? "Signal conflict" : "Trajectory"}
+              </span>
+            </div>
+            <p className="text-sm text-foreground/90 leading-relaxed">
+              {darthSurprise}
+            </p>
+          </motion.div>
+        )}
         {!usesDarth && surprisingInsight && (
           <motion.div
             initial={{ opacity: 0, y: 12 }}
@@ -564,10 +636,16 @@ export function InsightPreview({
                 )}
               </div>
               <p className="text-xl font-semibold text-foreground leading-snug mb-2">
-                {darthHeroCopy.action}
+                {darthPayload?.guidance?.suggested_action ?? darthHeroCopy.action}
               </p>
+              {darthPayload?.guidance && (
+                <p className="mb-3 text-xs font-medium uppercase tracking-wider text-[#e6b800]">
+                  Decision window: {darthPayload.guidance.decision_window_hours}h ·{" "}
+                  {darthPayload.guidance.risk_type.replaceAll("_", " ")}
+                </p>
+              )}
               <p className="text-sm text-muted-foreground leading-relaxed mb-4 max-w-2xl">
-                {darthHeroCopy.body}
+                {darthPayload?.explanation ?? darthHeroCopy.body}
               </p>
               <div className="grid gap-3 sm:grid-cols-[1.25fr_0.75fr]">
                 <div className="rounded-lg border border-border/60 bg-background/40 px-3 py-2">
@@ -575,7 +653,11 @@ export function InsightPreview({
                     {t.teaser.evidenceLabel}
                   </p>
                   <p className="text-[11px] text-muted-foreground/75 font-mono leading-relaxed">
-                    {darthHeroCopy.evidence}
+                    {darthPayload?.trajectory
+                      ? `${darthPayload.trajectory.window} | ${darthPayload.trajectory.direction} | ${Math.round(
+                          darthPayload.trajectory.confidence * 100
+                        )}% confidence`
+                      : darthHeroCopy.evidence}
                   </p>
                 </div>
                 <div className="rounded-lg border border-border/60 bg-background/30 px-3 py-2">
