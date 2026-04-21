@@ -1,4 +1,4 @@
-export type DarthLocale = "en-IE" | "pt-BR";
+export type DarthLocale = "en-IE" | "pt-BR" | "hi-IN";
 
 export interface DarthCopy {
   title: string;
@@ -18,7 +18,27 @@ export interface DarthInsightBlock {
   meaning: string;
   action: string;
   evidence_refs: string[];
+  signal_refs?: Array<{
+    name: string;
+    type?: string;
+    window?: string;
+    baseline_value?: number | null;
+    confidence?: number;
+  }>;
   chart_binding: string | null;
+  confidence?: number;
+  severity?: string;
+  window_label?: string;
+  comparison?: {
+    type: string;
+    baseline: number | null;
+    label: string;
+    metric?: string;
+  };
+  visual_emphasis?: {
+    tone?: string;
+    accent?: string;
+  };
   params: Record<string, unknown>;
   copy?: Record<string, DarthCopy>;
 }
@@ -26,6 +46,10 @@ export interface DarthInsightBlock {
 export interface DarthChartBinding {
   key: string;
   component: string;
+  role?: "evidence" | "impact" | "support";
+  label_key?: string;
+  empty_state_key?: string;
+  emphasis?: "primary" | "secondary";
   evidence_refs: string[];
 }
 
@@ -42,6 +66,13 @@ export interface DarthPresentation {
     primary_domain?: string;
     severity?: string;
     direction?: string;
+    confidence?: number;
+    supporting_domains?: string[];
+  };
+  layout_hints?: Record<string, unknown>;
+  visual_emphasis?: {
+    hero_tone?: string;
+    accent?: string;
   };
 }
 
@@ -77,6 +108,7 @@ export function getDarthExplainability(sections: unknown): DarthInsightBlock[] {
 }
 
 export function resolveDarthLocale(locale: string): DarthLocale {
+  if (locale === "hi-IN") return "hi-IN";
   return locale === "pt-BR" ? "pt-BR" : "en-IE";
 }
 

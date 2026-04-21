@@ -559,6 +559,14 @@ export const hiIN: Dictionary = {
 
   // Teaser (insight-preview)
   teaser: {
+    confidence: "विश्वास",
+    evidenceLabel: "प्रमाण",
+    meaningLabel: "यह क्यों मायने रखता है",
+    chartRoles: {
+      evidence: "प्रमाण",
+      impact: "प्रभाव",
+      support: "सहायक संकेत",
+    },
     hero: {
       adaptiveClear: "आपका शरीर स्पष्ट पैटर्न दिखा रहा है — यहाँ जो सामने आया वह है",
       adaptiveSteady: "आपकी नींद स्थिर है — आपका शरीर एक स्थिर लय बनाए रख रहा है",

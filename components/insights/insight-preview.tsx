@@ -14,6 +14,7 @@
 
 import { useLocale } from "@/components/providers/locale-provider";
 import {
+  type DarthChartBinding,
   getDarthPresentation,
   selectDarthCopy,
   selectDarthCta,
@@ -355,7 +356,20 @@ export function InsightPreview({
     return () => obs.disconnect();
   }, []);
 
-  function renderDarthChartCard(bindingKey: string) {
+  function renderChartRole(role: DarthChartBinding["role"] | undefined) {
+    if (role === "impact") return t.teaser.chartRoles.impact;
+    if (role === "support") return t.teaser.chartRoles.support;
+    return t.teaser.chartRoles.evidence;
+  }
+
+  function renderDarthChartCard(binding: DarthChartBinding) {
+    const bindingKey = binding.key;
+    const isPrimary = binding.emphasis === "primary";
+    const cardClass = `rounded-xl border ${
+      isPrimary ? "border-[#e6b800]/45 bg-[#e6b800]/[0.035]" : "border-border bg-card"
+    } p-4 shadow-sm`;
+    const roleLabel = renderChartRole(binding.role);
+
     if (bindingKey === "sleep_stages") {
       const stageData = sections?.sleep_stages;
       const hasStages =
@@ -364,7 +378,10 @@ export function InsightPreview({
           (stageData.averages?.deep_hours ?? 0) +
           (stageData.averages?.rem_hours ?? 0)) > 0;
       return (
-        <div className="rounded-xl border border-accent/30 bg-card p-4">
+        <div className={cardClass}>
+          <p className="mb-2 text-[10px] font-semibold uppercase tracking-wider text-[#e6b800]">
+            {roleLabel}
+          </p>
           {hasStages ? (
             <SleepStageChart
               data={stageData}
@@ -391,7 +408,10 @@ export function InsightPreview({
       const score = sections?.recovery_signals?.recovery_composite_score;
       const hasScore = score != null && typeof score === "number";
       return (
-        <div className="rounded-xl border border-border bg-card p-4">
+        <div className={cardClass}>
+          <p className="mb-2 text-[10px] font-semibold uppercase tracking-wider text-[#e6b800]">
+            {roleLabel}
+          </p>
           {hasScore ? (
             <RecoveryScoreChart
               score={score}
@@ -418,7 +438,10 @@ export function InsightPreview({
       const activitySignals = sections?.activity_signals;
       const hasEnergy = activitySignals?.basal_energy_cal?.mean != null;
       return (
-        <div className="rounded-xl border border-border bg-card p-4">
+        <div className={cardClass}>
+          <p className="mb-2 text-[10px] font-semibold uppercase tracking-wider text-[#e6b800]">
+            {roleLabel}
+          </p>
           {hasEnergy ? (
             <DailyEnergyChart
               data={activitySignals}
@@ -470,7 +493,7 @@ export function InsightPreview({
 
       <main className={embedded ? "" : "max-w-6xl mx-auto px-6 pt-8 pb-16"}>
         <h1 className="text-3xl lg:text-4xl font-semibold text-foreground leading-tight mb-6">
-          {adaptiveHeadline}
+          {usesDarth && darthHeroCopy ? darthHeroCopy.title : adaptiveHeadline}
         </h1>
 
         {/* 2. Surprising personal insight */}
@@ -526,24 +549,47 @@ export function InsightPreview({
             transition={{ duration: 0.4 }}
             className="mb-6"
           >
-            <div className="rounded-xl border border-accent/30 bg-accent/[0.04] p-5 mb-3">
-              <div className="flex items-center gap-2 mb-2">
+            <div className="rounded-xl border border-[#e6b800]/45 bg-[radial-gradient(circle_at_top_left,rgba(230,184,0,0.12),transparent_38%),rgba(230,184,0,0.035)] p-6 mb-3 shadow-sm">
+              <div className="flex flex-wrap items-center gap-2 mb-3">
                 <span className="inline-block h-2 w-2 rounded-full shrink-0 bg-accent" />
                 <span className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
                   {t.portal.insightsPage.pillar[
                     darthPresentation.hero.domain as keyof typeof t.portal.insightsPage.pillar
                   ] ?? darthPresentation.hero.domain}
                 </span>
+                {darthPresentation.hero.confidence != null && (
+                  <span className="rounded-full border border-[#e6b800]/35 px-2 py-0.5 text-[10px] font-medium uppercase tracking-wider text-[#e6b800]">
+                    {Math.round(darthPresentation.hero.confidence * 100)}% {t.teaser.confidence}
+                  </span>
+                )}
               </div>
-              <p className="text-base font-bold text-foreground leading-snug mb-1.5">
+              <p className="text-xl font-semibold text-foreground leading-snug mb-2">
                 {darthHeroCopy.action}
               </p>
-              <p className="text-sm text-muted-foreground leading-relaxed mb-2.5">
+              <p className="text-sm text-muted-foreground leading-relaxed mb-4 max-w-2xl">
                 {darthHeroCopy.body}
               </p>
-              <p className="text-[11px] text-muted-foreground/60 font-mono leading-relaxed">
-                {darthHeroCopy.evidence}
-              </p>
+              <div className="grid gap-3 sm:grid-cols-[1.25fr_0.75fr]">
+                <div className="rounded-lg border border-border/60 bg-background/40 px-3 py-2">
+                  <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground mb-1">
+                    {t.teaser.evidenceLabel}
+                  </p>
+                  <p className="text-[11px] text-muted-foreground/75 font-mono leading-relaxed">
+                    {darthHeroCopy.evidence}
+                  </p>
+                </div>
+                <div className="rounded-lg border border-border/60 bg-background/30 px-3 py-2">
+                  <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground mb-1">
+                    {t.teaser.meaningLabel}
+                  </p>
+                  <p className="text-xs text-muted-foreground leading-relaxed">
+                    {darthPresentation.hero.window_label ?? darthPresentation.hero.window}
+                    {darthPresentation.hero.comparison?.label
+                      ? ` · ${darthPresentation.hero.comparison.label}`
+                      : ""}
+                  </p>
+                </div>
+              </div>
             </div>
 
             {darthSupporting.length > 0 && (
@@ -692,7 +738,7 @@ export function InsightPreview({
             <div className="grid gap-4 sm:grid-cols-3">
               {darthPresentation.chart_bindings.map((binding) => (
                 <div key={binding.key} className="flex flex-col gap-1.5">
-                  {renderDarthChartCard(binding.key)}
+                  {renderDarthChartCard(binding)}
                 </div>
               ))}
             </div>
