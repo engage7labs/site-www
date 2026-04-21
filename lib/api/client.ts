@@ -72,6 +72,19 @@ interface RequestConfig extends RequestInit {
   skipRetry?: boolean;
 }
 
+let hasLoggedApiBaseUrl = false;
+
+function logApiBaseUrlDebug(url: string, isProxied: boolean): void {
+  if (hasLoggedApiBaseUrl) return;
+  hasLoggedApiBaseUrl = true;
+
+  console.log("[api-debug] API base URL selected by browser client", {
+    API_BASE_URL,
+    isProxied,
+    requestUrl: url,
+  });
+}
+
 function isUploadEndpoint(endpoint: string): boolean {
   return endpoint === "/api/analyze-upload";
 }
@@ -129,6 +142,7 @@ async function request<T>(
       // Proxy endpoints (/api/proxy/*) are same-origin; others use the external API base URL.
       const isProxied = endpoint.startsWith("/api/proxy/");
       const url = isProxied ? endpoint : `${API_BASE_URL}${endpoint}`;
+      logApiBaseUrlDebug(url, isProxied);
       const response = await fetch(url, {
         ...fetchConfig,
         signal: controller.signal,

@@ -25,7 +25,11 @@ Both **Production** and **Preview** deployments must set these variables:
 
 - `NEXT_PUBLIC_APP_ENV=development`
 - `NEXT_PUBLIC_SITE_URL=https://dev.engage7.ie` (or leave unset for automatic default)
-- `NEXT_PUBLIC_API_BASE_URL=https://api-dev.engage7.ie` (or appropriate DEV API endpoint)
+- `NEXT_PUBLIC_API_BASE_URL=https://engage7-api-dev.orangeisland-abf82cd7.northeurope.azurecontainerapps.io`
+
+`NEXT_PUBLIC_API_BASE_URL` is embedded into browser JavaScript during the Vercel build.
+Changing it in a runtime environment after `next build` will not update the client bundle;
+fix the Vercel environment variable and redeploy.
 
 ## Why This Matters
 
@@ -115,6 +119,14 @@ After any deployment:
 - [ ] DEV badge visible in bottom-left corner (pulsing amber dot + "DEV" text)
 - [ ] Browser tab title: `[DEV] Engage7 — ...`
 - [ ] Open Graph image meta tag points to `dev.engage7.ie`
+- [ ] `/api/debug/env` returns `NEXT_PUBLIC_API_BASE_URL=https://engage7-api-dev.orangeisland-abf82cd7.northeurope.azurecontainerapps.io`
+- [ ] Browser console shows `[api-debug]` with `API_BASE_URL=https://engage7-api-dev.orangeisland-abf82cd7.northeurope.azurecontainerapps.io`
+- [ ] Vercel deployment source includes the expected API URL in built static chunks.
+
+```bash
+rg "engage7-api-dev\\.orangeisland-abf82cd7\\.northeurope\\.azurecontainerapps\\.io" .next/static --glob "!*.map"
+rg "http://localhost:8000" .next/static --glob "!*.map"
+```
 
 ## Troubleshooting
 
@@ -129,6 +141,13 @@ After any deployment:
 - Check `NEXT_PUBLIC_APP_ENV` is set to `development` in Preview env vars
 - Check Vercel domain assignment: `dev.engage7.ie` should be assigned to `dev` branch
 - Verify social shared links point to `dev.engage7.ie`, not `www.engage7.ie`
+
+### "dev.engage7.ie calls localhost or the wrong API"
+
+- Check Vercel Preview env var `NEXT_PUBLIC_API_BASE_URL`
+- Expected value: `https://engage7-api-dev.orangeisland-abf82cd7.northeurope.azurecontainerapps.io`
+- Redeploy after fixing the env var; `NEXT_PUBLIC_*` values are build-time client values
+- Open `/api/debug/env` on the deployment to compare runtime env with the browser console `[api-debug]` value
 
 ### "Social shares show wrong domain"
 
