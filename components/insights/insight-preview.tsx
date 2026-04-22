@@ -148,6 +148,10 @@ function assertDarthContract(darth: DarthPayload): void {
   }
 }
 
+function hasDarthClaimContract(darth: DarthPayload | null): darth is DarthPayload {
+  return Boolean(darth?.primary_claim || darth?.guidance?.statement);
+}
+
 // ---------------------------------------------------------------------------
 // Locale helpers (Sprint 25.2)
 // ---------------------------------------------------------------------------
@@ -181,6 +185,7 @@ export function InsightPreview({
   );
   const usesDarth = useMemo(() => {
     if (!darthPayload) return false;
+    if (!hasDarthClaimContract(darthPayload)) return false;
     assertDarthContract(darthPayload);
     return true;
   }, [darthPayload]);
@@ -234,8 +239,8 @@ export function InsightPreview({
     return t.teaser.hero.adaptiveShifting;
   }, [sections, t]);
   const stateHeadline = useMemo(
-    () => darthPayload?.primary_claim ?? adaptiveHeadline,
-    [adaptiveHeadline, darthPayload]
+    () => (usesDarth ? darthPayload?.primary_claim ?? adaptiveHeadline : adaptiveHeadline),
+    [adaptiveHeadline, darthPayload, usesDarth]
   );
 
   // ---- Extract insights (deterministic) ----------------------------------
