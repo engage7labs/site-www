@@ -522,7 +522,7 @@ export function extractActivitySignalInsights(
 }
 
 // ---------------------------------------------------------------------------
-// Aggregation Helper — "What Matters Today" (Sprint 17.0)
+// Aggregation Helper — "What Matters In The Active Window" (Sprint 17.0)
 // ---------------------------------------------------------------------------
 
 /**
@@ -533,7 +533,7 @@ export function extractActivitySignalInsights(
  * - At least 1 from sleep or recovery
  * - Sorted by score (highest first)
  *
- * Useful for decision-support dashboards and "what matters today" views.
+ * Useful for decision-support dashboards and active-window priority views.
  */
 export function getTopInsights(allInsights: InsightText[]): InsightText[] {
   if (allInsights.length === 0) return [];

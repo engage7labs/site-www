@@ -61,10 +61,12 @@ export interface DarthChartAnnotation {
 
 export interface DarthProofChart {
   id: string;
-  role: "evidence" | "impact" | "supporting";
+  role: "evidence" | "supporting" | "conflict";
   proves: "state" | "trajectory" | "conflict";
   metric: string;
-  window: "last_7d" | "last_30d" | "baseline_30d";
+  window: "latest_day" | "last_7d" | "last_30d";
+  baseline_reference: "baseline_30d";
+  proof_statement: string;
   priority: number;
   type?: "divergence";
   signals?: string[];
@@ -109,7 +111,11 @@ export interface DarthConflict {
 export interface DarthGuidance {
   decision_window_hours: number;
   risk_type: string;
+  pattern_continues: string;
+  predicted_outcome: string;
+  recommended_adjustment: string;
   suggested_action: string;
+  statement: string;
 }
 
 export interface DarthEvidence {
@@ -124,9 +130,12 @@ export interface DarthPayload {
     | "RECOVERING"
     | "STRAIN_ACCUMULATING"
     | "OVERREACHED"
-    | "STABLE"
-    | "MISALIGNED_RECOVERY";
+      | "STABLE"
+      | "MISALIGNED_RECOVERY";
   trajectory?: DarthTrajectory;
+  primary_claim?: string;
+  dominant_signal?: string | null;
+  conflicting_signal?: string | null;
   conflict?: DarthConflict;
   guidance?: DarthGuidance;
   evidence?: DarthEvidence;

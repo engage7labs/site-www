@@ -2,7 +2,7 @@
  * DailyBriefing — Sprint 19.0
  *
  * Hero card for the portal overview page. Renders a deterministic
- * daily briefing: current state, what to avoid, projection, and
+ * daily briefing: active window, what to avoid, projection, and
  * light adjustments — all from the user's own data.
  *
  * Language: simple, calm, human. No jargon.
@@ -66,7 +66,7 @@ const STATE_CONFIG: Record<
 > = {
   strained: {
     label: "Strained",
-    description: "Your body is signalling it needs extra care today.",
+    description: "Your body is signalling it needs extra care in this window.",
     icon: AlertTriangle,
     color: "text-amber-600 dark:text-amber-400",
     bg: "bg-amber-50/80 dark:bg-amber-950/30",
@@ -279,7 +279,7 @@ export function DailyBriefing() {
       {b.avoid.length > 0 && (
         <div>
           <h3 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-2">
-            What to avoid today
+            What to avoid in this window
           </h3>
           <div className="space-y-1.5">
             {b.avoid.map((a, i) => (
