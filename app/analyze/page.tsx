@@ -18,8 +18,6 @@ import { submitAnalysisUpload } from "@/lib/api/analysis";
 import { ApiClientError } from "@/lib/api/client";
 import { getOrCreateSessionId } from "@/lib/api/events";
 import {
-  trackAnalysisStarted,
-  trackErrorOccurred,
   trackUploadCompleted,
   trackUploadStarted,
 } from "@/lib/telemetry";
@@ -69,11 +67,7 @@ export default function AnalyzePage() {
 
     setIsUploading(true);
 
-    // Track upload started with file metadata (no PII)
-    trackUploadStarted(
-      selectedFile.size,
-      selectedFile.name.endsWith(".zip") ? "export.zip" : undefined
-    );
+    trackUploadStarted(selectedFile.size);
 
     void submitAnalysisUpload(
       selectedFile,
@@ -87,23 +81,15 @@ export default function AnalyzePage() {
         window.localStorage.setItem(`engage7_job_${result.job_id}`, sessionId);
 
         trackUploadCompleted(result.job_id);
-        trackAnalysisStarted(result.job_id);
         router.push(`/result/${result.job_id}`);
       })
       .catch((error: unknown) => {
         console.error("Upload error:", error);
 
-        // Track error occurrence
         const errorMessage =
           error instanceof ApiClientError && error.message
             ? error.message
             : "Upload failed";
-
-        trackErrorOccurred("upload_failed", errorMessage, {
-          file_size: selectedFile.size,
-          status_code:
-            error instanceof ApiClientError ? error.statusCode : undefined,
-        });
 
         const message =
           error instanceof ApiClientError && error.message

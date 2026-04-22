@@ -40,15 +40,7 @@ import {
   getSurprisingInsight,
 } from "@/lib/insights";
 import { generateInsights } from "@/lib/insights/engine";
-import {
-  trackActivityPreviewViewed,
-  trackAnalysisPreviewLoaded,
-  trackChartInteracted,
-  trackFullReportCtaViewed,
-  trackPreviewNextClicked,
-  trackReportUnlockClicked,
-  trackSleepPreviewViewed,
-} from "@/lib/telemetry";
+import { trackPremiumCtaClicked } from "@/lib/telemetry";
 import type { AnalysisResult } from "@/lib/types/analysis";
 import { motion } from "framer-motion";
 import {
@@ -356,8 +348,6 @@ export function InsightPreview({
       datasetDurationValue: durationInfo?.value,
       previewStage: "sleep",
     };
-    trackAnalysisPreviewLoaded(meta);
-    trackSleepPreviewViewed(meta);
   }, [jobId, durationInfo]);
 
   // ---- Progressive section reveal (Sprint 24.0) -------------------------
@@ -404,19 +394,10 @@ export function InsightPreview({
 
   const goToActivity = () => {
     setActiveStage("activity");
-    trackPreviewNextClicked("recovery", "recovery");
-    trackActivityPreviewViewed({
-      jobId,
-      datasetDurationUnit: durationInfo?.unit,
-      datasetDurationValue: durationInfo?.value,
-      previewStage: "activity",
-    });
     scrollToSection("activity");
   };
 
-  const handleChartInteraction = (insightType: string) => {
-    trackChartInteracted(insightType, activeStage);
-  };
+  const handleChartInteraction = (_insightType: string) => {};
 
   // ---- Full report CTA --------------------------------------------------
   const fullReportRef = useRef<HTMLDivElement>(null);
@@ -425,7 +406,6 @@ export function InsightPreview({
     const obs = new IntersectionObserver(
       ([entry]) => {
         if (entry.isIntersecting) {
-          trackFullReportCtaViewed("bottom");
           obs.disconnect();
         }
       },
@@ -1227,7 +1207,7 @@ export function InsightPreview({
               <button
                 type="button"
                 onClick={() => {
-                  trackReportUnlockClicked("bottom");
+                  trackPremiumCtaClicked("bottom");
                   onOpenModal?.();
                 }}
                 className="inline-flex items-center gap-2 px-5 py-2.5 rounded-lg bg-[#e6b800] text-[#1a1a1a] text-sm font-medium shadow-sm transition-colors duration-200 hover:bg-[#f2c94c] active:bg-[#c99a00]"

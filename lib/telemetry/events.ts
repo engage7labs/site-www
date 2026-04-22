@@ -1,198 +1,71 @@
 /**
- * Telemetry Events — Sprint 11
+ * Telemetry Events — Sprint 28.1
  *
- * Named event helpers for the insight-preview journey.
- * Each function enriches the event with user context automatically.
+ * YODA §14: Only events with a clear GTM hypothesis are tracked.
+ * Rule: If removing an event doesn't affect a funnel decision, remove it.
+ *
+ * Active funnel (8 events):
+ *   upload_started → upload_completed → analysis_completed → teaser_viewed
+ *   → premium_cta_clicked → trial_started → portal_opened → trial_reconfirmed
+ *
  * NO sensitive physiological data is ever sent.
  */
 
 import { capture } from "./posthog";
 import { getUserContext } from "./user-context";
 
-// ---- Acquisition / arrival ------------------------------------------------
+// ── Funnel step 1 ──────────────────────────────────────────────────────────
+// Hypothesis: drop-off between started and completed reveals UX friction.
 
-export function trackSiteVisited(): void {
-  capture("site_visited", getUserContext());
+export function trackUploadStarted(fileSize?: number): void {
+  capture("upload_started", { ...getUserContext(), file_size: fileSize });
 }
 
-export function trackResultPageViewed(jobId?: string): void {
-  capture("result_page_viewed", {
-    ...getUserContext(),
-    job_id: jobId,
-  });
-}
-
-// ---- Analysis journey -----------------------------------------------------
-
-interface PreviewMeta {
-  jobId?: string;
-  datasetDurationUnit?: string;
-  datasetDurationValue?: number;
-  previewStage?: string;
-}
-
-export function trackAnalysisPreviewLoaded(meta: PreviewMeta): void {
-  capture("analysis_preview_loaded", {
-    ...getUserContext(),
-    job_id: meta.jobId,
-    dataset_duration_unit: meta.datasetDurationUnit,
-    dataset_duration_value: meta.datasetDurationValue,
-    preview_stage: meta.previewStage,
-  });
-}
-
-export function trackSleepPreviewViewed(meta: PreviewMeta): void {
-  capture("sleep_preview_viewed", {
-    job_id: meta.jobId,
-    dataset_duration_unit: meta.datasetDurationUnit,
-    dataset_duration_value: meta.datasetDurationValue,
-    preview_stage: "sleep",
-  });
-}
-
-export function trackRecoveryPreviewViewed(meta: PreviewMeta): void {
-  capture("recovery_preview_viewed", {
-    job_id: meta.jobId,
-    dataset_duration_unit: meta.datasetDurationUnit,
-    dataset_duration_value: meta.datasetDurationValue,
-    preview_stage: "recovery",
-  });
-}
-
-export function trackActivityPreviewViewed(meta: PreviewMeta): void {
-  capture("activity_preview_viewed", {
-    job_id: meta.jobId,
-    dataset_duration_unit: meta.datasetDurationUnit,
-    dataset_duration_value: meta.datasetDurationValue,
-    preview_stage: "activity",
-  });
-}
-
-// ---- Interaction journey --------------------------------------------------
-
-export function trackPreviewNextClicked(
-  insightType: string,
-  previewStage: string
-): void {
-  capture("preview_next_clicked", {
-    insight_type: insightType,
-    preview_stage: previewStage,
-  });
-}
-
-export function trackInsightCardExpanded(
-  insightType: string,
-  previewStage: string
-): void {
-  capture("insight_card_expanded", {
-    insight_type: insightType,
-    preview_stage: previewStage,
-  });
-}
-
-export function trackChartInteracted(
-  insightType: string,
-  previewStage: string
-): void {
-  capture("chart_interacted", {
-    insight_type: insightType,
-    preview_stage: previewStage,
-  });
-}
-
-export function trackFullReportCtaViewed(ctaLocation: string): void {
-  capture("full_report_cta_viewed", {
-    cta_location: ctaLocation,
-  });
-}
-
-export function trackReportUnlockClicked(ctaLocation: string): void {
-  capture("report_unlock_clicked", {
-    cta_location: ctaLocation,
-  });
-}
-
-// ---- Upload lifecycle -----------------------------------------------------
-
-export function trackUploadStarted(fileSize?: number, fileName?: string): void {
-  capture("upload_started", {
-    ...getUserContext(),
-    file_size: fileSize,
-    file_name: fileName,
-  });
-}
+// ── Funnel step 2 ──────────────────────────────────────────────────────────
+// Hypothesis: completion rate confirms upload reliability.
 
 export function trackUploadCompleted(jobId: string): void {
-  capture("upload_completed", {
-    ...getUserContext(),
-    job_id: jobId,
-  });
+  capture("upload_completed", { ...getUserContext(), job_id: jobId });
 }
 
-export function trackDatasetUploadStarted(): void {
-  capture("dataset_upload_started", getUserContext());
-}
-
-export function trackDatasetUploadCompleted(): void {
-  capture("dataset_upload_completed", getUserContext());
-}
-
-export function trackAnalysisStarted(jobId: string): void {
-  capture("analysis_started", { job_id: jobId, ...getUserContext() });
-}
+// ── Funnel step 3 ──────────────────────────────────────────────────────────
+// Hypothesis: analysis_completed → teaser_viewed drop-off signals slow load or UX confusion.
 
 export function trackAnalysisCompleted(jobId: string): void {
-  capture("analysis_completed", { job_id: jobId, ...getUserContext() });
+  capture("analysis_completed", { ...getUserContext(), job_id: jobId });
 }
 
-// ---- PDF & Downloads ------------------------------------------------------
+// ── Funnel step 4 ──────────────────────────────────────────────────────────
+// Hypothesis: if teaser_viewed > 80%, the result page is landing correctly.
 
-export function trackPdfDownloadClicked(
-  jobId: string,
-  ctaLocation?: string
-): void {
-  capture("pdf_download_clicked", {
-    ...getUserContext(),
-    job_id: jobId,
-    cta_location: ctaLocation,
-  });
+export function trackTeaserViewed(jobId?: string): void {
+  capture("teaser_viewed", { ...getUserContext(), job_id: jobId });
 }
 
-// ---- Error tracking -------------------------------------------------------
+// ── Funnel step 5 ──────────────────────────────────────────────────────────
+// Hypothesis: premium_cta_clicked / teaser_viewed > 30% validates conversion intent.
 
-export function trackErrorOccurred(
-  errorType: string,
-  errorMessage?: string,
-  context?: Record<string, unknown>
-): void {
-  capture("error_occurred", {
-    ...getUserContext(),
-    error_type: errorType,
-    error_message: errorMessage,
-    ...context,
-  });
+export function trackPremiumCtaClicked(ctaLocation: string): void {
+  capture("premium_cta_clicked", { ...getUserContext(), cta_location: ctaLocation });
 }
 
-// ---- Sprint 20 Phase 5 — Disciplined PostHog events -----------------------
+// ── Funnel step 6 ──────────────────────────────────────────────────────────
+// Hypothesis: trial_started is the primary conversion metric for free → paid.
 
-export function trackDailyBriefingViewed(jobId?: string): void {
-  capture("daily_briefing_viewed", {
-    ...getUserContext(),
-    job_id: jobId,
-  });
+export function trackTrialStarted(jobId?: string): void {
+  capture("trial_started", { ...getUserContext(), job_id: jobId });
 }
 
-export function trackPremiumUnlocked(jobId?: string): void {
-  capture("premium_unlocked", {
-    ...getUserContext(),
-    job_id: jobId,
-  });
+// ── Funnel step 7 ──────────────────────────────────────────────────────────
+// Hypothesis: portal_opened measures activation — user accessed depth layer after trial start.
+
+export function trackPortalOpened(): void {
+  capture("portal_opened", getUserContext());
 }
 
-export function trackInsightViewed(insightType: string, jobId?: string): void {
-  capture("insight_viewed", {
-    ...getUserContext(),
-    insight_type: insightType,
-    job_id: jobId,
-  });
+// ── Funnel step 8 ──────────────────────────────────────────────────────────
+// Hypothesis: trial_reconfirmed measures retention intent after first portal session.
+
+export function trackTrialReconfirmed(): void {
+  capture("trial_reconfirmed", getUserContext());
 }
