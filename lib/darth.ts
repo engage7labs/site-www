@@ -68,6 +68,7 @@ export interface DarthProofChart {
   baseline_reference: "baseline_30d";
   proof_statement: string;
   priority: number;
+  claim_relation?: "supports_claim" | "shows_conflict" | "shows_driver";
   type?: "divergence";
   signals?: string[];
   annotation: DarthChartAnnotation;
@@ -118,6 +119,18 @@ export interface DarthGuidance {
   statement: string;
 }
 
+export interface DarthConsequence {
+  summary: string;
+  if_pattern_continues: string;
+  scope: "recovery" | "sleep" | "activity" | "multi_domain";
+  severity: "low" | "medium" | "high";
+}
+
+export interface DarthBaselineContext {
+  headline: string;
+  explanation: string;
+}
+
 export interface DarthEvidence {
   strength: number;
   consistency: number;
@@ -130,14 +143,16 @@ export interface DarthPayload {
     | "RECOVERING"
     | "STRAIN_ACCUMULATING"
     | "OVERREACHED"
-      | "STABLE"
-      | "MISALIGNED_RECOVERY";
+    | "STABLE"
+    | "MISALIGNED_RECOVERY";
   trajectory?: DarthTrajectory;
   primary_claim?: string;
+  baseline_context?: DarthBaselineContext;
   dominant_signal?: string | null;
   conflicting_signal?: string | null;
   conflict?: DarthConflict;
   guidance?: DarthGuidance;
+  consequence?: DarthConsequence;
   evidence?: DarthEvidence;
   charts?: DarthProofChart[];
   confidence?: number;

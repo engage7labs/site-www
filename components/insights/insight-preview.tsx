@@ -124,9 +124,20 @@ function assertDarthContract(darth: DarthPayload): void {
   if (!darth.state) missing.push("state");
   if (!darth.trajectory) missing.push("trajectory");
   if (!darth.primary_claim) missing.push("primary_claim");
+  if (!darth.baseline_context?.headline) missing.push("baseline_context.headline");
+  if (!darth.baseline_context?.explanation) missing.push("baseline_context.explanation");
   if (darth.confidence == null) missing.push("confidence");
   if (!darth.dominant_signal) missing.push("dominant_signal");
   if (!darth.guidance?.statement) missing.push("guidance.statement");
+  if (!darth.guidance?.recommended_adjustment) {
+    missing.push("guidance.recommended_adjustment");
+  }
+  if (!darth.consequence?.summary) missing.push("consequence.summary");
+  if (!darth.consequence?.if_pattern_continues) {
+    missing.push("consequence.if_pattern_continues");
+  }
+  if (!darth.consequence?.scope) missing.push("consequence.scope");
+  if (!darth.consequence?.severity) missing.push("consequence.severity");
   if (!darth.evidence) missing.push("evidence");
   if (!Array.isArray(darth.charts) || darth.charts.length === 0) {
     missing.push("charts");
@@ -141,6 +152,7 @@ function assertDarthContract(darth: DarthPayload): void {
     }
     if (!chart.proof_statement) missing.push(`charts.${index}.proof_statement`);
     if (chart.priority == null) missing.push(`charts.${index}.priority`);
+    if (!chart.claim_relation) missing.push(`charts.${index}.claim_relation`);
   });
 
   if (missing.length > 0) {
@@ -149,7 +161,14 @@ function assertDarthContract(darth: DarthPayload): void {
 }
 
 function hasDarthClaimContract(darth: DarthPayload | null): darth is DarthPayload {
-  return Boolean(darth?.primary_claim || darth?.guidance?.statement);
+  return Boolean(
+    darth?.primary_claim &&
+      darth.baseline_context?.headline &&
+      darth.baseline_context?.explanation &&
+      darth.consequence?.summary &&
+      darth.consequence?.if_pattern_continues &&
+      darth.guidance?.statement
+  );
 }
 
 // ---------------------------------------------------------------------------
@@ -422,6 +441,12 @@ export function InsightPreview({
     return t.teaser.chartRoles.evidence;
   }
 
+  function renderClaimRelation(relation: DarthProofChart["claim_relation"] | undefined) {
+    if (relation === "shows_conflict") return "shows conflict";
+    if (relation === "shows_driver") return "shows driver";
+    return "supports claim";
+  }
+
   function renderDivergenceChart(chart: DarthProofChart) {
     const signals = chart.signals?.slice(0, 2) ?? [];
     return (
@@ -504,7 +529,7 @@ export function InsightPreview({
       <div className={cardClass}>
         <div className="mb-3 flex flex-wrap items-center gap-2">
           <span className="text-[10px] font-semibold uppercase tracking-wider text-[#e6b800]">
-            {roleLabel} · proves {chart.proves}
+            {roleLabel} · {renderClaimRelation(chart.claim_relation)}
           </span>
           <span className="rounded-full border border-border/70 px-2 py-0.5 text-[10px] font-medium uppercase tracking-wider text-muted-foreground">
             {chart.window.replaceAll("_", " ")} vs {chart.baseline_reference.replaceAll("_", " ")}
@@ -572,8 +597,30 @@ export function InsightPreview({
           </motion.div>
         )}
 
+        {/* 2. DARTH baseline context */}
+        {usesDarth && darthPayload?.baseline_context && (
+          <motion.div
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.35 }}
+            className="rounded-xl border border-[#e6b800] bg-[#e6b800]/5 p-5 mb-6 flex flex-col gap-2"
+          >
+            <p className="text-sm font-bold text-foreground">
+              {darthPayload.baseline_context.headline}
+            </p>
+            <p className="text-xs leading-relaxed text-muted-foreground">
+              {darthPayload.baseline_context.explanation}
+            </p>
+            {summary?.dataset_start && summary?.dataset_end && (
+              <p className="text-[11px] text-muted-foreground/70 font-mono">
+                {String(summary.dataset_start)} - {String(summary.dataset_end)}
+              </p>
+            )}
+          </motion.div>
+        )}
+
         {/* 2. Provenance card (gold) */}
-        {(durationInfo || summary?.dataset_start) && (
+        {!usesDarth && (durationInfo || summary?.dataset_start) && (
           <motion.div
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
@@ -776,7 +823,7 @@ export function InsightPreview({
           </motion.div>
         )}
 
-        {usesDarth && darthPayload?.guidance && (
+        {usesDarth && darthPayload?.consequence && (
           <motion.div
             initial={{ opacity: 0, y: 12 }}
             animate={{ opacity: 1, y: 0 }}
@@ -785,7 +832,31 @@ export function InsightPreview({
           >
             <div className="mb-2 flex flex-wrap items-center gap-2">
               <span className="rounded-full border border-[#e6b800]/35 px-2 py-0.5 text-[10px] font-medium uppercase tracking-wider text-[#e6b800]">
-                {darthPayload.guidance.decision_window_hours}h
+                Consequence
+              </span>
+              <span className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
+                {darthPayload.consequence.scope.replaceAll("_", " ")} · {darthPayload.consequence.severity}
+              </span>
+            </div>
+            <p className="text-base font-semibold leading-snug text-foreground">
+              {darthPayload.consequence.summary}
+            </p>
+            <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
+              {darthPayload.consequence.if_pattern_continues}
+            </p>
+          </motion.div>
+        )}
+
+        {usesDarth && darthPayload?.guidance && (
+          <motion.div
+            initial={{ opacity: 0, y: 12 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.4 }}
+            className="mb-6 rounded-xl border border-[#e6b800]/35 bg-[#e6b800]/[0.035] p-5"
+          >
+            <div className="mb-2 flex flex-wrap items-center gap-2">
+              <span className="rounded-full border border-[#e6b800]/35 px-2 py-0.5 text-[10px] font-medium uppercase tracking-wider text-[#e6b800]">
+                Action
               </span>
               <span className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
                 {darthPayload.guidance.risk_type.replaceAll("_", " ")}
@@ -793,6 +864,9 @@ export function InsightPreview({
             </div>
             <p className="text-base font-semibold leading-snug text-foreground">
               {darthPayload.guidance.statement}
+            </p>
+            <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
+              {darthPayload.guidance.recommended_adjustment}
             </p>
           </motion.div>
         )}
