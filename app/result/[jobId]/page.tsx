@@ -9,13 +9,11 @@ import { ApiClientError } from "@/lib/api/client";
 import {
   getOrCreateSessionId,
   sendUserEvent,
-  trackPdfDownloaded,
 } from "@/lib/api/events";
 import { createPollingManager } from "@/lib/polling";
 import {
   trackAnalysisCompleted,
-  trackAnalysisStarted,
-  trackResultPageViewed,
+  trackTeaserViewed,
 } from "@/lib/telemetry";
 import type { AnalysisResult } from "@/lib/types/analysis";
 import { motion } from "framer-motion";
@@ -346,7 +344,6 @@ export default function ResultPage({
 
   const handleModalDownload = () => {
     if (!jobId || !result?.artifacts?.pdf_available) return;
-    trackPdfDownloaded(jobId, "post_analysis_modal");
     window.open(
       `/api/proxy/result/${jobId}/pdf`,
       "_blank",
@@ -500,8 +497,8 @@ export default function ResultPage({
         return;
       }
 
-      // Telemetry: result page viewed
-      trackResultPageViewed(id);
+      // Telemetry: teaser viewed (funnel step 4)
+      trackTeaserViewed(id);
 
       // Reset completed flag for new job
       completedFiredRef.current = false;
@@ -531,7 +528,6 @@ export default function ResultPage({
           data.status === "queued" || data.status === "processing";
         if (isInProgress) {
           seenInProgressRef.current = true;
-          trackAnalysisStarted(id);
         }
 
         // If already terminal, stop polling

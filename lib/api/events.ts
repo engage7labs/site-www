@@ -1,7 +1,5 @@
 "use client";
 
-import { trackPdfDownloadClicked } from "@/lib/telemetry";
-
 const SESSION_KEY = "engage7_session_id";
 const EVENTS_PROXY_PATH = "/api/proxy/events";
 
@@ -75,7 +73,6 @@ export async function sendUserEvent(
 }
 
 export function trackPdfDownloaded(jobId: string, ctaLocation: string): void {
-  trackPdfDownloadClicked(jobId, ctaLocation);
   void sendUserEvent("pdf_downloaded", {
     job_id: jobId,
     metadata: { cta_location: ctaLocation },
