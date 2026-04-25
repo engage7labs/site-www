@@ -74,6 +74,38 @@ export interface DarthProofChart {
   annotation: DarthChartAnnotation;
 }
 
+export interface DarthTeaserEvidence {
+  metric: string;
+  value: number | string | null;
+  window: string;
+  comparison: string | null;
+  statement: string;
+}
+
+export interface DarthTeaser {
+  template_id: string;
+  archetype: "tension" | "strength" | "baseline" | "fallback";
+  headline: string;
+  subtext: string;
+  action: string;
+  cta: string;
+  badge: {
+    icon: "crown";
+    label: "Free";
+  };
+  visual: {
+    type: "line" | "none";
+    metric: string | null;
+    window: string | null;
+    role: "evidence" | "context" | "none";
+  };
+  evidence: DarthTeaserEvidence[];
+  score: number;
+  confidence: number;
+  reason: string;
+  fallback_level: number;
+}
+
 export interface DarthPresentation {
   hero: DarthInsightBlock;
   supporting: DarthInsightBlock[];
@@ -167,6 +199,7 @@ export interface DarthPayload {
   };
   presentation?: DarthPresentation;
   explainability?: DarthInsightBlock[];
+  teaser?: DarthTeaser;
 }
 
 function isObject(value: unknown): value is Record<string, unknown> {
@@ -182,6 +215,10 @@ export function getDarthPayload(sections: unknown): DarthPayload | null {
 
 export function getDarthPresentation(sections: unknown): DarthPresentation | null {
   return getDarthPayload(sections)?.presentation ?? null;
+}
+
+export function getDarthTeaser(sections: unknown): DarthTeaser | null {
+  return getDarthPayload(sections)?.teaser ?? null;
 }
 
 export function getDarthExplainability(sections: unknown): DarthInsightBlock[] {

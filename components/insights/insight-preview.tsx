@@ -16,8 +16,10 @@ import { useLocale } from "@/components/providers/locale-provider";
 import {
   type DarthPayload,
   type DarthProofChart,
+  type DarthTeaser,
   getDarthPayload,
   getDarthPresentation,
+  getDarthTeaser,
   selectDarthCopy,
   selectDarthCta,
 } from "@/lib/darth";
@@ -194,12 +196,23 @@ export function InsightPreview({
     () => getDarthPresentation(result.sections),
     [result.sections]
   );
+  const darthTeaser = useMemo(
+    () => getDarthTeaser(result.sections),
+    [result.sections]
+  );
+  const usesDarthTeaser = Boolean(
+    darthTeaser?.headline &&
+      darthTeaser.subtext &&
+      darthTeaser.action &&
+      darthTeaser.cta
+  );
   const usesDarth = useMemo(() => {
+    if (usesDarthTeaser) return false;
     if (!darthPayload) return false;
     if (!hasDarthClaimContract(darthPayload)) return false;
     assertDarthContract(darthPayload);
     return true;
-  }, [darthPayload]);
+  }, [darthPayload, usesDarthTeaser]);
   const darthSupporting = useMemo(
     () =>
       (darthPresentation?.supporting ?? []).map((block) => ({
@@ -250,8 +263,10 @@ export function InsightPreview({
     return t.teaser.hero.adaptiveShifting;
   }, [sections, t]);
   const stateHeadline = useMemo(
-    () => (usesDarth ? darthPayload?.primary_claim ?? adaptiveHeadline : adaptiveHeadline),
-    [adaptiveHeadline, darthPayload, usesDarth]
+    () =>
+      darthTeaser?.headline ??
+      (usesDarth ? darthPayload?.primary_claim ?? adaptiveHeadline : adaptiveHeadline),
+    [adaptiveHeadline, darthPayload, darthTeaser, usesDarth]
   );
 
   // ---- Extract insights (deterministic) ----------------------------------
@@ -528,6 +543,111 @@ export function InsightPreview({
     );
   }
 
+  function renderTeaserVisual(teaser: DarthTeaser) {
+    const evidence = teaser.evidence?.[0] ?? null;
+    const visual = teaser.visual;
+    const metricLabel = visual.metric?.replaceAll("_", " ") ?? null;
+    const windowLabel = visual.window?.replaceAll("_", " ") ?? null;
+    const roleLabel = visual.role === "none" ? null : visual.role;
+
+    return (
+      <div className="rounded-xl border border-[#e6b800]/35 bg-background/45 p-4">
+        <div className="mb-3 flex flex-wrap items-center gap-2">
+          {roleLabel && (
+            <span className="rounded-full border border-[#e6b800]/40 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-[#e6b800]">
+              {roleLabel}
+            </span>
+          )}
+          {windowLabel && (
+            <span className="rounded-full border border-border/70 px-2 py-0.5 text-[10px] font-medium uppercase tracking-wider text-muted-foreground">
+              {windowLabel}
+            </span>
+          )}
+        </div>
+        <div className="flex h-[180px] flex-col justify-end rounded-lg border border-border/70 bg-card/70 px-4 py-3">
+          {visual.type === "line" ? (
+            <div className="flex h-full items-end gap-2">
+              {[28, 48, 36, 64, 52, 76, 68].map((height, index) => (
+                <div
+                  key={`${metricLabel ?? "teaser"}-${height}-${index}`}
+                  className="flex-1 rounded-t bg-[#e6b800]/35"
+                  style={{ height: `${height}%` }}
+                />
+              ))}
+            </div>
+          ) : (
+            <div className="flex h-full items-center justify-center border border-dashed border-border/70">
+              <Crown className="h-7 w-7 text-[#e6b800]" />
+            </div>
+          )}
+          {metricLabel && (
+            <p className="mt-3 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
+              {metricLabel}
+            </p>
+          )}
+        </div>
+        {evidence && (
+          <div className="mt-3 border-t border-border/50 pt-3">
+            <p className="text-sm font-semibold leading-snug text-foreground">
+              {evidence.statement}
+            </p>
+            {(evidence.value != null || evidence.comparison) && (
+              <p className="mt-1 text-xs leading-relaxed text-muted-foreground">
+                {[evidence.value, evidence.comparison].filter(Boolean).join(" · ")}
+              </p>
+            )}
+          </div>
+        )}
+      </div>
+    );
+  }
+
+  function renderDarthTeaser(teaser: DarthTeaser) {
+    return (
+      <motion.section
+        initial={{ opacity: 0, y: 12 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.4 }}
+        className="mb-8 rounded-xl border border-[#e6b800]/45 bg-[radial-gradient(circle_at_top_left,rgba(230,184,0,0.12),transparent_40%),rgba(230,184,0,0.035)] p-5 shadow-sm md:grid md:grid-cols-[1.1fr_0.9fr] md:gap-6 md:p-6"
+      >
+        <div className="flex min-w-0 flex-col">
+          <div className="mb-4 flex flex-wrap items-center gap-2">
+            <span className="inline-flex items-center gap-1.5 rounded-full bg-[#e6b800] px-2.5 py-1 text-[11px] font-semibold text-[#1a1a1a]">
+              <Crown className="h-3.5 w-3.5" />
+              {teaser.badge?.label ?? "Free"}
+            </span>
+            <span className="rounded-full border border-border/70 px-2.5 py-1 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
+              {teaser.archetype}
+            </span>
+          </div>
+          <h2 className="text-2xl font-semibold leading-tight text-foreground md:text-3xl">
+            {teaser.headline}
+          </h2>
+          <p className="mt-3 text-sm leading-relaxed text-muted-foreground md:text-base">
+            {teaser.subtext}
+          </p>
+          <div className="mt-5 rounded-lg border border-[#e6b800]/30 bg-[#e6b800]/[0.04] p-4">
+            <p className="text-base font-semibold leading-snug text-foreground">
+              {teaser.action}
+            </p>
+          </div>
+          <button
+            type="button"
+            onClick={() => {
+              trackPremiumCtaClicked("darth_teaser");
+              onOpenModal?.();
+            }}
+            className="mt-5 inline-flex w-full items-center justify-center gap-2 rounded-lg bg-[#e6b800] px-5 py-3 text-sm font-semibold text-[#1a1a1a] shadow-sm transition-colors duration-200 hover:bg-[#f2c94c] active:bg-[#c99a00] sm:w-fit"
+          >
+            <Crown className="h-4 w-4" />
+            {teaser.cta}
+          </button>
+        </div>
+        <div className="mt-5 md:mt-0">{renderTeaserVisual(teaser)}</div>
+      </motion.section>
+    );
+  }
+
   // -----------------------------------------------------------------------
   // RENDER
   // -----------------------------------------------------------------------
@@ -553,12 +673,16 @@ export function InsightPreview({
       )}
 
       <main className={embedded ? "" : "max-w-6xl mx-auto px-6 pt-8 pb-16"}>
-        <h1 className="text-3xl lg:text-4xl font-semibold text-foreground leading-tight mb-6">
-          {stateHeadline}
-        </h1>
+        {!usesDarthTeaser && (
+          <h1 className="text-3xl lg:text-4xl font-semibold text-foreground leading-tight mb-6">
+            {stateHeadline}
+          </h1>
+        )}
+
+        {usesDarthTeaser && darthTeaser && renderDarthTeaser(darthTeaser)}
 
         {/* 2. Surprising personal insight */}
-        {!usesDarth && surprisingInsight && (
+        {!usesDarthTeaser && !usesDarth && surprisingInsight && (
           <motion.div
             initial={{ opacity: 0, y: 12 }}
             animate={{ opacity: 1, y: 0 }}
@@ -600,7 +724,7 @@ export function InsightPreview({
         )}
 
         {/* 2. Provenance card (gold) */}
-        {!usesDarth && (durationInfo || summary?.dataset_start) && (
+        {!usesDarthTeaser && !usesDarth && (durationInfo || summary?.dataset_start) && (
           <motion.div
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
@@ -673,7 +797,7 @@ export function InsightPreview({
           </motion.div>
         )}
 
-        {!usesDarth && engineInsights.length > 0 && (
+        {!usesDarthTeaser && !usesDarth && engineInsights.length > 0 && (
           <motion.div
             initial={{ opacity: 0, y: 12 }}
             animate={{ opacity: 1, y: 0 }}
@@ -887,7 +1011,7 @@ export function InsightPreview({
           </motion.div>
         )}
 
-        {!usesDarth && (
+        {!usesDarthTeaser && !usesDarth && (
           <motion.div
             initial={{ opacity: 0, y: 12 }}
             animate={{ opacity: 1, y: 0 }}
@@ -995,7 +1119,7 @@ export function InsightPreview({
         )}
 
         {/* 5. Preview insight (before CTA) */}
-        {!usesDarth && previewInsight && (
+        {!usesDarthTeaser && !usesDarth && previewInsight && (
           <motion.div
             initial={{ opacity: 0, y: 12 }}
             animate={{ opacity: 1, y: 0 }}
@@ -1014,7 +1138,7 @@ export function InsightPreview({
           </motion.div>
         )}
 
-        {!usesDarth && <div className="hidden md:block">
+        {!usesDarthTeaser && !usesDarth && <div className="hidden md:block">
 
           {/* Lower compact zone— Sleep + Recovery + Activity */}
           <section className="grid grid-cols-3 gap-6 mt-2">
@@ -1101,7 +1225,7 @@ export function InsightPreview({
         {/* ============================================================= */}
         {/* MOBILE LAYOUT — stacked scrollable cards                       */}
         {/* ============================================================= */}
-        {!usesDarth && <div className="md:hidden space-y-6">
+        {!usesDarthTeaser && !usesDarth && <div className="md:hidden space-y-6">
 
           <section
             className={`scroll-mt-28 transition-all duration-500 ease-out ${
@@ -1180,7 +1304,7 @@ export function InsightPreview({
         {/* ============================================================= */}
         {/* Full Report CTA — hidden when embedded in portal               */}
         {/* ============================================================= */}
-        {!embedded && (
+        {!embedded && !usesDarthTeaser && (
           <div ref={fullReportRef} className="mt-10">
             <motion.div
               initial={{ opacity: 0, y: 16 }}
@@ -1213,7 +1337,7 @@ export function InsightPreview({
                 className="inline-flex items-center gap-2 px-5 py-2.5 rounded-lg bg-[#e6b800] text-[#1a1a1a] text-sm font-medium shadow-sm transition-colors duration-200 hover:bg-[#f2c94c] active:bg-[#c99a00]"
               >
                 <Crown className="h-4 w-4" />
-                {darthCta ?? t.result.preview.fullReport.downloadButton}
+                {darthTeaser?.cta ?? darthCta ?? t.result.preview.fullReport.downloadButton}
               </button>
             </motion.div>
 
