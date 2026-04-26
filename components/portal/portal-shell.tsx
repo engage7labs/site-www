@@ -6,6 +6,7 @@ import { AdminViewBanner } from "../admin-view-banner";
 import { PasswordSetupAlert } from "./password-setup-alert";
 import { PortalHeader } from "./portal-header";
 import { PortalSidebar } from "./portal-sidebar";
+import { TrialExpiredBanner } from "./trial-expired-banner";
 
 const SECTION_TITLES: Record<string, { title: string; subtitle: string }> = {
   "/portal": {
@@ -90,6 +91,7 @@ export function PortalShell({
         />
 
         <PasswordSetupAlert />
+        <TrialExpiredBanner />
 
         <main className="flex-1 p-4 sm:p-6 lg:p-8">
           <div className="mx-auto max-w-[1400px]">{children}</div>

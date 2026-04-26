@@ -1,13 +1,53 @@
 "use client";
 
-import { useRouter } from "next/navigation";
-import { useState } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
+import { useEffect, useState } from "react";
 
 export default function SettingsPage() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [confirmText, setConfirmText] = useState("");
   const [deleting, setDeleting] = useState(false);
+  const [checkoutLoading, setCheckoutLoading] = useState(false);
+  const [checkoutError, setCheckoutError] = useState<string | null>(null);
+  const [paymentStatus, setPaymentStatus] = useState<"success" | "cancelled" | null>(null);
+  const [plan, setPlan] = useState<string | null>(null);
+  const [trialEnd, setTrialEnd] = useState<string | null>(null);
+
+  useEffect(() => {
+    const ps = searchParams.get("payment");
+    if (ps === "success" || ps === "cancelled") {
+      setPaymentStatus(ps);
+      // Clean up URL
+      router.replace("/portal/settings");
+    }
+    // Fetch plan status
+    fetch("/api/proxy/users/portal-overview")
+      .then((r) => r.json())
+      .then((d) => {
+        setPlan(d.plan ?? null);
+        setTrialEnd(d.trial_end_at ?? null);
+      })
+      .catch(() => {});
+  }, [searchParams, router]);
+
+  const handleUpgrade = async () => {
+    setCheckoutLoading(true);
+    setCheckoutError(null);
+    try {
+      const res = await fetch("/api/stripe/checkout", { method: "POST" });
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}));
+        throw new Error((data as { error?: string }).error ?? "Checkout unavailable");
+      }
+      const { url } = await res.json();
+      if (url) window.location.href = url;
+    } catch (err) {
+      setCheckoutError(err instanceof Error ? err.message : "Something went wrong");
+      setCheckoutLoading(false);
+    }
+  };
   const [deleteError, setDeleteError] = useState<string | null>(null);
   const [deleted, setDeleted] = useState(false);
 
@@ -67,8 +107,64 @@ export default function SettingsPage() {
     );
   }
 
+  const isPremium = plan === "premium";
+  const trialEndDate = trialEnd ? new Date(trialEnd) : null;
+  const trialActive = plan === "trial" && trialEndDate && trialEndDate > new Date();
+  const trialExpired = (plan === "trial" && trialEndDate && trialEndDate <= new Date()) || plan === "expired";
+  const daysLeft = trialActive && trialEndDate
+    ? Math.max(0, Math.ceil((trialEndDate.getTime() - Date.now()) / 86400000))
+    : null;
+
   return (
     <div className="flex flex-col gap-6">
+
+      {/* Payment success / cancelled notification */}
+      {paymentStatus === "success" && (
+        <div className="rounded-xl border border-emerald-500/30 bg-emerald-500/10 px-4 py-3 text-sm text-emerald-400">
+          ✓ Payment confirmed — your account has been upgraded to Premium.
+        </div>
+      )}
+      {paymentStatus === "cancelled" && (
+        <div className="rounded-xl border border-border bg-muted/30 px-4 py-3 text-sm text-muted-foreground">
+          Payment was cancelled. Your plan is unchanged.
+        </div>
+      )}
+
+      {/* Billing section — Sprint 33.0 */}
+      <div className="rounded-xl border border-border bg-card p-5">
+        <h2 className="text-sm font-semibold text-card-foreground mb-1">Plan &amp; Billing</h2>
+        <p className="text-xs text-muted-foreground mb-4">
+          {isPremium && "You are on Premium — thank you for your support."}
+          {trialActive && `Free access active${daysLeft !== null ? ` — ${daysLeft} day${daysLeft === 1 ? "" : "s"} remaining` : ""}.`}
+          {trialExpired && "Your free access period has ended."}
+          {plan === "trial_start" && "Your account is being activated."}
+          {!plan && "Loading…"}
+        </p>
+        {!isPremium && (
+          <div className="flex flex-col gap-3">
+            <div className="flex items-start gap-3 rounded-lg border border-accent/20 bg-accent/5 p-4">
+              <div className="flex-1">
+                <p className="text-sm font-semibold text-card-foreground">Engage7 Premium</p>
+                <p className="text-xs text-muted-foreground mt-0.5">
+                  Full dashboard · Unlimited analyses · Longitudinal trends · DARTH insights
+                </p>
+              </div>
+              <p className="text-sm font-bold text-accent shrink-0">€7 / month</p>
+            </div>
+            {checkoutError && (
+              <p className="text-xs text-destructive">{checkoutError}</p>
+            )}
+            <button
+              onClick={handleUpgrade}
+              disabled={checkoutLoading}
+              className="self-start rounded-lg bg-accent px-4 py-2 text-sm font-semibold text-accent-foreground hover:bg-accent/90 transition-colors disabled:opacity-60 disabled:cursor-not-allowed"
+            >
+              {checkoutLoading ? "Redirecting…" : "Upgrade to Premium →"}
+            </button>
+          </div>
+        )}
+      </div>
+
       <div className="grid gap-4 sm:grid-cols-2">
         {/* Profile section */}
         <div className="rounded-xl border border-border bg-card p-5">
