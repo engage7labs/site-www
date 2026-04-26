@@ -1,6 +1,7 @@
 import { AppThemeProvider } from "@/components/providers/app-theme-provider";
 import { LocaleProvider } from "@/components/providers/locale-provider";
 import { PostHogProvider } from "@/components/providers/posthog-provider";
+import { CookieConsentBanner } from "@/components/shared/cookie-consent-banner";
 import { DevEnvironmentMarker } from "@/components/shared/dev-environment-marker";
 import { config } from "@/lib/config";
 import { isDevEnvironment } from "@/lib/env";
@@ -115,6 +116,7 @@ export default function RootLayout({
             <PostHogProvider>{children}</PostHogProvider>
           </LocaleProvider>
         </AppThemeProvider>
+        <CookieConsentBanner />
         <DevEnvironmentMarker />
         <Analytics />
         <Toaster richColors position="top-center" />

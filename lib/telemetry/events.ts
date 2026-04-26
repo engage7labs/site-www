@@ -69,3 +69,11 @@ export function trackPortalOpened(): void {
 export function trackTrialReconfirmed(): void {
   capture("trial_reconfirmed", getUserContext());
 }
+
+// ── Funnel step 9 ──────────────────────────────────────────────────────────
+// Hypothesis: account_activated measures how many users complete onboarding
+// (access code set). Sprint 30.2 / 31.1.
+
+export function trackAccountActivated(): void {
+  capture("account_activated", getUserContext());
+}

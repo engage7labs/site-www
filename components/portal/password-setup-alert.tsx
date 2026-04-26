@@ -1,3 +1,10 @@
+/**
+ * PasswordSetupAlert — Sprint 30.2
+ *
+ * Calm activation prompt. Language: "access code" not "password".
+ * Shown when the user hasn't set a password yet (plan=trial_start or missing password).
+ * Fires account_activated telemetry on success.
+ */
 "use client";
 
 import {
@@ -7,8 +14,11 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import { trackAccountActivated } from "@/lib/telemetry/events";
 import { Eye, EyeOff, KeyRound, Loader2 } from "lucide-react";
 import { useEffect, useState } from "react";
+
+const DISMISSED_KEY = "engage7_access_code_dismissed";
 
 export function PasswordSetupAlert() {
   const [hasPassword, setHasPassword] = useState<boolean | null>(null);
@@ -23,11 +33,21 @@ export function PasswordSetupAlert() {
   const [error, setError] = useState("");
 
   useEffect(() => {
+    // Check if user dismissed this session
+    if (sessionStorage.getItem(DISMISSED_KEY)) {
+      setDismissed(true);
+      return;
+    }
     fetch("/api/proxy/users/portal-overview")
       .then((r) => r.json())
       .then((d) => setHasPassword(d.has_password ?? true))
       .catch(() => setHasPassword(true));
   }, []);
+
+  const handleDismiss = () => {
+    sessionStorage.setItem(DISMISSED_KEY, "1");
+    setDismissed(true);
+  };
 
   if (hasPassword === null || hasPassword || dismissed || status === "success")
     return null;
@@ -52,9 +72,12 @@ export function PasswordSetupAlert() {
         setHasPassword(true);
         setStatus("success");
         setOpen(false);
+        trackAccountActivated();
       } else {
         const data = await res.json().catch(() => ({}));
-        setError(data.error ?? "Failed to set password");
+        setError(
+          (data as { error?: string }).error ?? "Something went wrong — please try again"
+        );
         setStatus("error");
       }
     } catch {
@@ -65,21 +88,22 @@ export function PasswordSetupAlert() {
 
   return (
     <>
-      <div className="mx-4 mt-3 sm:mx-6 rounded-lg border border-amber-300/50 dark:border-amber-500/30 bg-amber-50/80 dark:bg-amber-950/20 px-4 py-3 flex items-center gap-3 text-sm">
-        <KeyRound className="h-4 w-4 shrink-0 text-amber-600 dark:text-amber-400" />
-        <span className="text-amber-800 dark:text-amber-200 flex-1">
-          You haven&apos;t set a password yet.{" "}
+      {/* Calm activation banner — Sprint 30.2 */}
+      <div className="mx-4 mt-3 sm:mx-6 rounded-lg border border-accent/30 bg-accent/5 px-4 py-3 flex items-center gap-3 text-sm">
+        <KeyRound className="h-4 w-4 shrink-0 text-accent" />
+        <span className="text-foreground/80 flex-1">
+          Secure your access —{" "}
           <button
             onClick={() => setOpen(true)}
-            className="font-medium underline underline-offset-2 hover:text-amber-900 dark:hover:text-amber-100 transition-colors"
+            className="font-medium text-accent underline underline-offset-2 hover:text-accent/80 transition-colors"
           >
-            Set one now
+            create an access code
           </button>{" "}
-          to secure your account.
+          to return from any device.
         </span>
         <button
-          onClick={() => setDismissed(true)}
-          className="text-amber-600/60 dark:text-amber-400/60 hover:text-amber-800 dark:hover:text-amber-200 transition-colors text-xs"
+          onClick={handleDismiss}
+          className="text-muted-foreground hover:text-foreground transition-colors text-xs"
           aria-label="Dismiss"
         >
           ✕
@@ -89,9 +113,10 @@ export function PasswordSetupAlert() {
       <Dialog open={open} onOpenChange={setOpen}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Set your password</DialogTitle>
+            <DialogTitle>Create your access code</DialogTitle>
             <DialogDescription>
-              Create a password so you can sign in securely from any device.
+              Choose a personal code to return to your dashboard from any device.
+              At least 8 characters.
             </DialogDescription>
           </DialogHeader>
 
@@ -99,7 +124,7 @@ export function PasswordSetupAlert() {
             <div className="relative">
               <input
                 type={showPassword ? "text" : "password"}
-                placeholder="New password (min 8 characters)"
+                placeholder="Access code (min 8 characters)"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 minLength={8}
@@ -123,7 +148,7 @@ export function PasswordSetupAlert() {
 
             <input
               type="password"
-              placeholder="Confirm password"
+              placeholder="Confirm access code"
               value={confirm}
               onChange={(e) => setConfirm(e.target.value)}
               minLength={8}
@@ -133,7 +158,7 @@ export function PasswordSetupAlert() {
             />
 
             {confirm && password !== confirm && (
-              <p className="text-xs text-destructive">Passwords do not match</p>
+              <p className="text-xs text-destructive">Codes do not match</p>
             )}
 
             {error && <p className="text-sm text-destructive">{error}</p>}
@@ -141,12 +166,12 @@ export function PasswordSetupAlert() {
             <button
               type="submit"
               disabled={!valid || status === "loading"}
-              className="w-full rounded-lg bg-accent px-4 py-2.5 text-sm font-medium text-white hover:bg-accent/90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+              className="w-full rounded-lg bg-accent px-4 py-2.5 text-sm font-medium text-accent-foreground hover:bg-accent/90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
             >
               {status === "loading" && (
                 <Loader2 className="h-4 w-4 animate-spin" />
               )}
-              Set Password
+              Save access code
             </button>
           </form>
         </DialogContent>
