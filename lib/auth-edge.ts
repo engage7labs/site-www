@@ -37,8 +37,8 @@ export type SessionPayload = {
   mode?: "admin_view";
   /** Read-only mode flag — Sprint 17.1 */
   read_only?: boolean;
-  /** User ID when in admin_view mode — Sprint 17.1 */
-  view_as_user_id?: number;
+  /** User ID when in admin_view mode — Sprint 17.1 (UUID string post-Supabase migration) */
+  view_as_user_id?: string;
 };
 
 // ---------------------------------------------------------------------------
