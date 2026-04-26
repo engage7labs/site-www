@@ -16,7 +16,7 @@ interface SessionPayload {
   role: "user" | "admin";
   mode?: "admin_view";
   read_only?: boolean;
-  view_as_user_id?: number;
+  view_as_user_id?: string;
 }
 
 function parseJwt(token: string): SessionPayload | null {

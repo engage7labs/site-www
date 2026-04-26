@@ -28,15 +28,15 @@ export async function POST(
       return NextResponse.json({ detail: "Forbidden" }, { status: 403 });
     }
 
-    // 2. Parse and validate userId
-    const numericUserId = Number.parseInt(userId, 10);
-    if (!Number.isFinite(numericUserId) || numericUserId <= 0) {
+    // 2. Validate userId (UUID post-Supabase migration)
+    const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+    if (!uuidRegex.test(userId)) {
       return NextResponse.json({ detail: "Invalid userId" }, { status: 400 });
     }
 
     // 3. Fetch target user through web proxy using request-derived absolute URL
     const userUrl = new URL(
-      `/api/proxy/admin/users/${numericUserId}`,
+      `/api/proxy/admin/users/${userId}`,
       request.url
     );
 
@@ -76,7 +76,7 @@ export async function POST(
     }
 
     const targetUser = (await userResponse.json().catch(() => null)) as {
-      id?: number;
+      id?: string;
       email?: string;
     } | null;
 
@@ -92,9 +92,9 @@ export async function POST(
     }
 
     const targetUserId =
-      typeof targetUser.id === "number" && Number.isFinite(targetUser.id)
+      typeof targetUser.id === "string" && uuidRegex.test(targetUser.id)
         ? targetUser.id
-        : numericUserId;
+        : userId;
 
     // 4. Preserve current admin-view contract
     const adminViewToken = signJwt({
