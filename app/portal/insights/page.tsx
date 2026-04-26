@@ -6,7 +6,7 @@ import {
   extractSleepInsights,
   type InsightText,
 } from "@/lib/insights/extract";
-import { getDarthPresentation, selectDarthCopy, type DarthInsightBlock } from "@/lib/darth";
+import { getDarthPayload, getDarthPresentation, selectDarthCopy, type DarthInsightBlock } from "@/lib/darth";
 import { useLocale } from "@/components/providers/locale-provider";
 import {
   Activity,
@@ -251,6 +251,9 @@ export default function InsightsPage() {
   const [darthInsights, setDarthInsights] = useState<
     Array<{ block: DarthInsightBlock; copy: ReturnType<typeof selectDarthCopy> }>
   >([]);
+  const [heroBlock, setHeroBlock] = useState<{ block: DarthInsightBlock; copy: ReturnType<typeof selectDarthCopy> } | null>(null);
+  const [darthState, setDarthState] = useState<string | null>(null);
+  const [darthClaim, setDarthClaim] = useState<string | null>(null);
   const [trends, setTrends] = useState<TrendsData["trends"] | null>(null);
   const [loading, setLoading] = useState(true);
   const [empty, setEmpty] = useState(false);
@@ -279,18 +282,33 @@ export default function InsightsPage() {
         const latest = analyses.find((a) => a.sections) ?? analyses[0];
         const sections = latest?.sections ?? null;
         const presentation = getDarthPresentation(sections);
-        if (presentation?.supporting?.length) {
-          setDarthInsights(
-            presentation.supporting
-              .map((block) => ({
-                block,
-                copy: selectDarthCopy(block.copy, locale),
-              }))
-              .filter((entry) => entry.copy)
-          );
-          setInsights([]);
-          setLoading(false);
-          return;
+        const payload = getDarthPayload(sections);
+
+        // Extract DARTH state + primary claim for header
+        if (payload?.state) setDarthState(payload.state);
+        if (payload?.primary_claim) setDarthClaim(payload.primary_claim);
+
+        if (presentation) {
+          // Hero block
+          if (presentation.hero) {
+            const heroCopy = selectDarthCopy(presentation.hero.copy, locale);
+            if (heroCopy) setHeroBlock({ block: presentation.hero, copy: heroCopy });
+          }
+
+          // Supporting blocks
+          if (presentation.supporting?.length) {
+            setDarthInsights(
+              presentation.supporting
+                .map((block) => ({
+                  block,
+                  copy: selectDarthCopy(block.copy, locale),
+                }))
+                .filter((entry) => entry.copy)
+            );
+            setInsights([]);
+            setLoading(false);
+            return;
+          }
         }
 
         const all = [
@@ -335,7 +353,7 @@ export default function InsightsPage() {
     pillar: t.portal.insightsPage.pillar,
   };
 
-  if (empty || (insights.length === 0 && darthInsights.length === 0)) {
+  if (empty || (insights.length === 0 && darthInsights.length === 0 && !heroBlock)) {
     return (
       <div className="flex flex-col gap-6">
         <div className="flex flex-col items-center justify-center py-16 gap-4 text-center">
@@ -348,8 +366,61 @@ export default function InsightsPage() {
     );
   }
 
+  // State label map
+  const STATE_LABELS: Record<string, string> = {
+    RECOVERING: "Recovering",
+    STABLE: "Stable",
+    STRAIN_ACCUMULATING: "Strain Accumulating",
+    OVERREACHED: "Overreached",
+    MISALIGNED_RECOVERY: "Misaligned Recovery",
+  };
+
   return (
     <div className="flex flex-col gap-6">
+
+      {/* ─── DARTH primary claim header — Sprint 32.0 ─── */}
+      {(darthState || darthClaim) && (
+        <div className="rounded-xl border border-accent/20 bg-accent/5 px-5 py-4 flex flex-col gap-2">
+          {darthState && (
+            <span className="text-xs font-semibold uppercase tracking-wider text-accent">
+              {STATE_LABELS[darthState] ?? darthState}
+            </span>
+          )}
+          {darthClaim && (
+            <p className="text-sm font-medium text-card-foreground leading-relaxed">
+              {darthClaim}
+            </p>
+          )}
+        </div>
+      )}
+
+      {/* ─── DARTH hero insight ─── */}
+      {heroBlock?.copy && (
+        <div className="flex flex-col gap-3 rounded-xl border border-accent/30 bg-card p-5">
+          <div className="flex items-center gap-2">
+            <Lightbulb className="h-4 w-4 text-accent" />
+            <span className="text-[10px] font-semibold uppercase tracking-wider text-accent">
+              Key finding
+            </span>
+          </div>
+          <h3 className="text-base font-semibold text-card-foreground leading-snug">
+            {heroBlock.copy.title}
+          </h3>
+          <p className="text-sm leading-relaxed text-muted-foreground">
+            {heroBlock.copy.body}
+          </p>
+          <p className="text-xs text-accent/80 italic">→ {heroBlock.copy.action}</p>
+          {heroBlock.copy.evidence && (
+            <div className="rounded-lg bg-muted/40 px-3 py-2">
+              <span className="text-[10px] text-muted-foreground font-mono">
+                {heroBlock.copy.evidence}
+              </span>
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* ─── Supporting insights ─── */}
       {darthInsights.length > 0 ? (
         <div className="grid gap-4 sm:grid-cols-2">
           {darthInsights.map(({ block, copy }) =>
