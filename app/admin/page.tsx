@@ -214,11 +214,12 @@ export default function AdminOverviewPage() {
         </div>
       </div>
 
-      <div className="grid gap-3 sm:grid-cols-3">
+      <div className="grid gap-3 sm:grid-cols-4">
         {[
           { href: "/admin/users", label: "View all users →" },
           { href: "/admin/events", label: "View events →" },
           { href: "/admin/feedback", label: "View feedback →" },
+          { href: "/admin/blobs", label: "Blob storage →" },
         ].map(({ href, label }) => (
           <a
             key={href}
