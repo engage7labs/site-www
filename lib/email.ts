@@ -101,33 +101,66 @@ export function passwordResetEmail(resetUrl: string): {
 export { APP_URL };
 
 // ---------------------------------------------------------------------------
-// Premium Welcome Email — Sprint 17.7
+// Welcome Email — Sprint 30.1 (calm UX, magic link)
 // ---------------------------------------------------------------------------
 
-export function premiumWelcomeEmail(): { subject: string; html: string } {
-  const portalUrl = `${APP_URL}/portal`;
+/**
+ * Welcome email sent after first analysis + consent.
+ * Uses a magic link for frictionless portal access.
+ * Calm tone — no "Premium", no "password", no noise.
+ *
+ * @param accessLink - Magic link or portal URL for direct access
+ */
+export function welcomeEmail(accessLink: string): { subject: string; html: string } {
   return {
-    subject: "Welcome to Engage7 Premium",
-    html: `
-      <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; max-width: 480px; margin: 0 auto; padding: 32px 24px;">
-        <h2 style="color: #111827; margin-bottom: 16px;">Welcome to Premium</h2>
-        <p style="color: #4b5563; line-height: 1.6; margin-bottom: 16px;">
-          Your Premium access is now active. You have full access to longitudinal
-          insights, personalized baselines, and your private health dashboard.
-        </p>
-        <p style="color: #4b5563; line-height: 1.6; margin-bottom: 24px;">
-          Upload your Apple Health data anytime to keep your insights up to date.
-          The more data you add, the clearer the patterns become.
-        </p>
-        <a href="${portalUrl}" style="display: inline-block; background-color: #e6b800; color: #1a1a1a; padding: 12px 28px; border-radius: 8px; text-decoration: none; font-weight: 600; font-size: 14px;">
-          Go to your Dashboard
-        </a>
-        <p style="color: #9ca3af; font-size: 12px; margin-top: 32px; line-height: 1.5;">
-          Engage7 — Personal health insights from your wearable data.
-        </p>
-      </div>
-    `,
+    subject: "Your health insights are ready",
+    html: `<!DOCTYPE html>
+<html lang="en">
+<head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"></head>
+<body style="margin:0;padding:0;background:#0f0f0f;">
+  <div style="font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;max-width:480px;margin:0 auto;padding:40px 24px;background:#0f0f0f;color:#e5e7eb;">
+
+    <p style="font-size:13px;color:#6b7280;margin:0 0 32px 0;letter-spacing:0.05em;text-transform:uppercase;">Engage7</p>
+
+    <h1 style="font-size:24px;font-weight:700;color:#ffffff;margin:0 0 16px 0;line-height:1.3;">
+      Your data is telling a story.
+    </h1>
+
+    <p style="font-size:15px;color:#9ca3af;line-height:1.7;margin:0 0 12px 0;">
+      We've analysed your Apple Health data and found patterns worth exploring.
+    </p>
+
+    <p style="font-size:15px;color:#9ca3af;line-height:1.7;margin:0 0 32px 0;">
+      Your personal dashboard is ready — built entirely from your own data.
+    </p>
+
+    <a href="${accessLink}"
+       style="display:inline-block;background:#e6b800;color:#0f0f0f;padding:14px 32px;border-radius:8px;text-decoration:none;font-weight:700;font-size:15px;letter-spacing:0.01em;">
+      Open your dashboard →
+    </a>
+
+    <p style="font-size:12px;color:#4b5563;margin:40px 0 0 0;line-height:1.6;">
+      This link is private and opens directly to your data.<br>
+      It stays active for 30 days.
+    </p>
+
+    <hr style="border:none;border-top:1px solid #1f2937;margin:32px 0;">
+
+    <p style="font-size:11px;color:#374151;margin:0;line-height:1.5;">
+      Engage7 · Personal health insights · <a href="${APP_URL}/privacy" style="color:#4b5563;">Privacy Policy</a>
+    </p>
+
+  </div>
+</body>
+</html>`,
   };
+}
+
+/**
+ * @deprecated Use welcomeEmail(magicLink) instead (Sprint 30.1).
+ */
+export function premiumWelcomeEmail(): { subject: string; html: string } {
+  return welcomeEmail(`${APP_URL}/portal`);
 }
 
 // ---------------------------------------------------------------------------

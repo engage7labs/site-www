@@ -4,16 +4,21 @@
  * Forwards user creation requests to the API backend.
  * Sprint 15.0: Passwordless user creation with trial plan.
  * Sprint 15.2: Sets session cookie so user lands authenticated in portal.
- * Sprint 17.7: Sends premium welcome email on successful creation.
+ * Sprint 30.1: Magic link welcome email (calm UX). Session extended to 30 days.
+ *              New users receive a magic link; returning users get a plain portal link.
  */
 
 import { signRequest } from "@/lib/api/signing";
-import { SESSION_COOKIE_NAME, SESSION_HOURS, signJwt } from "@/lib/auth-server";
-import { premiumWelcomeEmail, sendEmail } from "@/lib/email";
+import { SESSION_COOKIE_NAME, signJwt } from "@/lib/auth-server";
+import { welcomeEmail, sendEmail } from "@/lib/email";
+import { generateMagicLink } from "@/lib/supabase-admin";
 import { INTERNAL_API_BASE_URL } from "@/lib/server-config";
 import { NextRequest, NextResponse } from "next/server";
 
 export const runtime = "nodejs";
+
+// 30-day session — user should not have to re-authenticate frequently
+const SESSION_30_DAYS = 30 * 24 * 3600;
 
 export async function POST(request: NextRequest) {
   const path = "/api/users/create-or-get";
@@ -43,27 +48,39 @@ export async function POST(request: NextRequest) {
 
   const res = NextResponse.json(data, { status: upstreamResponse.status });
 
-  // Sprint 15.2: Set session cookie on successful user creation/retrieval
-  // so the user lands authenticated when navigating to /portal.
   if (upstreamResponse.ok && data.email) {
-    const token = signJwt({ sub: data.email, role: "user" });
+    // Sprint 30.1: 30-day session cookie
+    const token = signJwt({
+      sub: data.email,
+      role: "user",
+      exp: Math.floor(Date.now() / 1000) + SESSION_30_DAYS,
+    });
     res.cookies.set(SESSION_COOKIE_NAME, token, {
       httpOnly: true,
       secure: process.env.NODE_ENV === "production",
       sameSite: "lax",
       path: "/",
-      maxAge: SESSION_HOURS * 3600,
+      maxAge: SESSION_30_DAYS,
     });
 
-    // Sprint 17.7: Send premium welcome email (fire-and-forget)
-    const welcome = premiumWelcomeEmail();
-    void sendEmail({
-      to: data.email,
-      subject: welcome.subject,
-      html: welcome.html,
-    }).catch((err) =>
-      console.error("[create-or-get] Welcome email failed:", err)
-    );
+    // Sprint 30.1: Welcome email with magic link for new users (plan=trial_start)
+    // Returning users already have a session — no email needed.
+    const isNewUser = data.plan === "trial_start";
+    if (isNewUser) {
+      void (async () => {
+        try {
+          // Generate magic link (30-day Supabase OTP) — falls back to portal URL
+          const magicLink =
+            (await generateMagicLink(data.email)) ??
+            `${process.env.NEXT_PUBLIC_APP_URL ?? "https://engage7.ie"}/portal`;
+
+          const email = welcomeEmail(magicLink);
+          await sendEmail({ to: data.email, subject: email.subject, html: email.html });
+        } catch (err) {
+          console.error("[create-or-get] Welcome email failed:", err);
+        }
+      })();
+    }
   }
 
   return res;
