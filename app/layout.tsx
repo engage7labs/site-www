@@ -74,6 +74,19 @@ export const metadata: Metadata = {
     ],
     apple: [{ url: "/engage7-logo-180x180.png", sizes: "180x180" }],
   },
+  // Sprint 35.0: PWA manifest
+  manifest: "/manifest.json",
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: "black-translucent",
+    title: "Engage7",
+  },
+  viewport: {
+    width: "device-width",
+    initialScale: 1,
+    maximumScale: 1,
+    userScalable: false,
+  },
 };
 
 export default function RootLayout({
