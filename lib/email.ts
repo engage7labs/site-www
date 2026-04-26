@@ -141,7 +141,7 @@ export function welcomeEmail(accessLink: string): { subject: string; html: strin
 
     <p style="font-size:12px;color:#4b5563;margin:40px 0 0 0;line-height:1.6;">
       This link is private and opens directly to your data.<br>
-      It stays active for 30 days.
+      It stays active for 24 hours.
     </p>
 
     <hr style="border:none;border-top:1px solid #1f2937;margin:32px 0;">
