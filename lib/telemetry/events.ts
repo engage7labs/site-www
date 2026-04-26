@@ -77,3 +77,11 @@ export function trackTrialReconfirmed(): void {
 export function trackAccountActivated(): void {
   capture("account_activated", getUserContext());
 }
+
+// ── Funnel step 10 ─────────────────────────────────────────────────────────
+// Hypothesis: plan_upgraded is the primary monetisation conversion event.
+// Sprint 33.0.
+
+export function trackPlanUpgraded(): void {
+  capture("plan_upgraded", getUserContext());
+}

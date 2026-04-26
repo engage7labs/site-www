@@ -119,6 +119,23 @@ export default function PortalUploadPage() {
                     </p>
                   </div>
 
+                  {/* Sprint 35.0: iOS export guide */}
+                  <details className="group rounded-lg border border-border bg-muted/20 text-sm">
+                    <summary className="cursor-pointer px-4 py-3 font-medium text-muted-foreground hover:text-foreground transition-colors list-none flex items-center justify-between">
+                      <span>📱 How to export from iPhone / Apple Health</span>
+                      <span className="text-xs text-muted-foreground/60 group-open:hidden">Show steps</span>
+                      <span className="text-xs text-muted-foreground/60 hidden group-open:inline">Hide</span>
+                    </summary>
+                    <ol className="px-4 pb-4 pt-1 space-y-1.5 text-muted-foreground leading-relaxed">
+                      <li>1. Open the <strong className="text-foreground">Health</strong> app on your iPhone.</li>
+                      <li>2. Tap your <strong className="text-foreground">profile picture</strong> (top right).</li>
+                      <li>3. Scroll down and tap <strong className="text-foreground">Export All Health Data</strong>.</li>
+                      <li>4. Tap <strong className="text-foreground">Export</strong> and wait a few seconds.</li>
+                      <li>5. Choose <strong className="text-foreground">Save to Files</strong> → iCloud Drive.</li>
+                      <li>6. Open this page on your iPhone, tap the upload area and select the <code className="font-mono text-accent">export.zip</code> file.</li>
+                    </ol>
+                  </details>
+
                   <FileUpload
                     onFileSelect={handleFileSelect}
                     onUpload={handleUpload}

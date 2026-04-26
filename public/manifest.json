@@ -1,0 +1,50 @@
+{
+  "name": "Engage7 — Personal Health Insights",
+  "short_name": "Engage7",
+  "description": "Turn your Apple Health data into clear, personalised insights about sleep, recovery, and movement.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#0f0f0f",
+  "theme_color": "#e6b800",
+  "orientation": "portrait-primary",
+  "lang": "en-IE",
+  "categories": ["health", "fitness", "medical"],
+  "icons": [
+    {
+      "src": "/engage7-logo-192x192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/engage7-logo-512x512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/engage7-logo-180x180.png",
+      "sizes": "180x180",
+      "type": "image/png",
+      "purpose": "any"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "My Dashboard",
+      "short_name": "Dashboard",
+      "description": "Open your health dashboard",
+      "url": "/portal",
+      "icons": [{ "src": "/engage7-logo-192x192.png", "sizes": "192x192" }]
+    },
+    {
+      "name": "Upload Health Data",
+      "short_name": "Upload",
+      "description": "Upload an Apple Health export",
+      "url": "/portal/upload",
+      "icons": [{ "src": "/engage7-logo-192x192.png", "sizes": "192x192" }]
+    }
+  ],
+  "screenshots": [],
+  "prefer_related_applications": false
+}
