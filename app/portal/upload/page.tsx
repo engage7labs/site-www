@@ -74,17 +74,60 @@ export default function PortalUploadPage() {
     setStatus("uploading");
     trackUploadStarted(selectedFile.size);
 
-    const form = new FormData();
-    form.append("file", selectedFile, selectedFile.name);
-    form.append("locale", locale);
-
     try {
-      const res = await fetch("/api/proxy/portal/upload", { method: "POST", body: form });
-      if (!res.ok) {
-        const err = await res.json().catch(() => ({ detail: "Upload failed" })) as { detail?: string };
-        throw new Error(err.detail ?? "Upload failed");
+      // Step 1 — get SAS URL + job_id from server (no file sent here)
+      const tokenForm = new FormData();
+      tokenForm.append("consent", "true");
+      tokenForm.append("locale", locale);
+
+      const tokenRes = await fetch("/api/proxy/upload-token", {
+        method: "POST",
+        body: tokenForm,
+      });
+      if (!tokenRes.ok) {
+        const err = await tokenRes.json().catch(() => ({ detail: "Failed to get upload URL" })) as { detail?: string };
+        throw new Error(err.detail ?? "Failed to get upload URL");
       }
-      const data = await res.json() as { job_id: string };
+      const tokenData = await tokenRes.json() as {
+        mode?: string;
+        job_id?: string;
+        sas_url?: string;
+        confirmUrl?: string;
+        confirmHeaders?: Record<string, string>;
+      };
+
+      if (tokenData.mode !== "direct-blob" || !tokenData.sas_url || !tokenData.job_id) {
+        throw new Error("Upload service unavailable. Please try again.");
+      }
+
+      // Step 2 — PUT file directly to Azure Blob Storage (bypasses Vercel size limit)
+      const blobRes = await fetch(tokenData.sas_url, {
+        method: "PUT",
+        headers: {
+          "x-ms-blob-type": "BlockBlob",
+          "Content-Type": "application/zip",
+        },
+        body: selectedFile,
+      });
+      if (!blobRes.ok) {
+        throw new Error(`File upload failed (${blobRes.status}). Please try again.`);
+      }
+
+      // Step 3 — portal confirm: creates UserAnalysis + triggers ingest job
+      const confirmForm = new FormData();
+      confirmForm.append("job_id", tokenData.job_id);
+      confirmForm.append("locale", locale);
+
+      const confirmRes = await fetch("/api/proxy/portal/confirm", {
+        method: "POST",
+        body: confirmForm,
+      });
+      if (!confirmRes.ok) {
+        const err = await confirmRes.json().catch(() => ({ detail: "Confirm failed" })) as { detail?: string };
+        throw new Error(err.detail ?? "Upload confirmation failed");
+      }
+
+      const data = await confirmRes.json() as { job_id: string };
       setActiveJobId(data.job_id);
       setStatus("queued");
     } catch (err) {
