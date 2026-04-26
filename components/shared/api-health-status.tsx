@@ -24,6 +24,7 @@ export function APIHealthStatus({
   suppressUnhealthy = false,
 }: Readonly<APIHealthStatusProps>) {
   const [isHealthy, setIsHealthy] = useState<boolean | null>(null);
+  const [version, setVersion] = useState<string | null>(null);
 
   useEffect(() => {
     let cancelled = false;
@@ -33,6 +34,7 @@ export function APIHealthStatus({
         .then((response) => {
           if (!cancelled) {
             setIsHealthy(response.status === "healthy");
+            if (response.version) setVersion(response.version);
           }
         })
         .catch(() => {
@@ -67,7 +69,7 @@ export function APIHealthStatus({
       >
         <div className="inline-flex items-center gap-2 rounded-full border border-emerald-200 dark:border-emerald-900/50 bg-emerald-50 dark:bg-emerald-950/20 px-3 py-1.5 text-xs text-emerald-800 dark:text-emerald-200">
           <CheckCircle2 className="h-3.5 w-3.5" />
-          API online
+          API online{version ? ` ${version}` : ""}
         </div>
       </motion.div>
     );

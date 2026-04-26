@@ -198,6 +198,9 @@ export interface APIHealth {
   status: string;
   timestamp: string;
   version: string;
+  git_sha?: string;
+  environment?: string;
+  build_time?: string;
 }
 
 export async function getPublicMetrics(): Promise<PublicMetrics> {
