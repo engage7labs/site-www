@@ -1,6 +1,6 @@
 "use client";
 
-import { BarChart3, MessageSquare, Users, Zap } from "lucide-react";
+import { BarChart3, MessageSquare, TrendingUp, UserCheck, Users, Zap } from "lucide-react";
 import { useEffect, useState } from "react";
 
 interface AdminMetrics {
@@ -13,6 +13,14 @@ interface AdminMetrics {
   premium_unlock_events: number;
   conversion_rate_approx: number;
   analyses_per_user_avg: number;
+  users_with_analysis: number;
+  new_users_7d: number;
+  funnel: {
+    total_users: number;
+    users_with_consent: number;
+    users_with_analysis: number;
+    premium_users: number;
+  };
 }
 
 function MetricCard({
@@ -82,6 +90,22 @@ export default function AdminOverviewPage() {
   const planEntries = Object.entries(metrics.users_by_plan).sort(
     ([, a], [, b]) => b - a
   );
+  const total_users = metrics.total_users;
+  const funnel = metrics.funnel ?? {
+    total_users: metrics.total_users,
+    users_with_consent: metrics.users_with_consent,
+    users_with_analysis: metrics.users_with_analysis ?? 0,
+    premium_users: metrics.users_by_plan.premium ?? 0,
+  };
+
+  // Funnel bar widths as % relative to the first step
+  const funnelMax = Math.max(funnel.total_users, 1);
+  const funnelSteps = [
+    { label: "Signed up", value: funnel.total_users, color: "#6366f1" },
+    { label: "Consented", value: funnel.users_with_consent, color: "#3dbe73" },
+    { label: "Ran analysis", value: funnel.users_with_analysis, color: "#e5a336" },
+    { label: "Premium", value: funnel.premium_users, color: "#e6b800" },
+  ];
 
   return (
     <div className="flex flex-col gap-8">
@@ -92,12 +116,24 @@ export default function AdminOverviewPage() {
         </p>
       </div>
 
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6">
         <MetricCard
           label="Total users"
           value={metrics.total_users}
           icon={Users}
-          sub={`${metrics.users_with_consent} with consent`}
+          sub={`${metrics.new_users_7d} new (7d)`}
+        />
+        <MetricCard
+          label="Consented"
+          value={metrics.users_with_consent}
+          icon={UserCheck}
+          sub={`${total_users > 0 ? Math.round((metrics.users_with_consent / total_users) * 100) : 0}% of total`}
+        />
+        <MetricCard
+          label="Activated"
+          value={metrics.users_with_analysis}
+          icon={TrendingUp}
+          sub={`${total_users > 0 ? Math.round((metrics.users_with_analysis / total_users) * 100) : 0}% ran analysis`}
         />
         <MetricCard
           label="Total analyses"
@@ -112,13 +148,48 @@ export default function AdminOverviewPage() {
           sub={`${metrics.premium_unlock_events} premium unlocks`}
         />
         <MetricCard
-          label="Total feedback"
+          label="Feedback"
           value={metrics.total_feedback}
           icon={MessageSquare}
-          sub={`${(metrics.conversion_rate_approx * 100).toFixed(
-            1
-          )}% conversion approx`}
+          sub={`${(metrics.conversion_rate_approx * 100).toFixed(1)}% premium rate`}
         />
+      </div>
+
+      {/* Conversion funnel — Sprint 31.1 */}
+      <div className="rounded-xl border border-border bg-card p-5">
+        <h2 className="text-sm font-semibold text-card-foreground mb-4">
+          Conversion funnel
+        </h2>
+        <div className="space-y-3">
+          {funnelSteps.map((step, i) => {
+            const pct = Math.round((step.value / funnelMax) * 100);
+            const dropPct =
+              i > 0 && funnelSteps[i - 1].value > 0
+                ? Math.round((1 - step.value / funnelSteps[i - 1].value) * 100)
+                : null;
+            return (
+              <div key={step.label}>
+                <div className="flex items-center justify-between mb-1">
+                  <span className="text-xs text-muted-foreground">{step.label}</span>
+                  <div className="flex items-center gap-2">
+                    {dropPct !== null && (
+                      <span className="text-xs text-destructive/70">-{dropPct}%</span>
+                    )}
+                    <span className="text-xs font-semibold text-card-foreground">
+                      {step.value}
+                    </span>
+                  </div>
+                </div>
+                <div className="h-2 w-full rounded-full bg-muted overflow-hidden">
+                  <div
+                    className="h-full rounded-full transition-all"
+                    style={{ width: `${pct}%`, backgroundColor: step.color }}
+                  />
+                </div>
+              </div>
+            );
+          })}
+        </div>
       </div>
 
       <div className="rounded-xl border border-border bg-card p-5">
