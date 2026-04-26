@@ -37,9 +37,9 @@ const NAV_ITEMS: NavItem[] = [
     href: "/portal/health",
     icon: Activity,
     children: [
-      { label: "Sleep", href: "/portal/health#sleep", icon: Moon },
-      { label: "Recovery", href: "/portal/health#recovery", icon: Heart },
-      { label: "Activity", href: "/portal/health#activity", icon: Zap },
+      { label: "Sleep", href: "/portal/health/sleep", icon: Moon },
+      { label: "Recovery", href: "/portal/health/recovery", icon: Heart },
+      { label: "Activity", href: "/portal/health/activity", icon: Zap },
     ],
   },
   { label: "Insights", href: "/portal/insights", icon: Lightbulb },
@@ -150,17 +150,24 @@ export function PortalSidebar({
               {/* Children: Sleep, Recovery, Activity */}
               {!collapsed && healthOpen && (
                 <div className="ml-4 mt-0.5 flex flex-col gap-0.5 border-l border-border/50 pl-2">
-                  {item.children.map((child) => (
-                    <Link
-                      key={child.href}
-                      href={child.href}
-                      onClick={onCloseMobile}
-                      className="flex items-center gap-2.5 rounded-lg px-2.5 py-1.5 text-xs font-medium transition-colors text-muted-foreground hover:text-foreground hover:bg-muted/50"
-                    >
-                      <child.icon className="h-3.5 w-3.5 shrink-0" />
-                      {child.label}
-                    </Link>
-                  ))}
+                  {item.children.map((child) => {
+                    const childActive = pathname === child.href;
+                    return (
+                      <Link
+                        key={child.href}
+                        href={child.href}
+                        onClick={onCloseMobile}
+                        className={`flex items-center gap-2.5 rounded-lg px-2.5 py-1.5 text-xs font-medium transition-colors ${
+                          childActive
+                            ? "bg-accent/10 text-accent"
+                            : "text-muted-foreground hover:bg-muted/50 hover:text-foreground"
+                        }`}
+                      >
+                        <child.icon className="h-3.5 w-3.5 shrink-0" />
+                        {child.label}
+                      </Link>
+                    );
+                  })}
                 </div>
               )}
             </div>

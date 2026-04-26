@@ -38,6 +38,18 @@ const SECTION_TITLES: Record<string, { title: string; subtitle: string }> = {
     title: "Health",
     subtitle: "Longitudinal Sleep, Recovery & Activity",
   },
+  "/portal/health/sleep": {
+    title: "Sleep",
+    subtitle: "Sleep duration, stages, consistency, and efficiency",
+  },
+  "/portal/health/recovery": {
+    title: "Recovery",
+    subtitle: "HRV, heart rate, readiness, and baseline comparison",
+  },
+  "/portal/health/activity": {
+    title: "Activity",
+    subtitle: "Steps, energy, distance, and activity consistency",
+  },
 };
 
 const STORAGE_KEY = "engage7_portal_sidebar_collapsed";
