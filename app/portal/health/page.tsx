@@ -1,5 +1,6 @@
 "use client";
 
+import { DarthStatePanel } from "@/components/portal/darth-state-panel";
 import type { EChartsOption } from "echarts";
 import { Activity, Heart, Moon } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
@@ -305,15 +306,33 @@ function EmptyState() {
 
 export default function HealthPage() {
   const [trendsData, setTrendsData] = useState<TrendsData | null>(null);
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const [latestSections, setLatestSections] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [period, setPeriod] = useState<Period>("all");
 
   useEffect(() => {
     (async () => {
       try {
-        const res = await fetch("/api/proxy/users/portal-trends");
-        if (res.ok) {
-          setTrendsData(await res.json());
+        const [trendsRes, analysesRes] = await Promise.allSettled([
+          fetch("/api/proxy/users/portal-trends"),
+          fetch("/api/proxy/users/portal-analyses"),
+        ]);
+
+        if (trendsRes.status === "fulfilled" && trendsRes.value.ok) {
+          setTrendsData(await trendsRes.value.json());
+        }
+
+        if (analysesRes.status === "fulfilled" && analysesRes.value.ok) {
+          const analysesData = await analysesRes.value.json();
+          const analyses = analysesData.analyses ?? [];
+          const latest = analyses.find(
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            (a: any) => a.sections
+          );
+          if (latest?.sections) {
+            setLatestSections(latest.sections);
+          }
         }
       } catch {
         // silent
@@ -376,6 +395,9 @@ export default function HealthPage() {
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <PeriodSwitcher period={period} onChange={setPeriod} />
       </div>
+
+      {/* ─── DARTH State Panel — Sprint 32.0 ─── */}
+      <DarthStatePanel sections={latestSections} />
 
       {/* ─── Sleep Section ─── */}
       <div id="sleep" className="flex items-center gap-2 mt-2 scroll-mt-20">
