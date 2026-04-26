@@ -68,6 +68,25 @@ interface OverviewData {
   } | null;
 }
 
+function coerceHighlights(value: unknown): string[] {
+  if (Array.isArray(value)) {
+    return value.filter((item): item is string => typeof item === "string");
+  }
+
+  if (typeof value === "string") {
+    try {
+      const parsed = JSON.parse(value);
+      return Array.isArray(parsed)
+        ? parsed.filter((item): item is string => typeof item === "string")
+        : [];
+    } catch {
+      return [];
+    }
+  }
+
+  return [];
+}
+
 function parseLatestSections(payload: unknown): Record<string, unknown> | null {
   if (!payload) return null;
 
@@ -492,6 +511,7 @@ export default function PortalOverviewPage() {
     data?.recovery_trend != null ? `${data.recovery_trend} ms` : "—";
   const completeness = data?.data_completeness ?? "—";
   const latest = data?.latest_analysis;
+  const latestHighlights = coerceHighlights(latest?.highlights);
 
   return (
     <div className="flex flex-col gap-6">
@@ -585,9 +605,9 @@ export default function PortalOverviewPage() {
               })}
             </p>
           )}
-          {latest.highlights && latest.highlights.length > 0 ? (
+          {latestHighlights.length > 0 ? (
             <ul className="mt-3 space-y-1.5">
-              {latest.highlights.map((h: string, i: number) => (
+              {latestHighlights.map((h: string, i: number) => (
                 <li
                   key={`hl-${i}`}
                   className="flex items-start gap-2 text-sm text-card-foreground"
