@@ -6,6 +6,7 @@ import {
   extractSleepInsights,
   type InsightText,
 } from "@/lib/insights/extract";
+import { getDarthPresentation, selectDarthCopy, type DarthInsightBlock } from "@/lib/darth";
 import { useLocale } from "@/components/providers/locale-provider";
 import {
   Activity,
@@ -245,8 +246,11 @@ function InsightCard({
 }
 
 export default function InsightsPage() {
-  const { t } = useLocale();
+  const { t, locale } = useLocale();
   const [insights, setInsights] = useState<InsightText[]>([]);
+  const [darthInsights, setDarthInsights] = useState<
+    Array<{ block: DarthInsightBlock; copy: ReturnType<typeof selectDarthCopy> }>
+  >([]);
   const [trends, setTrends] = useState<TrendsData["trends"] | null>(null);
   const [loading, setLoading] = useState(true);
   const [empty, setEmpty] = useState(false);
@@ -274,6 +278,20 @@ export default function InsightsPage() {
 
         const latest = analyses.find((a) => a.sections) ?? analyses[0];
         const sections = latest?.sections ?? null;
+        const presentation = getDarthPresentation(sections);
+        if (presentation?.supporting?.length) {
+          setDarthInsights(
+            presentation.supporting
+              .map((block) => ({
+                block,
+                copy: selectDarthCopy(block.copy, locale),
+              }))
+              .filter((entry) => entry.copy)
+          );
+          setInsights([]);
+          setLoading(false);
+          return;
+        }
 
         const all = [
           ...extractSleepInsights(sections),
@@ -290,7 +308,7 @@ export default function InsightsPage() {
         setEmpty(true);
         setLoading(false);
       });
-  }, []);
+  }, [locale]);
 
   // Memoize sparkline data for each pillar
   const sparklines = useMemo(() => {
@@ -317,7 +335,7 @@ export default function InsightsPage() {
     pillar: t.portal.insightsPage.pillar,
   };
 
-  if (empty || insights.length === 0) {
+  if (empty || (insights.length === 0 && darthInsights.length === 0)) {
     return (
       <div className="flex flex-col gap-6">
         <div className="flex flex-col items-center justify-center py-16 gap-4 text-center">
@@ -332,18 +350,47 @@ export default function InsightsPage() {
 
   return (
     <div className="flex flex-col gap-6">
-      <div className="grid gap-4 sm:grid-cols-2">
-        {insights.map((insight, i) => (
-          <InsightCard
-            key={`${insight.pillar}-${i}`}
-            insight={insight}
-            sparkData={
-              sparklines[insight.pillar as keyof typeof sparklines] ?? []
-            }
-            strings={insightStrings}
-          />
-        ))}
-      </div>
+      {darthInsights.length > 0 ? (
+        <div className="grid gap-4 sm:grid-cols-2">
+          {darthInsights.map(({ block, copy }) =>
+            copy ? (
+              <div
+                key={block.id}
+                className="flex flex-col gap-3 rounded-xl border border-border bg-card p-5"
+              >
+                <div className="flex items-center gap-2">
+                  <Lightbulb className="h-4 w-4 text-accent" />
+                  <h3 className="text-sm font-semibold text-card-foreground">
+                    {copy.title}
+                  </h3>
+                </div>
+                <p className="text-sm leading-relaxed text-muted-foreground">
+                  {copy.body}
+                </p>
+                <p className="text-xs text-accent/80 italic">→ {copy.action}</p>
+                <div className="rounded-lg bg-muted/40 px-3 py-2">
+                  <span className="text-[10px] text-muted-foreground font-mono">
+                    {copy.evidence}
+                  </span>
+                </div>
+              </div>
+            ) : null
+          )}
+        </div>
+      ) : (
+        <div className="grid gap-4 sm:grid-cols-2">
+          {insights.map((insight, i) => (
+            <InsightCard
+              key={`${insight.pillar}-${i}`}
+              insight={insight}
+              sparkData={
+                sparklines[insight.pillar as keyof typeof sparklines] ?? []
+              }
+              strings={insightStrings}
+            />
+          ))}
+        </div>
+      )}
     </div>
   );
 }

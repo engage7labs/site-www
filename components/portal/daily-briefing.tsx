@@ -2,7 +2,7 @@
  * DailyBriefing — Sprint 19.0
  *
  * Hero card for the portal overview page. Renders a deterministic
- * daily briefing: current state, what to avoid, projection, and
+ * daily briefing: active window, what to avoid, projection, and
  * light adjustments — all from the user's own data.
  *
  * Language: simple, calm, human. No jargon.
@@ -20,6 +20,8 @@ import {
 } from "lucide-react";
 import { useEffect, useState } from "react";
 import { BriefingFeedback } from "./briefing-feedback";
+import { selectDarthCopy, selectDarthCta, type DarthPresentation } from "@/lib/darth";
+import { useLocale } from "@/components/providers/locale-provider";
 
 // ---------------------------------------------------------------------------
 // Types
@@ -36,6 +38,14 @@ interface Briefing {
 
 interface DailyBriefingData {
   briefing: Briefing | null;
+  presentation?: DarthPresentation | null;
+  narrative_state?: {
+    primary_theme: string;
+    tone: string;
+    direction: string;
+    confidence: number;
+    supporting_domains: string[];
+  } | null;
   reason?: string;
 }
 
@@ -56,7 +66,7 @@ const STATE_CONFIG: Record<
 > = {
   strained: {
     label: "Strained",
-    description: "Your body is signalling it needs extra care today.",
+    description: "Your body is signalling it needs extra care in this window.",
     icon: AlertTriangle,
     color: "text-amber-600 dark:text-amber-400",
     bg: "bg-amber-50/80 dark:bg-amber-950/30",
@@ -103,6 +113,7 @@ function benchmarkLabel(text: string): string {
 // ---------------------------------------------------------------------------
 
 export function DailyBriefing() {
+  const { locale } = useLocale();
   const [data, setData] = useState<DailyBriefingData | null>(null);
   const [loading, setLoading] = useState(true);
 
@@ -132,6 +143,91 @@ export function DailyBriefing() {
   }
 
   if (!data?.briefing) return null;
+
+  const darthHero = data.presentation?.hero
+    ? selectDarthCopy(data.presentation.hero.copy, locale)
+    : null;
+  const darthSupporting = (data.presentation?.supporting ?? [])
+    .map((block) => ({
+      block,
+      copy: selectDarthCopy(block.copy, locale),
+    }))
+    .filter((entry) => entry.copy);
+  const darthCta = selectDarthCta(data.presentation?.cta, locale);
+
+  if (data.presentation?.hero && darthHero) {
+    return (
+      <div className="portal-panel rounded-xl border border-accent/20 bg-accent/[0.04] p-6 space-y-5">
+        <div className="flex items-start gap-4">
+          <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-accent/10 text-accent">
+            <Sparkles className="h-5 w-5" />
+          </div>
+          <div className="flex-1 min-w-0">
+            <div className="flex items-center gap-2 flex-wrap">
+              <h2 className="text-lg font-semibold text-card-foreground">
+                {darthHero.title}
+              </h2>
+              {data.narrative_state && (
+                <span className="text-[10px] text-muted-foreground/60 font-medium uppercase tracking-wider">
+                  {Math.round(data.narrative_state.confidence * 100)}% confidence
+                </span>
+              )}
+            </div>
+            <p className="text-sm text-muted-foreground mt-0.5">
+              {darthHero.body}
+            </p>
+          </div>
+        </div>
+
+        <div className="rounded-lg bg-muted/30 px-4 py-3">
+          <p className="text-[11px] text-muted-foreground/60 font-mono">
+            {darthHero.evidence}
+          </p>
+        </div>
+
+        {darthSupporting.length > 0 && (
+          <div>
+            <h3 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-2">
+              Supporting signals
+            </h3>
+            <div className="space-y-2">
+              {darthSupporting.map(({ block, copy }) => (
+                <p
+                  key={block.id}
+                  className="text-sm text-card-foreground/85 flex items-start gap-2"
+                >
+                  <ArrowRight className="h-3.5 w-3.5 mt-0.5 shrink-0 text-accent/70" />
+                  <span>
+                    {copy?.body}
+                    {copy?.evidence ? ` (${copy.evidence})` : ""}
+                  </span>
+                </p>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {darthCta && (
+          <div>
+            <h3 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-2">
+              Light adjustments
+            </h3>
+            <p className="text-sm text-card-foreground/85 flex items-start gap-2">
+              <ArrowRight className="h-3.5 w-3.5 mt-0.5 shrink-0 text-accent/70" />
+              {darthCta}
+            </p>
+          </div>
+        )}
+
+        <div className="pt-2 border-t border-border/40">
+          <BriefingFeedback
+            feedbackType="daily_briefing"
+            context={data.narrative_state?.primary_theme ?? "darth"}
+          />
+        </div>
+      </div>
+    );
+  }
 
   const b = data.briefing;
   const cfg = STATE_CONFIG[b.state];
@@ -183,7 +279,7 @@ export function DailyBriefing() {
       {b.avoid.length > 0 && (
         <div>
           <h3 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-2">
-            What to avoid today
+            What to avoid in this window
           </h3>
           <div className="space-y-1.5">
             {b.avoid.map((a, i) => (

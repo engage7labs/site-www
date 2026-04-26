@@ -42,5 +42,7 @@ jobs:
           NEXT_PUBLIC_APP_VERSION: ${{ github.sha }}
           NEXT_PUBLIC_GIT_SHA: ${{ github.sha }}
           NEXT_PUBLIC_BUILD_TIME: ${{ github.event.head_commit.timestamp }}
-          NEXT_PUBLIC_APP_ENV: ci
+          NEXT_PUBLIC_APP_ENV: ${{ github.ref_name == 'main' && 'production' || 'development' }}
+          NEXT_PUBLIC_SITE_URL: ${{ github.ref_name == 'main' && 'https://www.engage7.ie' || 'https://dev.engage7.ie' }}
+          NEXT_PUBLIC_API_BASE_URL: ${{ github.ref_name == 'main' && 'https://api.engage7.ie' || 'https://engage7-api-dev.orangeisland-abf82cd7.northeurope.azurecontainerapps.io' }}
         run: pnpm build

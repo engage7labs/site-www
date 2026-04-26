@@ -17,7 +17,7 @@
 
 import { checkReadOnlyMode } from "@/lib/api/read-only-check";
 import { signRequest } from "@/lib/api/signing";
-import { ensureProtocol } from "@/lib/config";
+import { INTERNAL_API_BASE_URL } from "@/lib/server-config";
 import { NextRequest, NextResponse } from "next/server";
 
 export const runtime = "nodejs";
@@ -31,9 +31,7 @@ export async function POST(req: NextRequest) {
     );
   }
 
-  const apiBase = ensureProtocol(
-    process.env.NEXT_PUBLIC_API_BASE_URL ?? "http://localhost:8000"
-  );
+  const apiBase = INTERNAL_API_BASE_URL;
 
   // Forward consent/locale/turnstile to the API's upload-sas endpoint
   // to get a SAS URL for direct blob upload.

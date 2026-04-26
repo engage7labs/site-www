@@ -553,6 +553,14 @@ export const enIE = {
 
   // Teaser (insight-preview)
   teaser: {
+    confidence: "confidence",
+    evidenceLabel: "Evidence",
+    meaningLabel: "Why this matters",
+    chartRoles: {
+      evidence: "Evidence",
+      impact: "Impact",
+      support: "Supporting signal",
+    },
     hero: {
       // Adaptive headline — driven by sleep consistency CV
       adaptiveClear: "Your body is showing clear patterns — here's what stands out",

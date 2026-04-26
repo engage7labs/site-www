@@ -9,8 +9,6 @@ import { ApiClientError } from "@/lib/api/client";
 import { getOrCreateSessionId } from "@/lib/api/events";
 import { SESSION_COOKIE_NAME } from "@/lib/auth-edge";
 import {
-  trackAnalysisStarted,
-  trackErrorOccurred,
   trackUploadCompleted,
   trackUploadStarted,
 } from "@/lib/telemetry";
@@ -59,10 +57,7 @@ export default function PortalUploadPage() {
 
     setIsUploading(true);
 
-    trackUploadStarted(
-      selectedFile.size,
-      selectedFile.name.endsWith(".zip") ? "export.zip" : undefined
-    );
+    trackUploadStarted(selectedFile.size);
 
     void submitAnalysisUpload(
       selectedFile,
@@ -75,7 +70,6 @@ export default function PortalUploadPage() {
         window.localStorage.setItem(`engage7_job_${result.job_id}`, sessionId);
 
         trackUploadCompleted(result.job_id);
-        trackAnalysisStarted(result.job_id);
         // Stay in portal — navigate to portal report page
         router.push(`/portal/reports/${result.job_id}`);
       })
@@ -84,12 +78,6 @@ export default function PortalUploadPage() {
           error instanceof ApiClientError && error.message
             ? error.message
             : "Upload failed";
-
-        trackErrorOccurred("upload_failed", errorMessage, {
-          file_size: selectedFile.size,
-          status_code:
-            error instanceof ApiClientError ? error.statusCode : undefined,
-        });
 
         const message =
           error instanceof ApiClientError && error.message

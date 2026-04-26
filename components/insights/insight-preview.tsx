@@ -14,6 +14,16 @@
 
 import { useLocale } from "@/components/providers/locale-provider";
 import {
+  type DarthPayload,
+  type DarthProofChart,
+  type DarthTeaser,
+  getDarthPayload,
+  getDarthPresentation,
+  getDarthTeaser,
+  selectDarthCopy,
+  selectDarthCta,
+} from "@/lib/darth";
+import {
   buildActivityChart,
   buildActivityWeeklyChart,
   buildRecoveryChart,
@@ -32,15 +42,7 @@ import {
   getSurprisingInsight,
 } from "@/lib/insights";
 import { generateInsights } from "@/lib/insights/engine";
-import {
-  trackActivityPreviewViewed,
-  trackAnalysisPreviewLoaded,
-  trackChartInteracted,
-  trackFullReportCtaViewed,
-  trackPreviewNextClicked,
-  trackReportUnlockClicked,
-  trackSleepPreviewViewed,
-} from "@/lib/telemetry";
+import { trackPremiumCtaClicked } from "@/lib/telemetry";
 import type { AnalysisResult } from "@/lib/types/analysis";
 import { motion } from "framer-motion";
 import {
@@ -53,6 +55,7 @@ import {
   Sparkles,
 } from "lucide-react";
 import Link from "next/link";
+import type { ReactNode } from "react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { ChartEmptyState } from "./chart-empty-state";
 import { DailyEnergyChart } from "./daily-energy-chart";
@@ -110,6 +113,58 @@ function useDarkMode(theme?: string) {
   return theme === "black";
 }
 
+function assertDarthContract(darth: DarthPayload): void {
+  const missing: string[] = [];
+  if (!darth.state) missing.push("state");
+  if (!darth.trajectory) missing.push("trajectory");
+  if (!darth.primary_claim) missing.push("primary_claim");
+  if (!darth.baseline_context?.headline) missing.push("baseline_context.headline");
+  if (!darth.baseline_context?.explanation) missing.push("baseline_context.explanation");
+  if (darth.confidence == null) missing.push("confidence");
+  if (!darth.dominant_signal) missing.push("dominant_signal");
+  if (!darth.guidance?.statement) missing.push("guidance.statement");
+  if (!darth.guidance?.recommended_adjustment) {
+    missing.push("guidance.recommended_adjustment");
+  }
+  if (!darth.consequence?.summary) missing.push("consequence.summary");
+  if (!darth.consequence?.if_pattern_continues) {
+    missing.push("consequence.if_pattern_continues");
+  }
+  if (!darth.consequence?.scope) missing.push("consequence.scope");
+  if (!darth.consequence?.severity) missing.push("consequence.severity");
+  if (!darth.evidence) missing.push("evidence");
+  if (!Array.isArray(darth.charts) || darth.charts.length === 0) {
+    missing.push("charts");
+  }
+
+  darth.charts?.forEach((chart, index) => {
+    if (!chart.role) missing.push(`charts.${index}.role`);
+    if (!chart.metric) missing.push(`charts.${index}.metric`);
+    if (!chart.window) missing.push(`charts.${index}.window`);
+    if (chart.baseline_reference !== "baseline_30d") {
+      missing.push(`charts.${index}.baseline_reference`);
+    }
+    if (!chart.proof_statement) missing.push(`charts.${index}.proof_statement`);
+    if (chart.priority == null) missing.push(`charts.${index}.priority`);
+    if (!chart.claim_relation) missing.push(`charts.${index}.claim_relation`);
+  });
+
+  if (missing.length > 0) {
+    throw new Error(`Incomplete DARTH teaser contract: ${missing.join(", ")}`);
+  }
+}
+
+function hasDarthClaimContract(darth: DarthPayload | null): darth is DarthPayload {
+  return Boolean(
+    darth?.primary_claim &&
+      darth.baseline_context?.headline &&
+      darth.baseline_context?.explanation &&
+      darth.consequence?.summary &&
+      darth.consequence?.if_pattern_continues &&
+      darth.guidance?.statement
+  );
+}
+
 // ---------------------------------------------------------------------------
 // Locale helpers (Sprint 25.2)
 // ---------------------------------------------------------------------------
@@ -129,10 +184,65 @@ export function InsightPreview({
   onOpenModal,
   embedded,
 }: Readonly<InsightPreviewProps>) {
-  const { t } = useLocale();
+  const { t, locale } = useLocale();
   const isDark = useDarkMode(theme);
   const sections: Sections | null = result.sections ?? null;
   const summary = result.summary;
+  const darthPayload = useMemo(
+    () => getDarthPayload(result.sections),
+    [result.sections]
+  );
+  const darthPresentation = useMemo(
+    () => getDarthPresentation(result.sections),
+    [result.sections]
+  );
+  const darthTeaser = useMemo(
+    () => getDarthTeaser(result.sections),
+    [result.sections]
+  );
+  const usesDarthTeaser = Boolean(
+    darthTeaser?.headline &&
+      darthTeaser.subtext &&
+      darthTeaser.action &&
+      darthTeaser.cta
+  );
+  const usesDarth = useMemo(() => {
+    if (usesDarthTeaser) return false;
+    if (!darthPayload) return false;
+    if (!hasDarthClaimContract(darthPayload)) return false;
+    assertDarthContract(darthPayload);
+    return true;
+  }, [darthPayload, usesDarthTeaser]);
+  const darthSupporting = useMemo(
+    () =>
+      (darthPresentation?.supporting ?? []).map((block) => ({
+        block,
+        copy: selectDarthCopy(block.copy, locale),
+      })),
+    [darthPresentation, locale]
+  );
+  const darthCta = useMemo(
+    () => selectDarthCta(darthPresentation?.cta, locale),
+    [darthPresentation, locale]
+  );
+  const darthProofCharts = useMemo(() => {
+    const roleOrder: Record<DarthProofChart["role"], number> = {
+      evidence: 0,
+      supporting: 1,
+      conflict: 2,
+    };
+    return [...(darthPayload?.charts ?? [])].sort((a, b) => {
+      const roleDelta = roleOrder[a.role] - roleOrder[b.role];
+      if (roleDelta !== 0) return roleDelta;
+      const priorityDelta = a.priority - b.priority;
+      if (priorityDelta !== 0) return priorityDelta;
+      return a.metric.localeCompare(b.metric);
+    });
+  }, [darthPayload]);
+  const topEvidenceCharts = useMemo(
+    () => darthProofCharts.slice(0, 3),
+    [darthProofCharts]
+  );
 
   // ---- Duration ---------------------------------------------------------
   const durationInfo: DurationInfo | null = useMemo(
@@ -152,6 +262,12 @@ export function InsightPreview({
     }
     return t.teaser.hero.adaptiveShifting;
   }, [sections, t]);
+  const stateHeadline = useMemo(
+    () =>
+      darthTeaser?.headline ??
+      (usesDarth ? darthPayload?.primary_claim ?? adaptiveHeadline : adaptiveHeadline),
+    [adaptiveHeadline, darthPayload, darthTeaser, usesDarth]
+  );
 
   // ---- Extract insights (deterministic) ----------------------------------
   const sleepInsights = useMemo(
@@ -247,8 +363,6 @@ export function InsightPreview({
       datasetDurationValue: durationInfo?.value,
       previewStage: "sleep",
     };
-    trackAnalysisPreviewLoaded(meta);
-    trackSleepPreviewViewed(meta);
   }, [jobId, durationInfo]);
 
   // ---- Progressive section reveal (Sprint 24.0) -------------------------
@@ -295,19 +409,10 @@ export function InsightPreview({
 
   const goToActivity = () => {
     setActiveStage("activity");
-    trackPreviewNextClicked("recovery", "recovery");
-    trackActivityPreviewViewed({
-      jobId,
-      datasetDurationUnit: durationInfo?.unit,
-      datasetDurationValue: durationInfo?.value,
-      previewStage: "activity",
-    });
     scrollToSection("activity");
   };
 
-  const handleChartInteraction = (insightType: string) => {
-    trackChartInteracted(insightType, activeStage);
-  };
+  const handleChartInteraction = (_insightType: string) => {};
 
   // ---- Full report CTA --------------------------------------------------
   const fullReportRef = useRef<HTMLDivElement>(null);
@@ -316,7 +421,6 @@ export function InsightPreview({
     const obs = new IntersectionObserver(
       ([entry]) => {
         if (entry.isIntersecting) {
-          trackFullReportCtaViewed("bottom");
           obs.disconnect();
         }
       },
@@ -325,6 +429,224 @@ export function InsightPreview({
     obs.observe(fullReportRef.current);
     return () => obs.disconnect();
   }, []);
+
+  function renderChartRole(role: DarthProofChart["role"] | undefined) {
+    if (role === "conflict") return "Conflict";
+    if (role === "supporting") return t.teaser.chartRoles.support;
+    return t.teaser.chartRoles.evidence;
+  }
+
+  function renderClaimRelation(relation: DarthProofChart["claim_relation"] | undefined) {
+    if (relation === "shows_conflict") return "shows conflict";
+    if (relation === "shows_driver") return "shows driver";
+    return "supports claim";
+  }
+
+  function renderDivergenceChart(chart: DarthProofChart) {
+    const signals = chart.signals?.slice(0, 2) ?? [];
+    return (
+      <div className="h-[200px] rounded-lg border border-[#e6b800]/25 bg-background/40 px-4 py-5">
+        <div className="grid h-full grid-cols-[1fr_auto_1fr] items-center gap-3">
+          <div className="flex h-full flex-col justify-end rounded-lg border border-emerald-500/25 bg-emerald-500/[0.06] p-3">
+            <div className="h-2/3 rounded-md bg-emerald-500/35" />
+            <p className="mt-3 text-[10px] font-semibold uppercase tracking-wider text-emerald-600 dark:text-emerald-300">
+              {(signals[0] ?? "support signal").replaceAll("_", " ")}
+            </p>
+          </div>
+          <div className="flex h-full flex-col items-center justify-center">
+            <div className="h-full w-px bg-[#e6b800]/35" />
+            <span className="my-2 rounded-full border border-[#e6b800]/35 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-[#e6b800]">
+              Divergence
+            </span>
+            <div className="h-full w-px bg-[#e6b800]/35" />
+          </div>
+          <div className="flex h-full flex-col justify-start rounded-lg border border-rose-500/25 bg-rose-500/[0.06] p-3">
+            <div className="h-2/3 rounded-md bg-rose-500/35" />
+            <p className="mt-3 text-[10px] font-semibold uppercase tracking-wider text-rose-600 dark:text-rose-300">
+              {(signals[1] ?? "recovery signal").replaceAll("_", " ")}
+            </p>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  function renderDarthProofChartCard(chart: DarthProofChart) {
+    const chartId = chart.id.split("_2")[0].split("_3")[0];
+    const cardClass =
+      "rounded-xl border border-[#e6b800]/45 bg-[#e6b800]/[0.035] p-4 shadow-sm";
+    const roleLabel = renderChartRole(chart.role);
+
+    let visual: ReactNode = null;
+    if (chart.type === "divergence") {
+      visual = renderDivergenceChart(chart);
+    } else if (chartId === "sleep_stages") {
+      const stageData = sections?.sleep_stages;
+      const hasStages =
+        stageData?.has_stage_data === true &&
+        ((stageData.averages?.core_hours ?? 0) +
+          (stageData.averages?.deep_hours ?? 0) +
+          (stageData.averages?.rem_hours ?? 0)) > 0;
+      visual = hasStages ? (
+        <SleepStageChart
+          data={stageData}
+          height={200}
+          label={t.teaser.charts.sleepStages}
+        />
+      ) : null;
+    } else if (chartId === "recovery_score") {
+      const score = sections?.recovery_signals?.recovery_composite_score;
+      const hasScore = score != null && typeof score === "number";
+      visual = hasScore ? (
+        <RecoveryScoreChart
+          score={score}
+          height={200}
+          label={t.teaser.charts.recovery}
+        />
+      ) : null;
+    } else if (chartId === "daily_energy") {
+      const activitySignals = sections?.activity_signals;
+      const hasEnergy = activitySignals?.basal_energy_cal?.mean != null;
+      visual = hasEnergy ? (
+        <DailyEnergyChart
+          data={activitySignals}
+          height={200}
+          label={t.teaser.charts.energy}
+        />
+      ) : null;
+    }
+
+    if (!visual) {
+      throw new Error(`DARTH proof chart cannot render: ${chart.id}`);
+    }
+
+    return (
+      <div className={cardClass}>
+        <div className="mb-3 flex flex-wrap items-center gap-2">
+          <span className="text-[10px] font-semibold uppercase tracking-wider text-[#e6b800]">
+            {roleLabel} · {renderClaimRelation(chart.claim_relation)}
+          </span>
+          <span className="rounded-full border border-border/70 px-2 py-0.5 text-[10px] font-medium uppercase tracking-wider text-muted-foreground">
+            {chart.window.replaceAll("_", " ")} vs {chart.baseline_reference.replaceAll("_", " ")}
+          </span>
+        </div>
+        {visual}
+        <div className="mt-3 border-t border-border/50 pt-3">
+          <p className="text-sm font-semibold leading-snug text-foreground">
+            {chart.annotation.insight}
+          </p>
+          <p className="mt-1 text-xs leading-relaxed text-muted-foreground">
+            {chart.proof_statement}
+          </p>
+        </div>
+      </div>
+    );
+  }
+
+  function renderTeaserVisual(teaser: DarthTeaser) {
+    const evidence = teaser.evidence?.[0] ?? null;
+    const visual = teaser.visual;
+    const metricLabel = visual.metric?.replaceAll("_", " ") ?? null;
+    const windowLabel = visual.window?.replaceAll("_", " ") ?? null;
+    const roleLabel = visual.role === "none" ? null : visual.role;
+
+    return (
+      <div className="rounded-xl border border-[#e6b800]/35 bg-background/45 p-4">
+        <div className="mb-3 flex flex-wrap items-center gap-2">
+          {roleLabel && (
+            <span className="rounded-full border border-[#e6b800]/40 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-[#e6b800]">
+              {roleLabel}
+            </span>
+          )}
+          {windowLabel && (
+            <span className="rounded-full border border-border/70 px-2 py-0.5 text-[10px] font-medium uppercase tracking-wider text-muted-foreground">
+              {windowLabel}
+            </span>
+          )}
+        </div>
+        <div className="flex h-[180px] flex-col justify-end rounded-lg border border-border/70 bg-card/70 px-4 py-3">
+          {visual.type === "line" ? (
+            <div className="flex h-full items-end gap-2">
+              {[28, 48, 36, 64, 52, 76, 68].map((height, index) => (
+                <div
+                  key={`${metricLabel ?? "teaser"}-${height}-${index}`}
+                  className="flex-1 rounded-t bg-[#e6b800]/35"
+                  style={{ height: `${height}%` }}
+                />
+              ))}
+            </div>
+          ) : (
+            <div className="flex h-full items-center justify-center border border-dashed border-border/70">
+              <Crown className="h-7 w-7 text-[#e6b800]" />
+            </div>
+          )}
+          {metricLabel && (
+            <p className="mt-3 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
+              {metricLabel}
+            </p>
+          )}
+        </div>
+        {evidence && (
+          <div className="mt-3 border-t border-border/50 pt-3">
+            <p className="text-sm font-semibold leading-snug text-foreground">
+              {evidence.statement}
+            </p>
+            {(evidence.value != null || evidence.comparison) && (
+              <p className="mt-1 text-xs leading-relaxed text-muted-foreground">
+                {[evidence.value, evidence.comparison].filter(Boolean).join(" · ")}
+              </p>
+            )}
+          </div>
+        )}
+      </div>
+    );
+  }
+
+  function renderDarthTeaser(teaser: DarthTeaser) {
+    return (
+      <motion.section
+        initial={{ opacity: 0, y: 12 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.4 }}
+        className="mb-8 rounded-xl border border-[#e6b800]/45 bg-[radial-gradient(circle_at_top_left,rgba(230,184,0,0.12),transparent_40%),rgba(230,184,0,0.035)] p-5 shadow-sm md:grid md:grid-cols-[1.1fr_0.9fr] md:gap-6 md:p-6"
+      >
+        <div className="flex min-w-0 flex-col">
+          <div className="mb-4 flex flex-wrap items-center gap-2">
+            <span className="inline-flex items-center gap-1.5 rounded-full bg-[#e6b800] px-2.5 py-1 text-[11px] font-semibold text-[#1a1a1a]">
+              <Crown className="h-3.5 w-3.5" />
+              {teaser.badge?.label ?? "Free"}
+            </span>
+            <span className="rounded-full border border-border/70 px-2.5 py-1 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
+              {teaser.archetype}
+            </span>
+          </div>
+          <h2 className="text-2xl font-semibold leading-tight text-foreground md:text-3xl">
+            {teaser.headline}
+          </h2>
+          <p className="mt-3 text-sm leading-relaxed text-muted-foreground md:text-base">
+            {teaser.subtext}
+          </p>
+          <div className="mt-5 rounded-lg border border-[#e6b800]/30 bg-[#e6b800]/[0.04] p-4">
+            <p className="text-base font-semibold leading-snug text-foreground">
+              {teaser.action}
+            </p>
+          </div>
+          <button
+            type="button"
+            onClick={() => {
+              trackPremiumCtaClicked("darth_teaser");
+              onOpenModal?.();
+            }}
+            className="mt-5 inline-flex w-full items-center justify-center gap-2 rounded-lg bg-[#e6b800] px-5 py-3 text-sm font-semibold text-[#1a1a1a] shadow-sm transition-colors duration-200 hover:bg-[#f2c94c] active:bg-[#c99a00] sm:w-fit"
+          >
+            <Crown className="h-4 w-4" />
+            {teaser.cta}
+          </button>
+        </div>
+        <div className="mt-5 md:mt-0">{renderTeaserVisual(teaser)}</div>
+      </motion.section>
+    );
+  }
 
   // -----------------------------------------------------------------------
   // RENDER
@@ -351,12 +673,16 @@ export function InsightPreview({
       )}
 
       <main className={embedded ? "" : "max-w-6xl mx-auto px-6 pt-8 pb-16"}>
-        <h1 className="text-3xl lg:text-4xl font-semibold text-foreground leading-tight mb-6">
-          {adaptiveHeadline}
-        </h1>
+        {!usesDarthTeaser && (
+          <h1 className="text-3xl lg:text-4xl font-semibold text-foreground leading-tight mb-6">
+            {stateHeadline}
+          </h1>
+        )}
+
+        {usesDarthTeaser && darthTeaser && renderDarthTeaser(darthTeaser)}
 
         {/* 2. Surprising personal insight */}
-        {surprisingInsight && (
+        {!usesDarthTeaser && !usesDarth && surprisingInsight && (
           <motion.div
             initial={{ opacity: 0, y: 12 }}
             animate={{ opacity: 1, y: 0 }}
@@ -375,8 +701,30 @@ export function InsightPreview({
           </motion.div>
         )}
 
+        {/* 2. DARTH baseline context */}
+        {usesDarth && darthPayload?.baseline_context && (
+          <motion.div
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.35 }}
+            className="rounded-xl border border-[#e6b800] bg-[#e6b800]/5 p-5 mb-6 flex flex-col gap-2"
+          >
+            <p className="text-sm font-bold text-foreground">
+              {darthPayload.baseline_context.headline}
+            </p>
+            <p className="text-xs leading-relaxed text-muted-foreground">
+              {darthPayload.baseline_context.explanation}
+            </p>
+            {summary?.dataset_start && summary?.dataset_end && (
+              <p className="text-[11px] text-muted-foreground/70 font-mono">
+                {String(summary.dataset_start)} - {String(summary.dataset_end)}
+              </p>
+            )}
+          </motion.div>
+        )}
+
         {/* 2. Provenance card (gold) */}
-        {(durationInfo || summary?.dataset_start) && (
+        {!usesDarthTeaser && !usesDarth && (durationInfo || summary?.dataset_start) && (
           <motion.div
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
@@ -400,8 +748,56 @@ export function InsightPreview({
           </motion.div>
         )}
 
-        {/* 3. Engine insights */}
-        {engineInsights.length > 0 && (
+        {/* 3. DARTH claim block */}
+        {usesDarth && darthPayload && (
+          <motion.div
+            initial={{ opacity: 0, y: 12 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.4 }}
+            className="mb-6"
+          >
+            <div className="rounded-xl border border-[#e6b800]/45 bg-[radial-gradient(circle_at_top_left,rgba(230,184,0,0.12),transparent_38%),rgba(230,184,0,0.035)] p-6 mb-3 shadow-sm">
+              <div className="flex flex-wrap items-center gap-2 mb-3">
+                <span className="inline-block h-2 w-2 rounded-full shrink-0 bg-accent" />
+                <span className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
+                  {darthPayload.state?.replaceAll("_", " ")}
+                </span>
+                <span className="rounded-full border border-[#e6b800]/35 px-2 py-0.5 text-[10px] font-medium uppercase tracking-wider text-[#e6b800]">
+                  {Math.round((darthPayload.confidence ?? 0) * 100)}% {t.teaser.confidence}
+                </span>
+              </div>
+              <p className="text-xl font-semibold text-foreground leading-snug mb-2">
+                {darthPayload.explanation}
+              </p>
+              <div className="grid gap-3 sm:grid-cols-[1.25fr_0.75fr]">
+                <div className="rounded-lg border border-border/60 bg-background/40 px-3 py-2">
+                  <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground mb-1">
+                    Trajectory
+                  </p>
+                  <p className="text-[11px] text-muted-foreground/75 font-mono leading-relaxed">
+                    {darthPayload.trajectory?.window} | {darthPayload.trajectory?.direction} |{" "}
+                    {Math.round((darthPayload.trajectory?.confidence ?? 0) * 100)}% confidence
+                  </p>
+                </div>
+                <div className="rounded-lg border border-border/60 bg-background/30 px-3 py-2">
+                  <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground mb-1">
+                    Dominant signal
+                  </p>
+                  <p className="text-xs text-muted-foreground leading-relaxed">
+                    {darthPayload.dominant_signal}
+                  </p>
+                </div>
+              </div>
+              {darthPayload.conflicting_signal && (
+                <p className="mt-3 text-xs leading-relaxed text-muted-foreground">
+                  {darthPayload.conflicting_signal}
+                </p>
+              )}
+            </div>
+          </motion.div>
+        )}
+
+        {!usesDarthTeaser && !usesDarth && engineInsights.length > 0 && (
           <motion.div
             initial={{ opacity: 0, y: 12 }}
             animate={{ opacity: 1, y: 0 }}
@@ -503,16 +899,128 @@ export function InsightPreview({
           </motion.div>
         )}
 
-        {/* 4. New signals block — Sprint 25.9: always rendered; empty state when data absent */}
-        <motion.div
-          initial={{ opacity: 0, y: 12 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.4 }}
-          className="mb-6"
-        >
-          {/* Charts with narrative roles — Evidence → Impact → Possible cause */}
-          {/* Sprint 25.9: all 3 slots always render; ChartEmptyState when data is absent */}
-          <div className="grid gap-4 sm:grid-cols-3">
+        {/* 4. PROOF — evidence charts only, bound directly to DARTH reasoning */}
+        {usesDarth && topEvidenceCharts.length > 0 && (
+          <motion.div
+            initial={{ opacity: 0, y: 12 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.4 }}
+            className="mb-6"
+          >
+            <div className="mb-3 flex items-center justify-between gap-3">
+              <p className="text-[10px] font-semibold uppercase tracking-wider text-[#e6b800]">
+                PROOF
+              </p>
+              {darthPayload?.evidence && (
+                <p className="text-[10px] font-medium uppercase tracking-wider text-muted-foreground">
+                  {Math.round(darthPayload.evidence.confidence_adjusted * 100)}% adjusted confidence
+                </p>
+              )}
+            </div>
+            <div className="grid gap-4 sm:grid-cols-2">
+              {topEvidenceCharts.map((chart) => (
+                <div key={chart.id} className="flex flex-col gap-1.5">
+                  {renderDarthProofChartCard(chart)}
+                </div>
+              ))}
+            </div>
+          </motion.div>
+        )}
+
+        {usesDarth && darthPayload?.consequence && (
+          <motion.div
+            initial={{ opacity: 0, y: 12 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.4 }}
+            className="mb-6 rounded-xl border border-border bg-card p-5"
+          >
+            <div className="mb-2 flex flex-wrap items-center gap-2">
+              <span className="rounded-full border border-[#e6b800]/35 px-2 py-0.5 text-[10px] font-medium uppercase tracking-wider text-[#e6b800]">
+                Consequence
+              </span>
+              <span className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
+                {darthPayload.consequence.scope.replaceAll("_", " ")} · {darthPayload.consequence.severity}
+              </span>
+            </div>
+            <p className="text-base font-semibold leading-snug text-foreground">
+              {darthPayload.consequence.summary}
+            </p>
+            <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
+              {darthPayload.consequence.if_pattern_continues}
+            </p>
+          </motion.div>
+        )}
+
+        {usesDarth && darthPayload?.guidance && (
+          <motion.div
+            initial={{ opacity: 0, y: 12 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.4 }}
+            className="mb-6 rounded-xl border border-[#e6b800]/35 bg-[#e6b800]/[0.035] p-5"
+          >
+            <div className="mb-2 flex flex-wrap items-center gap-2">
+              <span className="rounded-full border border-[#e6b800]/35 px-2 py-0.5 text-[10px] font-medium uppercase tracking-wider text-[#e6b800]">
+                Action
+              </span>
+              <span className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
+                {darthPayload.guidance.risk_type.replaceAll("_", " ")}
+              </span>
+            </div>
+            <p className="text-base font-semibold leading-snug text-foreground">
+              {darthPayload.guidance.statement}
+            </p>
+            <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
+              {darthPayload.guidance.recommended_adjustment}
+            </p>
+          </motion.div>
+        )}
+
+        {usesDarth && darthSupporting.length > 0 && (
+          <motion.div
+            initial={{ opacity: 0, y: 12 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.4 }}
+            className="mb-6 grid gap-3 sm:grid-cols-3"
+          >
+            {darthSupporting.slice(0, 3).map(({ block, copy }) =>
+              copy ? (
+                <div
+                  key={block.id}
+                  className="rounded-xl border border-border bg-card p-4"
+                >
+                  <div className="flex items-center gap-2 mb-2">
+                    <span className="inline-block h-1.5 w-1.5 rounded-full shrink-0 bg-accent" />
+                    <span className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
+                      {t.portal.insightsPage.pillar[
+                        block.domain as keyof typeof t.portal.insightsPage.pillar
+                      ] ?? block.domain}
+                    </span>
+                  </div>
+                  <p className="text-sm font-semibold text-foreground leading-snug mb-1">
+                    {copy.action}
+                  </p>
+                  <p className="text-xs text-muted-foreground leading-relaxed mb-2">
+                    {copy.body}
+                  </p>
+                  <p className="text-[10px] text-muted-foreground/60 font-mono leading-relaxed">
+                    {copy.evidence}
+                  </p>
+                </div>
+              ) : null
+            )}
+          </motion.div>
+        )}
+
+        {!usesDarthTeaser && !usesDarth && (
+          <motion.div
+            initial={{ opacity: 0, y: 12 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.4 }}
+            className="mb-6"
+          >
+            {/* Charts with narrative roles — Evidence → Impact → Possible cause */}
+            {/* Sprint 25.9: all 3 slots always render; ChartEmptyState when data is absent */}
+            <div className="grid gap-4 sm:grid-cols-3">
             {/* Sleep Stages — Evidence */}
             {(() => {
               const stageData = sections?.sleep_stages;
@@ -606,11 +1114,12 @@ export function InsightPreview({
                 </div>
               );
             })()}
-          </div>
-        </motion.div>
+            </div>
+          </motion.div>
+        )}
 
         {/* 5. Preview insight (before CTA) */}
-        {previewInsight && (
+        {!usesDarthTeaser && !usesDarth && previewInsight && (
           <motion.div
             initial={{ opacity: 0, y: 12 }}
             animate={{ opacity: 1, y: 0 }}
@@ -629,7 +1138,7 @@ export function InsightPreview({
           </motion.div>
         )}
 
-        <div className="hidden md:block">
+        {!usesDarthTeaser && !usesDarth && <div className="hidden md:block">
 
           {/* Lower compact zone— Sleep + Recovery + Activity */}
           <section className="grid grid-cols-3 gap-6 mt-2">
@@ -711,12 +1220,12 @@ export function InsightPreview({
               />
             </div>
           </section>
-        </div>
+        </div>}
 
         {/* ============================================================= */}
         {/* MOBILE LAYOUT — stacked scrollable cards                       */}
         {/* ============================================================= */}
-        <div className="md:hidden space-y-6">
+        {!usesDarthTeaser && !usesDarth && <div className="md:hidden space-y-6">
 
           <section
             className={`scroll-mt-28 transition-all duration-500 ease-out ${
@@ -790,12 +1299,12 @@ export function InsightPreview({
               }
             />
           </section>
-        </div>
+        </div>}
 
         {/* ============================================================= */}
         {/* Full Report CTA — hidden when embedded in portal               */}
         {/* ============================================================= */}
-        {!embedded && (
+        {!embedded && !usesDarthTeaser && (
           <div ref={fullReportRef} className="mt-10">
             <motion.div
               initial={{ opacity: 0, y: 16 }}
@@ -822,13 +1331,13 @@ export function InsightPreview({
               <button
                 type="button"
                 onClick={() => {
-                  trackReportUnlockClicked("bottom");
+                  trackPremiumCtaClicked("bottom");
                   onOpenModal?.();
                 }}
                 className="inline-flex items-center gap-2 px-5 py-2.5 rounded-lg bg-[#e6b800] text-[#1a1a1a] text-sm font-medium shadow-sm transition-colors duration-200 hover:bg-[#f2c94c] active:bg-[#c99a00]"
               >
                 <Crown className="h-4 w-4" />
-                {t.result.preview.fullReport.downloadButton}
+                {darthTeaser?.cta ?? darthCta ?? t.result.preview.fullReport.downloadButton}
               </button>
             </motion.div>
 

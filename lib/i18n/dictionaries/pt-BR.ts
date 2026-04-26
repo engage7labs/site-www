@@ -558,6 +558,14 @@ export const ptBR: Dictionary = {
 
   // Teaser (insight-preview)
   teaser: {
+    confidence: "confiança",
+    evidenceLabel: "Evidência",
+    meaningLabel: "Por que isso importa",
+    chartRoles: {
+      evidence: "Evidência",
+      impact: "Impacto",
+      support: "Sinal de apoio",
+    },
     hero: {
       adaptiveClear: "Seu corpo está mostrando padrões claros — aqui está o que se destaca",
       adaptiveSteady: "Seu sono está estável — seu corpo está mantendo um ritmo regular",
