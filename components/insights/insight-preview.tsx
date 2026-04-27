@@ -250,6 +250,19 @@ export function InsightPreview({
     [summary?.days]
   );
 
+  // ---- Last-7-day date range label for evidence charts ------------------
+  const last7DRange = useMemo((): string | null => {
+    const endRaw = summary?.dataset_end;
+    if (!endRaw) return null;
+    const end = new Date(String(endRaw));
+    if (isNaN(end.getTime())) return null;
+    const start = new Date(end);
+    start.setDate(start.getDate() - 6);
+    const fmt = (d: Date) =>
+      d.toLocaleDateString("en-US", { month: "short", day: "numeric" });
+    return `Last 7 days (${fmt(start)} – ${fmt(end)})`;
+  }, [summary?.dataset_end]);
+
   // Adaptive headline — based on sleep consistency (Sprint 24.0.1)
   const adaptiveHeadline = useMemo((): string => {
     const cv = sections?.volatility?.sleep_hours?.cv;
@@ -1036,7 +1049,7 @@ export function InsightPreview({
                       <SleepStageChart
                         data={stageData}
                         height={200}
-                        label={t.teaser.charts.sleepStages}
+                        label={last7DRange ? `${t.teaser.charts.sleepStages} · ${last7DRange}` : t.teaser.charts.sleepStages}
                       />
                     ) : (
                       <>
@@ -1066,7 +1079,7 @@ export function InsightPreview({
                       <RecoveryScoreChart
                         score={score}
                         height={200}
-                        label={t.teaser.charts.recovery}
+                        label={last7DRange ? `${t.teaser.charts.recovery} · ${last7DRange}` : t.teaser.charts.recovery}
                       />
                     ) : (
                       <>
@@ -1096,7 +1109,7 @@ export function InsightPreview({
                       <DailyEnergyChart
                         data={activitySignals}
                         height={200}
-                        label={t.teaser.charts.energy}
+                        label={last7DRange ? `${t.teaser.charts.energy} · ${last7DRange}` : t.teaser.charts.energy}
                       />
                     ) : (
                       <>
