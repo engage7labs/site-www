@@ -1,43 +1,29 @@
 "use client";
 
-import { Crown, Loader2, Mail, MessageSquareText, X } from "lucide-react";
+import { Crown, Loader2, Mail, X } from "lucide-react";
 import { useMemo, useState } from "react";
-
-type FeedbackValue = "made_sense" | "not_sure" | "didnt_make_sense";
+import { toast } from "sonner";
 
 interface PostAnalysisModalProps {
   open: boolean;
   onClose: () => void;
   onDownload: () => void;
-  onFeedback: (value: FeedbackValue, note?: string) => void;
+  onFeedback: (value: string, note?: string) => void;
   onEmailSubmit: (email: string, consent: boolean) => Promise<void>;
   onShare: () => Promise<void>;
   pdfAvailable?: boolean;
 }
-
-const FEEDBACK_OPTIONS: Array<{
-  value: FeedbackValue;
-  label: string;
-}> = [
-  { value: "made_sense", label: "👍 Made sense" },
-  { value: "not_sure", label: "🤔 Not sure" },
-  { value: "didnt_make_sense", label: "😕 Didn't make sense" },
-];
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 export function PostAnalysisModal({
   open,
   onClose,
-  onFeedback,
   onEmailSubmit,
 }: Readonly<PostAnalysisModalProps>) {
-  const [feedback, setFeedback] = useState<FeedbackValue | null>(null);
-  const [note, setNote] = useState("");
   const [email, setEmail] = useState("");
   const [consentChecked, setConsentChecked] = useState(false);
   const [submitting, setSubmitting] = useState(false);
-  const [submitted, setSubmitted] = useState(false);
   const [emailError, setEmailError] = useState<string | null>(null);
   const [submitError, setSubmitError] = useState<string | null>(null);
 
@@ -45,11 +31,6 @@ export function PostAnalysisModal({
   const canSubmit = isValidEmail && consentChecked && !submitting;
 
   if (!open) return null;
-
-  const handleFeedbackClick = (value: FeedbackValue) => {
-    setFeedback(value);
-    onFeedback(value, note.trim() || undefined);
-  };
 
   const handleUnlockPremium = async () => {
     const normalized = email.trim();
@@ -70,14 +51,14 @@ export function PostAnalysisModal({
 
     try {
       await onEmailSubmit(normalized, true);
-      setSubmitted(true);
+      toast.success("Your 90-day premium trial has started");
+      window.location.href = "/portal";
     } catch (err) {
       setSubmitError(
         err instanceof Error
           ? err.message
           : "Something went wrong. Please try again."
       );
-    } finally {
       setSubmitting(false);
     }
   };
@@ -103,140 +84,81 @@ export function PostAnalysisModal({
         <div className="p-6 space-y-5">
           <div className="space-y-1">
             <h2 className="text-xl font-semibold text-foreground">
-              {submitted
-                ? "Welcome to Engage7 Premium"
-                : "Unlock your premium experience"}
+              Unlock your premium experience
             </h2>
             <p className="text-sm text-muted-foreground">
-              {submitted
-                ? "Your 90-day trial has started. Access your portal to explore advanced insights."
-                : "Get 90 days of free premium access — advanced trends, correlations, and a personal health portal."}
+              Get 90 days of free premium access — advanced trends, correlations, and a personal health portal.
             </p>
           </div>
 
-          {submitted ? (
-            <a
-              href="/portal"
-              className="inline-flex w-full items-center justify-center gap-2 rounded-lg bg-[#e6b800] px-4 py-2.5 text-sm font-medium text-[#1a1a1a] shadow-sm transition-colors hover:bg-[#f2c94c] active:bg-[#c99a00]"
+          {/* Email input — required */}
+          <div className="space-y-2">
+            <label
+              className="text-sm font-medium text-foreground"
+              htmlFor="premium-email"
             >
-              <Crown className="h-4 w-4" />
-              Go to Portal
-            </a>
-          ) : (
-            <>
-              {/* Email input — required */}
-              <div className="space-y-2">
-                <label
-                  className="text-sm font-medium text-foreground"
-                  htmlFor="premium-email"
-                >
-                  <span className="inline-flex items-center gap-2">
-                    <Mail className="h-4 w-4" />
-                    Your email
-                  </span>
-                </label>
-                <input
-                  id="premium-email"
-                  type="email"
-                  required
-                  value={email}
-                  onChange={(e) => {
-                    setEmail(e.target.value);
-                    setEmailError(null);
-                  }}
-                  placeholder="you@example.com"
-                  className="w-full rounded-md border border-border bg-background px-3 py-2 text-sm text-foreground outline-none placeholder:text-muted-foreground focus:border-accent"
-                />
-                {emailError && (
-                  <p className="text-xs text-destructive">{emailError}</p>
-                )}
-              </div>
+              <span className="inline-flex items-center gap-2">
+                <Mail className="h-4 w-4" />
+                Your email
+              </span>
+            </label>
+            <input
+              id="premium-email"
+              type="email"
+              required
+              value={email}
+              onChange={(e) => {
+                setEmail(e.target.value);
+                setEmailError(null);
+              }}
+              placeholder="you@example.com"
+              className="w-full rounded-md border border-border bg-background px-3 py-2 text-sm text-foreground outline-none placeholder:text-muted-foreground focus:border-accent"
+            />
+            {emailError && (
+              <p className="text-xs text-destructive">{emailError}</p>
+            )}
+          </div>
 
-              {/* Feedback section */}
-              <div className="space-y-2">
-                <p className="text-sm font-medium text-foreground">
-                  Quick feedback
-                </p>
-                <div className="grid gap-2 sm:grid-cols-3">
-                  {FEEDBACK_OPTIONS.map((option) => (
-                    <button
-                      key={option.value}
-                      type="button"
-                      onClick={() => handleFeedbackClick(option.value)}
-                      className={`rounded-md border px-3 py-2 text-sm transition-colors ${
-                        feedback === option.value
-                          ? "border-accent bg-accent/10 text-foreground"
-                          : "border-border bg-background text-muted-foreground hover:text-foreground"
-                      }`}
-                    >
-                      {option.label}
-                    </button>
-                  ))}
-                </div>
-              </div>
+          {/* Consent checkbox — required before unlock */}
+          <div className="flex items-start gap-3">
+            <input
+              id="consent-checkbox"
+              type="checkbox"
+              checked={consentChecked}
+              onChange={(e) => setConsentChecked(e.target.checked)}
+              className="mt-0.5 h-4 w-4 rounded border-border accent-[#e6b800] cursor-pointer"
+            />
+            <label
+              htmlFor="consent-checkbox"
+              className="text-xs text-muted-foreground leading-relaxed cursor-pointer"
+            >
+              I agree to store my processed health insights so Engage7 can
+              show me trends and portal insights. I can delete this data at
+              any time from portal settings.
+            </label>
+          </div>
 
-              {/* Optional note */}
-              <div className="space-y-2">
-                <label
-                  className="text-sm font-medium text-foreground"
-                  htmlFor="feedback-note"
-                >
-                  <span className="inline-flex items-center gap-2">
-                    <MessageSquareText className="h-4 w-4" />
-                    Optional note
-                  </span>
-                </label>
-                <textarea
-                  id="feedback-note"
-                  value={note}
-                  onChange={(e) => setNote(e.target.value)}
-                  placeholder="Anything surprising or confusing?"
-                  className="min-h-[80px] w-full rounded-md border border-border bg-background px-3 py-2 text-sm text-foreground outline-none ring-0 placeholder:text-muted-foreground focus:border-accent"
-                />
-              </div>
-
-              {/* Consent checkbox — required before unlock */}
-              <div className="flex items-start gap-3">
-                <input
-                  id="consent-checkbox"
-                  type="checkbox"
-                  checked={consentChecked}
-                  onChange={(e) => setConsentChecked(e.target.checked)}
-                  className="mt-0.5 h-4 w-4 rounded border-border accent-[#e6b800] cursor-pointer"
-                />
-                <label
-                  htmlFor="consent-checkbox"
-                  className="text-xs text-muted-foreground leading-relaxed cursor-pointer"
-                >
-                  I agree to store my processed health insights so Engage7 can
-                  show me trends and portal insights. I can delete this data at
-                  any time from portal settings.
-                </label>
-              </div>
-
-              {/* Error from backend */}
-              {submitError && (
-                <p className="text-xs text-destructive">{submitError}</p>
-              )}
-
-              {/* CTA — Unlock Premium */}
-              <div className="flex justify-center border-t border-border pt-4">
-                <button
-                  type="button"
-                  onClick={handleUnlockPremium}
-                  disabled={!canSubmit}
-                  className="inline-flex items-center gap-2 rounded-lg bg-[#e6b800] px-5 py-2.5 text-sm font-medium text-[#1a1a1a] shadow-sm transition-colors duration-200 hover:bg-[#f2c94c] active:bg-[#c99a00] disabled:cursor-not-allowed disabled:opacity-50 dark:text-[#1a1a1a]"
-                >
-                  {submitting ? (
-                    <Loader2 className="h-4 w-4 animate-spin" />
-                  ) : (
-                    <Crown className="h-4 w-4" />
-                  )}
-                  Unlock Premium (90 days free)
-                </button>
-              </div>
-            </>
+          {/* Error from backend */}
+          {submitError && (
+            <p className="text-xs text-destructive">{submitError}</p>
           )}
+
+          {/* CTA — Unlock Premium */}
+          <div className="flex justify-center border-t border-border pt-4">
+            <button
+              type="button"
+              onClick={handleUnlockPremium}
+              disabled={!canSubmit}
+              className="inline-flex items-center gap-2 rounded-lg bg-[#e6b800] px-5 py-2.5 text-sm font-medium text-[#1a1a1a] shadow-sm transition-colors duration-200 hover:bg-[#f2c94c] active:bg-[#c99a00] disabled:cursor-not-allowed disabled:opacity-50 dark:text-[#1a1a1a]"
+            >
+              {submitting ? (
+                <Loader2 className="h-4 w-4 animate-spin" />
+              ) : (
+                <Crown className="h-4 w-4" />
+              )}
+              Unlock Premium (90 days free)
+            </button>
+          </div>
         </div>
       </div>
     </div>

@@ -79,6 +79,9 @@ function RecoveryGauge({ score, height, label }: { score: number; height: number
 function buildOption(score: number) {
   return {
     backgroundColor: "transparent",
+    tooltip: {
+      formatter: () => `Readiness score: ${score} / 100`,
+    },
     series: [
       {
         type: "gauge",

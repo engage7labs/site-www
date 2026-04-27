@@ -351,20 +351,6 @@ export default function ResultPage({
     );
   };
 
-  const handleModalFeedback = (
-    value: "made_sense" | "not_sure" | "didnt_make_sense",
-    note?: string
-  ) => {
-    if (!jobId) return;
-    void sendUserEvent("feedback_given", {
-      job_id: jobId,
-      metadata: {
-        value,
-        note: note ?? null,
-      },
-    });
-  };
-
   const handleModalEmail = async (
     email: string,
     consent: boolean
@@ -620,7 +606,7 @@ export default function ResultPage({
         open={showCompletionModal}
         onClose={() => setShowCompletionModal(false)}
         onDownload={handleModalDownload}
-        onFeedback={handleModalFeedback}
+        onFeedback={() => undefined}
         onEmailSubmit={handleModalEmail}
         onShare={handleModalShare}
       />
