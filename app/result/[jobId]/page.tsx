@@ -17,7 +17,7 @@ import {
 } from "@/lib/telemetry";
 import type { AnalysisResult } from "@/lib/types/analysis";
 import { motion } from "framer-motion";
-import { AlertCircle, ArrowLeft, Clock, Loader2 } from "lucide-react";
+import { AlertCircle, ArrowLeft, Clock } from "lucide-react";
 import Link from "next/link";
 import { useCallback, useEffect, useRef, useState } from "react";
 
@@ -29,6 +29,12 @@ const fadeInUp = {
   animate: { opacity: 1, y: 0 },
   transition: { duration: 0.5, ease: "easeOut" as const },
 };
+
+function formatTime(seconds: number): string {
+  const m = Math.floor(seconds / 60).toString().padStart(2, "0");
+  const s = (seconds % 60).toString().padStart(2, "0");
+  return `${m}:${s}`;
+}
 
 // ---------------------------------------------------------------------------
 // Shell wrapper with sticky header
@@ -58,13 +64,29 @@ function PageShell({ children }: Readonly<{ children: React.ReactNode }>) {
 // State views
 // ---------------------------------------------------------------------------
 
-function LoadingView() {
-  const { t } = useLocale();
+function AnalyzingView({ elapsedSeconds }: Readonly<{ elapsedSeconds: number }>) {
   return (
     <PageShell>
-      <div className="flex flex-col items-center justify-center py-24 space-y-4">
-        <Loader2 className="h-10 w-10 text-accent animate-spin" />
-        <p className="text-muted-foreground">{t.result.loading}</p>
+      <div className="flex flex-col items-center justify-center py-24 space-y-6 text-center">
+        <div className="relative flex items-center justify-center">
+          <div className="h-20 w-20 rounded-full border-4 border-accent/20" />
+          <div className="absolute inset-0 h-20 w-20 rounded-full border-4 border-accent border-t-transparent animate-spin" />
+          <span className="absolute text-sm font-mono font-semibold text-foreground">
+            {formatTime(elapsedSeconds)}
+          </span>
+        </div>
+        <div className="space-y-2">
+          <h1 className="text-2xl font-semibold text-foreground">
+            Analyzing your data
+          </h1>
+          <p className="text-muted-foreground max-w-md">
+            Your analysis is underway. This page updates automatically.
+          </p>
+        </div>
+        <div className="flex items-center space-x-2 text-sm text-muted-foreground">
+          <Clock className="h-4 w-4" />
+          <span>Typically completes in 30-90 seconds</span>
+        </div>
       </div>
     </PageShell>
   );
@@ -114,14 +136,6 @@ function ProcessingView({
 
   // Show calm message if taking longer than 60 seconds
   const isDelayed = elapsedSeconds > 60;
-
-  const formatTime = (seconds: number): string => {
-    const m = Math.floor(seconds / 60)
-      .toString()
-      .padStart(2, "0");
-    const s = (seconds % 60).toString().padStart(2, "0");
-    return `${m}:${s}`;
-  };
 
   return (
     <PageShell>
@@ -562,9 +576,9 @@ export default function ResultPage({
     };
   }, [params]);
 
-  // Initial loading state
+  // Initial loading state — show analyzing screen immediately with live timer
   if (!result && !isNotFound && !fetchError) {
-    return <LoadingView />;
+    return <AnalyzingView elapsedSeconds={elapsedSeconds} />;
   }
 
   if (isNotFound) {
