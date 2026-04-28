@@ -14,6 +14,7 @@ import { createPollingManager } from "@/lib/polling";
 import {
   trackAnalysisCompleted,
   trackTeaserViewed,
+  trackTrialStarted,
 } from "@/lib/telemetry";
 import type { AnalysisResult } from "@/lib/types/analysis";
 import { motion } from "framer-motion";
@@ -398,11 +399,25 @@ export default function ResultPage({
       );
     }
 
-    // Non-blocking: telemetry errors must not affect UX
-    void sendUserEvent("premium_unlock", {
-      job_id: jobId,
-      metadata: { email },
-    }).catch(() => undefined);
+    // Sprint 37.8: canonical PostHog conversion event (replaces legacy
+    // `premium_unlock` user-event which was non-canonical in both PostHog
+    // and the API events catalog).
+    trackTrialStarted(jobId);
+
+    // Sprint 37.8: surface email-delivery outcome from the proxy without
+    // blocking the portal redirect. Show a calm warning toast if the
+    // welcome/magic-link email failed; the user is still authenticated
+    // via the session cookie set by the proxy.
+    const data = (await response.json().catch(() => ({}))) as {
+      email_delivery?: { status?: string; reason?: string };
+    };
+    const status = data.email_delivery?.status;
+    if (status && status !== "sent" && status !== "skipped_existing_user") {
+      const { toast } = await import("sonner");
+      toast.warning(
+        "We couldn't send your welcome email — your portal is still open."
+      );
+    }
   };
 
   const handleModalShare = async (): Promise<void> => {

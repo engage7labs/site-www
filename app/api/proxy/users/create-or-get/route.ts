@@ -6,6 +6,9 @@
  * Sprint 15.2: Sets session cookie so user lands authenticated in portal.
  * Sprint 30.1: Magic link welcome email (calm UX). Session extended to 30 days.
  *              New users receive a magic link; returning users get a plain portal link.
+ * Sprint 37.8: Awaited welcome email + structured Vercel logs + email_delivery
+ *              in response so the UI can show calm feedback if Resend/Supabase env
+ *              is missing in PROD. No new modal — keep CTA UX from Sprint 37.3.
  */
 
 import { signRequest } from "@/lib/api/signing";
@@ -19,6 +22,87 @@ export const runtime = "nodejs";
 
 // 30-day session — user should not have to re-authenticate frequently
 const SESSION_30_DAYS = 30 * 24 * 3600;
+
+type EmailDeliveryStatus =
+  | "sent"
+  | "skipped_existing_user"
+  | "magic_link_failed"
+  | "send_failed"
+  | "not_attempted";
+
+interface EmailDelivery {
+  status: EmailDeliveryStatus;
+  reason?: string;
+  magic_link_used: boolean;
+}
+
+function logStructured(event: string, fields: Record<string, unknown>): void {
+  // Single-line JSON so Vercel runtime logs stay greppable.
+  // NEVER log Resend keys, Supabase service role, or full magic-link tokens.
+  console.log(JSON.stringify({ event, ...fields }));
+}
+
+async function deliverWelcomeEmail(email: string): Promise<EmailDelivery> {
+  logStructured("magic_link_generation_attempt", { email });
+  let magicLink: string | null = null;
+  try {
+    magicLink = await generateMagicLink(email);
+  } catch (err) {
+    logStructured("magic_link_generation_failed", {
+      email,
+      reason: err instanceof Error ? err.message : "unknown",
+    });
+  }
+
+  if (magicLink) {
+    logStructured("magic_link_generation_succeeded", { email });
+  } else {
+    logStructured("magic_link_generation_failed", {
+      email,
+      reason: "supabase_returned_null_or_env_missing",
+    });
+  }
+
+  const accessLink =
+    magicLink ??
+    `${process.env.NEXT_PUBLIC_APP_URL ?? "https://engage7.ie"}/portal`;
+
+  const template = welcomeEmail(accessLink);
+
+  logStructured("welcome_email_send_attempt", {
+    email,
+    magic_link_used: Boolean(magicLink),
+  });
+
+  const result = await sendEmail({
+    to: email,
+    subject: template.subject,
+    html: template.html,
+  });
+
+  if (result.ok) {
+    logStructured("welcome_email_send_succeeded", {
+      email,
+      magic_link_used: Boolean(magicLink),
+    });
+    return {
+      status: magicLink ? "sent" : "send_failed",
+      reason: magicLink ? undefined : "magic_link_unavailable_used_fallback",
+      magic_link_used: Boolean(magicLink),
+    };
+  }
+
+  logStructured("welcome_email_send_failed", {
+    email,
+    reason: result.error ?? "unknown",
+    magic_link_used: Boolean(magicLink),
+  });
+  return {
+    status: magicLink ? "send_failed" : "magic_link_failed",
+    reason: result.error ?? "send_failed",
+    magic_link_used: Boolean(magicLink),
+  };
+}
 
 export async function POST(request: NextRequest) {
   const path = "/api/users/create-or-get";
@@ -46,10 +130,48 @@ export async function POST(request: NextRequest) {
     .json()
     .catch(() => ({ detail: `Upstream error ${upstreamResponse.status}` }));
 
-  const res = NextResponse.json(data, { status: upstreamResponse.status });
+  logStructured("unlock_create_or_get_received", {
+    upstream_status: upstreamResponse.status,
+    has_email: Boolean(data?.email),
+    plan: data?.plan,
+  });
+
+  let emailDelivery: EmailDelivery = {
+    status: "not_attempted",
+    magic_link_used: false,
+  };
 
   if (upstreamResponse.ok && data.email) {
-    // Sprint 30.1: 30-day session cookie
+    const isNewUser = data.plan === "trial_start";
+    logStructured("unlock_user_created_or_found", {
+      email: data.email,
+      plan: data.plan,
+      is_new_user: isNewUser,
+    });
+
+    if (isNewUser) {
+      emailDelivery = await deliverWelcomeEmail(data.email);
+    } else {
+      emailDelivery = {
+        status: "skipped_existing_user",
+        magic_link_used: false,
+      };
+      logStructured("welcome_email_skipped_existing_user", {
+        email: data.email,
+      });
+    }
+  }
+
+  const responseBody =
+    upstreamResponse.ok && data.email
+      ? { ...data, email_delivery: emailDelivery }
+      : data;
+
+  const res = NextResponse.json(responseBody, {
+    status: upstreamResponse.status,
+  });
+
+  if (upstreamResponse.ok && data.email) {
     const token = signJwt({
       sub: data.email,
       role: "user",
@@ -62,25 +184,6 @@ export async function POST(request: NextRequest) {
       path: "/",
       maxAge: SESSION_30_DAYS,
     });
-
-    // Sprint 30.1: Welcome email with magic link for new users (plan=trial_start)
-    // Returning users already have a session — no email needed.
-    const isNewUser = data.plan === "trial_start";
-    if (isNewUser) {
-      void (async () => {
-        try {
-          // Generate magic link (30-day Supabase OTP) — falls back to portal URL
-          const magicLink =
-            (await generateMagicLink(data.email)) ??
-            `${process.env.NEXT_PUBLIC_APP_URL ?? "https://engage7.ie"}/portal`;
-
-          const email = welcomeEmail(magicLink);
-          await sendEmail({ to: data.email, subject: email.subject, html: email.html });
-        } catch (err) {
-          console.error("[create-or-get] Welcome email failed:", err);
-        }
-      })();
-    }
   }
 
   return res;
