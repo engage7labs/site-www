@@ -13,6 +13,7 @@
 
 import { signRequest } from "@/lib/api/signing";
 import { SESSION_COOKIE_NAME, signJwt } from "@/lib/auth-server";
+import { resolveMagicLinkRedirect } from "@/lib/canonical-app-url";
 import { welcomeEmail, sendEmail } from "@/lib/email";
 import { ensureSupabaseAuthUser, generateMagicLink } from "@/lib/supabase-admin";
 import { INTERNAL_API_BASE_URL } from "@/lib/server-config";
@@ -43,29 +44,47 @@ function logStructured(event: string, fields: Record<string, unknown>): void {
 }
 
 async function deliverWelcomeEmail(email: string): Promise<EmailDelivery> {
-  logStructured("magic_link_generation_attempt", { email });
+  const redirect = resolveMagicLinkRedirect();
+  const safeRedirectFields = {
+    redirect_host: redirect.redirectHost,
+    redirect_path: redirect.redirectPath,
+    app_url_source: redirect.source,
+  };
+
+  logStructured("magic_link_redirect_resolved", {
+    ...safeRedirectFields,
+    has_action_link: false,
+  });
+  logStructured("magic_link_generation_attempt", {
+    ...safeRedirectFields,
+    has_action_link: false,
+  });
   let magicLink: string | null = null;
   try {
-    magicLink = await generateMagicLink(email);
+    magicLink = await generateMagicLink(email, redirect.redirectTo);
   } catch (err) {
     logStructured("magic_link_generation_failed", {
-      email,
+      ...safeRedirectFields,
+      has_action_link: false,
       reason: err instanceof Error ? err.message : "unknown",
     });
   }
 
   if (magicLink) {
-    logStructured("magic_link_generation_succeeded", { email });
+    logStructured("magic_link_generation_succeeded", {
+      ...safeRedirectFields,
+      has_action_link: true,
+    });
   } else {
     logStructured("magic_link_generation_failed", {
-      email,
+      ...safeRedirectFields,
+      has_action_link: false,
       reason: "supabase_returned_null_or_env_missing",
     });
   }
 
-  const accessLink =
-    magicLink ??
-    `${process.env.NEXT_PUBLIC_APP_URL ?? "https://engage7.ie"}/portal`;
+  const fallbackUrl = `${redirect.appUrl}/portal`;
+  const accessLink = magicLink ?? fallbackUrl;
 
   const template = welcomeEmail(accessLink);
 

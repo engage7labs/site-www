@@ -12,6 +12,7 @@
  */
 
 import Stripe from "stripe";
+import { resolveCanonicalAppUrl } from "@/lib/canonical-app-url";
 
 let _stripe: Stripe | null = null;
 
@@ -25,4 +26,4 @@ export function getStripe(): Stripe {
 
 export const STRIPE_PRICE_ID = process.env.STRIPE_PRICE_ID ?? "";
 export const STRIPE_WEBHOOK_SECRET = process.env.STRIPE_WEBHOOK_SECRET ?? "";
-export const APP_URL = process.env.NEXT_PUBLIC_APP_URL ?? "https://engage7.ie";
+export const APP_URL = resolveCanonicalAppUrl().appUrl;

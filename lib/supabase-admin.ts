@@ -8,6 +8,7 @@
  */
 
 import { createClient, type SupabaseClient } from "@supabase/supabase-js";
+import { resolveMagicLinkRedirect } from "@/lib/canonical-app-url";
 
 const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL ?? "";
 const SUPABASE_SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY ?? "";
@@ -46,9 +47,7 @@ export const supabaseAdmin = new Proxy({} as SupabaseClient, {
  */
 export async function generateMagicLink(
   email: string,
-  redirectTo = `${(
-    process.env.NEXT_PUBLIC_APP_URL ?? "https://www.engage7.ie"
-  ).replace(/\/$/, "")}/auth/callback`
+  redirectTo = resolveMagicLinkRedirect().redirectTo
 ): Promise<string | null> {
   try {
     const { data, error } = await supabaseAdmin.auth.admin.generateLink({

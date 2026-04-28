@@ -10,9 +10,11 @@
  *   NEXT_PUBLIC_APP_URL — Application base URL for links in emails
  */
 
+import { resolveCanonicalAppUrl } from "@/lib/canonical-app-url";
+
 const RESEND_API_KEY = process.env.RESEND_API_KEY ?? "";
 const EMAIL_FROM = process.env.EMAIL_FROM ?? "Engage7 <noreply@engage7.ie>";
-const APP_URL = process.env.NEXT_PUBLIC_APP_URL ?? "https://engage7.ie";
+const APP_URL = resolveCanonicalAppUrl().appUrl;
 
 interface SendEmailOptions {
   to: string;
