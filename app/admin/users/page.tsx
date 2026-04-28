@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 
 interface AdminUser {
-  id: number;
+  id: string;
   email: string;
   role: string;
   plan: string;
@@ -50,7 +50,7 @@ export default function AdminUsersPage() {
   const [data, setData] = useState<AdminUsersResponse | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
-  const [viewingAsUserId, setViewingAsUserId] = useState<number | null>(null);
+  const [viewingAsUserId, setViewingAsUserId] = useState<string | null>(null);
 
   useEffect(() => {
     fetch("/api/proxy/admin/users")
@@ -65,7 +65,7 @@ export default function AdminUsersPage() {
       .finally(() => setLoading(false));
   }, []);
 
-  const handleViewAsUser = async (userId: number) => {
+  const handleViewAsUser = async (userId: string) => {
     setViewingAsUserId(userId);
     try {
       const response = await fetch(`/admin/view-as/${userId}`, {

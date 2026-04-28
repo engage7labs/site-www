@@ -28,8 +28,9 @@ export async function GET(
   }
 
   const { id } = await params;
-  const userId = parseInt(id, 10);
-  if (isNaN(userId)) {
+  const userId = id.trim();
+  const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+  if (!uuidRegex.test(userId)) {
     return NextResponse.json({ detail: "Invalid user id" }, { status: 400 });
   }
 
