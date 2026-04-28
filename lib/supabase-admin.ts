@@ -64,3 +64,104 @@ export async function generateMagicLink(
     return null;
   }
 }
+
+function isAlreadyRegisteredError(message: string | undefined): boolean {
+  const normalized = (message ?? "").toLowerCase();
+  return (
+    normalized.includes("already") ||
+    normalized.includes("registered") ||
+    normalized.includes("exists")
+  );
+}
+
+async function findAuthUserIdByEmail(email: string): Promise<string | null> {
+  const targetEmail = email.trim().toLowerCase();
+  const perPage = 1000;
+
+  for (let page = 1; page <= 20; page += 1) {
+    const { data, error } = await supabaseAdmin.auth.admin.listUsers({
+      page,
+      perPage,
+    });
+
+    if (error) {
+      console.error("[findAuthUserIdByEmail] Supabase error:", error.message);
+      return null;
+    }
+
+    const users = data?.users ?? [];
+    const match = users.find(
+      (user) => user.email?.trim().toLowerCase() === targetEmail
+    );
+    if (match?.id) return match.id;
+    if (users.length < perPage) return null;
+  }
+
+  return null;
+}
+
+/**
+ * Ensure Supabase Auth owns the canonical UUID for this email before the API
+ * inserts public.users. public.users.id is constrained to auth.users.id in PROD.
+ */
+export async function ensureSupabaseAuthUser(email: string): Promise<{
+  ok: boolean;
+  userId?: string;
+  reason?: string;
+  created?: boolean;
+}> {
+  try {
+    const { data, error } = await supabaseAdmin.auth.admin.createUser({
+      email,
+      email_confirm: true,
+    });
+
+    if (!error && data?.user?.id) {
+      return { ok: true, userId: data.user.id, created: true };
+    }
+
+    if (error && isAlreadyRegisteredError(error.message)) {
+      const existingId = await findAuthUserIdByEmail(email);
+      if (existingId) {
+        return { ok: true, userId: existingId, created: false };
+      }
+      return {
+        ok: false,
+        reason: "auth_user_exists_but_lookup_failed",
+      };
+    }
+
+    return {
+      ok: false,
+      reason: error?.message ?? "supabase_create_user_returned_no_user",
+    };
+  } catch (err) {
+    return {
+      ok: false,
+      reason: err instanceof Error ? err.message : "unknown",
+    };
+  }
+}
+
+export async function deleteSupabaseAuthUser(userId: string): Promise<{
+  ok: boolean;
+  reason?: string;
+  alreadyAbsent?: boolean;
+}> {
+  try {
+    const { error } = await supabaseAdmin.auth.admin.deleteUser(userId);
+    if (!error) return { ok: true };
+
+    const message = error.message ?? "";
+    if (message.toLowerCase().includes("not found")) {
+      return { ok: true, reason: "auth_user_already_absent", alreadyAbsent: true };
+    }
+
+    return { ok: false, reason: message || "supabase_delete_user_failed" };
+  } catch (err) {
+    return {
+      ok: false,
+      reason: err instanceof Error ? err.message : "unknown",
+    };
+  }
+}

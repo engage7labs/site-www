@@ -14,7 +14,7 @@
 import { signRequest } from "@/lib/api/signing";
 import { SESSION_COOKIE_NAME, signJwt } from "@/lib/auth-server";
 import { welcomeEmail, sendEmail } from "@/lib/email";
-import { generateMagicLink } from "@/lib/supabase-admin";
+import { ensureSupabaseAuthUser, generateMagicLink } from "@/lib/supabase-admin";
 import { INTERNAL_API_BASE_URL } from "@/lib/server-config";
 import { NextRequest, NextResponse } from "next/server";
 
@@ -108,6 +108,38 @@ export async function POST(request: NextRequest) {
   const path = "/api/users/create-or-get";
   const sigHeaders = signRequest("POST", path);
   const rawBody = await request.text();
+  let forwardedBody = rawBody;
+
+  try {
+    const parsed = JSON.parse(rawBody) as { email?: unknown; user_id?: unknown };
+    const email = typeof parsed.email === "string" ? parsed.email.trim().toLowerCase() : "";
+
+    if (email && typeof parsed.user_id !== "string") {
+      logStructured("unlock_supabase_auth_user_resolve_attempt", { email });
+      const authUser = await ensureSupabaseAuthUser(email);
+      if (!authUser.ok || !authUser.userId) {
+        logStructured("unlock_supabase_auth_user_resolve_failed", {
+          email,
+          reason: authUser.reason ?? "unknown",
+        });
+        return NextResponse.json(
+          {
+            detail:
+              "Authentication service unavailable. Please try again before opening your dashboard.",
+          },
+          { status: 503 }
+        );
+      }
+
+      logStructured("unlock_supabase_auth_user_resolve_succeeded", {
+        email,
+        auth_user_created: authUser.created === true,
+      });
+      forwardedBody = JSON.stringify({ ...parsed, user_id: authUser.userId });
+    }
+  } catch {
+    // Let the API return its existing validation response for malformed JSON.
+  }
 
   let upstreamResponse: Response;
   try {
@@ -117,7 +149,7 @@ export async function POST(request: NextRequest) {
         "Content-Type": "application/json",
         ...sigHeaders,
       },
-      body: rawBody,
+      body: forwardedBody,
     });
   } catch {
     return NextResponse.json(
