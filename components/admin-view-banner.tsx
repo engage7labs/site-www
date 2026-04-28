@@ -36,16 +36,17 @@ export function AdminViewBanner() {
   const [dismissed, setDismissed] = useState(false);
 
   useEffect(() => {
-    // Read session from cookie
-    const cookies = document.cookie.split("; ");
-    const sessionCookie = cookies.find((c) =>
-      c.startsWith(SESSION_COOKIE_NAME)
-    );
-    if (sessionCookie) {
-      const token = sessionCookie.split("=")[1];
-      const payload = parseJwt(token);
-      setSession(payload);
-    }
+    fetch("/api/auth/session", { cache: "no-store" })
+      .then((res) => (res.ok ? res.json() : null))
+      .then((payload: SessionPayload | null) => setSession(payload))
+      .catch(() => {
+        const cookies = document.cookie.split("; ");
+        const sessionCookie = cookies.find((c) =>
+          c.startsWith(SESSION_COOKIE_NAME)
+        );
+        if (!sessionCookie) return;
+        setSession(parseJwt(sessionCookie.split("=")[1]));
+      });
   }, []);
 
   if (!session || session.mode !== "admin_view" || dismissed) {
@@ -63,8 +64,9 @@ export function AdminViewBanner() {
         <div className="flex items-center gap-2 text-sm text-amber-700 dark:text-amber-300">
           <AlertCircle className="h-4 w-4 flex-shrink-0" />
           <span className="font-medium">
-            Viewing as user {session.view_as_user_id ?? session.sub} (read-only
-            mode)
+            Viewing as {session.sub}
+            {session.view_as_user_id ? ` (${session.view_as_user_id})` : ""} —
+            read-only mode
           </span>
         </div>
         <div className="flex items-center gap-2">

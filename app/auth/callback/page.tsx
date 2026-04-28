@@ -32,6 +32,7 @@ export default function AuthCallbackPage() {
     const params = new URLSearchParams(hash.slice(1));
     const accessToken = params.get("access_token");
     const tokenType = params.get("type");
+    const redirectTo = new URLSearchParams(window.location.search).get("next") ?? "/portal";
 
     if (!accessToken) {
       setError("Invalid or expired link. Please request a new one.");
@@ -42,11 +43,18 @@ export default function AuthCallbackPage() {
     fetch("/api/auth/magic-callback", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ access_token: accessToken, type: tokenType }),
+      body: JSON.stringify({
+        access_token: accessToken,
+        type: tokenType,
+        redirect_to: redirectTo,
+      }),
     })
       .then(async (res) => {
         if (res.ok) {
-          router.replace("/portal");
+          const data = (await res.json().catch(() => ({}))) as {
+            redirect_to?: string;
+          };
+          router.replace(data.redirect_to ?? "/portal");
         } else {
           const data = await res.json().catch(() => ({}));
           setError(data.error ?? "Something went wrong. Please try again.");

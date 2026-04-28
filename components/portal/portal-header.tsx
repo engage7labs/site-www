@@ -2,8 +2,7 @@
 
 import { LocaleSwitcher } from "@/components/shared/locale-switcher";
 import { ThemeSwitcher } from "@/components/shared/theme-switcher";
-import { SESSION_COOKIE_NAME } from "@/lib/auth-edge";
-import { LogOut, Menu, Upload } from "lucide-react";
+import { LogOut, Menu, Upload, UserRound } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
@@ -21,22 +20,27 @@ export function PortalHeader({
 }: PortalHeaderProps) {
   const router = useRouter();
   const [isAdminView, setIsAdminView] = useState(false);
+  const [userEmail, setUserEmail] = useState<string | null>(null);
+  const [viewAsUserId, setViewAsUserId] = useState<string | null>(null);
 
   useEffect(() => {
-    try {
-      const cookies = document.cookie.split("; ");
-      const sc = cookies.find((c) => c.startsWith(SESSION_COOKIE_NAME));
-      if (!sc) return;
-      const token = sc.split("=")[1];
-      const parts = token.split(".");
-      if (parts.length !== 3) return;
-      const body = JSON.parse(
-        atob(parts[1].replace(/-/g, "+").replace(/_/g, "/"))
-      );
-      if (body.mode === "admin_view") setIsAdminView(true);
-    } catch {
-      /* ignore */
-    }
+    fetch("/api/auth/session", { cache: "no-store" })
+      .then((res) => (res.ok ? res.json() : null))
+      .then(
+        (session: {
+          email?: string;
+          mode?: "admin_view";
+          view_as_user_id?: string;
+        } | null) => {
+          if (!session) return;
+          setUserEmail(session.email ?? null);
+          setIsAdminView(session.mode === "admin_view");
+          setViewAsUserId(session.view_as_user_id ?? null);
+        }
+      )
+      .catch(() => {
+        /* Header identity is best-effort; auth gates still run server-side. */
+      });
   }, []);
 
   const handleLogout = async () => {
@@ -75,6 +79,26 @@ export function PortalHeader({
 
       {/* Right: upload + theme + language + logout */}
       <div className="flex items-center gap-1.5">
+        {userEmail && (
+          <div
+            className="hidden max-w-[220px] items-center gap-2 rounded-lg border border-border px-2.5 py-1.5 text-xs text-muted-foreground lg:flex"
+            title={
+              isAdminView
+                ? `Admin view: ${userEmail}${viewAsUserId ? ` (${viewAsUserId})` : ""}`
+                : userEmail
+            }
+          >
+            <UserRound className="h-3.5 w-3.5 shrink-0" />
+            <span className="truncate">
+              {isAdminView ? `Viewing ${userEmail}` : userEmail}
+            </span>
+            {isAdminView && (
+              <span className="shrink-0 rounded bg-amber-500/10 px-1.5 py-0.5 text-[10px] font-medium text-amber-700 dark:text-amber-300">
+                read-only
+              </span>
+            )}
+          </div>
+        )}
         {!isAdminView && (
           <Link
             href="/portal/upload"

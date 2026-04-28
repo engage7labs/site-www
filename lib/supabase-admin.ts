@@ -46,7 +46,9 @@ export const supabaseAdmin = new Proxy({} as SupabaseClient, {
  */
 export async function generateMagicLink(
   email: string,
-  redirectTo = `${process.env.NEXT_PUBLIC_APP_URL ?? "https://engage7.ie"}/auth/callback`
+  redirectTo = `${(
+    process.env.NEXT_PUBLIC_APP_URL ?? "https://www.engage7.ie"
+  ).replace(/\/$/, "")}/auth/callback`
 ): Promise<string | null> {
   try {
     const { data, error } = await supabaseAdmin.auth.admin.generateLink({
