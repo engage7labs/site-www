@@ -28,7 +28,7 @@ export function SiteFooter() {
           >
             {t.home.footer.copyright}
           </p>
-          <div className="flex gap-6 text-sm text-muted-foreground">
+          <div className="flex flex-wrap items-center justify-center gap-6 text-sm text-muted-foreground md:justify-end">
             <Link
               href="/privacy-policy"
               className="hover:text-foreground transition-colors duration-300"
@@ -55,16 +55,14 @@ export function SiteFooter() {
             >
               {t.home.footer.research}
             </a>
+            <span
+              className="text-xs text-muted-foreground/60"
+              title={`${config.gitSha} · ${config.buildTime}`}
+            >
+              v{config.appVersion}
+            </span>
           </div>
         </motion.div>
-        <div className="mt-8 flex justify-center md:justify-end">
-          <span
-            className="text-xs text-muted-foreground/60"
-            title={`${config.gitSha} · ${config.buildTime}`}
-          >
-            v{config.appVersion}
-          </span>
-        </div>
       </div>
     </footer>
   );
