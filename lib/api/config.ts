@@ -23,6 +23,8 @@ export const API_ENDPOINTS = {
   // Sensitive — proxied through Next.js server
   uploadAnalysis: "/api/proxy/analyze-upload",
   getAnalysisResult: (jobId: string) => `/api/proxy/result/${jobId}`,
+  getPortalAnalysisResult: (jobId: string) =>
+    `/api/proxy/users/portal-analyses/${jobId}`,
   getPdf: (jobId: string) => `/api/proxy/result/${jobId}/pdf`,
   getCsv: (jobId: string) => `/api/proxy/result/${jobId}/csv`,
 

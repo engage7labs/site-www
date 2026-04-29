@@ -1,7 +1,7 @@
 "use client";
 
 import { InsightPreview } from "@/components/insights";
-import { getAnalysisResult } from "@/lib/api/analysis";
+import { getPortalAnalysisResult } from "@/lib/api/analysis";
 import { trackTeaserViewed } from "@/lib/telemetry";
 import type { AnalysisResult } from "@/lib/types/analysis";
 import { AlertCircle, ArrowLeft, Clock, Loader2 } from "lucide-react";
@@ -42,7 +42,7 @@ export default function PortalReportPage({
     }
     pollCount.current += 1;
     try {
-      const data = await getAnalysisResult(jobId);
+      const data = await getPortalAnalysisResult(jobId);
       setResult(data);
       if (data.status === "completed" || data.status === "failed") {
         if (data.status === "completed") {
