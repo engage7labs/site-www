@@ -1,0 +1,15 @@
+
+> my-v0-project@0.37.8.5 dev C:\projects\engage7\web
+> next dev -p 3000
+
+▲ Next.js 16.1.6 (Turbopack)
+- Local:         http://localhost:3000
+- Network:       http://172.20.10.3:3000
+- Environments: .env.local, .env
+
+✓ Starting...
+[env-debug] NEXT_PUBLIC_API_BASE_URL at server startup: {
+  value: 'engage7-api-dev.lemonmeadow-fbee5d84.northeurope.azurecontainerapps.io',
+  isSet: true
+}
+✓ Ready in 2.7s

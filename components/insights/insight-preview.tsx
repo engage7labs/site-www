@@ -165,6 +165,57 @@ function hasDarthClaimContract(darth: DarthPayload | null): darth is DarthPayloa
   );
 }
 
+function formatNumber(value: number): string {
+  return Number.isInteger(value)
+    ? value.toLocaleString("en-US")
+    : value.toLocaleString("en-US", { maximumFractionDigits: 1 });
+}
+
+function formatTeaserEvidenceValue(evidence: DarthTeaser["evidence"][number]): string | null {
+  const value = evidence.value;
+  if (value == null || value === "") return null;
+
+  if (typeof value === "string") {
+    return value.replaceAll("_", " ");
+  }
+
+  if (!Number.isFinite(value)) return null;
+
+  const formatted = formatNumber(value);
+  const metric = evidence.metric;
+  if (metric === "dataset_duration" || metric === "available_data") {
+    return `${formatted} days`;
+  }
+  if (metric === "sleep_hours") {
+    return `${formatted}h`;
+  }
+  if (metric.includes("cv")) {
+    return `${formatted}%`;
+  }
+  if (metric.includes("energy") || metric.includes("cal")) {
+    return `${formatted} kcal`;
+  }
+  if (metric.includes("hrv")) {
+    return `${formatted} ms`;
+  }
+  if (metric.includes("hr") || metric.includes("heart_rate")) {
+    return `${formatted} bpm`;
+  }
+  if (metric === "recovery_score") {
+    return `${formatted}/100`;
+  }
+  if (metric === "steps") {
+    return `${formatted} steps`;
+  }
+  return formatted;
+}
+
+function teaserEvidenceDetails(evidence: DarthTeaser["evidence"][number]): string[] {
+  return [formatTeaserEvidenceValue(evidence), evidence.comparison].filter(
+    (detail): detail is string => Boolean(detail)
+  );
+}
+
 // ---------------------------------------------------------------------------
 // Locale helpers (Sprint 25.2)
 // ---------------------------------------------------------------------------
@@ -562,6 +613,7 @@ export function InsightPreview({
     const metricLabel = visual.metric?.replaceAll("_", " ") ?? null;
     const windowLabel = visual.window?.replaceAll("_", " ") ?? null;
     const roleLabel = visual.role === "none" ? null : visual.role;
+    const evidenceDetails = evidence ? teaserEvidenceDetails(evidence) : [];
 
     return (
       <div className="rounded-xl border border-[#e6b800]/35 bg-background/45 p-4">
@@ -604,9 +656,9 @@ export function InsightPreview({
             <p className="text-sm font-semibold leading-snug text-foreground">
               {evidence.statement}
             </p>
-            {(evidence.value != null || evidence.comparison) && (
+            {evidenceDetails.length > 0 && (
               <p className="mt-1 text-xs leading-relaxed text-muted-foreground">
-                {[evidence.value, evidence.comparison].filter(Boolean).join(" · ")}
+                {evidenceDetails.join(" · ")}
               </p>
             )}
           </div>
