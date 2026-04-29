@@ -6,7 +6,7 @@ import { DevEnvironmentMarker } from "@/components/shared/dev-environment-marker
 import { config } from "@/lib/config";
 import { isDevEnvironment } from "@/lib/env";
 import { Analytics } from "@vercel/analytics/next";
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { Geist_Mono, Inter } from "next/font/google";
 import type React from "react";
 import { Toaster } from "sonner";
@@ -81,12 +81,13 @@ export const metadata: Metadata = {
     statusBarStyle: "black-translucent",
     title: "Engage7",
   },
-  viewport: {
-    width: "device-width",
-    initialScale: 1,
-    maximumScale: 1,
-    userScalable: false,
-  },
+};
+
+export const viewport: Viewport = {
+  width: "device-width",
+  initialScale: 1,
+  maximumScale: 1,
+  userScalable: false,
 };
 
 export default function RootLayout({

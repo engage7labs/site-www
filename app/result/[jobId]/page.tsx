@@ -4,6 +4,12 @@ import { InsightPreview } from "@/components/insights";
 import { useAppTheme } from "@/components/providers/app-theme-provider";
 import { useLocale } from "@/components/providers/locale-provider";
 import { PostAnalysisModal } from "@/components/shared/post-analysis-modal";
+import {
+  clearProcessingStart,
+  elapsedSecondsFrom,
+  ProcessingView,
+  readProcessingStart,
+} from "@/components/shared/processing-view";
 import { getAnalysisResult } from "@/lib/api/analysis";
 import { ApiClientError } from "@/lib/api/client";
 import {
@@ -18,7 +24,7 @@ import {
 } from "@/lib/telemetry";
 import type { AnalysisResult } from "@/lib/types/analysis";
 import { motion } from "framer-motion";
-import { AlertCircle, ArrowLeft, Clock } from "lucide-react";
+import { AlertCircle, ArrowLeft } from "lucide-react";
 import Link from "next/link";
 import { useCallback, useEffect, useRef, useState } from "react";
 
@@ -30,12 +36,6 @@ const fadeInUp = {
   animate: { opacity: 1, y: 0 },
   transition: { duration: 0.5, ease: "easeOut" as const },
 };
-
-function formatTime(seconds: number): string {
-  const m = Math.floor(seconds / 60).toString().padStart(2, "0");
-  const s = (seconds % 60).toString().padStart(2, "0");
-  return `${m}:${s}`;
-}
 
 // ---------------------------------------------------------------------------
 // Shell wrapper with sticky header
@@ -65,34 +65,6 @@ function PageShell({ children }: Readonly<{ children: React.ReactNode }>) {
 // State views
 // ---------------------------------------------------------------------------
 
-function AnalyzingView({ elapsedSeconds }: Readonly<{ elapsedSeconds: number }>) {
-  return (
-    <PageShell>
-      <div className="flex flex-col items-center justify-center py-24 space-y-6 text-center">
-        <div className="relative flex items-center justify-center">
-          <div className="h-20 w-20 rounded-full border-4 border-accent/20" />
-          <div className="absolute inset-0 h-20 w-20 rounded-full border-4 border-accent border-t-transparent animate-spin" />
-          <span className="absolute text-sm font-mono font-semibold text-foreground">
-            {formatTime(elapsedSeconds)}
-          </span>
-        </div>
-        <div className="space-y-2">
-          <h1 className="text-2xl font-semibold text-foreground">
-            Analyzing your data
-          </h1>
-          <p className="text-muted-foreground max-w-md">
-            Your analysis is underway. This page updates automatically.
-          </p>
-        </div>
-        <div className="flex items-center space-x-2 text-sm text-muted-foreground">
-          <Clock className="h-4 w-4" />
-          <span>Typically completes in 30-90 seconds</span>
-        </div>
-      </div>
-    </PageShell>
-  );
-}
-
 function NotFoundView() {
   const { t } = useLocale();
   return (
@@ -117,54 +89,6 @@ function NotFoundView() {
         >
           {t.result.backToAnalyze}
         </Link>
-      </motion.div>
-    </PageShell>
-  );
-}
-
-function ProcessingView({
-  result,
-  elapsedSeconds,
-}: Readonly<{
-  result: AnalysisResult;
-  elapsedSeconds: number;
-}>) {
-  const { t } = useLocale();
-  const statusLabel =
-    result.status === "queued"
-      ? t.result.status.pending
-      : t.result.status.processing;
-
-  // Show calm message if taking longer than 60 seconds
-  const isDelayed = elapsedSeconds > 60;
-
-  return (
-    <PageShell>
-      <motion.div
-        {...fadeInUp}
-        className="flex flex-col items-center justify-center py-24 space-y-6 text-center"
-      >
-        <div className="relative flex items-center justify-center">
-          <div className="h-20 w-20 rounded-full border-4 border-accent/20" />
-          <div className="absolute inset-0 h-20 w-20 rounded-full border-4 border-accent border-t-transparent animate-spin" />
-          <span className="absolute text-sm font-mono font-semibold text-foreground">
-            {formatTime(elapsedSeconds)}
-          </span>
-        </div>
-        <div className="space-y-2">
-          <h1 className="text-2xl font-semibold text-foreground">
-            {isDelayed ? "Still working on your analysis…" : statusLabel}
-          </h1>
-          <p className="text-muted-foreground max-w-md">
-            {isDelayed
-              ? "This is taking longer than expected, but we're still processing your data."
-              : "Your analysis is underway. This page updates automatically."}
-          </p>
-        </div>
-        <div className="flex items-center space-x-2 text-sm text-muted-foreground">
-          <Clock className="h-4 w-4" />
-          <span>Typically completes in 30-90 seconds</span>
-        </div>
       </motion.div>
     </PageShell>
   );
@@ -335,6 +259,7 @@ export default function ResultPage({
   const [isNotFound, setIsNotFound] = useState(false);
   const [fetchError, setFetchError] = useState<string | null>(null);
   const [elapsedSeconds, setElapsedSeconds] = useState(0);
+  const processingStartedAtRef = useRef<number | null>(null);
   const [showCompletionModal, setShowCompletionModal] = useState(false);
 
   const pollingManagerRef = useRef<ReturnType<
@@ -447,8 +372,6 @@ export default function ResultPage({
     });
   };
 
-  const tickElapsed = () => setElapsedSeconds((prev) => prev + 1);
-
   useEffect(() => {
     let mounted = true;
 
@@ -464,6 +387,7 @@ export default function ResultPage({
         }
 
         if (updated.status === "completed" && !completedFiredRef.current) {
+          clearProcessingStart();
           handleCompletedState(id);
         }
         return updated;
@@ -521,8 +445,13 @@ export default function ResultPage({
       polling404CountRef.current = 0;
 
       // Start elapsed timer
-      setElapsedSeconds(0);
-      timerRef.current = setInterval(() => mounted && tickElapsed(), 1000);
+      processingStartedAtRef.current = readProcessingStart() ?? Date.now();
+      setElapsedSeconds(elapsedSecondsFrom(processingStartedAtRef.current));
+      timerRef.current = setInterval(() => {
+        if (mounted) {
+          setElapsedSeconds(elapsedSecondsFrom(processingStartedAtRef.current));
+        }
+      }, 1000);
 
       // Create polling manager
       const pollingManager = createPollingManager({
@@ -547,11 +476,13 @@ export default function ResultPage({
 
         // If already terminal, stop polling
         if (data.status === "completed") {
+          clearProcessingStart();
           handleCompletedState(id);
           return;
         }
 
         if (data.status === "failed") {
+          clearProcessingStart();
           return;
         }
 
@@ -593,7 +524,11 @@ export default function ResultPage({
 
   // Initial loading state — show analyzing screen immediately with live timer
   if (!result && !isNotFound && !fetchError) {
-    return <AnalyzingView elapsedSeconds={elapsedSeconds} />;
+    return (
+      <PageShell>
+        <ProcessingView phase="analyzing" elapsedSeconds={elapsedSeconds} />
+      </PageShell>
+    );
   }
 
   if (isNotFound) {
@@ -621,7 +556,15 @@ export default function ResultPage({
 
   if (!isTeaserReady) {
     // Show processing state until teaser payload is truly ready
-    return <ProcessingView result={result} elapsedSeconds={elapsedSeconds} />;
+    return (
+      <PageShell>
+        <ProcessingView
+          phase="analyzing"
+          elapsedSeconds={elapsedSeconds}
+          delayed={elapsedSeconds > 60}
+        />
+      </PageShell>
+    );
   }
 
   return (

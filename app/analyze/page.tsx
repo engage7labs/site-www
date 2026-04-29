@@ -10,6 +10,12 @@ import { useLocale } from "@/components/providers/locale-provider";
 import { APIHealthStatus } from "@/components/shared/api-health-status";
 import { AppleHealthTutorial } from "@/components/shared/apple-health-tutorial";
 import { FileUpload } from "@/components/shared/file-upload";
+import {
+  clearProcessingStart,
+  elapsedSecondsFrom,
+  ProcessingView,
+  writeProcessingStart,
+} from "@/components/shared/processing-view";
 import { SiteFooter } from "@/components/shared/site-footer";
 import { SiteHeader } from "@/components/shared/site-header";
 import { Turnstile } from "@/components/shared/turnstile";
@@ -25,7 +31,7 @@ import { motion } from "framer-motion";
 import { CheckCircle2 } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { toast } from "sonner";
 
 const fadeInUp = {
@@ -48,8 +54,21 @@ export default function AnalyzePage() {
   const router = useRouter();
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [isUploading, setIsUploading] = useState(false);
+  const [processingStartedAt, setProcessingStartedAt] = useState<number | null>(
+    null
+  );
+  const [elapsedSeconds, setElapsedSeconds] = useState(0);
   const [consentGiven, setConsentGiven] = useState(false);
   const [turnstileToken, setTurnstileToken] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (!processingStartedAt) return;
+    setElapsedSeconds(elapsedSecondsFrom(processingStartedAt));
+    const timer = setInterval(() => {
+      setElapsedSeconds(elapsedSecondsFrom(processingStartedAt));
+    }, 1000);
+    return () => clearInterval(timer);
+  }, [processingStartedAt]);
 
   const handleFileSelect = (file: File) => {
     setSelectedFile(file);
@@ -66,6 +85,7 @@ export default function AnalyzePage() {
     });
 
     setIsUploading(true);
+    setProcessingStartedAt(writeProcessingStart());
 
     trackUploadStarted(selectedFile.size);
 
@@ -96,7 +116,10 @@ export default function AnalyzePage() {
             ? error.message
             : "Upload failed. Please try again or contact support.";
         toast.error(message);
+        clearProcessingStart();
         setIsUploading(false);
+        setProcessingStartedAt(null);
+        setElapsedSeconds(0);
       });
   };
 
@@ -112,116 +135,124 @@ export default function AnalyzePage() {
           animate="animate"
           className="space-y-10"
         >
-          {/* Page Title */}
-          <motion.div variants={fadeInUp} className="text-center space-y-4">
-            <h1 className="text-4xl md:text-5xl font-semibold text-foreground">
-              {t.analyze.title}
-            </h1>
-            <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
-              {t.analyze.subtitle}
-            </p>
-          </motion.div>
-
-          {/* Upload instruction line */}
-          <motion.div variants={fadeInUp} className="text-center">
-            <p className="text-sm text-muted-foreground max-w-md mx-auto">
-              Export from the Health app on your iPhone, then upload the .zip
-              file below.
-            </p>
-          </motion.div>
-
-          {/* Apple Health Export Tutorial */}
-          <motion.div variants={fadeInUp} className="max-w-4xl mx-auto">
-            <AppleHealthTutorial />
-          </motion.div>
-
-          {/* Upload Section */}
-          <motion.div variants={fadeInUp} className="max-w-2xl mx-auto">
-            <div className="rounded-lg border border-border bg-card p-8 space-y-6">
-              <div className="space-y-2">
-                <h2 className="text-xl font-semibold text-foreground">
-                  {t.analyze.upload.title}
-                </h2>
-                <p className="text-sm text-muted-foreground">
-                  {t.analyze.upload.formatHint}
+          {isUploading ? (
+            <motion.div variants={fadeInUp} className="max-w-2xl mx-auto">
+              <ProcessingView phase="uploading" elapsedSeconds={elapsedSeconds} />
+            </motion.div>
+          ) : (
+            <>
+              {/* Page Title */}
+              <motion.div variants={fadeInUp} className="text-center space-y-4">
+                <h1 className="text-4xl md:text-5xl font-semibold text-foreground">
+                  {t.analyze.title}
+                </h1>
+                <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
+                  {t.analyze.subtitle}
                 </p>
-                <p className="text-sm text-accent">
-                  {t.analyze.upload.expectationHint}
-                </p>
-              </div>
+              </motion.div>
 
-              <FileUpload
-                onFileSelect={handleFileSelect}
-                onUpload={handleUpload}
-                isUploading={isUploading}
-                disabled={!consentGiven || !turnstileToken}
-                t={t}
-                consentSlot={
-                  <>
-                    <label className="flex items-start gap-3 text-xs text-muted-foreground leading-snug cursor-pointer">
-                      <Checkbox
-                        id="consent"
-                        checked={consentGiven}
-                        onCheckedChange={(checked) =>
-                          setConsentGiven(checked === true)
-                        }
-                        className="mt-0.5"
-                      />
-                      <span>
-                        {t.analyze.consent.description}{" "}
-                        <Link
-                          href="/privacy-policy"
-                          className="text-accent hover:underline"
-                          target="_blank"
-                        >
-                          {t.analyze.consent.linkText}
-                        </Link>
+              {/* Upload instruction line */}
+              <motion.div variants={fadeInUp} className="text-center">
+                <p className="text-sm text-muted-foreground max-w-md mx-auto">
+                  Export from the Health app on your iPhone, then upload the .zip
+                  file below.
+                </p>
+              </motion.div>
+
+              {/* Apple Health Export Tutorial */}
+              <motion.div variants={fadeInUp} className="max-w-4xl mx-auto">
+                <AppleHealthTutorial />
+              </motion.div>
+
+              {/* Upload Section */}
+              <motion.div variants={fadeInUp} className="max-w-2xl mx-auto">
+                <div className="rounded-lg border border-border bg-card p-8 space-y-6">
+                  <div className="space-y-2">
+                    <h2 className="text-xl font-semibold text-foreground">
+                      {t.analyze.upload.title}
+                    </h2>
+                    <p className="text-sm text-muted-foreground">
+                      {t.analyze.upload.formatHint}
+                    </p>
+                    <p className="text-sm text-accent">
+                      {t.analyze.upload.expectationHint}
+                    </p>
+                  </div>
+
+                  <FileUpload
+                    onFileSelect={handleFileSelect}
+                    onUpload={handleUpload}
+                    isUploading={isUploading}
+                    disabled={!consentGiven || !turnstileToken}
+                    t={t}
+                    consentSlot={
+                      <>
+                        <label className="flex items-start gap-3 text-xs text-muted-foreground leading-snug cursor-pointer">
+                          <Checkbox
+                            id="consent"
+                            checked={consentGiven}
+                            onCheckedChange={(checked) =>
+                              setConsentGiven(checked === true)
+                            }
+                            className="mt-0.5"
+                          />
+                          <span>
+                            {t.analyze.consent.description}{" "}
+                            <Link
+                              href="/privacy-policy"
+                              className="text-accent hover:underline"
+                              target="_blank"
+                            >
+                              {t.analyze.consent.linkText}
+                            </Link>
+                          </span>
+                        </label>
+                        <Turnstile onVerify={setTurnstileToken} />
+                      </>
+                    }
+                  />
+                </div>
+              </motion.div>
+
+              {/* Trust Section */}
+              <motion.div variants={fadeInUp} className="max-w-2xl mx-auto">
+                <div className="rounded-lg bg-muted/30 p-6 space-y-4">
+                  <div className="flex items-center space-x-3">
+                    <CheckCircle2 className="h-5 w-5 text-accent" />
+                    <h3 className="text-base font-semibold text-foreground">
+                      {t.analyze.trust.title}
+                    </h3>
+                  </div>
+
+                  <ul className="space-y-2">
+                    <li className="flex items-start space-x-2">
+                      <span className="text-accent mt-1">•</span>
+                      <span className="text-sm text-muted-foreground">
+                        {t.analyze.trust.point1}
                       </span>
-                    </label>
-                    <Turnstile onVerify={setTurnstileToken} />
-                  </>
-                }
-              />
-            </div>
-          </motion.div>
+                    </li>
+                    <li className="flex items-start space-x-2">
+                      <span className="text-accent mt-1">•</span>
+                      <span className="text-sm text-muted-foreground">
+                        {t.analyze.trust.point2}
+                      </span>
+                    </li>
+                    <li className="flex items-start space-x-2">
+                      <span className="text-accent mt-1">•</span>
+                      <span className="text-sm text-muted-foreground">
+                        {t.analyze.trust.point3}
+                      </span>
+                    </li>
+                  </ul>
+                </div>
+              </motion.div>
 
-          {/* Trust Section */}
-          <motion.div variants={fadeInUp} className="max-w-2xl mx-auto">
-            <div className="rounded-lg bg-muted/30 p-6 space-y-4">
-              <div className="flex items-center space-x-3">
-                <CheckCircle2 className="h-5 w-5 text-accent" />
-                <h3 className="text-base font-semibold text-foreground">
-                  {t.analyze.trust.title}
-                </h3>
-              </div>
-
-              <ul className="space-y-2">
-                <li className="flex items-start space-x-2">
-                  <span className="text-accent mt-1">•</span>
-                  <span className="text-sm text-muted-foreground">
-                    {t.analyze.trust.point1}
-                  </span>
-                </li>
-                <li className="flex items-start space-x-2">
-                  <span className="text-accent mt-1">•</span>
-                  <span className="text-sm text-muted-foreground">
-                    {t.analyze.trust.point2}
-                  </span>
-                </li>
-                <li className="flex items-start space-x-2">
-                  <span className="text-accent mt-1">•</span>
-                  <span className="text-sm text-muted-foreground">
-                    {t.analyze.trust.point3}
-                  </span>
-                </li>
-              </ul>
-            </div>
-          </motion.div>
-
-          {/* API Health Status */}
-          <motion.div variants={fadeInUp} className="max-w-2xl mx-auto">
-            <APIHealthStatus suppressUnhealthy={isUploading} />
-          </motion.div>
+              {/* API Health Status */}
+              <motion.div variants={fadeInUp} className="max-w-2xl mx-auto">
+                <APIHealthStatus suppressUnhealthy={isUploading} />
+              </motion.div>
+            </>
+          )}
         </motion.div>
       </main>
 

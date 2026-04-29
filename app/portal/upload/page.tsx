@@ -2,10 +2,16 @@
 
 import { useLocale } from "@/components/providers/locale-provider";
 import { FileUpload } from "@/components/shared/file-upload";
+import {
+  clearProcessingStart,
+  elapsedSecondsFrom,
+  ProcessingView,
+  writeProcessingStart,
+} from "@/components/shared/processing-view";
 import { Checkbox } from "@/components/ui/checkbox";
 import { SESSION_COOKIE_NAME } from "@/lib/auth-edge";
 import { trackUploadCompleted, trackUploadStarted } from "@/lib/telemetry";
-import { Lock, CheckCircle, Loader2 } from "lucide-react";
+import { Lock, CheckCircle } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
@@ -38,7 +44,20 @@ export default function PortalUploadPage() {
   const [consentGiven, setConsentGiven] = useState(false);
   const [status, setStatus] = useState<UploadStatus>("idle");
   const [activeJobId, setActiveJobId] = useState<string | null>(null);
+  const [processingStartedAt, setProcessingStartedAt] = useState<number | null>(
+    null
+  );
+  const [elapsedSeconds, setElapsedSeconds] = useState(0);
   const pollRef = useRef<ReturnType<typeof setInterval> | null>(null);
+
+  useEffect(() => {
+    if (!processingStartedAt) return;
+    setElapsedSeconds(elapsedSecondsFrom(processingStartedAt));
+    const timer = setInterval(() => {
+      setElapsedSeconds(elapsedSecondsFrom(processingStartedAt));
+    }, 1000);
+    return () => clearInterval(timer);
+  }, [processingStartedAt]);
 
   // Poll for completion once job is queued
   useEffect(() => {
@@ -52,12 +71,14 @@ export default function PortalUploadPage() {
         if (data.upload_status === "completed") {
           clearInterval(pollRef.current!);
           setStatus("completed");
+          clearProcessingStart();
           trackUploadCompleted(activeJobId);
           toast.success("Analysis complete!");
           setTimeout(() => router.push("/portal/health"), 1500);
         } else if (data.upload_status === "failed") {
           clearInterval(pollRef.current!);
           setStatus("failed");
+          clearProcessingStart();
           toast.error("Analysis failed. Please try again.");
         } else if (data.upload_status === "processing") {
           setStatus("processing");
@@ -72,6 +93,7 @@ export default function PortalUploadPage() {
     if (!selectedFile || status !== "idle") return;
 
     setStatus("uploading");
+    setProcessingStartedAt(writeProcessingStart());
     trackUploadStarted(selectedFile.size);
 
     try {
@@ -132,7 +154,10 @@ export default function PortalUploadPage() {
       setStatus("queued");
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "Upload failed. Please try again.");
+      clearProcessingStart();
       setStatus("idle");
+      setProcessingStartedAt(null);
+      setElapsedSeconds(0);
     }
   };
 
@@ -150,7 +175,7 @@ export default function PortalUploadPage() {
                 Uploads are not available while viewing as another user (read-only mode).
               </p>
             </div>
-          ) : status === "queued" || status === "processing" || status === "completed" ? (
+          ) : status === "uploading" || status === "queued" || status === "processing" || status === "completed" ? (
             <div className="rounded-lg border border-border bg-card p-8 text-center space-y-4">
               {status === "completed" ? (
                 <>
@@ -159,16 +184,11 @@ export default function PortalUploadPage() {
                   <p className="text-sm text-muted-foreground">Redirecting to your portal…</p>
                 </>
               ) : (
-                <>
-                  <Loader2 className="mx-auto h-10 w-10 text-accent animate-spin" />
-                  <h2 className="text-lg font-semibold text-foreground">
-                    {status === "queued" ? "Processing your data…" : "Running analysis…"}
-                  </h2>
-                  <p className="text-sm text-muted-foreground">
-                    This takes 2–5 minutes. You can close this page — we'll have your results ready.
-                  </p>
-                  <p className="text-xs text-muted-foreground/60 font-mono">{activeJobId?.slice(0, 8)}</p>
-                </>
+                <ProcessingView
+                  phase={status === "uploading" ? "uploading" : "analyzing"}
+                  elapsedSeconds={elapsedSeconds}
+                  delayed={elapsedSeconds > 60}
+                />
               )}
             </div>
           ) : (

@@ -70,7 +70,7 @@ export function CookieConsentBanner() {
             also enable anonymous session analytics to improve the product. No health
             data is ever shared.{" "}
             <a
-              href="/privacy"
+              href="/privacy-policy"
               className="underline underline-offset-2 hover:text-foreground transition-colors"
               target="_blank"
               rel="noopener noreferrer"

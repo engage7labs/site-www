@@ -1,6 +1,6 @@
 {
   "name": "my-v0-project",
-  "version": "0.37.8.5",
+  "version": "0.37.9",
   "private": true,
   "scripts": {
     "build": "next build",
@@ -80,6 +80,12 @@
     "typescript": "^5.9.3"
   },
   "pnpm": {
+    "onlyBuiltDependencies": [
+      "@tailwindcss/oxide",
+      "core-js",
+      "protobufjs",
+      "sharp"
+    ],
     "overrides": {
       "lodash@>=4.0.0 <=4.17.22": ">=4.17.23",
       "next@>=15.6.0-canary.0 <16.1.5": ">=16.1.5",
