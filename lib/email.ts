@@ -15,11 +15,29 @@ import { resolveCanonicalAppUrl } from "@/lib/canonical-app-url";
 const RESEND_API_KEY = process.env.RESEND_API_KEY ?? "";
 const EMAIL_FROM = process.env.EMAIL_FROM ?? "Engage7 Labs <noreply@engage7.ie>";
 const APP_URL = resolveCanonicalAppUrl().appUrl;
+const INLINE_LOGO_CID = "engage7-logo";
+const INLINE_LOGO_URL = "https://www.engage7.ie/logo-engage7-labs.svg";
+const INLINE_LOGO_MARKUP = `    <div data-engage7-inline-logo="true" style="text-align:center;margin-bottom:24px;">
+      <img
+        src="cid:engage7-logo"
+        alt="Engage7 Labs"
+        width="160"
+        style="display:block;margin:0 auto;max-width:160px;height:auto;"
+      />
+    </div>`;
+
+interface EmailAttachment {
+  filename: string;
+  content: string;
+  contentId: string;
+  content_type: string;
+}
 
 interface SendEmailOptions {
   to: string;
   subject: string;
   html: string;
+  attachments?: EmailAttachment[];
 }
 
 export interface SendEmailResult {
@@ -60,10 +78,67 @@ function getSafeResendMessage(body: string): string {
   }
 }
 
+function logInlineLogo(event: string, fields: Record<string, unknown>): void {
+  // Never log SVG content, attachment base64, action links, tokens, or API keys.
+  console.log(JSON.stringify({ event, ...fields }));
+}
+
+async function fetchInlineLogoAttachment(): Promise<EmailAttachment | null> {
+  try {
+    const response = await fetch(INLINE_LOGO_URL);
+    if (!response.ok) {
+      logInlineLogo("email_inline_logo_fetch_failed", {
+        attached: false,
+        reason: "http_error",
+        status: response.status,
+      });
+      return null;
+    }
+
+    const svg = await response.text();
+    logInlineLogo("email_inline_logo_fetch_succeeded", {
+      attached: true,
+      status: response.status,
+    });
+    return {
+      filename: "logo-engage7-labs.svg",
+      content: Buffer.from(svg, "utf-8").toString("base64"),
+      contentId: INLINE_LOGO_CID,
+      content_type: "image/svg+xml",
+    };
+  } catch (err) {
+    logInlineLogo("email_inline_logo_fetch_failed", {
+      attached: false,
+      reason: err instanceof Error ? err.name : "unknown",
+    });
+    return null;
+  }
+}
+
+async function prepareEmailPayload(html: string): Promise<{
+  html: string;
+  attachments?: EmailAttachment[];
+}> {
+  if (!html.includes(`cid:${INLINE_LOGO_CID}`)) {
+    return { html };
+  }
+
+  const logo = await fetchInlineLogoAttachment();
+  if (!logo) {
+    return {
+      html: html.replace(INLINE_LOGO_MARKUP, ""),
+    };
+  }
+
+  logInlineLogo("email_inline_logo_attached", { attached: true });
+  return { html, attachments: [logo] };
+}
+
 export async function sendEmail({
   to,
   subject,
   html,
+  attachments = [],
 }: SendEmailOptions): Promise<SendEmailResult> {
   if (!RESEND_API_KEY) {
     console.error(
@@ -95,13 +170,25 @@ export async function sendEmail({
     })
   );
 
+  const prepared = await prepareEmailPayload(html);
+  const payloadAttachments = [...attachments, ...(prepared.attachments ?? [])];
+  const payload = {
+    from: EMAIL_FROM,
+    to: [to],
+    subject,
+    html: prepared.html,
+    ...(payloadAttachments.length > 0
+      ? { attachments: payloadAttachments }
+      : {}),
+  };
+
   const res = await fetch("https://api.resend.com/emails", {
     method: "POST",
     headers: {
       Authorization: `Bearer ${RESEND_API_KEY}`,
       "Content-Type": "application/json",
     },
-    body: JSON.stringify({ from: EMAIL_FROM, to: [to], subject, html }),
+    body: JSON.stringify(payload),
   });
 
   if (!res.ok) {
@@ -145,6 +232,10 @@ export async function sendEmail({
   };
 }
 
+function authEmailLogoMarkup(): string {
+  return INLINE_LOGO_MARKUP;
+}
+
 export function passwordSetupEmail(resetUrl: string): {
   subject: string;
   html: string;
@@ -181,6 +272,8 @@ export function passwordResetEmail(resetUrl: string): {
 <head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"></head>
 <body style="margin:0;padding:0;background:#0f0f0f;">
   <div style="font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;max-width:480px;margin:0 auto;padding:40px 24px;background:#0f0f0f;color:#e5e7eb;">
+
+${authEmailLogoMarkup()}
 
     <p style="font-size:13px;color:#6b7280;margin:0 0 32px 0;letter-spacing:0.05em;text-transform:uppercase;">Engage7</p>
 
@@ -239,6 +332,8 @@ export function welcomeEmail(accessLink: string): { subject: string; html: strin
 <head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"></head>
 <body style="margin:0;padding:0;background:#0f0f0f;">
   <div style="font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;max-width:480px;margin:0 auto;padding:40px 24px;background:#0f0f0f;color:#e5e7eb;">
+
+${authEmailLogoMarkup()}
 
     <p style="font-size:13px;color:#6b7280;margin:0 0 32px 0;letter-spacing:0.05em;text-transform:uppercase;">Engage7</p>
 
