@@ -6,7 +6,7 @@ import { useState } from "react";
 export default function ForgotPasswordPage() {
   const [email, setEmail] = useState("");
   const [status, setStatus] = useState<
-    "idle" | "loading" | "success" | "error"
+    "idle" | "loading" | "accepted" | "error"
   >("idle");
   const [error, setError] = useState("");
 
@@ -24,11 +24,16 @@ export default function ForgotPasswordPage() {
         body: JSON.stringify({ email: email.trim().toLowerCase() }),
       });
 
+      const data = await res.json().catch(() => ({}));
+
       if (res.ok) {
-        setStatus("success");
+        setStatus("accepted");
       } else {
-        const data = await res.json().catch(() => ({}));
-        setError(data.error ?? "Something went wrong");
+        setError(
+          data.code === "email_delivery_failed"
+            ? "We couldn't send the email right now. Please try again later."
+            : data.error ?? "Something went wrong"
+        );
         setStatus("error");
       }
     } catch {
@@ -37,7 +42,7 @@ export default function ForgotPasswordPage() {
     }
   }
 
-  if (status === "success") {
+  if (status === "accepted") {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background px-4">
         <div className="max-w-sm w-full text-center space-y-4">
@@ -60,8 +65,8 @@ export default function ForgotPasswordPage() {
             Check your email
           </h1>
           <p className="text-sm text-muted-foreground">
-            If an account exists for that email, you&apos;ll receive a password
-            reset link shortly.
+            If an account exists for this email, we&apos;ll send recovery
+            instructions.
           </p>
           <a
             href="/login"

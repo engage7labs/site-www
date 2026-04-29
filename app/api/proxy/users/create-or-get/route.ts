@@ -114,6 +114,9 @@ async function deliverWelcomeEmail(email: string): Promise<EmailDelivery> {
   logStructured("welcome_email_send_failed", {
     email,
     reason: result.error ?? "unknown",
+    provider: result.provider ?? "resend",
+    provider_status: result.providerStatus,
+    sender_domain: result.senderDomain,
     magic_link_used: Boolean(magicLink),
   });
   return {

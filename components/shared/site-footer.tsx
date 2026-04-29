@@ -57,6 +57,14 @@ export function SiteFooter() {
             </a>
           </div>
         </motion.div>
+        <div className="mt-8 flex justify-center md:justify-end">
+          <span
+            className="text-xs text-muted-foreground/60"
+            title={`${config.gitSha} · ${config.buildTime}`}
+          >
+            v{config.appVersion}
+          </span>
+        </div>
       </div>
     </footer>
   );

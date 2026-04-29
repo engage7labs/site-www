@@ -75,7 +75,7 @@ function isAlreadyRegisteredError(message: string | undefined): boolean {
   );
 }
 
-async function findAuthUserIdByEmail(email: string): Promise<string | null> {
+export async function findAuthUserIdByEmail(email: string): Promise<string | null> {
   const targetEmail = email.trim().toLowerCase();
   const perPage = 1000;
 

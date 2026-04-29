@@ -13,7 +13,7 @@
 import { resolveCanonicalAppUrl } from "@/lib/canonical-app-url";
 
 const RESEND_API_KEY = process.env.RESEND_API_KEY ?? "";
-const EMAIL_FROM = process.env.EMAIL_FROM ?? "Engage7 <noreply@engage7.ie>";
+const EMAIL_FROM = (process.env.EMAIL_FROM ?? "Engage7 Labs <noreply@engage7.ie>").trim();
 const APP_URL = resolveCanonicalAppUrl().appUrl;
 
 interface SendEmailOptions {
@@ -22,15 +22,62 @@ interface SendEmailOptions {
   html: string;
 }
 
+export interface SendEmailResult {
+  ok: boolean;
+  error?: string;
+  statusCode?: number;
+  provider?: "resend";
+  providerStatus?: number;
+  senderDomain?: string;
+}
+
+function getSenderDomain(sender: string): string {
+  const bracketMatch = sender.match(/<[^@\s<>]+@([^>\s]+)>/);
+  const plainMatch = sender.match(/@([^>\s]+)$/);
+  return (bracketMatch?.[1] ?? plainMatch?.[1] ?? "unknown").toLowerCase();
+}
+
+const EMAIL_FROM_DOMAIN = getSenderDomain(EMAIL_FROM);
+
+function getSafeResendMessage(body: string): string {
+  try {
+    const parsed = JSON.parse(body) as { message?: unknown };
+    return typeof parsed.message === "string" ? parsed.message : "resend_error";
+  } catch {
+    return "resend_error";
+  }
+}
+
 export async function sendEmail({
   to,
   subject,
   html,
-}: SendEmailOptions): Promise<{ ok: boolean; error?: string }> {
+}: SendEmailOptions): Promise<SendEmailResult> {
   if (!RESEND_API_KEY) {
-    console.error("[email] RESEND_API_KEY not configured — email not sent");
-    return { ok: false, error: "Email service not configured" };
+    console.error(
+      JSON.stringify({
+        event: "email_send_failed",
+        provider: "resend",
+        reason: "resend_api_key_missing",
+        sender_domain: EMAIL_FROM_DOMAIN,
+      })
+    );
+    return {
+      ok: false,
+      error: "Email service not configured",
+      statusCode: 503,
+      provider: "resend",
+      senderDomain: EMAIL_FROM_DOMAIN,
+    };
   }
+
+  console.log(
+    JSON.stringify({
+      event: "email_send_attempt",
+      provider: "resend",
+      sender_domain: EMAIL_FROM_DOMAIN,
+    })
+  );
 
   const res = await fetch("https://api.resend.com/emails", {
     method: "POST",
@@ -43,11 +90,39 @@ export async function sendEmail({
 
   if (!res.ok) {
     const body = await res.text().catch(() => "unknown error");
-    console.error(`[email] Resend API error ${res.status}: ${body}`);
-    return { ok: false, error: `Email delivery failed (${res.status})` };
+    const message = getSafeResendMessage(body);
+    console.error(
+      JSON.stringify({
+        event: "email_send_failed",
+        provider: "resend",
+        provider_status: res.status,
+        sender_domain: EMAIL_FROM_DOMAIN,
+        message,
+      })
+    );
+    return {
+      ok: false,
+      error: `Email delivery failed (${res.status})`,
+      statusCode: res.status === 403 ? 403 : 502,
+      provider: "resend",
+      providerStatus: res.status,
+      senderDomain: EMAIL_FROM_DOMAIN,
+    };
   }
 
-  return { ok: true };
+  console.log(
+    JSON.stringify({
+      event: "email_send_succeeded",
+      provider: "resend",
+      sender_domain: EMAIL_FROM_DOMAIN,
+    })
+  );
+
+  return {
+    ok: true,
+    provider: "resend",
+    senderDomain: EMAIL_FROM_DOMAIN,
+  };
 }
 
 export function passwordSetupEmail(resetUrl: string): {
