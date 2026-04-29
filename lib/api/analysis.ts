@@ -166,6 +166,17 @@ export async function getAnalysisResult(
 }
 
 /**
+ * Gets an authenticated, user-owned Portal analysis result.
+ *
+ * GET /api/users/me/analyses/{jobId} through the Next.js proxy.
+ */
+export async function getPortalAnalysisResult(
+  jobId: string
+): Promise<AnalysisResult> {
+  return get<AnalysisResult>(API_ENDPOINTS.getPortalAnalysisResult(jobId));
+}
+
+/**
  * Returns the full URL for downloading the PDF report.
  * Routes through the server-side proxy (same origin).
  * The caller is responsible for verifying artifacts.pdf_available before use.
