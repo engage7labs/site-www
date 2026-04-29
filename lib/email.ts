@@ -6,14 +6,14 @@
  *
  * Required env vars:
  *   RESEND_API_KEY     — Resend API key (re_...)
- *   EMAIL_FROM         — Verified sender (e.g. "noreply@engage7.ie")
+ *   EMAIL_FROM         — Verified sender (e.g. "Engage7 Labs <noreply@auth.engage7.ie>")
  *   NEXT_PUBLIC_APP_URL — Application base URL for links in emails
  */
 
 import { resolveCanonicalAppUrl } from "@/lib/canonical-app-url";
 
 const RESEND_API_KEY = process.env.RESEND_API_KEY ?? "";
-const EMAIL_FROM = (process.env.EMAIL_FROM ?? "Engage7 Labs <noreply@engage7.ie>").trim();
+const EMAIL_FROM = process.env.EMAIL_FROM ?? "Engage7 Labs <noreply@engage7.ie>";
 const APP_URL = resolveCanonicalAppUrl().appUrl;
 
 interface SendEmailOptions {
@@ -37,7 +37,19 @@ function getSenderDomain(sender: string): string {
   return (bracketMatch?.[1] ?? plainMatch?.[1] ?? "unknown").toLowerCase();
 }
 
+function getSenderAddress(sender: string): string {
+  const bracketMatch = sender.match(/<([^@\s<>]+@[^>\s]+)>/);
+  const plainMatch = sender.match(/([^<>\s]+@[^<>\s]+)$/);
+  return (bracketMatch?.[1] ?? plainMatch?.[1] ?? "unknown").toLowerCase();
+}
+
+function hasSenderDisplayName(sender: string): boolean {
+  return /^\s*[^<>\s][^<>]*<[^@\s<>]+@[^>\s]+>\s*$/.test(sender);
+}
+
 const EMAIL_FROM_DOMAIN = getSenderDomain(EMAIL_FROM);
+const EMAIL_FROM_ADDRESS = getSenderAddress(EMAIL_FROM);
+const EMAIL_FROM_HAS_DISPLAY_NAME = hasSenderDisplayName(EMAIL_FROM);
 
 function getSafeResendMessage(body: string): string {
   try {
@@ -59,7 +71,9 @@ export async function sendEmail({
         event: "email_send_failed",
         provider: "resend",
         reason: "resend_api_key_missing",
-        sender_domain: EMAIL_FROM_DOMAIN,
+        email_from_has_display_name: EMAIL_FROM_HAS_DISPLAY_NAME,
+        email_from_domain: EMAIL_FROM_DOMAIN,
+        email_from_address: EMAIL_FROM_ADDRESS,
       })
     );
     return {
@@ -75,7 +89,9 @@ export async function sendEmail({
     JSON.stringify({
       event: "email_send_attempt",
       provider: "resend",
-      sender_domain: EMAIL_FROM_DOMAIN,
+      email_from_has_display_name: EMAIL_FROM_HAS_DISPLAY_NAME,
+      email_from_domain: EMAIL_FROM_DOMAIN,
+      email_from_address: EMAIL_FROM_ADDRESS,
     })
   );
 
@@ -96,7 +112,9 @@ export async function sendEmail({
         event: "email_send_failed",
         provider: "resend",
         provider_status: res.status,
-        sender_domain: EMAIL_FROM_DOMAIN,
+        email_from_has_display_name: EMAIL_FROM_HAS_DISPLAY_NAME,
+        email_from_domain: EMAIL_FROM_DOMAIN,
+        email_from_address: EMAIL_FROM_ADDRESS,
         message,
       })
     );
@@ -114,7 +132,9 @@ export async function sendEmail({
     JSON.stringify({
       event: "email_send_succeeded",
       provider: "resend",
-      sender_domain: EMAIL_FROM_DOMAIN,
+      email_from_has_display_name: EMAIL_FROM_HAS_DISPLAY_NAME,
+      email_from_domain: EMAIL_FROM_DOMAIN,
+      email_from_address: EMAIL_FROM_ADDRESS,
     })
   );
 

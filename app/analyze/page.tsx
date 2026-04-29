@@ -151,14 +151,6 @@ export default function AnalyzePage() {
                 </p>
               </motion.div>
 
-              {/* Upload instruction line */}
-              <motion.div variants={fadeInUp} className="text-center">
-                <p className="text-sm text-muted-foreground max-w-md mx-auto">
-                  Export from the Health app on your iPhone, then upload the .zip
-                  file below.
-                </p>
-              </motion.div>
-
               {/* Apple Health Export Tutorial */}
               <motion.div variants={fadeInUp} className="max-w-4xl mx-auto">
                 <AppleHealthTutorial />
