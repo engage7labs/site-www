@@ -13,8 +13,10 @@ import { NextRequest, NextResponse } from "next/server";
 export const runtime = "nodejs";
 
 const SESSION_30_DAYS = 30 * 24 * 3600;
+const SETUP_TOKEN_TTL = 30 * 60; // 30 minutes
 const PORTAL_PATH = "/portal";
 const LOGIN_PATH = "/login";
+const SETUP_PATH = "/auth/reset-password";
 
 function logWelcomeAccess(
   event: string,
@@ -75,13 +77,28 @@ export async function GET(request: NextRequest) {
     has_user_id: Boolean(authUserId),
   });
 
+  const now = Math.floor(Date.now() / 1000);
   const sessionToken = signJwt({
     sub: email,
     role: "user",
-    exp: Math.floor(Date.now() / 1000) + SESSION_30_DAYS,
+    exp: now + SESSION_30_DAYS,
   });
 
-  const response = NextResponse.redirect(redirectUrl(request, PORTAL_PATH));
+  // Short-lived password_reset token so the user can create their access code
+  // by reusing the existing /auth/reset-password page and /api/auth/reset-password
+  // route. The reset-password API validates purpose === "password_reset".
+  const setupToken = signJwt({
+    sub: email,
+    role: "user",
+    purpose: "password_reset",
+    exp: now + SETUP_TOKEN_TTL,
+  } as Parameters<typeof signJwt>[0] & { purpose: string });
+
+  const setupUrl = redirectUrl(request, SETUP_PATH);
+  setupUrl.searchParams.set("token", setupToken);
+  setupUrl.searchParams.set("mode", "welcome");
+
+  const response = NextResponse.redirect(setupUrl);
   response.cookies.set(SESSION_COOKIE_NAME, sessionToken, {
     httpOnly: true,
     secure: process.env.NODE_ENV === "production",
@@ -91,7 +108,10 @@ export async function GET(request: NextRequest) {
   });
 
   logWelcomeAccess("welcome_access_session_created", { email });
-  logWelcomeAccess("welcome_access_redirect", { redirect_to: PORTAL_PATH });
+  logWelcomeAccess("welcome_access_redirect_setup", {
+    redirect_to: SETUP_PATH,
+    mode: "welcome",
+  });
 
   return response;
 }

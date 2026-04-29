@@ -61,6 +61,16 @@ function PageShell({ children }: Readonly<{ children: React.ReactNode }>) {
   );
 }
 
+function FocusedProcessingShell({
+  children,
+}: Readonly<{ children: React.ReactNode }>) {
+  return (
+    <div className="min-h-screen bg-background flex items-center justify-center px-6">
+      {children}
+    </div>
+  );
+}
+
 // ---------------------------------------------------------------------------
 // State views
 // ---------------------------------------------------------------------------
@@ -525,9 +535,9 @@ export default function ResultPage({
   // Initial loading state — show analyzing screen immediately with live timer
   if (!result && !isNotFound && !fetchError) {
     return (
-      <PageShell>
+      <FocusedProcessingShell>
         <ProcessingView phase="analyzing" elapsedSeconds={elapsedSeconds} />
-      </PageShell>
+      </FocusedProcessingShell>
     );
   }
 
@@ -557,13 +567,13 @@ export default function ResultPage({
   if (!isTeaserReady) {
     // Show processing state until teaser payload is truly ready
     return (
-      <PageShell>
+      <FocusedProcessingShell>
         <ProcessingView
           phase="analyzing"
           elapsedSeconds={elapsedSeconds}
           delayed={elapsedSeconds > 60}
         />
-      </PageShell>
+      </FocusedProcessingShell>
     );
   }
 

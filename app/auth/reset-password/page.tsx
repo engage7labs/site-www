@@ -1,12 +1,19 @@
 "use client";
 
 import { Eye, EyeOff, Loader2 } from "lucide-react";
-import { useSearchParams } from "next/navigation";
-import { Suspense, useState } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
+import { Suspense, useEffect, useState } from "react";
+
+function logSetup(event: string, fields: Record<string, unknown> = {}): void {
+  // Never log tokens, JWTs, or full URLs.
+  console.log(JSON.stringify({ event, ...fields }));
+}
 
 function ResetPasswordForm() {
   const searchParams = useSearchParams();
+  const router = useRouter();
   const token = searchParams.get("token") ?? "";
+  const isWelcome = searchParams.get("mode") === "welcome";
 
   const [password, setPassword] = useState("");
   const [confirm, setConfirm] = useState("");
@@ -18,12 +25,20 @@ function ResetPasswordForm() {
 
   const valid = password.length >= 8 && password === confirm;
 
+  useEffect(() => {
+    if (isWelcome && status === "success") {
+      const timer = setTimeout(() => router.push("/portal"), 800);
+      return () => clearTimeout(timer);
+    }
+  }, [isWelcome, status, router]);
+
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     if (!valid || !token) return;
 
     setStatus("loading");
     setError("");
+    if (isWelcome) logSetup("welcome_access_code_setup_started");
 
     try {
       const res = await fetch("/api/auth/reset-password", {
@@ -34,14 +49,17 @@ function ResetPasswordForm() {
 
       if (res.ok) {
         setStatus("success");
+        if (isWelcome) logSetup("welcome_access_code_setup_succeeded");
       } else {
         const data = await res.json().catch(() => ({}));
         setError(data.error ?? "Failed to reset password");
         setStatus("error");
+        if (isWelcome) logSetup("welcome_access_code_setup_failed");
       }
     } catch {
       setError("Network error — please try again");
       setStatus("error");
+      if (isWelcome) logSetup("welcome_access_code_setup_failed");
     }
   }
 
@@ -86,17 +104,23 @@ function ResetPasswordForm() {
             </svg>
           </div>
           <h1 className="text-xl font-semibold text-foreground">
-            Password updated
+            {isWelcome ? "Access code created" : "Password updated"}
           </h1>
           <p className="text-sm text-muted-foreground">
-            Your password has been set. You can now sign in.
+            {isWelcome
+              ? "Taking you to your Engage7 portal..."
+              : "Your password has been set. You can now sign in."}
           </p>
-          <a
-            href="/login"
-            className="inline-block rounded-md bg-accent px-6 py-2 text-sm font-medium text-white hover:bg-accent/90 transition-colors"
-          >
-            Sign in
-          </a>
+          {isWelcome ? (
+            <Loader2 className="h-5 w-5 animate-spin text-muted-foreground mx-auto" />
+          ) : (
+            <a
+              href="/login"
+              className="inline-block rounded-md bg-accent px-6 py-2 text-sm font-medium text-white hover:bg-accent/90 transition-colors"
+            >
+              Sign in
+            </a>
+          )}
         </div>
       </div>
     );
@@ -107,10 +131,12 @@ function ResetPasswordForm() {
       <form onSubmit={handleSubmit} className="max-w-sm w-full space-y-6">
         <div className="text-center space-y-1">
           <h1 className="text-xl font-semibold text-foreground">
-            Set your password
+            {isWelcome ? "Create your access code" : "Set your password"}
           </h1>
           <p className="text-sm text-muted-foreground">
-            Choose a strong password for your Engage7 account.
+            {isWelcome
+              ? "Choose an access code so you can return to your Engage7 portal anytime."
+              : "Choose a strong password for your Engage7 account."}
           </p>
         </div>
 
@@ -118,7 +144,11 @@ function ResetPasswordForm() {
           <div className="relative">
             <input
               type={showPassword ? "text" : "password"}
-              placeholder="New password (min 8 characters)"
+              placeholder={
+                isWelcome
+                  ? "Access code (min 8 characters)"
+                  : "New password (min 8 characters)"
+              }
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               minLength={8}
@@ -142,7 +172,7 @@ function ResetPasswordForm() {
 
           <input
             type="password"
-            placeholder="Confirm password"
+            placeholder={isWelcome ? "Confirm access code" : "Confirm password"}
             value={confirm}
             onChange={(e) => setConfirm(e.target.value)}
             minLength={8}
@@ -166,7 +196,7 @@ function ResetPasswordForm() {
           className="w-full rounded-lg bg-accent px-4 py-2.5 text-sm font-medium text-white hover:bg-accent/90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
         >
           {status === "loading" && <Loader2 className="h-4 w-4 animate-spin" />}
-          Set Password
+          {isWelcome ? "Create access code" : "Set Password"}
         </button>
       </form>
     </div>

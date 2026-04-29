@@ -123,6 +123,14 @@ export default function AnalyzePage() {
       });
   };
 
+  if (isUploading) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center px-6">
+        <ProcessingView phase="uploading" elapsedSeconds={elapsedSeconds} />
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen bg-background flex flex-col">
       <SiteHeader />
@@ -135,12 +143,7 @@ export default function AnalyzePage() {
           animate="animate"
           className="space-y-10"
         >
-          {isUploading ? (
-            <motion.div variants={fadeInUp} className="max-w-2xl mx-auto">
-              <ProcessingView phase="uploading" elapsedSeconds={elapsedSeconds} />
-            </motion.div>
-          ) : (
-            <>
+          <>
               {/* Page Title */}
               <motion.div variants={fadeInUp} className="text-center space-y-4">
                 <h1 className="text-4xl md:text-5xl font-semibold text-foreground">
@@ -244,7 +247,6 @@ export default function AnalyzePage() {
                 <APIHealthStatus suppressUnhealthy={isUploading} />
               </motion.div>
             </>
-          )}
         </motion.div>
       </main>
 
