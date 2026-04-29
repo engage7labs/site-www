@@ -38,30 +38,92 @@ export const supabaseAdmin = new Proxy({} as SupabaseClient, {
   },
 });
 
+function logMagicLink(event: string, fields: Record<string, unknown>): void {
+  // Never log Supabase action links, fragments, access tokens, or refresh tokens.
+  console.log(JSON.stringify({ event, ...fields }));
+}
+
+function resolveRedirectFields(redirectTo: string): {
+  redirectTo: string;
+  redirectHost: string;
+  redirectPath: string;
+  redirectToApplied: boolean;
+} {
+  try {
+    const url = new URL(redirectTo);
+    const redirectToApplied =
+      (url.protocol === "https:" || url.protocol === "http:") &&
+      url.pathname === "/auth/callback";
+
+    return {
+      redirectTo: url.toString(),
+      redirectHost: url.hostname,
+      redirectPath: url.pathname,
+      redirectToApplied,
+    };
+  } catch {
+    const fallback = resolveMagicLinkRedirect();
+    return {
+      redirectTo: fallback.redirectTo,
+      redirectHost: fallback.redirectHost,
+      redirectPath: fallback.redirectPath,
+      redirectToApplied: true,
+    };
+  }
+}
+
 /**
  * Generate a magic link for the given email.
  * Returns the action_link URL or null on failure.
  *
  * @param email - User email address
- * @param redirectTo - URL to redirect after verification (default: /portal)
+ * @param redirectTo - URL to redirect after verification (default: /auth/callback)
  */
 export async function generateMagicLink(
   email: string,
   redirectTo = resolveMagicLinkRedirect().redirectTo
 ): Promise<string | null> {
+  const redirect = resolveRedirectFields(redirectTo);
+
+  logMagicLink("magic_link_redirect_resolved", {
+    redirect_host: redirect.redirectHost,
+    redirect_path: redirect.redirectPath,
+    redirect_to_applied: redirect.redirectToApplied,
+  });
+
+  const options = {
+    redirectTo: redirect.redirectTo,
+  };
+
   try {
     const { data, error } = await supabaseAdmin.auth.admin.generateLink({
       type: "magiclink",
       email,
-      options: { redirectTo },
+      options,
     });
     if (error || !data?.properties?.action_link) {
-      console.error("[generateMagicLink] Supabase error:", error?.message);
+      logMagicLink("magic_link_generation_failed", {
+        redirect_host: redirect.redirectHost,
+        redirect_path: redirect.redirectPath,
+        redirect_to_applied: redirect.redirectToApplied,
+        reason: error?.message ?? "missing_action_link",
+      });
       return null;
     }
+    logMagicLink("magic_link_generation_succeeded", {
+      redirect_host: redirect.redirectHost,
+      redirect_path: redirect.redirectPath,
+      redirect_to_applied: redirect.redirectToApplied,
+      has_action_link: true,
+    });
     return data.properties.action_link;
   } catch (err) {
-    console.error("[generateMagicLink] Unexpected error:", err);
+    logMagicLink("magic_link_generation_failed", {
+      redirect_host: redirect.redirectHost,
+      redirect_path: redirect.redirectPath,
+      redirect_to_applied: redirect.redirectToApplied,
+      reason: err instanceof Error ? err.message : "unknown",
+    });
     return null;
   }
 }

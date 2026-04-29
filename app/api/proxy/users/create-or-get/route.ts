@@ -48,6 +48,7 @@ async function deliverWelcomeEmail(email: string): Promise<EmailDelivery> {
   const safeRedirectFields = {
     redirect_host: redirect.redirectHost,
     redirect_path: redirect.redirectPath,
+    redirect_to_applied: redirect.redirectPath === "/auth/callback",
     app_url_source: redirect.source,
   };
 
