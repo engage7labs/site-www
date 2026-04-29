@@ -13,3 +13,4 @@
   isSet: true
 }
 ✓ Ready in 2.7s
+ GET / 200 in 3.4s (compile: 2.7s, render: 731ms)
