@@ -3,6 +3,8 @@
 import { EChart } from "@/components/insights/echart";
 import { RecoveryScoreChart } from "@/components/insights/recovery-score-chart";
 import { DarthStatePanel } from "@/components/portal/darth-state-panel";
+import type { PortalDataStatus } from "@/lib/portal-data-status";
+import { parsePortalDataStatus } from "@/lib/portal-data-status";
 import type { EChartsOption } from "echarts";
 import {
   Activity,
@@ -42,6 +44,7 @@ interface HealthDataResponse {
   data_points: HealthPoint[];
   fields_available: string[];
   data_status: string;
+  portal_data_status?: unknown;
 }
 
 interface MetricSeries {
@@ -618,15 +621,27 @@ function LoadingState() {
 
 function DatasetEmptyState({
   status,
-}: Readonly<{ status: string | undefined }>) {
+  portalStatus,
+}: Readonly<{ status: string | undefined; portalStatus: PortalDataStatus | null }>) {
   const message =
-    status === "blob_storage_unavailable"
+    !portalStatus?.hasAnalyses || portalStatus.analysisStatus === "no_analysis"
+      ? "No analysis has been created yet. Upload or update your data before using the Health dashboards."
+      : portalStatus.analysisStatus === "analysis_processing"
+        ? "Your latest analysis is still processing. The longitudinal health timeline will appear when it is ready."
+        : portalStatus.analysisStatus === "analysis_failed"
+          ? "The latest analysis did not complete, so the health timeline is not available from that run."
+          : portalStatus.featureTimelineStatus === "blob_unavailable" ||
+              status === "blob_storage_unavailable"
       ? "The stored health timeline is not available in this environment."
-      : status === "feature_store_blob_missing"
+      : portalStatus.featureTimelineStatus === "blob_missing" ||
+          status === "feature_store_blob_missing"
         ? "A health timeline record exists, but the stored daily data could not be read."
-        : status === "feature_store_parse_failed"
+        : portalStatus.featureTimelineStatus === "parse_failed" ||
+            status === "feature_store_parse_failed"
           ? "The stored health timeline could not be converted into dashboard data."
-          : "No stored health timeline is available yet for this account.";
+          : portalStatus.hasAnalyses && !portalStatus.hasFeatureTimeline
+            ? "An analysis exists for this account, but the longitudinal UserFeatureStore timeline is not available yet."
+            : "No stored health timeline is available yet for this account.";
 
   return (
     <div className="portal-panel rounded-lg border border-border/70 bg-card/85 p-8 text-center">
@@ -1258,6 +1273,10 @@ export function HealthDashboard({
     [data?.latest_sections],
   );
   const allPoints = useMemo(() => sortedPoints(data?.data_points ?? []), [data]);
+  const portalStatus = useMemo(
+    () => parsePortalDataStatus(data?.portal_data_status),
+    [data?.portal_data_status],
+  );
   const filtered = useMemo(
     () => filterByPeriod(allPoints, domain, period),
     [allPoints, domain, period],
@@ -1274,7 +1293,12 @@ export function HealthDashboard({
   }
 
   if (!data || data.analysis_count === 0 || allPoints.length === 0) {
-    return <DatasetEmptyState status={data?.data_status} />;
+    return (
+      <DatasetEmptyState
+        status={data?.data_status}
+        portalStatus={portalStatus}
+      />
+    );
   }
 
   const meta = DOMAIN_META[domain];

@@ -5,6 +5,8 @@ import { DailyBriefing } from "@/components/portal/daily-briefing";
 import { ChartEmptyState } from "@/components/insights/chart-empty-state";
 import { useLocale } from "@/components/providers/locale-provider";
 import { generateCompareImprove } from "@/lib/insights/compare-improve";
+import type { PortalDataStatus } from "@/lib/portal-data-status";
+import { parsePortalDataStatus } from "@/lib/portal-data-status";
 import type { EChartsOption } from "echarts";
 import { Clock, Crown, ExternalLink, Heart, Moon, Upload } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
@@ -49,6 +51,7 @@ interface TrendsData {
     steps: TrendPoint[];
   };
   analysis_count: number;
+  portal_data_status?: unknown;
 }
 
 interface OverviewData {
@@ -66,6 +69,36 @@ interface OverviewData {
     summary: Record<string, unknown> | null;
     highlights: string[] | null;
   } | null;
+  portal_data_status?: unknown;
+}
+
+interface StatusNoticeProps {
+  readonly status: PortalDataStatus | null;
+}
+
+function StatusNotice({ status }: StatusNoticeProps) {
+  if (!status) return null;
+
+  let message: string | null = null;
+  if (!status.hasAnalyses || status.analysisStatus === "no_analysis") {
+    message = "No analysis has been created yet. Upload an Apple Health export to start your Portal timeline.";
+  } else if (status.analysisStatus === "analysis_processing") {
+    message = "Your latest analysis is still processing. Available Portal cards will update when it finishes.";
+  } else if (status.analysisStatus === "analysis_failed") {
+    message = "The latest analysis did not complete. Existing Portal data is still shown where available.";
+  } else if (!status.hasDarth) {
+    message = "Analysis data is available, but the DARTH guidance layer is not ready for this analysis yet.";
+  } else if (!status.hasFeatureTimeline) {
+    message = "Analysis data is available, but the longitudinal feature timeline is not available for this account yet.";
+  }
+
+  if (!message) return null;
+
+  return (
+    <div className="rounded-lg border border-border/70 bg-muted/30 px-4 py-3 text-sm text-muted-foreground">
+      {message}
+    </div>
+  );
 }
 
 function coerceHighlights(value: unknown): string[] {
@@ -452,6 +485,7 @@ export default function PortalOverviewPage() {
   const [sections, setSections] = useState<Record<string, unknown> | null>(
     null
   );
+  const [portalStatus, setPortalStatus] = useState<PortalDataStatus | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -468,6 +502,7 @@ export default function PortalOverviewPage() {
             .json()
             .catch(() => null)) as OverviewData | null;
           setData(overviewJson);
+          setPortalStatus(parsePortalDataStatus(overviewJson?.portal_data_status));
         }
 
         if (trendsReq.status === "fulfilled" && trendsReq.value.ok) {
@@ -475,6 +510,9 @@ export default function PortalOverviewPage() {
             .json()
             .catch(() => null)) as TrendsData | null;
           setTrends(trendsJson);
+          setPortalStatus((current) =>
+            current ?? parsePortalDataStatus(trendsJson?.portal_data_status)
+          );
         }
 
         if (analysesReq.status === "fulfilled" && analysesReq.value.ok) {
@@ -482,6 +520,9 @@ export default function PortalOverviewPage() {
             .json()
             .catch(() => null);
           setSections(parseLatestSections(analysesPayload));
+          setPortalStatus((current) =>
+            current ?? parsePortalDataStatus(analysesPayload?.portal_data_status)
+          );
         }
       } catch {
         // silent — show empty state
@@ -517,6 +558,8 @@ export default function PortalOverviewPage() {
     <div className="flex flex-col gap-6">
       {/* Daily Briefing — Sprint 19.0 */}
       <DailyBriefing />
+
+      <StatusNotice status={portalStatus} />
 
       {/* Compare & Improve — Sprint 17.5 */}
       <CompareImproveBlock result={compareImprove} />

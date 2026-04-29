@@ -1,6 +1,8 @@
 "use client";
 
 import { DarthStatePanel } from "@/components/portal/darth-state-panel";
+import type { PortalDataStatus } from "@/lib/portal-data-status";
+import { parsePortalDataStatus } from "@/lib/portal-data-status";
 import type { EChartsOption } from "echarts";
 import {
   Activity,
@@ -70,6 +72,7 @@ interface TrendsData {
     volatility: Record<string, unknown> | null;
   };
   analysis_count: number;
+  portal_data_status?: unknown;
 }
 
 // ---------------------------------------------------------------------------
@@ -686,14 +689,15 @@ function detectBiggestChange(
 // Empty state
 // ---------------------------------------------------------------------------
 
-function EmptyTrendsState() {
+function EmptyTrendsState({
+  message,
+}: Readonly<{ message: string }>) {
   return (
     <div className="flex flex-col gap-6">
       <div className="portal-panel rounded-xl border border-border/70 bg-card/85 p-8 text-center">
         <TrendingUpIcon className="h-10 w-10 text-muted-foreground/40 mx-auto mb-3" />
         <p className="text-sm text-muted-foreground max-w-sm mx-auto">
-          No trend data available yet. Upload an Apple Health export to see how
-          your signals evolve over time.
+          {message}
         </p>
       </div>
     </div>
@@ -706,6 +710,7 @@ function EmptyTrendsState() {
 
 export default function TrendsPage() {
   const [trendsData, setTrendsData] = useState<TrendsData | null>(null);
+  const [portalStatus, setPortalStatus] = useState<PortalDataStatus | null>(null);
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const [latestSections, setLatestSections] = useState<any>(null);
   const [loading, setLoading] = useState(true);
@@ -719,11 +724,16 @@ export default function TrendsPage() {
         ]);
 
         if (trendsRes.status === "fulfilled" && trendsRes.value.ok) {
-          setTrendsData(await trendsRes.value.json());
+          const payload = (await trendsRes.value.json()) as TrendsData;
+          setTrendsData(payload);
+          setPortalStatus(parsePortalDataStatus(payload.portal_data_status));
         }
 
         if (analysesRes.status === "fulfilled" && analysesRes.value.ok) {
           const analysesData = await analysesRes.value.json();
+          setPortalStatus((current) =>
+            current ?? parsePortalDataStatus(analysesData?.portal_data_status)
+          );
           const analyses = analysesData.analyses ?? [];
           // eslint-disable-next-line @typescript-eslint/no-explicit-any
           const latest = analyses.find((a: any) => a.sections);
@@ -757,8 +767,22 @@ export default function TrendsPage() {
     );
   }
 
-  if (!trendsData || trendsData.analysis_count === 0) {
-    return <EmptyTrendsState />;
+  if (!trendsData) {
+    return (
+      <EmptyTrendsState message="Advanced trend data could not be loaded right now." />
+    );
+  }
+
+  if (trendsData.analysis_count === 0 || portalStatus?.analysisStatus === "no_analysis") {
+    return (
+      <EmptyTrendsState message="No analysis has been created yet. Upload an Apple Health export before using Trends." />
+    );
+  }
+
+  if (portalStatus && !portalStatus.hasLegacyScientificData) {
+    return (
+      <EmptyTrendsState message="Advanced trend data is not available for this analysis yet. Your analysis may still have summary or health timeline data elsewhere in the Portal." />
+    );
   }
 
   const { trends } = trendsData;
