@@ -34,14 +34,23 @@ function isVercelDeploymentUrl(appUrl: string): boolean {
   return new URL(appUrl).hostname.endsWith(".vercel.app");
 }
 
+function isBareProductionHost(appUrl: string): boolean {
+  return new URL(appUrl).hostname === "engage7.ie";
+}
+
 export function resolveCanonicalAppUrl(): CanonicalAppUrlResolution {
   const configured = normalizeAppUrl(process.env.NEXT_PUBLIC_APP_URL ?? "");
 
   if (configured) {
-    if (isProductionRuntime() && isVercelDeploymentUrl(configured)) {
+    if (
+      isProductionRuntime() &&
+      (isVercelDeploymentUrl(configured) || isBareProductionHost(configured))
+    ) {
       return {
         appUrl: PRODUCTION_APP_URL,
-        source: "NEXT_PUBLIC_APP_URL_REJECTED_VERCEL_PRODUCTION_FALLBACK",
+        source: isVercelDeploymentUrl(configured)
+          ? "NEXT_PUBLIC_APP_URL_REJECTED_VERCEL_PRODUCTION_FALLBACK"
+          : "NEXT_PUBLIC_APP_URL_REJECTED_BARE_DOMAIN_PRODUCTION_FALLBACK",
       };
     }
 

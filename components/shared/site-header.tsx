@@ -7,6 +7,7 @@
 import { useLocale } from "@/components/providers/locale-provider";
 import { LocaleSwitcher } from "@/components/shared/locale-switcher";
 import { LoginFormFields } from "@/components/shared/login-form-fields";
+import { Logo } from "@/components/shared/logo";
 import { ThemeSwitcher } from "@/components/shared/theme-switcher";
 import { Button } from "@/components/ui/button";
 import {
@@ -70,11 +71,16 @@ export function SiteHeader() {
               </button>
             </DialogTrigger>
             <DialogContent>
-              <DialogHeader>
-                <div className="mx-auto mb-2 flex h-12 w-12 items-center justify-center rounded-xl bg-accent text-accent-foreground text-lg font-bold">
-                  E7
+              <DialogHeader className="text-center">
+                <div className="mx-auto mb-2">
+                  <Logo size={48} compact href="/" />
                 </div>
-                <DialogTitle>Sign in to Engage7</DialogTitle>
+                <DialogTitle className="text-2xl">
+                  Sign in to Engage7
+                </DialogTitle>
+                <p className="text-xs font-medium text-muted-foreground/70 mt-0.5">
+                  User Portal
+                </p>
                 <DialogDescription>
                   Personal insight system — your data stays yours
                 </DialogDescription>

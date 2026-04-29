@@ -13,9 +13,9 @@
 
 import { signRequest } from "@/lib/api/signing";
 import { SESSION_COOKIE_NAME, signJwt } from "@/lib/auth-server";
-import { resolveMagicLinkRedirect } from "@/lib/canonical-app-url";
+import { resolveCanonicalAppUrl } from "@/lib/canonical-app-url";
 import { welcomeEmail, sendEmail } from "@/lib/email";
-import { ensureSupabaseAuthUser, generateMagicLink } from "@/lib/supabase-admin";
+import { ensureSupabaseAuthUser } from "@/lib/supabase-admin";
 import { INTERNAL_API_BASE_URL } from "@/lib/server-config";
 import { NextRequest, NextResponse } from "next/server";
 
@@ -37,69 +37,56 @@ interface EmailDelivery {
   magic_link_used: boolean;
 }
 
+interface WelcomeAccessLink {
+  url: string;
+  expiresAt: number;
+}
+
 function logStructured(event: string, fields: Record<string, unknown>): void {
   // Single-line JSON so Vercel runtime logs stay greppable.
   // NEVER log Resend keys, Supabase service role, or full magic-link tokens.
   console.log(JSON.stringify({ event, ...fields }));
 }
 
-async function deliverWelcomeEmail(email: string): Promise<EmailDelivery> {
-  const redirect = resolveMagicLinkRedirect();
-  const safeRedirectFields = {
-    redirect_host: redirect.redirectHost,
-    redirect_path: redirect.redirectPath,
-    redirect_to_applied: redirect.redirectPath === "/auth/callback",
-    app_url_source: redirect.source,
+function createWelcomeAccessLink(email: string, userId?: string): WelcomeAccessLink {
+  const appUrl = resolveCanonicalAppUrl();
+  const now = Math.floor(Date.now() / 1000);
+  const expiresAt = now + 24 * 3600;
+  const token = signJwt({
+    sub: email,
+    role: "user",
+    purpose: "welcome_access",
+    user_id: userId,
+    exp: expiresAt,
+  } as Parameters<typeof signJwt>[0] & {
+    purpose: string;
+    user_id?: string;
+  });
+
+  logStructured("welcome_access_token_created", {
+    email,
+    has_user_id: Boolean(userId),
+    app_url_source: appUrl.source,
+    expires_in_seconds: expiresAt - now,
+  });
+
+  return {
+    url: `${appUrl.appUrl}/auth/welcome?token=${encodeURIComponent(token)}`,
+    expiresAt,
   };
+}
 
-  logStructured("welcome_magic_link_redirect_resolved", {
-    ...safeRedirectFields,
-    has_action_link: false,
-  });
-  logStructured("magic_link_redirect_resolved", {
-    ...safeRedirectFields,
-    has_action_link: false,
-  });
-  logStructured("magic_link_generation_attempt", {
-    ...safeRedirectFields,
-    has_action_link: false,
-  });
-  let magicLink: string | null = null;
-  try {
-    magicLink = await generateMagicLink(email, redirect.redirectTo);
-  } catch (err) {
-    logStructured("magic_link_generation_failed", {
-      ...safeRedirectFields,
-      has_action_link: false,
-      reason: err instanceof Error ? err.message : "unknown",
-    });
-  }
-
-  if (magicLink) {
-    logStructured("welcome_magic_link_redirect_resolved", {
-      ...safeRedirectFields,
-      has_action_link: true,
-    });
-    logStructured("magic_link_generation_succeeded", {
-      ...safeRedirectFields,
-      has_action_link: true,
-    });
-  } else {
-    logStructured("magic_link_generation_failed", {
-      ...safeRedirectFields,
-      has_action_link: false,
-      reason: "supabase_returned_null_or_env_missing",
-    });
-  }
-
-  const fallbackUrl = `${redirect.appUrl}/portal`;
-  const accessLink = magicLink ?? fallbackUrl;
-
-  const template = welcomeEmail(accessLink);
+async function deliverWelcomeEmail(
+  email: string,
+  userId?: string
+): Promise<EmailDelivery> {
+  const accessLink = createWelcomeAccessLink(email, userId);
+  const template = welcomeEmail(accessLink.url);
 
   logStructured("welcome_email_send_attempt", {
     email,
-    magic_link_used: Boolean(magicLink),
+    magic_link_used: false,
+    access_link_used: true,
   });
 
   const result = await sendEmail({
@@ -111,12 +98,12 @@ async function deliverWelcomeEmail(email: string): Promise<EmailDelivery> {
   if (result.ok) {
     logStructured("welcome_email_send_succeeded", {
       email,
-      magic_link_used: Boolean(magicLink),
+      magic_link_used: false,
+      access_link_used: true,
     });
     return {
-      status: magicLink ? "sent" : "send_failed",
-      reason: magicLink ? undefined : "magic_link_unavailable_used_fallback",
-      magic_link_used: Boolean(magicLink),
+      status: "sent",
+      magic_link_used: false,
     };
   }
 
@@ -126,12 +113,13 @@ async function deliverWelcomeEmail(email: string): Promise<EmailDelivery> {
     provider: result.provider ?? "resend",
     provider_status: result.providerStatus,
     sender_domain: result.senderDomain,
-    magic_link_used: Boolean(magicLink),
+    magic_link_used: false,
+    access_link_used: true,
   });
   return {
-    status: magicLink ? "send_failed" : "magic_link_failed",
+    status: "send_failed",
     reason: result.error ?? "send_failed",
-    magic_link_used: Boolean(magicLink),
+    magic_link_used: false,
   };
 }
 
@@ -213,7 +201,8 @@ export async function POST(request: NextRequest) {
     });
 
     if (isNewUser) {
-      emailDelivery = await deliverWelcomeEmail(data.email);
+      const userId = typeof data.id === "string" ? data.id : undefined;
+      emailDelivery = await deliverWelcomeEmail(data.email, userId);
     } else {
       emailDelivery = {
         status: "skipped_existing_user",
