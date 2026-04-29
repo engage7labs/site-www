@@ -72,6 +72,35 @@ function resolveRedirectFields(redirectTo: string): {
   }
 }
 
+function getSafeRedirectPath(value: string | null): string {
+  if (!value) return "missing";
+  try {
+    return new URL(value).pathname;
+  } catch {
+    return "invalid";
+  }
+}
+
+function applyRedirectToActionLink(
+  actionLink: string,
+  redirect: ReturnType<typeof resolveRedirectFields>
+): { actionLink: string; actionRedirectPath: string; redirectToApplied: boolean } {
+  const url = new URL(actionLink);
+  const currentRedirectTo = url.searchParams.get("redirect_to");
+  const currentRedirectPath = getSafeRedirectPath(currentRedirectTo);
+  const redirectToApplied = currentRedirectTo === redirect.redirectTo;
+
+  if (!redirectToApplied) {
+    url.searchParams.set("redirect_to", redirect.redirectTo);
+  }
+
+  return {
+    actionLink: url.toString(),
+    actionRedirectPath: redirectToApplied ? currentRedirectPath : redirect.redirectPath,
+    redirectToApplied: true,
+  };
+}
+
 /**
  * Generate a magic link for the given email.
  * Returns the action_link URL or null on failure.
@@ -110,13 +139,17 @@ export async function generateMagicLink(
       });
       return null;
     }
+    const actionLink = data.properties.action_link;
+    const normalizedActionLink = applyRedirectToActionLink(actionLink, redirect);
+
     logMagicLink("magic_link_generation_succeeded", {
       redirect_host: redirect.redirectHost,
       redirect_path: redirect.redirectPath,
-      redirect_to_applied: redirect.redirectToApplied,
+      action_redirect_path: normalizedActionLink.actionRedirectPath,
+      redirect_to_applied: normalizedActionLink.redirectToApplied,
       has_action_link: true,
     });
-    return data.properties.action_link;
+    return normalizedActionLink.actionLink;
   } catch (err) {
     logMagicLink("magic_link_generation_failed", {
       redirect_host: redirect.redirectHost,

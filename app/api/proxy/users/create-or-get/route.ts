@@ -52,6 +52,10 @@ async function deliverWelcomeEmail(email: string): Promise<EmailDelivery> {
     app_url_source: redirect.source,
   };
 
+  logStructured("welcome_magic_link_redirect_resolved", {
+    ...safeRedirectFields,
+    has_action_link: false,
+  });
   logStructured("magic_link_redirect_resolved", {
     ...safeRedirectFields,
     has_action_link: false,
@@ -72,6 +76,10 @@ async function deliverWelcomeEmail(email: string): Promise<EmailDelivery> {
   }
 
   if (magicLink) {
+    logStructured("welcome_magic_link_redirect_resolved", {
+      ...safeRedirectFields,
+      has_action_link: true,
+    });
     logStructured("magic_link_generation_succeeded", {
       ...safeRedirectFields,
       has_action_link: true,
