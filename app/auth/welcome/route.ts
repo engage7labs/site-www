@@ -6,6 +6,10 @@
  * Engage7 httpOnly session cookie.
  */
 
+import {
+  consumeAuthToken,
+  isAuthTokenConsumed,
+} from "@/lib/auth-token-consumption";
 import { SESSION_COOKIE_NAME, signJwt, verifyJwt } from "@/lib/auth-server";
 import { findAuthUserIdByEmail } from "@/lib/supabase-admin";
 import { NextRequest, NextResponse } from "next/server";
@@ -17,6 +21,7 @@ const SETUP_TOKEN_TTL = 30 * 60; // 30 minutes
 const PORTAL_PATH = "/portal";
 const LOGIN_PATH = "/login";
 const SETUP_PATH = "/auth/reset-password";
+const LINK_USED_ERROR_PATH = "/auth/reset-password?error=used";
 
 function logWelcomeAccess(
   event: string,
@@ -75,6 +80,52 @@ export async function GET(request: NextRequest) {
   logWelcomeAccess("welcome_access_token_valid", {
     email,
     has_user_id: Boolean(authUserId),
+  });
+
+  logWelcomeAccess("welcome_access_token_consumption_check", {
+    purpose: "welcome_access",
+  });
+  const consumed = await isAuthTokenConsumed(token, "welcome_access");
+  if (!consumed.ok) {
+    logWelcomeAccess("welcome_access_token_consumption_failed", {
+      purpose: "welcome_access",
+      reason: consumed.error ?? "unknown",
+    });
+    return NextResponse.redirect(redirectUrl(request, LOGIN_PATH));
+  }
+  if (consumed.alreadyConsumed) {
+    logWelcomeAccess("welcome_access_token_reuse_blocked", {
+      purpose: "welcome_access",
+    });
+    return NextResponse.redirect(redirectUrl(request, LINK_USED_ERROR_PATH));
+  }
+
+  const tokenExpiresAt =
+    typeof payload.exp === "number" ? new Date(payload.exp * 1000) : null;
+  const consumption = await consumeAuthToken({
+    token,
+    purpose: "welcome_access",
+    subject: email,
+    userId: authUserId,
+    expiresAt: tokenExpiresAt,
+  });
+  if (!consumption.ok) {
+    if (consumption.alreadyConsumed) {
+      logWelcomeAccess("welcome_access_token_reuse_blocked", {
+        purpose: "welcome_access",
+      });
+      return NextResponse.redirect(redirectUrl(request, LINK_USED_ERROR_PATH));
+    }
+
+    logWelcomeAccess("welcome_access_token_consumption_failed", {
+      purpose: "welcome_access",
+      reason: consumption.error ?? "unknown",
+    });
+    return NextResponse.redirect(redirectUrl(request, LOGIN_PATH));
+  }
+
+  logWelcomeAccess("welcome_access_token_consumed", {
+    purpose: "welcome_access",
   });
 
   const now = Math.floor(Date.now() / 1000);

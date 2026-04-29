@@ -14,6 +14,7 @@ function ResetPasswordForm() {
   const router = useRouter();
   const token = searchParams.get("token") ?? "";
   const isWelcome = searchParams.get("mode") === "welcome";
+  const linkError = searchParams.get("error");
 
   const [password, setPassword] = useState("");
   const [confirm, setConfirm] = useState("");
@@ -63,21 +64,22 @@ function ResetPasswordForm() {
     }
   }
 
-  if (!token) {
+  if (linkError || !token) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background px-4">
         <div className="max-w-sm w-full text-center space-y-4">
           <h1 className="text-xl font-semibold text-foreground">
-            Invalid Link
+            Link unavailable
           </h1>
           <p className="text-sm text-muted-foreground">
-            This password reset link is invalid or has expired.
+            This link has already been used or has expired. Please request a
+            new access link.
           </p>
           <a
-            href="/login"
+            href="/auth/forgot-password"
             className="inline-block text-sm text-accent hover:underline"
           >
-            Go to login
+            Request a new link
           </a>
         </div>
       </div>
