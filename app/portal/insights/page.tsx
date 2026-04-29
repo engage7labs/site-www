@@ -7,6 +7,8 @@ import {
   type InsightText,
 } from "@/lib/insights/extract";
 import { getDarthPayload, getDarthPresentation, selectDarthCopy, type DarthInsightBlock } from "@/lib/darth";
+import type { PortalDataStatus } from "@/lib/portal-data-status";
+import { parsePortalDataStatus } from "@/lib/portal-data-status";
 import { useLocale } from "@/components/providers/locale-provider";
 import {
   Activity,
@@ -25,6 +27,11 @@ type Sections = Record<string, any>;
 
 interface Analysis {
   sections?: Sections;
+}
+
+interface AnalysesPayload {
+  analyses?: Analysis[];
+  portal_data_status?: unknown;
 }
 
 interface TrendPoint {
@@ -257,6 +264,10 @@ export default function InsightsPage() {
   const [trends, setTrends] = useState<TrendsData["trends"] | null>(null);
   const [loading, setLoading] = useState(true);
   const [empty, setEmpty] = useState(false);
+  const [emptyMessage, setEmptyMessage] = useState<string>(
+    "Patterns are not available for this analysis yet."
+  );
+  const [portalStatus, setPortalStatus] = useState<PortalDataStatus | null>(null);
 
   useEffect(() => {
     Promise.all([
@@ -265,7 +276,10 @@ export default function InsightsPage() {
         .then((r) => (r.ok ? r.json() : null))
         .catch(() => null),
     ])
-      .then(([analysesData, trendsData]) => {
+      .then(([analysesData, trendsData]: [AnalysesPayload, TrendsData | null]) => {
+        const status = parsePortalDataStatus(analysesData?.portal_data_status);
+        setPortalStatus(status);
+
         // Trends
         if (trendsData?.trends) {
           setTrends(trendsData.trends);
@@ -274,6 +288,7 @@ export default function InsightsPage() {
         // Insights
         const analyses: Analysis[] = analysesData.analyses ?? [];
         if (analyses.length === 0) {
+          setEmptyMessage("No analysis has been created yet. Upload data to generate Portal insights.");
           setEmpty(true);
           setLoading(false);
           return;
@@ -283,6 +298,15 @@ export default function InsightsPage() {
         const sections = latest?.sections ?? null;
         const presentation = getDarthPresentation(sections);
         const payload = getDarthPayload(sections);
+        if (!payload && status?.darthStatus === "darth_missing") {
+          setEmptyMessage(
+            "Analysis data is available, but the semantic insight layer is not available for this analysis yet."
+          );
+        } else {
+          setEmptyMessage(
+            "Patterns are not available for this analysis yet. Your analysis exists, but no pattern cards were extracted."
+          );
+        }
 
         // Extract DARTH state + primary claim for header
         if (payload?.state) setDarthState(payload.state);
@@ -323,6 +347,7 @@ export default function InsightsPage() {
         setLoading(false);
       })
       .catch(() => {
+        setEmptyMessage("Insights could not be loaded right now.");
         setEmpty(true);
         setLoading(false);
       });
@@ -354,12 +379,19 @@ export default function InsightsPage() {
   };
 
   if (empty || (insights.length === 0 && darthInsights.length === 0 && !heroBlock)) {
+    const message =
+      !portalStatus?.hasAnalyses || portalStatus.analysisStatus === "no_analysis"
+        ? "No analysis has been created yet. Upload data to generate Portal insights."
+        : portalStatus.darthStatus === "darth_missing"
+          ? "Analysis data is available, but the semantic insight layer is not available for this analysis yet."
+          : emptyMessage;
+
     return (
       <div className="flex flex-col gap-6">
         <div className="flex flex-col items-center justify-center py-16 gap-4 text-center">
           <Lightbulb className="h-10 w-10 text-muted-foreground/50" />
           <p className="text-sm text-muted-foreground max-w-sm">
-            {t.portal.insightsPage.noInsights}
+            {message}
           </p>
         </div>
       </div>
