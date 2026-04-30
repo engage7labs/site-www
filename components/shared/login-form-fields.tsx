@@ -3,18 +3,24 @@
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import {
+  claimPendingPublicAnalysis,
+  rememberPendingPublicClaim,
+} from "@/lib/public-analysis-claim";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 
 interface LoginFormFieldsProps {
   /** Where to redirect on successful login (default: /portal) */
   readonly redirectTo?: string;
+  readonly claimJobId?: string | null;
   /** Called when login succeeds — allows parent to close a modal */
   readonly onSuccess?: () => void;
 }
 
 export function LoginFormFields({
   redirectTo = "/portal",
+  claimJobId,
   onSuccess,
 }: LoginFormFieldsProps) {
   const router = useRouter();
@@ -47,6 +53,7 @@ export function LoginFormFields({
     }
 
     setLoading(true);
+    if (claimJobId) rememberPendingPublicClaim(claimJobId);
 
     try {
       const endpoint = isRegister ? "/api/auth/register" : "/api/auth/login";
@@ -79,8 +86,16 @@ export function LoginFormFields({
       const data = (await res.json().catch(() => ({}))) as { role?: string };
       const role = data.role === "admin" ? "admin" : "user";
 
+      if (role !== "admin") {
+        try {
+          await claimPendingPublicAnalysis();
+        } catch {
+          // Keep the pending claim in session storage; Portal will offer retry.
+        }
+      }
+
       onSuccess?.();
-      router.push(role === "admin" ? "/admin" : "/portal");
+      router.push(role === "admin" ? "/admin" : redirectTo);
       router.refresh();
     } catch {
       setError("Something went wrong. Please try again.");

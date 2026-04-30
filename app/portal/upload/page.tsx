@@ -170,9 +170,9 @@ export default function PortalUploadPage() {
           {isAdminView ? (
             <div className="rounded-lg border border-amber-500/30 bg-amber-500/5 p-8 text-center space-y-3">
               <Lock className="mx-auto h-8 w-8 text-amber-500" />
-              <h2 className="text-lg font-semibold text-foreground">Upload disabled</h2>
+              <h2 className="text-lg font-semibold text-foreground">Update Data disabled</h2>
               <p className="text-sm text-muted-foreground">
-                Uploads are not available while viewing as another user (read-only mode).
+                Data updates are not available while viewing as another user (read-only mode).
               </p>
             </div>
           ) : status === "uploading" || status === "queued" || status === "processing" || status === "completed" ? (
@@ -194,9 +194,15 @@ export default function PortalUploadPage() {
           ) : (
             <div className="rounded-lg border border-border bg-card p-8 space-y-6">
               <div className="space-y-2">
-                <h2 className="text-xl font-semibold text-foreground">{t.analyze.upload.title}</h2>
-                <p className="text-sm text-muted-foreground">{t.analyze.upload.formatHint}</p>
-                <p className="text-sm text-accent">{t.analyze.upload.expectationHint}</p>
+                <h2 className="text-xl font-semibold text-foreground">
+                  Refresh your Apple Health timeline
+                </h2>
+                <p className="text-sm text-muted-foreground">
+                  Add your latest Apple Health export to update your longitudinal Portal data.
+                </p>
+                <p className="text-sm text-accent">
+                  Engage7 will refresh your semantic report and timeline when processing completes.
+                </p>
               </div>
 
               {/* iOS export guide */}
@@ -212,7 +218,7 @@ export default function PortalUploadPage() {
                   <li>3. Scroll down and tap <strong className="text-foreground">Export All Health Data</strong>.</li>
                   <li>4. Tap <strong className="text-foreground">Export</strong> and wait a few seconds.</li>
                   <li>5. Choose <strong className="text-foreground">Save to Files</strong> → iCloud Drive.</li>
-                  <li>6. Open this page on your iPhone, tap the upload area and select <code className="font-mono text-accent">export.zip</code>.</li>
+                  <li>6. Open this page on your iPhone, tap the update area and select <code className="font-mono text-accent">export.zip</code>.</li>
                 </ol>
               </details>
 
@@ -222,6 +228,8 @@ export default function PortalUploadPage() {
                 isUploading={isUploading}
                 disabled={!consentGiven || isUploading}
                 t={t}
+                buttonLabel="Update Data"
+                buttonLoadingLabel="Updating data..."
                 consentSlot={
                   <label className="flex items-start gap-3 text-xs text-muted-foreground leading-snug cursor-pointer">
                     <Checkbox
@@ -245,7 +253,7 @@ export default function PortalUploadPage() {
           {/* Link to analysis history */}
           <div className="text-center">
             <Link href="/portal/analyses" className="text-xs text-muted-foreground hover:text-foreground transition-colors">
-              View previous analyses →
+              View data updates →
             </Link>
           </div>
         </div>

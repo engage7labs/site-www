@@ -2,6 +2,11 @@
 
 import { usePathname } from "next/navigation";
 import { useCallback, useEffect, useState } from "react";
+import { toast } from "sonner";
+import {
+  claimPendingPublicAnalysis,
+  readPendingPublicClaim,
+} from "@/lib/public-analysis-claim";
 import { AdminViewBanner } from "../admin-view-banner";
 import { PasswordSetupAlert } from "./password-setup-alert";
 import { PortalHeader } from "./portal-header";
@@ -14,8 +19,8 @@ const SECTION_TITLES: Record<string, { title: string; subtitle: string }> = {
     subtitle: "Your health data at a glance",
   },
   "/portal/reports": {
-    title: "My Uploads",
-    subtitle: "Review your generated health reports",
+    title: "Data Updates",
+    subtitle: "Review timeline updates and generated health reports",
   },
   "/portal/trends": {
     title: "Trends",
@@ -31,8 +36,8 @@ const SECTION_TITLES: Record<string, { title: string; subtitle: string }> = {
     subtitle: "Manage your portal preferences",
   },
   "/portal/upload": {
-    title: "Upload",
-    subtitle: "Upload your Apple Health export",
+    title: "Update Data",
+    subtitle: "Refresh your Apple Health timeline",
   },
   "/portal/health": {
     title: "Health",
@@ -63,6 +68,32 @@ export function PortalShell({
   useEffect(() => {
     const stored = localStorage.getItem(STORAGE_KEY);
     if (stored === "true") setCollapsed(true);
+  }, []);
+
+  useEffect(() => {
+    const pendingJobId = readPendingPublicClaim();
+    if (!pendingJobId) return;
+
+    void claimPendingPublicAnalysis()
+      .then(() => {
+        toast.success("Your public analysis is now in your Portal.");
+      })
+      .catch(() => {
+        toast.message("Your analysis is ready to import.", {
+          description:
+            "We could not import it automatically. You can retry now.",
+          action: {
+            label: "Retry",
+            onClick: () => {
+              void claimPendingPublicAnalysis()
+                .then(() => toast.success("Analysis imported."))
+                .catch(() =>
+                  toast.error("Import still did not complete. Please try again later."),
+                );
+            },
+          },
+        });
+      });
   }, []);
 
   const toggleCollapsed = useCallback(() => {

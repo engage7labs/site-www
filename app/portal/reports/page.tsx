@@ -40,8 +40,8 @@ export default function ReportsPage() {
         <div className="portal-panel rounded-xl border border-border/70 bg-card/85 p-6 text-center">
           <FileText className="mx-auto h-8 w-8 text-muted-foreground mb-2" />
           <p className="text-sm text-muted-foreground">
-            No reports yet. Upload an Apple Health export to generate your first
-            report.
+            No data updates yet. Refresh your Apple Health timeline to generate
+            your first Portal report.
           </p>
         </div>
       ) : (
@@ -102,7 +102,7 @@ export default function ReportsPage() {
                       </td>
                       <td className="px-4 py-3">
                         <span className="inline-flex items-center rounded-full bg-accent/10 text-accent px-2.5 py-0.5 text-xs font-medium">
-                          Complete
+                          Updated
                         </span>
                       </td>
                       <td className="px-4 py-3">

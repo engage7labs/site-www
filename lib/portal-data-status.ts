@@ -4,6 +4,11 @@ export type PortalDataLayerStatus =
   | "analysis_processing"
   | "analysis_failed"
   | "analysis_available"
+  | "public_analysis_not_claimed"
+  | "claim_import_in_progress"
+  | "claimed_semantic_available"
+  | "update_data_processing"
+  | "update_data_failed"
   | "feature_timeline_available"
   | "feature_timeline_missing"
   | "feature_timeline_unavailable"
@@ -26,6 +31,11 @@ export type PortalFeatureTimelineStatus =
   | "blob_missing"
   | "parse_failed"
   | "empty"
+  | "unavailable"
+  | "skipped"
+  | "claim_import_in_progress"
+  | "update_data_processing"
+  | "update_data_failed"
   | "unknown";
 
 export interface PortalDataStatus {
@@ -96,6 +106,11 @@ const DATA_LAYER_STATUSES: readonly PortalDataLayerStatus[] = [
   "analysis_processing",
   "analysis_failed",
   "analysis_available",
+  "public_analysis_not_claimed",
+  "claim_import_in_progress",
+  "claimed_semantic_available",
+  "update_data_processing",
+  "update_data_failed",
   "feature_timeline_available",
   "feature_timeline_missing",
   "feature_timeline_unavailable",
@@ -112,6 +127,11 @@ const FEATURE_TIMELINE_STATUSES: readonly PortalFeatureTimelineStatus[] = [
   "blob_missing",
   "parse_failed",
   "empty",
+  "unavailable",
+  "skipped",
+  "claim_import_in_progress",
+  "update_data_processing",
+  "update_data_failed",
   "unknown",
 ];
 
@@ -243,10 +263,14 @@ export function derivePortalDataStatus(input: StatusInput): PortalDataStatus {
     ? "no_user"
     : !hasAnalyses
       ? "no_analysis"
-      : input.uploadStatus === "queued" || input.uploadStatus === "processing"
-        ? "analysis_processing"
+      : input.uploadStatus === "importing"
+        ? "claim_import_in_progress"
+        : input.uploadStatus === "queued" || input.uploadStatus === "processing"
+        ? "update_data_processing"
         : input.uploadStatus === "failed"
-          ? "analysis_failed"
+          ? "update_data_failed"
+          : input.uploadStatus === "imported" && hasLatestSections
+          ? "claimed_semantic_available"
           : "analysis_available";
 
   const primaryDataSource: PortalPrimaryDataSource = hasFeatureTimeline

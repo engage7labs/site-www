@@ -22,6 +22,11 @@ import {
   trackTeaserViewed,
   trackTrialStarted,
 } from "@/lib/telemetry";
+import {
+  claimPublicAnalysis,
+  clearPendingPublicClaim,
+  rememberPendingPublicClaim,
+} from "@/lib/public-analysis-claim";
 import type { AnalysisResult } from "@/lib/types/analysis";
 import { motion } from "framer-motion";
 import { AlertCircle, ArrowLeft } from "lucide-react";
@@ -306,6 +311,7 @@ export default function ResultPage({
     consent: boolean
   ): Promise<void> => {
     if (!jobId) return;
+    rememberPendingPublicClaim(jobId);
     const analysisData = result
       ? {
           report_label: "Health Analysis",
@@ -331,6 +337,17 @@ export default function ResultPage({
       throw new Error(
         (data as { detail?: string }).detail ||
           "Failed to create account. Please try again."
+      );
+    }
+
+    try {
+      await claimPublicAnalysis(jobId);
+      clearPendingPublicClaim();
+    } catch (err) {
+      throw new Error(
+        err instanceof Error
+          ? `Your account is ready, but we could not import this analysis yet: ${err.message}`
+          : "Your account is ready, but we could not import this analysis yet. Please try again from the Portal.",
       );
     }
 

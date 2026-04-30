@@ -198,8 +198,8 @@ export const enIE = {
     workflow: {
       title: "How it works",
       step1: {
-        title: "Upload Data",
-        description: "Your Apple Health export file",
+        title: "Update Data",
+        description: "Refresh your Apple Health timeline",
       },
       step2: {
         title: "We Analyze",
@@ -487,15 +487,15 @@ export const enIE = {
       sleepScore: "Sleep Score",
       recovery: "Recovery (HRV)",
       dataCompleteness: "Data Completeness",
-      uploads: "Uploads",
+      uploads: "Data Updates",
       until: "Until",
       medianFromLatest: "Median from latest",
       medianHrvFromLatest: "Median HRV from latest",
       noRecentData: "Not enough recent data to assess this yet",
       signalCoverage: "Signal coverage",
-      noUploads: "No uploads yet",
+      noUploads: "No data updates yet",
       totalAnalyses: "Total analyses",
-      startByUploading: "Start by uploading",
+      startByUploading: "Start by updating data",
     },
     planLabels: {
       trialStart: "Getting Started",

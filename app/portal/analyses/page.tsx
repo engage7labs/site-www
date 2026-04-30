@@ -15,6 +15,7 @@ interface Analysis {
 function StatusBadge({ status }: { status: string }) {
   const map: Record<string, { icon: React.ElementType; label: string; color: string }> = {
     completed: { icon: CheckCircle, label: "Complete", color: "text-emerald-400 border-emerald-500/30 bg-emerald-500/10" },
+    imported: { icon: CheckCircle, label: "Imported", color: "text-emerald-400 border-emerald-500/30 bg-emerald-500/10" },
     processing: { icon: Loader2, label: "Processing", color: "text-amber-400 border-amber-500/30 bg-amber-500/10" },
     queued:     { icon: Clock,    label: "Queued",     color: "text-blue-400 border-blue-500/30 bg-blue-500/10" },
     failed:     { icon: XCircle,  label: "Failed",     color: "text-destructive border-destructive/30 bg-destructive/10" },
@@ -54,15 +55,15 @@ export default function AnalysesPage() {
     <div className="flex flex-col gap-6 max-w-2xl mx-auto px-4 md:px-8 mt-10">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-foreground">Analyses</h1>
-          <p className="mt-1 text-sm text-muted-foreground">History of your Apple Health uploads</p>
+          <h1 className="text-2xl font-bold text-foreground">Data Updates</h1>
+          <p className="mt-1 text-sm text-muted-foreground">History of your Apple Health timeline updates</p>
         </div>
         <Link
           href="/portal/upload"
           className="flex items-center gap-2 rounded-lg bg-accent text-accent-foreground px-4 py-2 text-sm font-medium hover:opacity-90 transition-opacity"
         >
           <Upload className="h-4 w-4" />
-          New upload
+          Update Data
         </Link>
       </div>
 
@@ -77,13 +78,13 @@ export default function AnalysesPage() {
       ) : analyses.length === 0 ? (
         <div className="rounded-lg border border-border bg-card p-12 text-center space-y-4">
           <FileText className="mx-auto h-10 w-10 text-muted-foreground/40" />
-          <p className="text-sm text-muted-foreground">No analyses yet.</p>
+          <p className="text-sm text-muted-foreground">No data updates yet.</p>
           <Link
             href="/portal/upload"
             className="inline-flex items-center gap-2 text-sm text-accent hover:underline"
           >
             <Upload className="h-4 w-4" />
-            Upload your first export
+            Refresh your Apple Health timeline
           </Link>
         </div>
       ) : (
@@ -111,7 +112,7 @@ export default function AnalysesPage() {
                     <StatusBadge status={a.upload_status} />
                   </td>
                   <td className="px-4 py-3 text-right">
-                    {a.has_teaser && a.upload_status === "completed" && (
+                    {a.has_teaser && (a.upload_status === "completed" || a.upload_status === "imported") && (
                       <a
                         href={`/api/proxy/portal/teaser?job_id=${a.job_id}`}
                         target="_blank"

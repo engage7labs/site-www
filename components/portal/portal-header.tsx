@@ -105,7 +105,7 @@ export function PortalHeader({
             className="flex items-center gap-1.5 rounded-lg bg-[#e6b800] px-3 py-1.5 text-sm font-medium text-[#1a1a1a] shadow-sm transition-colors hover:bg-[#f2c94c] active:bg-[#c99a00]"
           >
             <Upload className="h-4 w-4" />
-            <span className="hidden sm:inline">Upload</span>
+            <span className="hidden sm:inline">Update Data</span>
           </Link>
         )}
         <ThemeSwitcher />

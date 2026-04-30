@@ -81,11 +81,13 @@ function StatusNotice({ status }: StatusNoticeProps) {
 
   let message: string | null = null;
   if (!status.hasAnalyses || status.analysisStatus === "no_analysis") {
-    message = "No analysis has been created yet. Upload an Apple Health export to start your Portal timeline.";
-  } else if (status.analysisStatus === "analysis_processing") {
+    message = "No analysis has been created yet. Refresh your Apple Health timeline to start your Portal.";
+  } else if (status.analysisStatus === "analysis_processing" || status.analysisStatus === "update_data_processing") {
     message = "Your latest analysis is still processing. Available Portal cards will update when it finishes.";
-  } else if (status.analysisStatus === "analysis_failed") {
+  } else if (status.analysisStatus === "analysis_failed" || status.analysisStatus === "update_data_failed") {
     message = "The latest analysis did not complete. Existing Portal data is still shown where available.";
+  } else if (status.analysisStatus === "claim_import_in_progress") {
+    message = "Your public analysis is being imported into your Portal.";
   } else if (!status.hasDarth) {
     message = "Analysis data is available, but the DARTH guidance layer is not ready for this analysis yet.";
   } else if (!status.hasFeatureTimeline) {
