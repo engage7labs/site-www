@@ -625,7 +625,7 @@ function DatasetEmptyState({
 }: Readonly<{ status: string | undefined; portalStatus: PortalDataStatus | null }>) {
   const message =
     !portalStatus?.hasAnalyses || portalStatus.analysisStatus === "no_analysis"
-      ? "No analysis has been created yet. Upload or update your data before using the Health dashboards."
+      ? "No analysis has been created yet. Update Data before using the Health dashboards."
       : portalStatus.analysisStatus === "analysis_processing"
         ? "Your latest analysis is still processing. The longitudinal health timeline will appear when it is ready."
         : portalStatus.analysisStatus === "analysis_failed"

@@ -775,7 +775,7 @@ export default function TrendsPage() {
 
   if (trendsData.analysis_count === 0 || portalStatus?.analysisStatus === "no_analysis") {
     return (
-      <EmptyTrendsState message="No analysis has been created yet. Upload an Apple Health export before using Trends." />
+      <EmptyTrendsState message="No analysis has been created yet. Update Data before using Trends." />
     );
   }
 

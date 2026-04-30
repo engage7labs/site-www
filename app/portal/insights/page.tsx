@@ -288,7 +288,7 @@ export default function InsightsPage() {
         // Insights
         const analyses: Analysis[] = analysesData.analyses ?? [];
         if (analyses.length === 0) {
-          setEmptyMessage("No analysis has been created yet. Upload data to generate Portal insights.");
+          setEmptyMessage("No analysis has been created yet. Update Data to generate Portal insights.");
           setEmpty(true);
           setLoading(false);
           return;
@@ -381,7 +381,7 @@ export default function InsightsPage() {
   if (empty || (insights.length === 0 && darthInsights.length === 0 && !heroBlock)) {
     const message =
       !portalStatus?.hasAnalyses || portalStatus.analysisStatus === "no_analysis"
-        ? "No analysis has been created yet. Upload data to generate Portal insights."
+        ? "No analysis has been created yet. Update Data to generate Portal insights."
         : portalStatus.darthStatus === "darth_missing"
           ? "Analysis data is available, but the semantic insight layer is not available for this analysis yet."
           : emptyMessage;
