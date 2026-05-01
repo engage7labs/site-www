@@ -205,6 +205,14 @@ function valueFor(point: HealthPoint, keys: string[]): number | null {
   return null;
 }
 
+function positiveMetricValue(value: number): number | null {
+  return value > 0 ? value : null;
+}
+
+function plausibleDailySteps(value: number): number | null {
+  return value >= 0 && value <= 200_000 ? value : null;
+}
+
 function parseDate(value: string): Date | null {
   const trimmed = value.trim();
   const iso = /^(\d{4})-(\d{1,2})-(\d{1,2})$/.exec(trimmed);
@@ -374,6 +382,25 @@ function formatDelta(value: number | null, digits = 1): string {
   return `${sign}${value.toFixed(digits)}`;
 }
 
+function displayValueWithUnit(
+  value: string,
+  unit: string,
+  muted = false,
+): ReactNode {
+  return (
+    <>
+      <span className={muted ? "text-base text-muted-foreground" : undefined}>
+        {value}
+      </span>
+      {unit && (
+        <span className="ml-1 text-sm font-normal text-muted-foreground">
+          {unit}
+        </span>
+      )}
+    </>
+  );
+}
+
 function clamp(value: number, min: number, max: number): number {
   return Math.min(max, Math.max(min, value));
 }
@@ -414,6 +441,72 @@ function statusFor(count: number, estimated = false) {
   if (count === 0) return "missing";
   if (count < 3) return "insufficient";
   return "valid";
+}
+
+type ComparisonState = {
+  value: number | null;
+  label: string;
+  unit: string;
+  status: "valid" | "insufficient" | "missing";
+};
+
+function baselineComparison({
+  current,
+  baseline,
+  currentCount,
+  baselineCount,
+  period,
+  unit,
+}: Readonly<{
+  current: number | null;
+  baseline: number | null;
+  currentCount: number;
+  baselineCount: number;
+  period: Period;
+  unit: string;
+}>): ComparisonState {
+  if (current === null || currentCount === 0) {
+    return {
+      value: null,
+      label: "Insufficient data",
+      unit: "",
+      status: "missing",
+    };
+  }
+
+  if (period === "all") {
+    return {
+      value: null,
+      label: "Comparison unavailable",
+      unit: "",
+      status: "insufficient",
+    };
+  }
+
+  if (baseline === null || baselineCount < 7) {
+    return {
+      value: null,
+      label: "Not enough baseline data",
+      unit: "",
+      status: "insufficient",
+    };
+  }
+
+  if (currentCount < 3) {
+    return {
+      value: null,
+      label: "Insufficient data",
+      unit: "",
+      status: "insufficient",
+    };
+  }
+
+  return {
+    value: current - baseline,
+    label: formatDelta(current - baseline),
+    unit,
+    status: "valid",
+  };
 }
 
 function buildAxisDates(points: HealthPoint[]): string[] {
@@ -822,7 +915,7 @@ function SleepDashboard({
           <p>
             Latest recorded sleep is {latest.toFixed(1)} hours.{" "}
             {currentAvg !== null && allTimeAvg !== null
-              ? `This range averages ${currentAvg.toFixed(1)} hours against your all-time ${allTimeAvg.toFixed(1)} hour baseline.`
+              ? `This range averages ${currentAvg.toFixed(1)} hours against your all-time ${allTimeAvg.toFixed(1)} hour average.`
               : "The dashboard is using stored nightly sleep records only."}
             {stageTrend
               ? ` Deep sleep is ${stageTrend} across the latest stage-enabled sample.`
@@ -965,14 +1058,16 @@ function RecoveryDashboard({
   allPoints,
   sections,
   rangeLabel,
+  period,
 }: Readonly<{
   points: HealthPoint[];
   allPoints: HealthPoint[];
   sections: UnknownRecord | null;
   rangeLabel: string;
+  period: Period;
 }>) {
-  const hrv = metricSeries(points, RECOVERY_HRV_KEYS);
-  const hr = metricSeries(points, RECOVERY_HR_KEYS);
+  const hrv = metricSeries(points, RECOVERY_HRV_KEYS, positiveMetricValue);
+  const hr = metricSeries(points, RECOVERY_HR_KEYS, positiveMetricValue);
   const scores = metricSeries(points, RECOVERY_SCORE_KEYS);
   const hrvVals = values(hrv);
   const hrVals = values(hr);
@@ -981,8 +1076,30 @@ function RecoveryDashboard({
   const sectionScore = toNumber(recoverySection?.recovery_composite_score);
   const currentHrv = average(hrvVals);
   const currentHr = average(hrVals);
-  const allHrv = average(values(metricSeries(allPoints, RECOVERY_HRV_KEYS)));
-  const allHr = average(values(metricSeries(allPoints, RECOVERY_HR_KEYS)));
+  const allHrvVals = values(
+    metricSeries(allPoints, RECOVERY_HRV_KEYS, positiveMetricValue),
+  );
+  const allHrVals = values(
+    metricSeries(allPoints, RECOVERY_HR_KEYS, positiveMetricValue),
+  );
+  const allHrv = average(allHrvVals);
+  const allHr = average(allHrVals);
+  const hrvComparison = baselineComparison({
+    current: currentHrv,
+    baseline: allHrv,
+    currentCount: hrvVals.length,
+    baselineCount: allHrvVals.length,
+    period,
+    unit: "ms",
+  });
+  const hrComparison = baselineComparison({
+    current: currentHr,
+    baseline: allHr,
+    currentCount: hrVals.length,
+    baselineCount: allHrVals.length,
+    period,
+    unit: "bpm",
+  });
   const readinessScore =
     average(scoreVals) ??
     estimatedReadinessScore({
@@ -1044,13 +1161,10 @@ function RecoveryDashboard({
         <SignalCard
           Icon={BarChart3}
           label="HRV vs Baseline"
-          value={formatDelta(
-            currentHrv !== null && allHrv !== null ? currentHrv - allHrv : null,
-            1,
-          )}
-          unit={currentHrv !== null && allHrv !== null ? "ms" : ""}
+          value={hrvComparison.label}
+          unit={hrvComparison.unit}
           count={hrvVals.length}
-          status={statusFor(hrvVals.length, currentHrv !== null && allHrv !== null)}
+          status={hrvComparison.status}
         />
       </div>
 
@@ -1113,14 +1227,16 @@ function RecoveryDashboard({
           <div className="rounded-lg border border-border/60 bg-background/35 p-4">
             <p className="text-xs font-semibold text-muted-foreground">HRV</p>
             <p className="mt-2 text-2xl font-semibold text-card-foreground">
-              {formatDelta(
-                currentHrv !== null && allHrv !== null
-                  ? currentHrv - allHrv
-                  : null,
-              )}{" "}
-              <span className="text-sm font-normal text-muted-foreground">
-                ms
-              </span>
+              {displayValueWithUnit(
+                hrvComparison.label,
+                hrvComparison.unit,
+                hrvComparison.value === null,
+              )}
+            </p>
+            <p className="mt-1 text-xs text-muted-foreground">
+              {hrvComparison.status === "valid"
+                ? "Selected range vs full stored timeline."
+                : "A comparison needs enough current and baseline data."}
             </p>
           </div>
           <div className="rounded-lg border border-border/60 bg-background/35 p-4">
@@ -1128,12 +1244,16 @@ function RecoveryDashboard({
               Heart Rate
             </p>
             <p className="mt-2 text-2xl font-semibold text-card-foreground">
-              {formatDelta(
-                currentHr !== null && allHr !== null ? currentHr - allHr : null,
-              )}{" "}
-              <span className="text-sm font-normal text-muted-foreground">
-                bpm
-              </span>
+              {displayValueWithUnit(
+                hrComparison.label,
+                hrComparison.unit,
+                hrComparison.value === null,
+              )}
+            </p>
+            <p className="mt-1 text-xs text-muted-foreground">
+              {hrComparison.status === "valid"
+                ? "Selected range vs full stored timeline."
+                : "A comparison needs enough current and baseline data."}
             </p>
           </div>
         </div>
@@ -1151,7 +1271,7 @@ function ActivityDashboard({
   rangeLabel: string;
   sections: UnknownRecord | null;
 }>) {
-  const steps = metricSeries(points, ACTIVITY_STEPS_KEYS);
+  const steps = metricSeries(points, ACTIVITY_STEPS_KEYS, plausibleDailySteps);
   const energy = metricSeries(points, ["active_energy_cal", "total_active_energy"]);
   const distance = metricSeries(points, ["distance_km", "total_distance"]);
   const exercise = metricSeries(points, [
@@ -1165,7 +1285,16 @@ function ActivityDashboard({
   const exerciseVals = values(exercise);
   const stepStd = standardDeviation(stepsVals);
   const activitySection = getSection(sections, "activity_signals");
-  const { best, lowest } = bestAndLowest(points, ACTIVITY_STEPS_KEYS);
+  const stepPoints = points.map((point) => {
+    const value = valueFor(point, ACTIVITY_STEPS_KEYS);
+    return {
+      ...point,
+      total_steps:
+        value === null ? point.total_steps : plausibleDailySteps(value),
+      steps: value === null ? point.steps : plausibleDailySteps(value),
+    };
+  });
+  const { best, lowest } = bestAndLowest(stepPoints, ACTIVITY_STEPS_KEYS);
 
   return (
     <div className="flex flex-col gap-5">
@@ -1444,6 +1573,7 @@ export function HealthDashboard({
               allPoints={allPoints}
               sections={sections}
               rangeLabel={filtered.rangeLabel}
+              period={period}
             />
           )}
           {domain === "activity" && (
