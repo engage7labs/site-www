@@ -27,6 +27,7 @@ import { useEffect, useMemo, useState } from "react";
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 type Sections = Record<string, any>;
+type SelectedDarthCopy = ReturnType<typeof selectDarthCopy>;
 
 interface Analysis {
   sections?: Sections;
@@ -92,6 +93,11 @@ function coerceSections(value: unknown): Sections | null {
     : null;
 }
 
+interface DarthDisplayBlock {
+  block: DarthInsightBlock;
+  copy: NonNullable<SelectedDarthCopy>;
+}
+
 function getAnalysisSections(analysis: Analysis | null | undefined): Sections | null {
   return coerceSections(analysis?.sections) ?? coerceSections(analysis?.sections_json);
 }
@@ -103,6 +109,72 @@ function getAnalyses(payload: unknown): Analysis[] {
   if (Array.isArray(record.analyses)) return record.analyses;
   if (Array.isArray(record.items)) return record.items;
   return [];
+}
+
+function humanizeTechnicalText(value: string | null | undefined): string | null {
+  if (!value) return null;
+
+  const replacements: Array<[RegExp, string]> = [
+    [/\blast_7d\b/gi, "latest available 7-day window"],
+    [/\blast_30d\b/gi, "latest available 30-day window"],
+    [/\bbaseline_30d\b/gi, "your personal baseline"],
+    [/\bsleep_variability_cv\b/gi, "sleep variability"],
+    [/\bsteps_variability_cv\b/gi, "step variability"],
+    [/\bhrv_sdnn_mean\b/gi, "HRV"],
+    [/\bhrv_sdnn\b/gi, "HRV"],
+    [/\bhr_resting\b/gi, "resting heart rate"],
+    [/\bresting_hr\b/gi, "resting heart rate"],
+    [/\bhr_mean\b/gi, "resting heart rate"],
+    [/\btotal_steps\b/gi, "daily steps"],
+    [/\bactive_energy_cal\b/gi, "daily energy"],
+    [/\btotal_energy_cal\b/gi, "daily energy"],
+    [/\bsleep_hours\b/gi, "sleep duration"],
+  ];
+
+  const cleaned = replacements
+    .reduce((text, [pattern, replacement]) => text.replace(pattern, replacement), value)
+    .replace(/\s*\|\s*/g, " · ")
+    .replace(/_/g, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+
+  return cleaned || null;
+}
+
+function hasRawTechnicalTrace(value: string | null | undefined): boolean {
+  return Boolean(
+    value &&
+      (value.includes("|") ||
+        /\b(last_7d|last_30d|baseline_30d|sleep_variability_cv|steps_variability_cv|hrv_sdnn|hrv_sdnn_mean|hr_resting|resting_hr|hr_mean|total_steps|active_energy_cal|total_energy_cal|sleep_hours)\b/i.test(
+          value,
+        )),
+  );
+}
+
+function safeDarthEvidence(value: string | null | undefined): string | null {
+  if (!value) return null;
+  const mapped = humanizeTechnicalText(value);
+  if (!mapped || hasRawTechnicalTrace(mapped)) return null;
+  return mapped;
+}
+
+function isDarthDisplayBlock(
+  entry: { block: DarthInsightBlock; copy: SelectedDarthCopy },
+): entry is DarthDisplayBlock {
+  return Boolean(entry.copy?.title && entry.copy?.body);
+}
+
+function extractLegacyInsights(sections: Sections | null): InsightText[] {
+  const all = [
+    ...extractSleepInsights(sections),
+    ...extractSleepStageInsights(sections),
+    ...extractRecoveryInsights(sections),
+    ...extractRecoverySignalInsights(sections),
+    ...extractActivityInsights(sections),
+    ...extractActivitySignalInsights(sections),
+  ];
+
+  return all.sort((a, b) => (b.score ?? 0) - (a.score ?? 0));
 }
 
 function priorityToConfidence(p?: string): "high" | "medium" | "low" {
@@ -292,17 +364,16 @@ function InsightCard({
 export default function InsightsPage() {
   const { t, locale } = useLocale();
   const [insights, setInsights] = useState<InsightText[]>([]);
-  const [darthInsights, setDarthInsights] = useState<
-    Array<{ block: DarthInsightBlock; copy: ReturnType<typeof selectDarthCopy> }>
-  >([]);
-  const [heroBlock, setHeroBlock] = useState<{ block: DarthInsightBlock; copy: ReturnType<typeof selectDarthCopy> } | null>(null);
+  const [darthInsights, setDarthInsights] = useState<DarthDisplayBlock[]>([]);
+  const [heroBlock, setHeroBlock] = useState<DarthDisplayBlock | null>(null);
   const [darthState, setDarthState] = useState<string | null>(null);
   const [darthClaim, setDarthClaim] = useState<string | null>(null);
   const [trends, setTrends] = useState<TrendsData["trends"] | null>(null);
   const [loading, setLoading] = useState(true);
   const [empty, setEmpty] = useState(false);
+  const [usingLegacyFallback, setUsingLegacyFallback] = useState(false);
   const [emptyMessage, setEmptyMessage] = useState<string>(
-    "Patterns are not available for this analysis yet."
+    "As you update your data, Engage7 will identify repeated patterns from your own history."
   );
   const [portalStatus, setPortalStatus] = useState<PortalDataStatus | null>(null);
 
@@ -317,7 +388,7 @@ export default function InsightsPage() {
         const status = parsePortalDataStatus(analysesData?.portal_data_status);
         setPortalStatus(status);
 
-        // Trends
+        // INSIGHTS_TRENDS_SPARKLINE_ONLY
         if (trendsData?.trends) {
           setTrends(trendsData.trends);
         }
@@ -325,7 +396,7 @@ export default function InsightsPage() {
         // Insights
         const analyses: Analysis[] = getAnalyses(analysesData);
         if (analyses.length === 0) {
-          setEmptyMessage("No analysis has been created yet. Update Data to generate Portal insights.");
+          setEmptyMessage("Your insights will appear after your first completed analysis.");
           setEmpty(true);
           setLoading(false);
           return;
@@ -336,55 +407,52 @@ export default function InsightsPage() {
         const sections = getAnalysisSections(latest);
         const presentation = getDarthPresentation(sections);
         const payload = getDarthPayload(sections);
-        if (!payload && status?.darthStatus === "darth_missing") {
-          setEmptyMessage(
-            "Analysis data is available, but the semantic insight layer is not available for this analysis yet."
-          );
-        } else {
-          setEmptyMessage(
-            "Patterns are not available for this analysis yet. Your analysis exists, but no pattern cards were extracted."
-          );
-        }
+        setEmptyMessage(
+          !payload || status?.darthStatus === "darth_missing"
+            ? "This analysis does not include the current semantic insight format yet."
+            : "As you update your data, Engage7 will identify repeated patterns from your own history."
+        );
 
         // Extract DARTH state + primary claim for header
         if (payload?.state) setDarthState(payload.state);
-        if (payload?.primary_claim) setDarthClaim(payload.primary_claim);
-
-        if (presentation) {
-          // Hero block
-          if (presentation.hero) {
-            const heroCopy = selectDarthCopy(presentation.hero.copy, locale);
-            if (heroCopy) setHeroBlock({ block: presentation.hero, copy: heroCopy });
-          }
-
-          // Supporting blocks
-          if (presentation.supporting?.length) {
-            setDarthInsights(
-              presentation.supporting
-                .map((block) => ({
-                  block,
-                  copy: selectDarthCopy(block.copy, locale),
-                }))
-                .filter((entry) => entry.copy)
-            );
-            setInsights([]);
-            setLoading(false);
-            return;
-          }
+        if (payload?.primary_claim) {
+          setDarthClaim(humanizeTechnicalText(payload.primary_claim));
         }
 
-        const all = [
-          ...extractSleepInsights(sections),
-          ...extractSleepStageInsights(sections),
-          ...extractRecoveryInsights(sections),
-          ...extractRecoverySignalInsights(sections),
-          ...extractActivityInsights(sections),
-          ...extractActivitySignalInsights(sections),
-        ];
+        // INSIGHTS_DARTH_PRESENTATION
+        const hero = presentation?.hero
+          ? {
+              block: presentation.hero,
+              copy: selectDarthCopy(presentation.hero.copy, locale),
+            }
+          : null;
+        const supporting = (presentation?.supporting ?? [])
+          .map((block) => ({
+            block,
+            copy: selectDarthCopy(block.copy, locale),
+          }))
+          .filter(isDarthDisplayBlock);
 
-        all.sort((a, b) => (b.score ?? 0) - (a.score ?? 0));
+        if (hero && isDarthDisplayBlock(hero)) {
+          setHeroBlock(hero);
+          setDarthInsights(supporting);
+          setInsights([]);
+          setUsingLegacyFallback(false);
+          setEmpty(false);
+          setLoading(false);
+          return;
+        }
 
-        setInsights(all);
+        // INSIGHTS_LEGACY_SECTIONS_FALLBACK
+        const fallbackInsights = extractLegacyInsights(sections);
+        if (fallbackInsights.length > 0) {
+          setEmptyMessage("Showing insights from an earlier analysis format.");
+        }
+        setHeroBlock(null);
+        setDarthInsights([]);
+        setInsights(fallbackInsights);
+        setUsingLegacyFallback(fallbackInsights.length > 0);
+        setEmpty(fallbackInsights.length === 0);
         setLoading(false);
       })
       .catch(() => {
@@ -422,9 +490,9 @@ export default function InsightsPage() {
   if (empty || (insights.length === 0 && darthInsights.length === 0 && !heroBlock)) {
     const message =
       !portalStatus?.hasAnalyses || portalStatus.analysisStatus === "no_analysis"
-        ? "No analysis has been created yet. Update Data to generate Portal insights."
+        ? "Your insights will appear after your first completed analysis."
         : portalStatus.darthStatus === "darth_missing"
-          ? "Analysis data is available, but the semantic insight layer is not available for this analysis yet."
+          ? "This analysis does not include the current semantic insight format yet."
           : emptyMessage;
 
     return (
@@ -483,10 +551,10 @@ export default function InsightsPage() {
             {heroBlock.copy.body}
           </p>
           <p className="text-xs text-accent/80 italic">→ {heroBlock.copy.action}</p>
-          {heroBlock.copy.evidence && (
+          {safeDarthEvidence(heroBlock.copy.evidence) && (
             <div className="rounded-lg bg-muted/40 px-3 py-2">
-              <span className="text-[10px] text-muted-foreground font-mono">
-                {heroBlock.copy.evidence}
+              <span className="text-xs text-muted-foreground">
+                {safeDarthEvidence(heroBlock.copy.evidence)}
               </span>
             </div>
           )}
@@ -512,27 +580,37 @@ export default function InsightsPage() {
                   {copy.body}
                 </p>
                 <p className="text-xs text-accent/80 italic">→ {copy.action}</p>
-                <div className="rounded-lg bg-muted/40 px-3 py-2">
-                  <span className="text-[10px] text-muted-foreground font-mono">
-                    {copy.evidence}
-                  </span>
-                </div>
+                {safeDarthEvidence(copy.evidence) && (
+                  <div className="rounded-lg bg-muted/40 px-3 py-2">
+                    <span className="text-xs text-muted-foreground">
+                      {safeDarthEvidence(copy.evidence)}
+                    </span>
+                  </div>
+                )}
               </div>
             ) : null
           )}
         </div>
       ) : (
-        <div className="grid gap-4 sm:grid-cols-2">
-          {insights.map((insight, i) => (
-            <InsightCard
-              key={`${insight.pillar}-${i}`}
-              insight={insight}
-              sparkData={
-                sparklines[insight.pillar as keyof typeof sparklines] ?? []
-              }
-              strings={insightStrings}
-            />
-          ))}
+        <div className="flex flex-col gap-4">
+          {usingLegacyFallback && (
+            <div className="rounded-lg border border-border/70 bg-muted/25 px-4 py-3 text-sm text-muted-foreground">
+              Showing insights from an earlier analysis format. As you update
+              your data, Engage7 will use the current semantic insight format.
+            </div>
+          )}
+          <div className="grid gap-4 sm:grid-cols-2">
+            {insights.map((insight, i) => (
+              <InsightCard
+                key={`${insight.pillar}-${i}`}
+                insight={insight}
+                sparkData={
+                  sparklines[insight.pillar as keyof typeof sparklines] ?? []
+                }
+                strings={insightStrings}
+              />
+            ))}
+          </div>
         </div>
       )}
     </div>
