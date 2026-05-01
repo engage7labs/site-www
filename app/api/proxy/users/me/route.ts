@@ -101,30 +101,6 @@ export async function DELETE() {
     mode: session.mode ?? "user",
   });
 
-  logAccountDelete("account_delete_supabase_auth_attempt", {
-    target_user_id: targetUserId,
-  });
-
-  const authDelete = await deleteSupabaseAuthUserForAccount(targetUserId, email);
-  if (!authDelete.ok) {
-    logAccountDelete("account_delete_supabase_auth_failed", {
-      target_user_id: targetUserId,
-      reason: authDelete.reason ?? "unknown",
-    });
-    return NextResponse.json(
-      {
-        detail:
-          "Account deletion could not complete because authentication cleanup failed. Please try again.",
-      },
-      { status: 502 }
-    );
-  }
-
-  logAccountDelete("account_delete_supabase_auth_succeeded", {
-    target_user_id: targetUserId,
-    already_absent: authDelete.alreadyAbsent === true,
-  });
-
   const sigHeaders = signRequest("DELETE", path);
 
   let upstreamResponse: Response;
@@ -148,10 +124,38 @@ export async function DELETE() {
   if (appCleanupOk) {
     logAccountDelete("account_delete_app_records_deleted", {
       target_user_id: targetUserId,
-      source: upstreamResponse.ok ? "api_delete" : "supabase_auth_cascade",
+      source: upstreamResponse.ok ? "api_delete" : "already_absent",
       upstream_status: upstreamResponse.status,
     });
   }
+
+  if (!appCleanupOk) {
+    return NextResponse.json(data, { status: upstreamResponse.status });
+  }
+
+  logAccountDelete("account_delete_supabase_auth_attempt", {
+    target_user_id: targetUserId,
+  });
+
+  const authDelete = await deleteSupabaseAuthUserForAccount(targetUserId, email);
+  if (!authDelete.ok) {
+    logAccountDelete("account_delete_supabase_auth_failed", {
+      target_user_id: targetUserId,
+      reason: authDelete.reason ?? "unknown",
+    });
+    return NextResponse.json(
+      {
+        detail:
+          "Account deletion could not complete because authentication cleanup failed. Please try again.",
+      },
+      { status: 502 }
+    );
+  }
+
+  logAccountDelete("account_delete_supabase_auth_succeeded", {
+    target_user_id: targetUserId,
+    already_absent: authDelete.alreadyAbsent === true,
+  });
 
   const responseStatus = upstreamResponse.status === 404 ? 200 : upstreamResponse.status;
   const responseBody =
