@@ -8,7 +8,8 @@ import { generateCompareImprove } from "@/lib/insights/compare-improve";
 import type { PortalDataStatus } from "@/lib/portal-data-status";
 import { parsePortalDataStatus } from "@/lib/portal-data-status";
 import type { EChartsOption } from "echarts";
-import { Clock, Crown, ExternalLink, Heart, Moon, Upload } from "lucide-react";
+import { ArrowDown, ArrowRight, ArrowUp, Clock, Crown, ExternalLink, Heart, Moon, Upload, Zap } from "lucide-react";
+import Link from "next/link";
 import { useEffect, useMemo, useRef, useState } from "react";
 
 // Lazy-load echarts
@@ -161,11 +162,47 @@ interface MetricCardProps {
   readonly value: string;
   readonly icon: React.ElementType;
   readonly subtitle?: string;
+  readonly debugLabel: string;
+  readonly href?: string;
+  readonly trend?: TrendSummary;
 }
 
-function MetricCard({ label, value, icon: Icon, subtitle }: MetricCardProps) {
+type TrendState = "up" | "down" | "stable" | "unavailable";
+
+interface TrendSummary {
+  readonly state: TrendState;
+  readonly label: string;
+}
+
+function CardDebugLabel({ label }: Readonly<{ label: string }>) {
   return (
+    <div className="mb-2 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground/70">
+      {label}
+    </div>
+  );
+}
+
+function TrendIndicator({ trend }: Readonly<{ trend?: TrendSummary }>) {
+  if (!trend) return null;
+  const Icon =
+    trend.state === "up"
+      ? ArrowUp
+      : trend.state === "down"
+        ? ArrowDown
+        : ArrowRight;
+
+  return (
+    <div className="mt-2 inline-flex items-center gap-1.5 text-[11px] font-medium text-muted-foreground">
+      <Icon className="h-3 w-3" aria-hidden="true" />
+      <span>{trend.label}</span>
+    </div>
+  );
+}
+
+function MetricCard({ label, value, icon: Icon, subtitle, debugLabel, href, trend }: MetricCardProps) {
+  const content = (
     <div className="portal-panel rounded-xl border border-border/70 bg-card/85 px-4 py-3">
+      <CardDebugLabel label={debugLabel} />
       <div className="flex items-center justify-between">
         <span className="text-[11px] font-medium uppercase tracking-wider text-muted-foreground">
           {label}
@@ -176,13 +213,23 @@ function MetricCard({ label, value, icon: Icon, subtitle }: MetricCardProps) {
       {subtitle && (
         <p className="mt-0.5 text-xs text-muted-foreground">{subtitle}</p>
       )}
+      <TrendIndicator trend={trend} />
     </div>
+  );
+
+  if (!href) return content;
+
+  return (
+    <Link href={href} className="block focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:ring-offset-background rounded-xl">
+      {content}
+    </Link>
   );
 }
 
 function ShareCard({ title, description, button }: Readonly<{ title: string; description: string; button: string }>) {
   return (
     <div className="portal-panel rounded-xl border border-border/70 bg-card/85 p-6">
+      <CardDebugLabel label="OVERVIEW_SHARE_CARD" />
       <div className="flex items-center gap-3">
         <ExternalLink className="h-5 w-5 text-accent" />
         <div>
@@ -224,6 +271,95 @@ function median(points?: TrendPoint[]): number | null {
   if (vals.length === 0) return null;
   const mid = Math.floor(vals.length / 2);
   return vals.length % 2 === 0 ? (vals[mid - 1] + vals[mid]) / 2 : vals[mid];
+}
+
+function getDateKey(point: TrendPoint): string {
+  return point.date.slice(0, 10);
+}
+
+function parseDateKey(value: string): Date | null {
+  const date = new Date(`${value}T00:00:00Z`);
+  return Number.isNaN(date.getTime()) ? null : date;
+}
+
+function formatDateKey(date: Date): string {
+  return date.toISOString().slice(0, 10);
+}
+
+function shiftDateKey(value: string, days: number): string | null {
+  const date = parseDateKey(value);
+  if (!date) return null;
+  date.setUTCDate(date.getUTCDate() + days);
+  return formatDateKey(date);
+}
+
+function latestFeatureDate(trendsData: TrendsData | null): string | null {
+  const dates = Object.values(trendsData?.trends ?? {})
+    .flat()
+    .filter((point) => point.value != null)
+    .map(getDateKey)
+    .sort();
+  return dates.at(-1) ?? null;
+}
+
+function availableRange(points: TrendPoint[] | undefined, latestDate: string | null) {
+  if (!points || !latestDate) return null;
+  const availableDates = points
+    .filter((point) => point.value != null)
+    .map(getDateKey)
+    .sort();
+  if (availableDates.length === 0) return null;
+
+  const weekStart = shiftDateKey(latestDate, -6);
+  if (!weekStart) return null;
+  const firstAvailable = availableDates[0];
+  return {
+    start: firstAvailable > weekStart ? firstAvailable : weekStart,
+    end: latestDate,
+  };
+}
+
+function pointsInRange(points: TrendPoint[] | undefined, start: string | null, end: string | null): TrendPoint[] {
+  if (!points || !start || !end) return [];
+  return points.filter((point) => {
+    const date = getDateKey(point);
+    return date >= start && date <= end;
+  });
+}
+
+function medianSubtitle(
+  range: { start: string; end: string } | null,
+  copy: { medianRange: string; medianLatestAvailable: string }
+): string {
+  if (!range) return copy.medianLatestAvailable;
+  return copy.medianRange
+    .replace("{start}", range.start)
+    .replace("{end}", range.end);
+}
+
+function weeklyTrend(
+  points: TrendPoint[] | undefined,
+  latestRange: { start: string; end: string } | null,
+  copy: { up: string; down: string; stable: string; unavailable: string }
+): TrendSummary {
+  if (!points || !latestRange) return { state: "unavailable", label: copy.unavailable };
+  const previousEnd = shiftDateKey(latestRange.start, -1);
+  const previousStart = previousEnd ? shiftDateKey(previousEnd, -6) : null;
+  const latestMedian = median(pointsInRange(points, latestRange.start, latestRange.end));
+  const previousWindow = pointsInRange(points, previousStart, previousEnd);
+  const previousMedian = median(previousWindow);
+
+  if (latestMedian == null || previousMedian == null || previousWindow.filter((point) => point.value != null).length < 2) {
+    return { state: "unavailable", label: copy.unavailable };
+  }
+
+  const relativeChange = previousMedian === 0
+    ? Math.abs(latestMedian - previousMedian)
+    : Math.abs((latestMedian - previousMedian) / previousMedian);
+  if (relativeChange < 0.05) return { state: "stable", label: copy.stable };
+  return latestMedian > previousMedian
+    ? { state: "up", label: copy.up }
+    : { state: "down", label: copy.down };
 }
 
 // ---------------------------------------------------------------------------
@@ -552,9 +688,18 @@ export default function PortalOverviewPage() {
   const sleepScore = data?.sleep_score != null ? `${data.sleep_score}h` : "—";
   const recoveryTrend =
     data?.recovery_trend != null ? `${data.recovery_trend} ms` : "—";
+  const stepsMedian = median(trends?.trends?.steps);
+  const activity = stepsMedian != null ? Math.round(stepsMedian).toLocaleString() : "—";
   const completeness = data?.data_completeness ?? "—";
   const latest = data?.latest_analysis;
   const latestHighlights = coerceHighlights(latest?.highlights);
+  const featureLatestDate = latestFeatureDate(trends);
+  const sleepRange = availableRange(trends?.trends?.sleep, featureLatestDate);
+  const recoveryRange = availableRange(trends?.trends?.hrv, featureLatestDate);
+  const activityRange = availableRange(trends?.trends?.steps, featureLatestDate);
+  const sleepTrend = weeklyTrend(trends?.trends?.sleep, sleepRange, t.portal.metrics.weekTrend);
+  const recoveryWeekTrend = weeklyTrend(trends?.trends?.hrv, recoveryRange, t.portal.metrics.weekTrend);
+  const activityTrend = weeklyTrend(trends?.trends?.steps, activityRange, t.portal.metrics.weekTrend);
 
   return (
     <div className="flex flex-col gap-6">
@@ -566,11 +711,54 @@ export default function PortalOverviewPage() {
       {/* Compare & Improve — Sprint 17.5 */}
       <CompareImproveBlock result={compareImprove} />
 
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5">
+      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+        <MetricCard
+          label={t.portal.metrics.sleepScore}
+          value={sleepScore}
+          icon={Moon}
+          debugLabel="OVERVIEW_SLEEP_CARD"
+          href="/portal/health/sleep"
+          subtitle={
+            data?.sleep_score == null
+              ? t.portal.metrics.noRecentData
+              : medianSubtitle(sleepRange, t.portal.metrics)
+          }
+          trend={sleepTrend}
+        />
+        <MetricCard
+          label={t.portal.metrics.recovery}
+          value={recoveryTrend}
+          icon={Heart}
+          debugLabel="OVERVIEW_RECOVERY_CARD"
+          href="/portal/health/recovery"
+          subtitle={
+            data?.recovery_trend == null
+              ? t.portal.metrics.noRecentData
+              : medianSubtitle(recoveryRange, t.portal.metrics)
+          }
+          trend={recoveryWeekTrend}
+        />
+        <MetricCard
+          label={t.portal.metrics.activity}
+          value={activity}
+          icon={Zap}
+          debugLabel="OVERVIEW_ACTIVITY_CARD"
+          href="/portal/health/activity"
+          subtitle={
+            stepsMedian == null
+              ? t.portal.metrics.noRecentData
+              : medianSubtitle(activityRange, t.portal.metrics)
+          }
+          trend={activityTrend}
+        />
+      </div>
+
+      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
         <MetricCard
           label={t.portal.metrics.plan}
           value={planLabel(plan, t.portal.planLabels)}
           icon={Crown}
+          debugLabel="OVERVIEW_PLAN_CARD"
           subtitle={
             data?.trial_end_at
               ? `${t.portal.metrics.until} ${new Date(data.trial_end_at).toLocaleDateString()}`
@@ -578,44 +766,20 @@ export default function PortalOverviewPage() {
           }
         />
         <MetricCard
-          label={t.portal.metrics.sleepScore}
-          value={sleepScore}
-          icon={Moon}
-          subtitle={
-            data?.sleep_score == null
-              ? t.portal.metrics.noRecentData
-              : t.portal.metrics.medianFromLatest
-          }
-        />
-        <MetricCard
-          label={t.portal.metrics.recovery}
-          value={recoveryTrend}
-          icon={Heart}
-          subtitle={
-            data?.recovery_trend == null
-              ? t.portal.metrics.noRecentData
-              : t.portal.metrics.medianHrvFromLatest
-          }
-        />
-        <MetricCard
           label={t.portal.metrics.dataCompleteness}
           value={completeness}
           icon={Clock}
+          debugLabel="OVERVIEW_DATA_COMPLETENESS_CARD"
           subtitle={uploads > 0 ? t.portal.metrics.signalCoverage : t.portal.metrics.noUploads}
         />
         <MetricCard
           label={t.portal.metrics.uploads}
           value={String(uploads)}
           icon={Upload}
+          debugLabel="OVERVIEW_SUBMISSIONS_CARD"
           subtitle={uploads > 0 ? t.portal.metrics.totalAnalyses : t.portal.metrics.startByUploading}
         />
       </div>
-
-      <ShareCard
-        title={t.portal.shareCard.title}
-        description={t.portal.shareCard.description}
-        button={t.portal.shareCard.button}
-      />
 
       {/* ECharts — Sprint 17.4 / Sprint 25.9: always rendered, empty states when no data */}
       <div className="grid gap-4 lg:grid-cols-2">
@@ -708,6 +872,12 @@ export default function PortalOverviewPage() {
           </p>
         </div>
       )}
+
+      <ShareCard
+        title={t.portal.shareCard.title}
+        description={t.portal.shareCard.description}
+        button={t.portal.shareCard.button}
+      />
     </div>
   );
 }

@@ -18,13 +18,13 @@ const APP_URL = resolveCanonicalAppUrl().appUrl;
 const EMAIL_LOGO_URL = "https://www.engage7.ie/engage7-logo-180x180.png";
 const EMAIL_LOGO_MARKUP = `    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" data-engage7-email-logo="true" style="border-collapse:collapse;margin:0 0 24px 0;">
       <tr>
-        <td align="right" valign="top" style="padding:0;text-align:right;">
+        <td align="left" valign="top" style="padding:0;text-align:left;">
           <img
             src="${EMAIL_LOGO_URL}"
             alt="Engage7 Labs"
             width="120"
             height="120"
-            style="display:block;margin:0 0 0 auto;width:120px;height:120px;border:0;outline:none;text-decoration:none;"
+            style="display:block;margin:0 auto 0 0;width:120px;height:120px;border:0;outline:none;text-decoration:none;"
           />
         </td>
       </tr>

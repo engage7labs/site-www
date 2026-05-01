@@ -12,8 +12,9 @@ assert(source.includes('alt="Engage7 Labs"'), "email logo must keep Engage7 Labs
 assert(source.includes('width="120"'), "email logo must use the larger header width");
 assert(source.includes('height="120"'), "email logo must use the larger header height");
 assert(source.includes('<table role="presentation"'), "email logo must use table layout");
-assert(source.includes('align="right"'), "email logo must align top-right");
-assert(source.includes('valign="top"'), "email logo must align top-right");
+assert(source.includes('align="left"'), "email logo must align top-left");
+assert(source.includes('valign="top"'), "email logo must align top-left");
+assert(!source.includes('align="right"'), "email logo must not align right");
 assert(source.includes("display:block"), "email logo must use email-safe display:block style");
 assert(source.includes("border:0"), "email logo must use email-safe border reset");
 assert(!source.includes('width="64"'), "email logo must not use the old centered 64px width");
