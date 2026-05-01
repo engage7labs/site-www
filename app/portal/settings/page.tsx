@@ -1,9 +1,11 @@
 "use client";
 
+import { useLocale } from "@/components/providers/locale-provider";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useState } from "react";
 
 export default function SettingsPage() {
+  const { locale } = useLocale();
   const router = useRouter();
   const searchParams = useSearchParams();
   const [showDeleteModal, setShowDeleteModal] = useState(false);
@@ -14,6 +16,10 @@ export default function SettingsPage() {
   const [paymentStatus, setPaymentStatus] = useState<"success" | "cancelled" | null>(null);
   const [plan, setPlan] = useState<string | null>(null);
   const [trialEnd, setTrialEnd] = useState<string | null>(null);
+  const [protectionEnabled, setProtectionEnabled] = useState(true);
+  const [protectionLoading, setProtectionLoading] = useState(true);
+  const [protectionSaving, setProtectionSaving] = useState(false);
+  const [protectionError, setProtectionError] = useState<string | null>(null);
 
   useEffect(() => {
     const ps = searchParams.get("payment");
@@ -30,6 +36,16 @@ export default function SettingsPage() {
         setTrialEnd(d.trial_end_at ?? null);
       })
       .catch(() => {});
+    fetch("/api/proxy/users/health-footprint")
+      .then((r) => r.json())
+      .then((d: { protection_enabled?: boolean }) => {
+        setProtectionEnabled(d.protection_enabled !== false);
+        setProtectionLoading(false);
+      })
+      .catch(() => {
+        setProtectionError("Protection settings are unavailable right now.");
+        setProtectionLoading(false);
+      });
   }, [searchParams, router]);
 
   const handleUpgrade = async () => {
@@ -52,6 +68,41 @@ export default function SettingsPage() {
   const [deleted, setDeleted] = useState(false);
 
   const canDelete = confirmText === "DELETE";
+  const isPt = locale.toLowerCase().startsWith("pt");
+  const protectionCopy = {
+    title: isPt ? "Proteger atualizações de dados" : "Protect data updates",
+    description: isPt
+      ? "Ajuda a evitar que exportações do Apple Health de outra pessoa sejam misturadas à sua linha do tempo."
+      : "Help prevent Apple Health exports from another person being merged into your timeline.",
+    on: isPt ? "Ligado" : "On",
+    off: isPt ? "Desligado" : "Off",
+    active: isPt ? "Proteção ativa" : "Protection is active",
+    inactive: isPt ? "Proteção desligada" : "Protection is off",
+    saving: isPt ? "Salvando..." : "Saving...",
+    error: isPt ? "Não foi possível salvar esta configuração." : "Could not save this setting.",
+  };
+
+  const handleProtectionToggle = async () => {
+    const next = !protectionEnabled;
+    setProtectionEnabled(next);
+    setProtectionSaving(true);
+    setProtectionError(null);
+    try {
+      const res = await fetch("/api/proxy/users/health-footprint", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ protection_enabled: next }),
+      });
+      const data = await res.json().catch(() => ({})) as { protection_enabled?: boolean; detail?: string };
+      if (!res.ok) throw new Error(data.detail ?? protectionCopy.error);
+      setProtectionEnabled(data.protection_enabled !== false);
+    } catch (err) {
+      setProtectionEnabled(!next);
+      setProtectionError(err instanceof Error ? err.message : protectionCopy.error);
+    } finally {
+      setProtectionSaving(false);
+    }
+  };
 
   const handleDeleteAccount = async () => {
     if (!canDelete) return;
@@ -186,6 +237,56 @@ export default function SettingsPage() {
             Your data is processed on-device or in a single ephemeral session.
             Only data you explicitly agreed to store is saved to your portal.
           </p>
+        </div>
+      </div>
+
+      <div className="rounded-xl border border-border bg-card p-5">
+        <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+          <div>
+            <h2 className="text-sm font-semibold text-card-foreground">
+              {protectionCopy.title}
+            </h2>
+            <p className="mt-2 max-w-2xl text-sm text-muted-foreground">
+              {protectionCopy.description}
+            </p>
+            <p className="mt-3 text-xs text-muted-foreground">
+              {protectionSaving
+                ? protectionCopy.saving
+                : protectionEnabled
+                  ? protectionCopy.active
+                  : protectionCopy.inactive}
+            </p>
+            {protectionError && (
+              <p className="mt-2 text-xs text-destructive">{protectionError}</p>
+            )}
+          </div>
+          <button
+            type="button"
+            role="switch"
+            aria-checked={protectionEnabled}
+            onClick={handleProtectionToggle}
+            disabled={protectionLoading || protectionSaving}
+            className={`relative inline-flex h-8 w-16 shrink-0 items-center rounded-full border transition-colors disabled:cursor-not-allowed disabled:opacity-60 ${
+              protectionEnabled
+                ? "border-emerald-500/40 bg-emerald-500/30"
+                : "border-border bg-muted"
+            }`}
+          >
+            <span className="sr-only">{protectionCopy.title}</span>
+            <span
+              className={`inline-block h-6 w-6 rounded-full bg-background shadow transition-transform ${
+                protectionEnabled ? "translate-x-8" : "translate-x-1"
+              }`}
+            />
+          </button>
+        </div>
+        <div className="mt-3 flex gap-3 text-xs text-muted-foreground">
+          <span className={protectionEnabled ? "font-medium text-foreground" : ""}>
+            {protectionCopy.on}
+          </span>
+          <span className={!protectionEnabled ? "font-medium text-foreground" : ""}>
+            {protectionCopy.off}
+          </span>
         </div>
       </div>
 

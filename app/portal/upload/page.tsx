@@ -43,6 +43,7 @@ export default function PortalUploadPage() {
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [consentGiven, setConsentGiven] = useState(false);
   const [status, setStatus] = useState<UploadStatus>("idle");
+  const [failureMessage, setFailureMessage] = useState<string | null>(null);
   const [activeJobId, setActiveJobId] = useState<string | null>(null);
   const [processingStartedAt, setProcessingStartedAt] = useState<number | null>(
     null
@@ -67,7 +68,7 @@ export default function PortalUploadPage() {
       try {
         const res = await fetch(`/api/proxy/portal/analysis-status?job_id=${activeJobId}`);
         if (!res.ok) return;
-        const data = await res.json() as { upload_status: string };
+        const data = await res.json() as { upload_status: string; error_message?: string | null };
         if (data.upload_status === "completed") {
           clearInterval(pollRef.current!);
           setStatus("completed");
@@ -78,8 +79,9 @@ export default function PortalUploadPage() {
         } else if (data.upload_status === "failed") {
           clearInterval(pollRef.current!);
           setStatus("failed");
+          setFailureMessage(data.error_message ?? "Analysis failed. Please try again.");
           clearProcessingStart();
-          toast.error("Analysis failed. Please try again.");
+          toast.error(data.error_message ?? "Analysis failed. Please try again.");
         } else if (data.upload_status === "processing") {
           setStatus("processing");
         }
@@ -90,9 +92,10 @@ export default function PortalUploadPage() {
   }, [activeJobId, status, router]);
 
   const handleUpload = async () => {
-    if (!selectedFile || status !== "idle") return;
+    if (!selectedFile || (status !== "idle" && status !== "failed")) return;
 
     setStatus("uploading");
+    setFailureMessage(null);
     setProcessingStartedAt(writeProcessingStart());
     trackUploadStarted(selectedFile.size);
 
@@ -161,7 +164,7 @@ export default function PortalUploadPage() {
     }
   };
 
-  const isUploading = status !== "idle";
+  const isUploading = status === "uploading" || status === "queued" || status === "processing" || status === "completed";
 
   return (
     <div className="flex justify-center">
@@ -193,6 +196,11 @@ export default function PortalUploadPage() {
             </div>
           ) : (
             <div className="rounded-lg border border-border bg-card p-8 space-y-6">
+              {status === "failed" && failureMessage && (
+                <div className="rounded-lg border border-destructive/30 bg-destructive/5 px-4 py-3 text-sm text-destructive">
+                  {failureMessage}
+                </div>
+              )}
               <div className="space-y-2">
                 <h2 className="text-xl font-semibold text-foreground">
                   Refresh your Apple Health timeline
