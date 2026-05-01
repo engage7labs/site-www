@@ -513,7 +513,7 @@ export const enIE = {
       expired: "Expired",
     },
     sleepTrend: "Sleep — Last 14 Days with Data",
-    healthBalance: "Health Balance",
+    healthBalance: "Health Balance — Last 7 Days with Data",
     latestAnalysis: {
       title: "Latest Analysis",
       noDataTitle: "Recent Analyses",

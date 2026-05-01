@@ -518,7 +518,7 @@ export const ptBR: Dictionary = {
       expired: "Expirado",
     },
     sleepTrend: "Sono — Últimos 14 Dias com Dados",
-    healthBalance: "Equilíbrio de Saúde",
+    healthBalance: "Equilíbrio de Saúde — Últimos 7 Dias com Dados",
     latestAnalysis: {
       title: "Análise Mais Recente",
       noDataTitle: "Análises Recentes",

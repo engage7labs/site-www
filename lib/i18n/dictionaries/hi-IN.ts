@@ -519,7 +519,7 @@ export const hiIN: Dictionary = {
       expired: "समाप्त",
     },
     sleepTrend: "नींद — डेटा के साथ पिछले 14 दिन",
-    healthBalance: "स्वास्थ्य संतुलन",
+    healthBalance: "स्वास्थ्य संतुलन — डेटा वाले पिछले 7 दिन",
     latestAnalysis: {
       title: "नवीनतम विश्लेषण",
       noDataTitle: "हालिया विश्लेषण",
