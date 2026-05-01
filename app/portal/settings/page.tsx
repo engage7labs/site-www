@@ -4,6 +4,26 @@ import { useLocale } from "@/components/providers/locale-provider";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useState } from "react";
 
+interface PortalOverviewSettingsData {
+  plan?: string | null;
+  trial_end_at?: string | null;
+  feature_store?: {
+    date_end?: string | null;
+    row_count?: number | null;
+  } | null;
+}
+
+function formatSettingsDate(value: string | null): string | null {
+  if (!value) return null;
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return null;
+  return date.toLocaleDateString("en-IE", {
+    year: "numeric",
+    month: "short",
+    day: "numeric",
+  });
+}
+
 export default function SettingsPage() {
   const { locale } = useLocale();
   const router = useRouter();
@@ -16,6 +36,8 @@ export default function SettingsPage() {
   const [paymentStatus, setPaymentStatus] = useState<"success" | "cancelled" | null>(null);
   const [plan, setPlan] = useState<string | null>(null);
   const [trialEnd, setTrialEnd] = useState<string | null>(null);
+  const [timelineDateEnd, setTimelineDateEnd] = useState<string | null>(null);
+  const [timelineRows, setTimelineRows] = useState<number | null>(null);
   const [protectionEnabled, setProtectionEnabled] = useState(true);
   const [protectionLoading, setProtectionLoading] = useState(true);
   const [protectionSaving, setProtectionSaving] = useState(false);
@@ -31,9 +53,11 @@ export default function SettingsPage() {
     // Fetch plan status
     fetch("/api/proxy/users/portal-overview")
       .then((r) => r.json())
-      .then((d) => {
+      .then((d: PortalOverviewSettingsData) => {
         setPlan(d.plan ?? null);
         setTrialEnd(d.trial_end_at ?? null);
+        setTimelineDateEnd(d.feature_store?.date_end ?? null);
+        setTimelineRows(d.feature_store?.row_count ?? null);
       })
       .catch(() => {});
     fetch("/api/proxy/users/health-footprint")
@@ -72,12 +96,16 @@ export default function SettingsPage() {
   const protectionCopy = {
     title: isPt ? "Proteger atualizações de dados" : "Protect data updates",
     description: isPt
-      ? "Ajuda a evitar que exportações do Apple Health de outra pessoa sejam misturadas à sua linha do tempo."
-      : "Help prevent Apple Health exports from another person being merged into your timeline.",
+      ? "Ajuda a evitar que exportações do Apple Health de outra pessoa sejam misturadas à sua linha do tempo. O Engage7 compara metadados minimizados antes de atualizar sua timeline processada."
+      : "Helps prevent Apple Health exports from another person being merged into your timeline. Engage7 compares privacy-minimized metadata before updating your processed timeline.",
     on: isPt ? "Ligado" : "On",
     off: isPt ? "Desligado" : "Off",
-    active: isPt ? "Proteção ativa" : "Protection is active",
-    inactive: isPt ? "Proteção desligada" : "Protection is off",
+    active: isPt
+      ? "Proteção ativa. Atualizações com diferença forte podem ser bloqueadas antes de alterar sua timeline."
+      : "Protection is active. Strong mismatches may be blocked before your timeline is changed.",
+    inactive: isPt
+      ? "A proteção está desligada. Atualizações futuras podem ser aceitas mesmo quando o conjunto de dados parecer diferente da sua timeline anterior."
+      : "Protection is off. Future updates may be accepted even when the dataset looks different from your previous timeline.",
     saving: isPt ? "Salvando..." : "Saving...",
     error: isPt ? "Não foi possível salvar esta configuração." : "Could not save this setting.",
   };
@@ -152,7 +180,7 @@ export default function SettingsPage() {
         </div>
         <p className="text-lg font-medium text-foreground">Account deleted</p>
         <p className="text-sm text-muted-foreground">
-          Your account and data have been removed. Redirecting…
+          Your Engage7 account deletion has completed. Redirecting…
         </p>
       </div>
     );
@@ -165,6 +193,7 @@ export default function SettingsPage() {
   const daysLeft = trialActive && trialEndDate
     ? Math.max(0, Math.ceil((trialEndDate.getTime() - Date.now()) / 86400000))
     : null;
+  const formattedTimelineDate = formatSettingsDate(timelineDateEnd);
 
   return (
     <div className="flex flex-col gap-6">
@@ -216,7 +245,22 @@ export default function SettingsPage() {
         )}
       </div>
 
-      <div className="grid gap-4 sm:grid-cols-2">
+      <div className="grid gap-4 lg:grid-cols-3">
+        {/* Account section */}
+        <div className="rounded-xl border border-border bg-card p-5">
+          <h2 className="text-sm font-semibold text-card-foreground">
+            Account
+          </h2>
+          <p className="mt-2 text-sm text-muted-foreground">
+            Your Engage7 account controls Portal access, plan state, settings,
+            and account deletion.
+          </p>
+          <p className="mt-3 text-xs text-muted-foreground">
+            Supabase stores login and control-plane metadata. Raw Apple Health
+            XML is not stored in Supabase.
+          </p>
+        </div>
+
         {/* Profile section */}
         <div className="rounded-xl border border-border bg-card p-5">
           <h2 className="text-sm font-semibold text-card-foreground">
@@ -228,16 +272,55 @@ export default function SettingsPage() {
           </p>
         </div>
 
-        {/* Data & Privacy section */}
+        {/* Export placeholder */}
         <div className="rounded-xl border border-border bg-card p-5">
           <h2 className="text-sm font-semibold text-card-foreground">
-            Data &amp; Privacy
+            Export / Download
           </h2>
           <p className="mt-2 text-sm text-muted-foreground">
-            Your data is processed on-device or in a single ephemeral session.
-            Only data you explicitly agreed to store is saved to your portal.
+            A self-serve export center is not available yet. Your reports remain
+            available in My Reports, and account deletion is available below.
           </p>
         </div>
+      </div>
+
+      {/* Data & Privacy section */}
+      <div className="rounded-xl border border-border bg-card p-5">
+        <h2 className="text-sm font-semibold text-card-foreground">
+          Data &amp; Privacy
+        </h2>
+        <p className="mt-2 max-w-3xl text-sm text-muted-foreground">
+          Engage7 uses your Apple Health export to build a processed
+          physiological timeline. Raw upload files are temporary. Processed
+          daily features and report artifacts may be kept so your Portal can
+          show Health, Insights, Data Lab, and My Reports.
+        </p>
+        <div className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-5">
+          {[
+            ["Raw ZIP/XML", "Temporary Azure Blob storage under lifecycle rules."],
+            ["Processed timeline", "Used for Portal dashboards and freshness."],
+            ["Reports", "Kept so you can reopen completed analyses."],
+            ["Account metadata", "Stored for login, plan, and settings."],
+            ["Delete account", "Removes app-owned account data."],
+          ].map(([label, description]) => (
+            <div
+              key={label}
+              className="rounded-lg border border-border/70 bg-muted/20 px-3 py-2"
+            >
+              <p className="text-xs font-semibold text-card-foreground">
+                {label}
+              </p>
+              <p className="mt-1 text-xs leading-relaxed text-muted-foreground">
+                {description}
+              </p>
+            </div>
+          ))}
+        </div>
+        <p className="mt-4 text-xs leading-relaxed text-muted-foreground">
+          Azure Blob Storage holds raw and processed artifacts according to
+          lifecycle rules. Supabase stores account, control-plane, report, and
+          timeline metadata needed to run the authenticated Portal.
+        </p>
       </div>
 
       <div className="rounded-xl border border-border bg-card p-5">
@@ -248,6 +331,12 @@ export default function SettingsPage() {
             </h2>
             <p className="mt-2 max-w-2xl text-sm text-muted-foreground">
               {protectionCopy.description}
+            </p>
+            <p className="mt-2 max-w-2xl text-xs leading-relaxed text-muted-foreground">
+              This is not medical identity verification. It uses
+              privacy-minimized metadata and does not expose raw Apple Health
+              content, raw device details, date of birth, or sex in Settings.
+              You can turn it off for testing or intentional advanced cases.
             </p>
             <p className="mt-3 text-xs text-muted-foreground">
               {protectionSaving
@@ -288,6 +377,36 @@ export default function SettingsPage() {
             {protectionCopy.off}
           </span>
         </div>
+        <div className="mt-4 grid gap-3 sm:grid-cols-3">
+          <div className="rounded-lg border border-border/70 bg-muted/20 px-3 py-2">
+            <p className="text-xs font-semibold text-card-foreground">
+              Timeline protection
+            </p>
+            <p className="mt-1 text-xs text-muted-foreground">
+              {protectionLoading
+                ? "Loading..."
+                : protectionEnabled
+                  ? "On"
+                  : "Off"}
+            </p>
+          </div>
+          <div className="rounded-lg border border-border/70 bg-muted/20 px-3 py-2">
+            <p className="text-xs font-semibold text-card-foreground">
+              Processed timeline
+            </p>
+            <p className="mt-1 text-xs text-muted-foreground">
+              {timelineRows && timelineRows > 0 ? "Available" : "Not available"}
+            </p>
+          </div>
+          <div className="rounded-lg border border-border/70 bg-muted/20 px-3 py-2">
+            <p className="text-xs font-semibold text-card-foreground">
+              Latest data through
+            </p>
+            <p className="mt-1 text-xs text-muted-foreground">
+              {formattedTimelineDate ?? "Not available"}
+            </p>
+          </div>
+        </div>
       </div>
 
       {/* Delete account section */}
@@ -296,9 +415,11 @@ export default function SettingsPage() {
           Delete my account and data
         </h2>
         <p className="mt-2 text-sm text-muted-foreground">
-          This permanently deletes your account and all stored processed data.
-          This action cannot be undone. You may create a new account with the
-          same email afterwards.
+          This deletes your Engage7 account and app-owned data. Reports,
+          processed timeline metadata, data update events, and footprint records
+          are removed by app cleanup and database cascade behavior. Temporary
+          raw upload files are governed by Azure storage lifecycle rules. This
+          action cannot be undone.
         </p>
         <button
           type="button"
@@ -326,8 +447,9 @@ export default function SettingsPage() {
               Confirm account deletion
             </h3>
             <p className="text-sm text-muted-foreground">
-              This will permanently delete your account and all stored processed
-              health data. To confirm, type{" "}
+              This will delete your Engage7 account and app-owned Portal data.
+              Raw temporary upload files remain governed by storage lifecycle
+              rules. To confirm, type{" "}
               <span className="font-mono font-bold text-foreground">
                 DELETE
               </span>{" "}
