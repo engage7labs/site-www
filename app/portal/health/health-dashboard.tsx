@@ -327,6 +327,10 @@ function values(series: MetricSeries[]): number[] {
     .filter((value): value is number => value !== null);
 }
 
+function hasAnyValue(point: HealthPoint, keyGroups: string[][]): boolean {
+  return keyGroups.some((keys) => valueFor(point, keys) !== null);
+}
+
 function average(numbers: number[]): number | null {
   if (numbers.length === 0) return null;
   return numbers.reduce((sum, value) => sum + value, 0) / numbers.length;
@@ -760,15 +764,26 @@ function SleepDashboard({
   sections: UnknownRecord | null;
   rangeLabel: string;
 }>) {
-  const sleep = metricSeries(points, SLEEP_DURATION_KEYS);
-  const core = metricSeries(points, ["sleep_hours_core"]);
-  const deep = metricSeries(points, ["sleep_hours_deep"]);
-  const rem = metricSeries(points, ["sleep_hours_rem"]);
-  const awake = points.map((point) => {
+  const sleepPoints = points.filter((point) =>
+    hasAnyValue(point, [SLEEP_DURATION_KEYS]),
+  );
+  const stagePoints = points.filter((point) =>
+    hasAnyValue(point, [
+      ["sleep_hours_core"],
+      ["sleep_hours_deep"],
+      ["sleep_hours_rem"],
+      ["sleep_awake_minutes"],
+    ]),
+  );
+  const sleep = metricSeries(sleepPoints, SLEEP_DURATION_KEYS);
+  const core = metricSeries(stagePoints, ["sleep_hours_core"]);
+  const deep = metricSeries(stagePoints, ["sleep_hours_deep"]);
+  const rem = metricSeries(stagePoints, ["sleep_hours_rem"]);
+  const awake = stagePoints.map((point) => {
     const minutes = valueFor(point, ["sleep_awake_minutes"]);
     return { date: point.date, value: minutes === null ? null : minutes / 60 };
   });
-  const efficiency = points.map((point) => ({
+  const efficiency = sleepPoints.map((point) => ({
     date: point.date,
     value: sleepEfficiency(point),
   }));
@@ -795,7 +810,7 @@ function SleepDashboard({
     },
   ].filter((item) => item.data.some((value) => value !== null));
 
-  const weekly = weeklyAverage(points, SLEEP_DURATION_KEYS);
+  const weekly = weeklyAverage(sleepPoints, SLEEP_DURATION_KEYS);
   const allSleepValues = values(metricSeries(allPoints, SLEEP_DURATION_KEYS));
   const allTimeAvg = average(allSleepValues);
   const currentAvg = average(sleepVals);
@@ -860,7 +875,7 @@ function SleepDashboard({
         {sleepVals.length > 0 ? (
           <EChart
             height={310}
-            option={lineChartOption(points, [
+            option={lineChartOption(sleepPoints, [
               {
                 name: "Sleep (h)",
                 color: COLORS.sleep,
@@ -886,7 +901,7 @@ function SleepDashboard({
             <EChart
               height={280}
               option={lineChartOption(
-                points,
+                stagePoints,
                 stageSeries.map((item) => ({
                   ...item,
                   type: "bar",
