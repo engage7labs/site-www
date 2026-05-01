@@ -24,7 +24,7 @@ const SECTION_TITLES: Record<string, { title: string; subtitle: string }> = {
   },
   "/portal/trends": {
     title: "Data Lab",
-    subtitle: "Multi-signal trends, correlations, baselines, and volatility",
+    subtitle: "Advanced evidence, trends, and technical context from your analysis.",
   },
   "/portal/insights": {
     title: "Insights",

@@ -1,6 +1,5 @@
 "use client";
 
-import { DarthStatePanel } from "@/components/portal/darth-state-panel";
 import type { PortalDataStatus } from "@/lib/portal-data-status";
 import { parsePortalDataStatus } from "@/lib/portal-data-status";
 import type { EChartsOption } from "echarts";
@@ -42,6 +41,8 @@ const LIGHT_TEXT = "#E5E7EB";
 const TOOLTIP_TEXT = "#111827";
 const TOOLTIP_BG = "#F9FAFB";
 const WEEK_DAYS = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
+const DATA_LAB_SUBTITLE =
+  "Advanced evidence, trends, and technical context from your analysis.";
 
 const COLORS = {
   sleep: "#3dbe73",
@@ -49,6 +50,26 @@ const COLORS = {
   hrv: "#6366f1",
   steps: "#5eead4",
   activity: "#f59e0b",
+};
+
+const TECHNICAL_LABELS: Record<string, string> = {
+  last_7d: "latest available 7-day window",
+  last_30d: "latest available 30-day window",
+  baseline_30d: "personal baseline",
+  yearly_summary: "long-term summary",
+  hrv_sdnn: "HRV",
+  hrv_sdnn_mean: "HRV",
+  hr_resting: "resting heart rate",
+  resting_hr: "resting heart rate",
+  hr_mean: "resting heart rate",
+  total_steps: "daily steps",
+  steps: "daily steps",
+  active_energy_cal: "active energy",
+  total_energy_cal: "daily energy",
+  sleep_hours: "sleep duration",
+  sleep_variability_cv: "sleep variability",
+  steps_variability_cv: "step variability",
+  active_minutes: "active minutes",
 };
 
 // ---------------------------------------------------------------------------
@@ -91,6 +112,20 @@ function formatDate(d: string): string {
   });
 }
 
+function humanizeTechnicalLabel(value: string): string {
+  const exact = TECHNICAL_LABELS[value];
+  if (exact) return exact;
+
+  return value
+    .replaceAll("_", " ")
+    .replace(/\bcv\b/gi, "variability")
+    .replace(/\bhrv\b/gi, "HRV")
+    .replace(/\bhr\b/gi, "heart rate")
+    .replace(/\bsdnn\b/gi, "")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
 function computeTrendDirection(vals: number[]): "rising" | "falling" | "stable" {
   if (vals.length < 4) return "stable";
   const half = Math.floor(vals.length / 2);
@@ -118,6 +153,14 @@ function trendNarrative(
   if (direction === "falling")
     return `Your ${signal} has been trending downward, currently around ${latest.toFixed(1)} ${unit} (average: ${mean.toFixed(1)} ${unit}).`;
   return `Your ${signal} has been stable around ${mean.toFixed(1)} ${unit} across ${vals.length} data points.`;
+}
+
+function hasTrendPoints(points: TrendPoint[]): boolean {
+  return points.some((point) => point.value != null);
+}
+
+function hasObjectData(value: Record<string, unknown> | null): boolean {
+  return Boolean(value && Object.keys(value).length > 0);
 }
 
 // ---------------------------------------------------------------------------
@@ -356,7 +399,12 @@ function BaselineRangesChart({
       const hrM = bMetrics.hr_mean ?? {};
       const stepsM = bMetrics.total_steps ?? {};
 
-      const metrics = ["Sleep (h)", "HRV (ms)", "HR (bpm)", "Steps (k)"];
+      const metrics = [
+        "Sleep duration (h)",
+        "HRV (ms)",
+        "Resting heart rate (bpm)",
+        "Daily steps (k)",
+      ];
       const baselines = [
         sleepM.median ?? 7.2,
         hrvM.median ?? 43,
@@ -447,7 +495,7 @@ function BaselineRangesChart({
           Your Baseline Ranges
         </h3>
         <span className="text-xs text-muted-foreground">
-          Typical ranges based on your data
+          Your personal reference range from available historical data.
         </span>
       </div>
       <div ref={containerRef} className="h-48 w-full" />
@@ -477,7 +525,13 @@ function CorrelationHeatmapChart({
       const isDark = document.documentElement.classList.contains("dark");
       const axisLabelColor = isDark ? LIGHT_TEXT : "#5f6368";
 
-      const metrics = ["Sleep", "HRV", "HR", "Steps", "Activity"];
+      const metrics = [
+        humanizeTechnicalLabel("sleep_hours"),
+        humanizeTechnicalLabel("hrv_sdnn_mean"),
+        humanizeTechnicalLabel("hr_mean"),
+        humanizeTechnicalLabel("total_steps"),
+        humanizeTechnicalLabel("active_minutes"),
+      ];
       const corrData: number[][] = [];
       if (correlations && typeof correlations === "object") {
         const matrix = correlations as Record<string, Record<string, number>>;
@@ -578,7 +632,8 @@ function CorrelationHeatmapChart({
           Signal Correlations
         </h3>
         <span className="text-xs text-muted-foreground">
-          How your signals relate &mdash; for reference only
+          Signals that moved together in your historical data. This does not
+          prove cause and effect.
         </span>
       </div>
       <div ref={containerRef} className="h-72 w-full" />
@@ -612,6 +667,29 @@ function StatCard({
   );
 }
 
+function DataLabHeader() {
+  return (
+    <div className="flex flex-col gap-3">
+      <div>
+        <h1 className="text-2xl font-semibold tracking-normal text-foreground">
+          Data Lab
+        </h1>
+        <p className="mt-1 text-sm text-muted-foreground">
+          {DATA_LAB_SUBTITLE}
+        </p>
+      </div>
+      <div className="flex flex-wrap gap-2 text-xs text-muted-foreground">
+        <span className="rounded-full border border-border/70 bg-muted/30 px-3 py-1">
+          Advanced analysis for reference.
+        </span>
+        <span className="rounded-full border border-border/70 bg-muted/30 px-3 py-1">
+          Correlations do not imply causation.
+        </span>
+      </div>
+    </div>
+  );
+}
+
 // ---------------------------------------------------------------------------
 // Trend section with narrative + chart
 // ---------------------------------------------------------------------------
@@ -619,11 +697,13 @@ function StatCard({
 function TrendSection({
   icon,
   title,
+  description,
   narrative,
   children,
 }: Readonly<{
   icon: React.ReactNode;
   title: string;
+  description: string;
   narrative: string;
   children: React.ReactNode;
 }>) {
@@ -635,6 +715,9 @@ function TrendSection({
           {title}
         </h2>
       </div>
+      <p className="text-xs text-muted-foreground max-w-2xl">
+        {description}
+      </p>
       {narrative && (
         <p className="text-sm text-muted-foreground leading-relaxed max-w-2xl">
           {narrative}
@@ -694,11 +777,99 @@ function EmptyTrendsState({
 }: Readonly<{ message: string }>) {
   return (
     <div className="flex flex-col gap-6">
+      <DataLabHeader />
       <div className="portal-panel rounded-xl border border-border/70 bg-card/85 p-8 text-center">
         <TrendingUpIcon className="h-10 w-10 text-muted-foreground/40 mx-auto mb-3" />
         <p className="text-sm text-muted-foreground max-w-sm mx-auto">
           {message}
         </p>
+      </div>
+    </div>
+  );
+}
+
+function InlineDataLabEmptyState({
+  message,
+}: Readonly<{ message: string }>) {
+  return (
+    <div className="portal-panel rounded-xl border border-border/70 bg-card/85 p-4">
+      <p className="text-sm text-muted-foreground">{message}</p>
+    </div>
+  );
+}
+
+function TechnicalAvailability({
+  hasTrendData,
+  hasBaseline,
+  hasCorrelations,
+  hasVolatility,
+}: Readonly<{
+  hasTrendData: boolean;
+  hasBaseline: boolean;
+  hasCorrelations: boolean;
+  hasVolatility: boolean;
+}>) {
+  const items = [
+    {
+      label: "Trend charts",
+      available: hasTrendData,
+      message: hasTrendData
+        ? "Longitudinal signal movement over time."
+        : "Advanced trend data is not available for this analysis yet.",
+    },
+    {
+      label: "Baseline ranges",
+      available: hasBaseline,
+      message: hasBaseline
+        ? "Your personal reference range from available historical data."
+        : "Baseline data is unavailable for this dataset.",
+    },
+    {
+      label: "Correlations",
+      available: hasCorrelations,
+      message: hasCorrelations
+        ? "Signals that moved together in your historical data. This does not prove cause and effect."
+        : "Correlation data is unavailable for this dataset.",
+    },
+    {
+      label: "Volatility",
+      available: hasVolatility,
+      message: hasVolatility
+        ? "How much a signal varied across the selected period."
+        : "Volatility data is unavailable for this dataset.",
+    },
+  ];
+
+  return (
+    <div className="portal-panel rounded-xl border border-border/70 bg-card/85 p-4">
+      <div className="mb-3">
+        <h2 className="text-sm font-semibold uppercase tracking-wider text-muted-foreground">
+          Technical Data Available
+        </h2>
+        <p className="mt-1 text-xs text-muted-foreground">
+          Data Lab shows supporting evidence when the legacy scientific outputs
+          exist for this analysis.
+        </p>
+      </div>
+      <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+        {items.map((item) => (
+          <div
+            key={item.label}
+            className="rounded-lg border border-border/60 bg-muted/20 px-3 py-2"
+          >
+            <div className="flex items-center justify-between gap-2">
+              <span className="text-xs font-semibold text-card-foreground">
+                {item.label}
+              </span>
+              <span className="text-[10px] uppercase tracking-wider text-muted-foreground">
+                {item.available ? "Available" : "Unavailable"}
+              </span>
+            </div>
+            <p className="mt-1 text-xs leading-relaxed text-muted-foreground">
+              {item.message}
+            </p>
+          </div>
+        ))}
       </div>
     </div>
   );
@@ -711,44 +882,17 @@ function EmptyTrendsState({
 export default function TrendsPage() {
   const [trendsData, setTrendsData] = useState<TrendsData | null>(null);
   const [portalStatus, setPortalStatus] = useState<PortalDataStatus | null>(null);
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const [latestSections, setLatestSections] = useState<any>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     (async () => {
       try {
-        const [trendsRes, analysesRes] = await Promise.allSettled([
-          fetch("/api/proxy/users/portal-trends"),
-          fetch("/api/proxy/users/portal-analyses"),
-        ]);
+        const trendsRes = await fetch("/api/proxy/users/portal-trends");
 
-        if (trendsRes.status === "fulfilled" && trendsRes.value.ok) {
-          const payload = (await trendsRes.value.json()) as TrendsData;
+        if (trendsRes.ok) {
+          const payload = (await trendsRes.json()) as TrendsData;
           setTrendsData(payload);
           setPortalStatus(parsePortalDataStatus(payload.portal_data_status));
-        }
-
-        if (analysesRes.status === "fulfilled" && analysesRes.value.ok) {
-          const analysesData = await analysesRes.value.json();
-          setPortalStatus((current) =>
-            current ?? parsePortalDataStatus(analysesData?.portal_data_status)
-          );
-          const analyses = analysesData.analyses ?? [];
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          const latest = analyses.find((a: any) => a.sections ?? a.sections_json);
-          if (latest?.sections ?? latest?.sections_json) {
-            const raw = latest.sections ?? latest.sections_json;
-            if (typeof raw === "string") {
-              try {
-                setLatestSections(JSON.parse(raw));
-              } catch {
-                setLatestSections(null);
-              }
-            } else {
-              setLatestSections(raw);
-            }
-          }
         }
       } catch {
         // silent
@@ -773,6 +917,7 @@ export default function TrendsPage() {
   if (loading) {
     return (
       <div className="flex flex-col gap-6">
+        <DataLabHeader />
         <p className="text-sm text-muted-foreground">Loading&hellip;</p>
       </div>
     );
@@ -786,13 +931,13 @@ export default function TrendsPage() {
 
   if (trendsData.analysis_count === 0 || portalStatus?.analysisStatus === "no_analysis") {
     return (
-      <EmptyTrendsState message="No analysis has been created yet. Update Data before using Trends." />
+      <EmptyTrendsState message="Data Lab will appear after Engage7 has enough completed analysis data." />
     );
   }
 
   if (portalStatus && !portalStatus.hasLegacyScientificData) {
     return (
-      <EmptyTrendsState message="Advanced trend data is not available for this analysis yet. Your analysis may still have summary or health timeline data elsewhere in the Portal." />
+      <EmptyTrendsState message="This analysis has Portal data, but no legacy scientific Data Lab outputs yet. Feature timeline availability is not necessarily a blocker for Insights or Health." />
     );
   }
 
@@ -853,17 +998,33 @@ export default function TrendsPage() {
   const hasSleep = sleepVals.length > 0;
   const hasRecovery = hrvVals.length > 0 || hrVals.length > 0;
   const hasActivity = stepVals.length > 0 || activityVals.length > 0;
+  const hasTrendData = [
+    trends.sleep,
+    trends.hrv,
+    trends.hr,
+    trends.steps,
+    trends.activity,
+  ].some(hasTrendPoints);
+  const hasBaseline = hasObjectData(trends.baseline);
+  const hasCorrelations = hasObjectData(trends.correlations);
+  const hasVolatility = hasObjectData(trends.volatility);
 
   return (
     <div className="flex flex-col gap-8">
-      {/* ─── DARTH State Panel — Sprint 32.0 ─── */}
-      <DarthStatePanel sections={latestSections} />
+      <DataLabHeader />
+
+      <TechnicalAvailability
+        hasTrendData={hasTrendData}
+        hasBaseline={hasBaseline}
+        hasCorrelations={hasCorrelations}
+        hasVolatility={hasVolatility}
+      />
 
       {/* Summary Stats */}
       <div className="grid gap-3 grid-cols-2 lg:grid-cols-4">
         {avgSleep != null && (
           <StatCard
-            label="Avg Sleep"
+            label="Average sleep"
             value={avgSleep.toFixed(1)}
             unit="hours"
             count={sleepVals.length}
@@ -871,7 +1032,7 @@ export default function TrendsPage() {
         )}
         {avgHrv != null && (
           <StatCard
-            label="Avg HRV"
+            label="Average HRV"
             value={Math.round(avgHrv).toString()}
             unit="ms"
             count={hrvVals.length}
@@ -879,7 +1040,7 @@ export default function TrendsPage() {
         )}
         {avgHr != null && (
           <StatCard
-            label="Avg HR"
+            label="Average resting heart rate"
             value={Math.round(avgHr).toString()}
             unit="bpm"
             count={hrVals.length}
@@ -887,7 +1048,7 @@ export default function TrendsPage() {
         )}
         {avgSteps != null && (
           <StatCard
-            label="Avg Steps"
+            label="Average daily steps"
             value={avgSteps.toLocaleString("en-IE", {
               maximumFractionDigits: 0,
             })}
@@ -902,12 +1063,17 @@ export default function TrendsPage() {
         <TrendSection
           icon={<Moon className="h-4 w-4 text-[#3dbe73]" />}
           title="Sleep Trend"
+          description="Longitudinal signal movement over time."
           narrative={sleepNarrative}
         >
           <SectionChart
             dates={sleepDates}
             series={[
-              { name: "Sleep (h)", data: sleepVals, color: COLORS.sleep },
+              {
+                name: "Sleep duration",
+                data: sleepVals,
+                color: COLORS.sleep,
+              },
             ]}
           />
         </TrendSection>
@@ -918,6 +1084,7 @@ export default function TrendsPage() {
         <TrendSection
           icon={<Heart className="h-4 w-4 text-[#6366f1]" />}
           title="Recovery Trend"
+          description="Longitudinal signal movement over time."
           narrative={recoveryNarrative}
         >
           <SectionChart
@@ -929,7 +1096,7 @@ export default function TrendsPage() {
               ...(hrVals.length > 0
                 ? [
                     {
-                      name: "HR (bpm)",
+                      name: "Resting heart rate",
                       data: hrVals,
                       color: COLORS.hr,
                       yAxisIndex: hrvVals.length > 0 ? 1 : 0,
@@ -946,6 +1113,7 @@ export default function TrendsPage() {
         <TrendSection
           icon={<Activity className="h-4 w-4 text-[#f59e0b]" />}
           title="Activity Trend"
+          description="Longitudinal signal movement over time."
           narrative={activityNarrative}
         >
           <SectionChart
@@ -956,12 +1124,18 @@ export default function TrendsPage() {
             }
             series={[
               ...(stepVals.length > 0
-                ? [{ name: "Steps", data: stepVals, color: COLORS.steps }]
+                ? [
+                    {
+                      name: "Daily steps",
+                      data: stepVals,
+                      color: COLORS.steps,
+                    },
+                  ]
                 : []),
               ...(activityVals.length > 0
                 ? [
                     {
-                      name: "Active min",
+                      name: "Active minutes",
                       data: activityVals,
                       color: COLORS.activity,
                       yAxisIndex: stepVals.length > 0 ? 1 : 0,
@@ -990,14 +1164,21 @@ export default function TrendsPage() {
         </div>
       )}
 
-      {/* Your Normal Pattern */}
+      {/* Baseline ranges */}
       <div className="flex flex-col gap-3">
         <h2 className="text-sm font-semibold uppercase tracking-wider text-muted-foreground">
-          Your Normal Pattern
+          Baseline Ranges
         </h2>
+        <p className="text-xs text-muted-foreground max-w-2xl">
+          Your personal reference range from available historical data.
+        </p>
         <div className="grid gap-4 lg:grid-cols-2">
           {hasSleep && <WeeklyPatternsChart sleepByDay={sleepByDay} />}
-          <BaselineRangesChart baseline={trends.baseline} />
+          {hasBaseline ? (
+            <BaselineRangesChart baseline={trends.baseline} />
+          ) : (
+            <InlineDataLabEmptyState message="Baseline data is unavailable for this dataset." />
+          )}
         </div>
       </div>
 
@@ -1007,6 +1188,10 @@ export default function TrendsPage() {
           <summary className="cursor-pointer text-sm font-semibold uppercase tracking-wider text-muted-foreground/60 hover:text-muted-foreground transition-colors">
             Signal Correlations (reference)
           </summary>
+          <p className="mt-2 text-xs text-muted-foreground max-w-2xl">
+            Signals that moved together in your historical data. This does not
+            prove cause and effect.
+          </p>
           <div className="mt-3">
             <CorrelationHeatmapChart correlations={trends.correlations} />
           </div>
