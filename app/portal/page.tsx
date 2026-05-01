@@ -55,6 +55,17 @@ interface TrendsData {
   portal_data_status?: unknown;
 }
 
+interface HealthPoint {
+  date: string;
+  [key: string]: string | number | boolean | null;
+}
+
+interface HealthData {
+  analysis_count: number;
+  data_points: HealthPoint[];
+  portal_data_status?: unknown;
+}
+
 interface OverviewData {
   plan: string;
   trial_end_at: string | null;
@@ -182,6 +193,18 @@ function CardDebugLabel({ label }: Readonly<{ label: string }>) {
   );
 }
 
+function OverviewBlock({
+  label,
+  children,
+}: Readonly<{ label: string; children: React.ReactNode }>) {
+  return (
+    <div className="flex flex-col gap-2">
+      <CardDebugLabel label={label} />
+      {children}
+    </div>
+  );
+}
+
 function TrendIndicator({ trend }: Readonly<{ trend?: TrendSummary }>) {
   if (!trend) return null;
   const Icon =
@@ -271,6 +294,28 @@ function median(points?: TrendPoint[]): number | null {
   if (vals.length === 0) return null;
   const mid = Math.floor(vals.length / 2);
   return vals.length % 2 === 0 ? (vals[mid - 1] + vals[mid]) / 2 : vals[mid];
+}
+
+function toNumber(value: unknown): number | null {
+  return typeof value === "number" && Number.isFinite(value) ? value : null;
+}
+
+function valueFor(point: HealthPoint, keys: string[]): number | null {
+  for (const key of keys) {
+    const value = toNumber(point[key]);
+    if (value !== null) return value;
+  }
+  return null;
+}
+
+function healthTrend(points: HealthPoint[] | undefined, keys: string[]): TrendPoint[] {
+  return [...(points ?? [])]
+    .filter((point) => point.date)
+    .sort((a, b) => a.date.localeCompare(b.date))
+    .map((point) => ({
+      date: point.date,
+      value: valueFor(point, keys),
+    }));
 }
 
 function getDateKey(point: TrendPoint): string {
@@ -366,7 +411,19 @@ function weeklyTrend(
 // Overview Charts — ECharts (Sprint 17.4)
 // ---------------------------------------------------------------------------
 
-function SleepTrendMini({ data, title, emptyTitle, emptyMessage }: Readonly<{ data: TrendPoint[]; title: string; emptyTitle: string; emptyMessage: string }>) {
+function SleepTrendMini({
+  data,
+  title,
+  emptyTitle,
+  emptyMessage,
+  debugLabel,
+}: Readonly<{
+  data: TrendPoint[];
+  title: string;
+  emptyTitle: string;
+  emptyMessage: string;
+  debugLabel: string;
+}>) {
   const containerRef = useRef<HTMLDivElement>(null);
   const hasData = data.some((p) => p.value != null);
 
@@ -456,6 +513,7 @@ function SleepTrendMini({ data, title, emptyTitle, emptyMessage }: Readonly<{ da
 
   return (
     <div className="portal-panel rounded-xl border border-border/70 bg-card/85 p-5">
+      <CardDebugLabel label={debugLabel} />
       <h3 className="text-sm font-semibold text-card-foreground mb-3">
         {title}
       </h3>
@@ -480,6 +538,7 @@ function HealthRadar({
   title,
   emptyTitle,
   emptyMessage,
+  debugLabel,
 }: Readonly<{
   sleep: number | null;
   hr: number | null;
@@ -488,6 +547,7 @@ function HealthRadar({
   title: string;
   emptyTitle: string;
   emptyMessage: string;
+  debugLabel: string;
 }>) {
   const containerRef = useRef<HTMLDivElement>(null);
 
@@ -600,6 +660,7 @@ function HealthRadar({
 
   return (
     <div className="portal-panel rounded-xl border border-border/70 bg-card/85 p-5">
+      <CardDebugLabel label={debugLabel} />
       <h3 className="text-sm font-semibold text-card-foreground mb-3">
         {title}
       </h3>
@@ -620,6 +681,7 @@ export default function PortalOverviewPage() {
   const { t } = useLocale();
   const [data, setData] = useState<OverviewData | null>(null);
   const [trends, setTrends] = useState<TrendsData | null>(null);
+  const [healthData, setHealthData] = useState<HealthData | null>(null);
   const [sections, setSections] = useState<Record<string, unknown> | null>(
     null
   );
@@ -629,10 +691,11 @@ export default function PortalOverviewPage() {
   useEffect(() => {
     (async () => {
       try {
-        const [overviewReq, trendsReq, analysesReq] = await Promise.allSettled([
+        const [overviewReq, trendsReq, analysesReq, healthReq] = await Promise.allSettled([
           fetch("/api/proxy/users/portal-overview"),
           fetch("/api/proxy/users/portal-trends"),
           fetch("/api/proxy/users/portal-analyses"),
+          fetch("/api/proxy/users/portal-health-data"),
         ]);
 
         if (overviewReq.status === "fulfilled" && overviewReq.value.ok) {
@@ -662,6 +725,16 @@ export default function PortalOverviewPage() {
             current ?? parsePortalDataStatus(analysesPayload?.portal_data_status)
           );
         }
+
+        if (healthReq.status === "fulfilled" && healthReq.value.ok) {
+          const healthJson = (await healthReq.value
+            .json()
+            .catch(() => null)) as HealthData | null;
+          setHealthData(healthJson);
+          setPortalStatus((current) =>
+            current ?? parsePortalDataStatus(healthJson?.portal_data_status)
+          );
+        }
       } catch {
         // silent — show empty state
       } finally {
@@ -688,29 +761,33 @@ export default function PortalOverviewPage() {
   const sleepScore = data?.sleep_score != null ? `${data.sleep_score}h` : "—";
   const recoveryTrend =
     data?.recovery_trend != null ? `${data.recovery_trend} ms` : "—";
-  const stepsMedian = median(trends?.trends?.steps);
+  const healthStepsTrend = healthTrend(healthData?.data_points, ["total_steps", "steps"]);
+  const activityPoints = healthStepsTrend.some((point) => point.value != null)
+    ? healthStepsTrend
+    : trends?.trends?.steps;
+  const stepsMedian = median(activityPoints);
   const activity = stepsMedian != null ? Math.round(stepsMedian).toLocaleString() : "—";
   const completeness = data?.data_completeness ?? "—";
   const latest = data?.latest_analysis;
   const latestHighlights = coerceHighlights(latest?.highlights);
-  const featureLatestDate = latestFeatureDate(trends);
+  const featureLatestDate = latestFeatureDate({
+    trends: {
+      sleep: trends?.trends?.sleep ?? [],
+      hrv: trends?.trends?.hrv ?? [],
+      hr: trends?.trends?.hr ?? [],
+      steps: activityPoints ?? [],
+    },
+    analysis_count: trends?.analysis_count ?? healthData?.analysis_count ?? 0,
+  });
   const sleepRange = availableRange(trends?.trends?.sleep, featureLatestDate);
   const recoveryRange = availableRange(trends?.trends?.hrv, featureLatestDate);
-  const activityRange = availableRange(trends?.trends?.steps, featureLatestDate);
+  const activityRange = availableRange(activityPoints, featureLatestDate);
   const sleepTrend = weeklyTrend(trends?.trends?.sleep, sleepRange, t.portal.metrics.weekTrend);
   const recoveryWeekTrend = weeklyTrend(trends?.trends?.hrv, recoveryRange, t.portal.metrics.weekTrend);
-  const activityTrend = weeklyTrend(trends?.trends?.steps, activityRange, t.portal.metrics.weekTrend);
+  const activityTrend = weeklyTrend(activityPoints, activityRange, t.portal.metrics.weekTrend);
 
   return (
     <div className="flex flex-col gap-6">
-      {/* Daily Briefing — Sprint 19.0 */}
-      <DailyBriefing />
-
-      <StatusNotice status={portalStatus} />
-
-      {/* Compare & Improve — Sprint 17.5 */}
-      <CompareImproveBlock result={compareImprove} />
-
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
         <MetricCard
           label={t.portal.metrics.sleepScore}
@@ -781,6 +858,18 @@ export default function PortalOverviewPage() {
         />
       </div>
 
+      <OverviewBlock label="OVERVIEW_DAILY_BRIEFING_COMPONENT">
+        <DailyBriefing />
+      </OverviewBlock>
+
+      <OverviewBlock label="OVERVIEW_STATUS_NOTICE_COMPONENT">
+        <StatusNotice status={portalStatus} />
+      </OverviewBlock>
+
+      <OverviewBlock label="OVERVIEW_COMPARE_IMPROVE_COMPONENT">
+        <CompareImproveBlock result={compareImprove} />
+      </OverviewBlock>
+
       {/* ECharts — Sprint 17.4 / Sprint 25.9: always rendered, empty states when no data */}
       <div className="grid gap-4 lg:grid-cols-2">
         <SleepTrendMini
@@ -788,20 +877,23 @@ export default function PortalOverviewPage() {
           title={t.portal.sleepTrend}
           emptyTitle={t.portal.charts.sleepTrendEmpty.title}
           emptyMessage={t.portal.charts.sleepTrendEmpty.message}
+          debugLabel="OVERVIEW_SLEEP_TREND_CHART"
         />
         <HealthRadar
           sleep={data?.sleep_score ?? null}
           hr={median(trends?.trends?.hr)}
           hrv={data?.recovery_trend ?? null}
-          steps={median(trends?.trends?.steps)}
+          steps={median(activityPoints)}
           title={t.portal.healthBalance}
           emptyTitle={t.portal.charts.healthBalanceEmpty.title}
           emptyMessage={t.portal.charts.healthBalanceEmpty.message}
+          debugLabel="OVERVIEW_HEALTH_BALANCE_CHART"
         />
       </div>
 
       {latest ? (
         <div className="portal-panel rounded-xl border border-border/70 bg-card/85 p-6">
+          <CardDebugLabel label="OVERVIEW_LATEST_ANALYSIS_CARD" />
           <h2 className="text-lg font-semibold text-card-foreground">
             {t.portal.latestAnalysis.title}
           </h2>
@@ -864,6 +956,7 @@ export default function PortalOverviewPage() {
         </div>
       ) : (
         <div className="portal-panel rounded-xl border border-border/70 bg-card/85 p-6">
+          <CardDebugLabel label="OVERVIEW_LATEST_ANALYSIS_EMPTY_CARD" />
           <h2 className="text-lg font-semibold text-card-foreground">
             {t.portal.latestAnalysis.noDataTitle}
           </h2>
