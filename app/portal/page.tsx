@@ -39,6 +39,8 @@ const COLORS = {
   steps: "#5eead4",
 };
 
+const OVERVIEW_HEADER_EVENT = "engage7:overview-header-subtitle";
+
 interface TrendPoint {
   date: string;
   value: number | null;
@@ -380,6 +382,18 @@ function medianSubtitle(
   return copy.medianRange
     .replace("{start}", range.start)
     .replace("{end}", range.end);
+}
+
+function latestAnalysisSubtitle(latest: OverviewData["latest_analysis"] | null | undefined): string {
+  if (!latest) return "No recent analysis yet. Update Data to refresh your Apple Health timeline.";
+  if (!latest.created_at) return "Latest analysis available.";
+
+  const formattedDate = new Date(latest.created_at).toLocaleDateString("en-IE", {
+    year: "numeric",
+    month: "long",
+    day: "numeric",
+  });
+  return `Latest analysis available: ${formattedDate}`;
 }
 
 function weeklyTrend(
@@ -748,6 +762,21 @@ export default function PortalOverviewPage() {
     [data, trends, sections]
   );
 
+  useEffect(() => {
+    if (loading) return;
+    window.dispatchEvent(
+      new CustomEvent(OVERVIEW_HEADER_EVENT, {
+        detail: { subtitle: latestAnalysisSubtitle(data?.latest_analysis) },
+      })
+    );
+
+    return () => {
+      window.dispatchEvent(
+        new CustomEvent(OVERVIEW_HEADER_EVENT, { detail: { subtitle: null } })
+      );
+    };
+  }, [data?.latest_analysis, loading]);
+
   if (loading) {
     return (
       <div className="flex flex-col gap-6">
@@ -768,8 +797,6 @@ export default function PortalOverviewPage() {
   const stepsMedian = median(activityPoints);
   const activity = stepsMedian != null ? Math.round(stepsMedian).toLocaleString() : "—";
   const completeness = data?.data_completeness ?? "—";
-  const latest = data?.latest_analysis;
-  const latestHighlights = coerceHighlights(latest?.highlights);
   const featureLatestDate = latestFeatureDate({
     trends: {
       sleep: trends?.trends?.sleep ?? [],
@@ -890,81 +917,6 @@ export default function PortalOverviewPage() {
           debugLabel="OVERVIEW_HEALTH_BALANCE_CHART"
         />
       </div>
-
-      {latest ? (
-        <div className="portal-panel rounded-xl border border-border/70 bg-card/85 p-6">
-          <CardDebugLabel label="OVERVIEW_LATEST_ANALYSIS_CARD" />
-          <h2 className="text-lg font-semibold text-card-foreground">
-            {t.portal.latestAnalysis.title}
-          </h2>
-          {latest.created_at && (
-            <p className="mt-1 text-xs text-muted-foreground">
-              {new Date(latest.created_at).toLocaleDateString("en-IE", {
-                year: "numeric",
-                month: "long",
-                day: "numeric",
-              })}
-            </p>
-          )}
-          {latestHighlights.length > 0 ? (
-            <ul className="mt-3 space-y-1.5">
-              {latestHighlights.map((h: string, i: number) => (
-                <li
-                  key={`hl-${i}`}
-                  className="flex items-start gap-2 text-sm text-card-foreground"
-                >
-                  <span className="mt-1 h-1.5 w-1.5 rounded-full bg-accent shrink-0" />
-                  {h}
-                </li>
-              ))}
-            </ul>
-          ) : (
-            <p className="mt-2 text-sm text-muted-foreground">
-              {t.portal.latestAnalysis.dataAvailable}
-            </p>
-          )}
-          {latest.summary && (
-            <div className="mt-4 grid gap-3 sm:grid-cols-3">
-              {!!latest.summary.dataset_start &&
-                !!latest.summary.dataset_end && (
-                  <div className="text-xs text-muted-foreground">
-                    <span className="font-medium text-card-foreground">
-                      {t.portal.latestAnalysis.period}:{" "}
-                    </span>
-                    {String(latest.summary.dataset_start)} →{" "}
-                    {String(latest.summary.dataset_end)}
-                  </div>
-                )}
-              {latest.summary.days != null && (
-                <div className="text-xs text-muted-foreground">
-                  <span className="font-medium text-card-foreground">
-                    {t.portal.latestAnalysis.days}:{" "}
-                  </span>
-                  {String(latest.summary.days)}
-                </div>
-              )}
-              {latest.summary.total_rows != null && (
-                <div className="text-xs text-muted-foreground">
-                  <span className="font-medium text-card-foreground">
-                    {t.portal.latestAnalysis.records}:{" "}
-                  </span>
-                  {Number(latest.summary.total_rows).toLocaleString()}
-                </div>
-              )}
-            </div>
-          )}
-        </div>
-      ) : (
-        <div className="portal-panel rounded-xl border border-border/70 bg-card/85 p-6">
-          <CardDebugLabel label="OVERVIEW_LATEST_ANALYSIS_EMPTY_CARD" />
-          <h2 className="text-lg font-semibold text-card-foreground">
-            {t.portal.latestAnalysis.noDataTitle}
-          </h2>
-          <p className="mt-2 text-sm text-muted-foreground">
-            {t.portal.latestAnalysis.noDataText}
-          </p>
-        </div>
-      )}
 
       <ShareCard
         title={t.portal.shareCard.title}

@@ -58,12 +58,14 @@ const SECTION_TITLES: Record<string, { title: string; subtitle: string }> = {
 };
 
 const STORAGE_KEY = "engage7_portal_sidebar_collapsed";
+const OVERVIEW_HEADER_EVENT = "engage7:overview-header-subtitle";
 
 export function PortalShell({
   children,
 }: Readonly<{ children: React.ReactNode }>) {
   const [collapsed, setCollapsed] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
+  const [overviewSubtitle, setOverviewSubtitle] = useState<string | null>(null);
 
   useEffect(() => {
     const stored = localStorage.getItem(STORAGE_KEY);
@@ -96,6 +98,18 @@ export function PortalShell({
       });
   }, []);
 
+  useEffect(() => {
+    const handleOverviewSubtitle = (event: Event) => {
+      const detail = (event as CustomEvent<{ subtitle?: string | null }>).detail;
+      setOverviewSubtitle(detail?.subtitle ?? null);
+    };
+
+    window.addEventListener(OVERVIEW_HEADER_EVENT, handleOverviewSubtitle);
+    return () => {
+      window.removeEventListener(OVERVIEW_HEADER_EVENT, handleOverviewSubtitle);
+    };
+  }, []);
+
   const toggleCollapsed = useCallback(() => {
     setCollapsed((prev) => {
       const next = !prev;
@@ -115,6 +129,10 @@ export function PortalShell({
       pathname.startsWith(k + "/")
     )?.[1] ??
     undefined;
+  const sectionSubtitle =
+    pathname === "/portal" && overviewSubtitle
+      ? overviewSubtitle
+      : section?.subtitle;
 
   return (
     <div className="portal-surface flex min-h-screen text-foreground">
@@ -130,7 +148,7 @@ export function PortalShell({
         <PortalHeader
           onToggleMobile={toggleMobile}
           sectionTitle={section?.title}
-          sectionSubtitle={section?.subtitle}
+          sectionSubtitle={sectionSubtitle}
         />
 
         <PasswordSetupAlert />
