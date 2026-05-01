@@ -83,6 +83,12 @@ interface OverviewData {
     summary: Record<string, unknown> | null;
     highlights: string[] | null;
   } | null;
+  feature_store?: {
+    date_start: string | null;
+    date_end: string | null;
+    row_count: number | null;
+    updated_at: string | null;
+  } | null;
   portal_data_status?: unknown;
 }
 
@@ -384,16 +390,25 @@ function medianSubtitle(
     .replace("{end}", range.end);
 }
 
-function latestAnalysisSubtitle(latest: OverviewData["latest_analysis"] | null | undefined): string {
-  if (!latest) return "No recent analysis yet. Update Data to refresh your Apple Health timeline.";
-  if (!latest.created_at) return "Latest analysis available.";
-
-  const formattedDate = new Date(latest.created_at).toLocaleDateString("en-IE", {
+function formatHeaderDate(iso: string): string {
+  return new Date(iso).toLocaleDateString("en-IE", {
     year: "numeric",
     month: "long",
     day: "numeric",
   });
-  return `Latest analysis available: ${formattedDate}`;
+}
+
+function latestTimelineSubtitle(data: OverviewData | null | undefined): string {
+  const dateEnd = data?.feature_store?.date_end;
+  if (dateEnd) {
+    return `Timeline updated through ${formatHeaderDate(dateEnd)}`;
+  }
+
+  const latest = data?.latest_analysis;
+  if (!latest) return "No recent analysis yet. Update Data to refresh your Apple Health timeline.";
+  if (!latest.created_at) return "Latest analysis is available.";
+
+  return `Latest analysis available from ${formatHeaderDate(latest.created_at)}`;
 }
 
 function weeklyTrend(
@@ -766,7 +781,7 @@ export default function PortalOverviewPage() {
     if (loading) return;
     window.dispatchEvent(
       new CustomEvent(OVERVIEW_HEADER_EVENT, {
-        detail: { subtitle: latestAnalysisSubtitle(data?.latest_analysis) },
+        detail: { subtitle: latestTimelineSubtitle(data) },
       })
     );
 
@@ -775,7 +790,7 @@ export default function PortalOverviewPage() {
         new CustomEvent(OVERVIEW_HEADER_EVENT, { detail: { subtitle: null } })
       );
     };
-  }, [data?.latest_analysis, loading]);
+  }, [data, loading]);
 
   if (loading) {
     return (

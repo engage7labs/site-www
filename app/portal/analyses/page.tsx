@@ -32,7 +32,21 @@ function StatusBadge({ status }: { status: string }) {
 
 function formatDate(iso: string | null): string {
   if (!iso) return "—";
-  return new Date(iso).toLocaleDateString("en-IE", { day: "numeric", month: "short", year: "numeric" });
+  return new Date(iso).toLocaleString("en-IE", {
+    day: "numeric",
+    month: "short",
+    year: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+  });
+}
+
+function sortNewestFirst(items: Analysis[]): Analysis[] {
+  return [...items].sort((a, b) => {
+    const aTime = a.created_at ? new Date(a.created_at).getTime() : 0;
+    const bTime = b.created_at ? new Date(b.created_at).getTime() : 0;
+    return bTime - aTime;
+  });
 }
 
 export default function AnalysesPage() {
@@ -46,7 +60,7 @@ export default function AnalysesPage() {
         if (!res.ok) throw new Error(`${res.status}`);
         return res.json() as Promise<{ analyses: Analysis[] }>;
       })
-      .then((data) => setAnalyses(data.analyses))
+      .then((data) => setAnalyses(sortNewestFirst(data.analyses ?? [])))
       .catch((err: unknown) => setError(err instanceof Error ? err.message : String(err)))
       .finally(() => setLoading(false));
   }, []);
@@ -93,7 +107,7 @@ export default function AnalysesPage() {
             <thead>
               <tr className="border-b border-border bg-muted/30">
                 <th className="text-left px-4 py-3 text-xs font-medium text-muted-foreground">Analysis</th>
-                <th className="text-left px-4 py-3 text-xs font-medium text-muted-foreground">Date</th>
+                <th className="text-left px-4 py-3 text-xs font-medium text-muted-foreground">Date & time</th>
                 <th className="text-left px-4 py-3 text-xs font-medium text-muted-foreground">Status</th>
                 <th className="px-4 py-3"></th>
               </tr>
