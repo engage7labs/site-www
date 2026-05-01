@@ -266,7 +266,7 @@ function ShareCard({ title, description, button }: Readonly<{ title: string; des
           </p>
         </div>
         <a
-          href="https://www.engage7.ie"
+          href="https://www.engage7.ie/friends"
           target="_blank"
           rel="noopener noreferrer"
           className="ml-auto inline-flex items-center gap-1.5 rounded-lg border border-border px-3 py-1.5 text-xs font-medium text-foreground hover:bg-muted/40 transition-colors"
@@ -899,9 +899,7 @@ export default function PortalOverviewPage() {
         <DailyBriefing />
       </OverviewBlock>
 
-      <OverviewBlock label="OVERVIEW_STATUS_NOTICE_COMPONENT">
-        <StatusNotice status={portalStatus} />
-      </OverviewBlock>
+      <StatusNotice status={portalStatus} />
 
       <OverviewBlock label="OVERVIEW_COMPARE_IMPROVE_COMPONENT">
         <CompareImproveBlock result={compareImprove} />

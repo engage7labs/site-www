@@ -114,9 +114,25 @@ const DOMAIN_META = {
   }
 >;
 
+const SLEEP_DURATION_KEYS = ["sleep_hours"];
+const RECOVERY_HRV_KEYS = [
+  "hrv_sdnn_mean",
+  "hrv_sdnn_mean_median",
+  "hrv_sdnn",
+  "hrv",
+];
+const RECOVERY_HR_KEYS = [
+  "hr_resting",
+  "resting_hr",
+  "resting_hr_mean",
+  "hr_mean",
+];
+const RECOVERY_SCORE_KEYS = ["recovery_score", "readiness_score"];
+const ACTIVITY_STEPS_KEYS = ["total_steps", "steps"];
+
 const DOMAIN_KEYS: Record<HealthDomain, string[][]> = {
   sleep: [
-    ["sleep_hours"],
+    SLEEP_DURATION_KEYS,
     ["sleep_hours_core"],
     ["sleep_hours_deep"],
     ["sleep_hours_rem"],
@@ -124,15 +140,15 @@ const DOMAIN_KEYS: Record<HealthDomain, string[][]> = {
     ["sleep_inbed_hours"],
   ],
   recovery: [
-    ["hrv_sdnn_mean"],
+    RECOVERY_HRV_KEYS,
     ["hrv_sdnn_min"],
-    ["hr_resting", "resting_hr", "resting_hr_mean", "hr_mean"],
-    ["recovery_score"],
+    RECOVERY_HR_KEYS,
+    RECOVERY_SCORE_KEYS,
     ["spo2_mean"],
     ["respiratory_rate"],
   ],
   activity: [
-    ["total_steps", "steps"],
+    ACTIVITY_STEPS_KEYS,
     ["active_energy_cal", "total_active_energy"],
     ["distance_km", "total_distance"],
     ["exercise_minutes", "active_minutes", "activity_minutes"],
@@ -190,7 +206,22 @@ function valueFor(point: HealthPoint, keys: string[]): number | null {
 }
 
 function parseDate(value: string): Date | null {
-  const parsed = new Date(`${value}T00:00:00`);
+  const trimmed = value.trim();
+  const iso = /^(\d{4})-(\d{1,2})-(\d{1,2})$/.exec(trimmed);
+  if (iso) {
+    return new Date(Date.UTC(Number(iso[1]), Number(iso[2]) - 1, Number(iso[3])));
+  }
+
+  const dayFirst = /^(\d{1,2})[/-](\d{1,2})[/-](\d{4})$/.exec(trimmed);
+  if (dayFirst) {
+    const first = Number(dayFirst[1]);
+    const second = Number(dayFirst[2]);
+    const day = first > 12 ? first : second > 12 ? second : first;
+    const month = first > 12 ? second : second > 12 ? first : second;
+    return new Date(Date.UTC(Number(dayFirst[3]), month - 1, day));
+  }
+
+  const parsed = new Date(trimmed);
   return Number.isNaN(parsed.getTime()) ? null : parsed;
 }
 
@@ -245,12 +276,12 @@ function filterByPeriod(
 
   if (!anchor || period === "all") {
     return {
-      points: all,
+      points: domainPoints,
       hasAnyDomainData: domainPoints.length > 0,
       hasDomainDataInRange: domainPoints.length > 0,
       rangeLabel:
-        all.length > 0
-          ? `${formatDate(all[0].date)} - ${formatDate(all[all.length - 1].date)}`
+        domainPoints.length > 0
+          ? `${formatDate(domainPoints[0].date)} - ${formatDate(domainPoints[domainPoints.length - 1].date)}`
           : "No range",
     };
   }
@@ -263,12 +294,16 @@ function filterByPeriod(
   const hasDomainDataInRange = filtered.some((point) =>
     domainHasData(domain, point),
   );
+  const domainFiltered = filtered.filter((point) => domainHasData(domain, point));
 
   return {
-    points: filtered,
+    points: domainFiltered,
     hasAnyDomainData: domainPoints.length > 0,
     hasDomainDataInRange,
-    rangeLabel: `${formatRangeDate(start)} - ${formatRangeDate(anchor)}`,
+    rangeLabel:
+      domainFiltered.length > 0
+        ? `${formatDate(domainFiltered[0].date)} - ${formatDate(domainFiltered[domainFiltered.length - 1].date)}`
+        : `${formatRangeDate(start)} - ${formatRangeDate(anchor)}`,
   };
 }
 
@@ -333,6 +368,41 @@ function formatDelta(value: number | null, digits = 1): string {
   if (value === null) return "No baseline";
   const sign = value > 0 ? "+" : "";
   return `${sign}${value.toFixed(digits)}`;
+}
+
+function clamp(value: number, min: number, max: number): number {
+  return Math.min(max, Math.max(min, value));
+}
+
+function estimatedReadinessScore({
+  currentHrv,
+  currentHr,
+  allHrv,
+  allHr,
+  fallback,
+}: Readonly<{
+  currentHrv: number | null;
+  currentHr: number | null;
+  allHrv: number | null;
+  allHr: number | null;
+  fallback: number | null;
+}>): number | null {
+  const base = fallback ?? 70;
+  let score = base;
+  let signalCount = 0;
+
+  if (currentHrv !== null && allHrv !== null && allHrv > 0) {
+    score += ((currentHrv - allHrv) / allHrv) * 35;
+    signalCount += 1;
+  }
+
+  if (currentHr !== null && allHr !== null && allHr > 0) {
+    score += ((allHr - currentHr) / allHr) * 30;
+    signalCount += 1;
+  }
+
+  if (signalCount === 0) return fallback;
+  return clamp(score, 0, 100);
 }
 
 function statusFor(count: number, estimated = false) {
@@ -690,7 +760,7 @@ function SleepDashboard({
   sections: UnknownRecord | null;
   rangeLabel: string;
 }>) {
-  const sleep = metricSeries(points, ["sleep_hours"]);
+  const sleep = metricSeries(points, SLEEP_DURATION_KEYS);
   const core = metricSeries(points, ["sleep_hours_core"]);
   const deep = metricSeries(points, ["sleep_hours_deep"]);
   const rem = metricSeries(points, ["sleep_hours_rem"]);
@@ -725,8 +795,8 @@ function SleepDashboard({
     },
   ].filter((item) => item.data.some((value) => value !== null));
 
-  const weekly = weeklyAverage(points, ["sleep_hours"]);
-  const allSleepValues = values(metricSeries(allPoints, ["sleep_hours"]));
+  const weekly = weeklyAverage(points, SLEEP_DURATION_KEYS);
+  const allSleepValues = values(metricSeries(allPoints, SLEEP_DURATION_KEYS));
   const allTimeAvg = average(allSleepValues);
   const currentAvg = average(sleepVals);
 
@@ -886,40 +956,41 @@ function RecoveryDashboard({
   sections: UnknownRecord | null;
   rangeLabel: string;
 }>) {
-  const hrv = metricSeries(points, ["hrv_sdnn_mean"]);
-  const hr = metricSeries(points, [
-    "hr_resting",
-    "resting_hr",
-    "resting_hr_mean",
-    "hr_mean",
-  ]);
-  const scores = metricSeries(points, ["recovery_score"]);
+  const hrv = metricSeries(points, RECOVERY_HRV_KEYS);
+  const hr = metricSeries(points, RECOVERY_HR_KEYS);
+  const scores = metricSeries(points, RECOVERY_SCORE_KEYS);
   const hrvVals = values(hrv);
   const hrVals = values(hr);
   const scoreVals = values(scores);
   const recoverySection = getSection(sections, "recovery_signals");
   const sectionScore = toNumber(recoverySection?.recovery_composite_score);
-  const latestScore = latestValue(scores) ?? sectionScore;
   const currentHrv = average(hrvVals);
   const currentHr = average(hrVals);
-  const allHrv = average(values(metricSeries(allPoints, ["hrv_sdnn_mean"])));
-  const allHr = average(
-    values(
-      metricSeries(allPoints, [
-        "hr_resting",
-        "resting_hr",
-        "resting_hr_mean",
-        "hr_mean",
-      ]),
-    ),
-  );
+  const allHrv = average(values(metricSeries(allPoints, RECOVERY_HRV_KEYS)));
+  const allHr = average(values(metricSeries(allPoints, RECOVERY_HR_KEYS)));
+  const readinessScore =
+    average(scoreVals) ??
+    estimatedReadinessScore({
+      currentHrv,
+      currentHr,
+      allHrv,
+      allHr,
+      fallback: sectionScore,
+    });
+  const readinessCount =
+    scoreVals.length ||
+    (readinessScore !== null && (currentHrv !== null || currentHr !== null)
+      ? hrvVals.length + hrVals.length
+      : sectionScore !== null
+        ? 1
+        : 0);
 
   return (
     <div className="flex flex-col gap-5">
       <InsightPanel title="Recovery insight">
         <p>
-          {latestScore !== null
-            ? `Latest readiness score is ${Math.round(latestScore)} out of 100.`
+          {readinessScore !== null
+            ? `Readiness for this range is ${Math.round(readinessScore)} out of 100.`
             : "No readiness score is available, so the dashboard is using HRV and heart-rate signals directly."}
           {currentHrv !== null
             ? ` HRV averages ${currentHrv.toFixed(1)} ms in this range.`
@@ -950,10 +1021,10 @@ function RecoveryDashboard({
         <SignalCard
           Icon={Gauge}
           label="Readiness"
-          value={formatValue(latestScore, 0)}
-          unit={latestScore === null ? "" : "/ 100"}
-          count={scoreVals.length || (sectionScore !== null ? 1 : 0)}
-          status={statusFor(scoreVals.length || (sectionScore !== null ? 1 : 0))}
+          value={formatValue(readinessScore, 0)}
+          unit={readinessScore === null ? "" : "/ 100"}
+          count={readinessCount}
+          status={statusFor(readinessCount, scoreVals.length === 0 && readinessScore !== null)}
         />
         <SignalCard
           Icon={BarChart3}
@@ -1007,8 +1078,8 @@ function RecoveryDashboard({
           title="Readiness"
           subtitle="Composite score when stored by the backend"
         >
-          {latestScore !== null ? (
-            <RecoveryScoreChart score={latestScore} height={250} label="" />
+          {readinessScore !== null ? (
+            <RecoveryScoreChart score={readinessScore} height={250} label="" />
           ) : (
             <MetricState
               Icon={Gauge}
@@ -1065,7 +1136,7 @@ function ActivityDashboard({
   rangeLabel: string;
   sections: UnknownRecord | null;
 }>) {
-  const steps = metricSeries(points, ["total_steps", "steps"]);
+  const steps = metricSeries(points, ACTIVITY_STEPS_KEYS);
   const energy = metricSeries(points, ["active_energy_cal", "total_active_energy"]);
   const distance = metricSeries(points, ["distance_km", "total_distance"]);
   const exercise = metricSeries(points, [
@@ -1079,7 +1150,7 @@ function ActivityDashboard({
   const exerciseVals = values(exercise);
   const stepStd = standardDeviation(stepsVals);
   const activitySection = getSection(sections, "activity_signals");
-  const { best, lowest } = bestAndLowest(points, ["total_steps", "steps"]);
+  const { best, lowest } = bestAndLowest(points, ACTIVITY_STEPS_KEYS);
 
   return (
     <div className="flex flex-col gap-5">
@@ -1194,7 +1265,7 @@ function ActivityDashboard({
 
         <ChartPanel title="Best vs Lowest" subtitle="Step-count range anchors">
           {best && lowest ? (
-            <div className="grid h-[300px] content-center gap-3 sm:grid-cols-2">
+            <div className="grid gap-3 sm:grid-cols-2">
               <div className="rounded-lg border border-emerald-500/20 bg-emerald-500/10 p-4">
                 <p className="text-xs font-semibold uppercase tracking-wider text-emerald-300">
                   Best day
