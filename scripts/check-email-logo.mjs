@@ -9,9 +9,14 @@ const logoUrl = "https://www.engage7.ie/engage7-logo-180x180.png";
 
 assert(source.includes(logoUrl), "email templates must use the hosted PNG logo");
 assert(source.includes('alt="Engage7 Labs"'), "email logo must keep Engage7 Labs alt text");
-assert(source.includes('width="64"'), "email logo must use a compact header width");
+assert(source.includes('width="120"'), "email logo must use the larger header width");
+assert(source.includes('height="120"'), "email logo must use the larger header height");
+assert(source.includes('<table role="presentation"'), "email logo must use table layout");
+assert(source.includes('align="right"'), "email logo must align top-right");
+assert(source.includes('valign="top"'), "email logo must align top-right");
 assert(source.includes("display:block"), "email logo must use email-safe display:block style");
 assert(source.includes("border:0"), "email logo must use email-safe border reset");
+assert(!source.includes('width="64"'), "email logo must not use the old centered 64px width");
 assert(!source.includes("cid:"), "email templates must not use CID logo references");
 assert(!source.includes("contentId:"), "email logo must not be attached as CID");
 assert(!source.includes("fetchInlineLogoAttachment"), "email logo must not be fetched as an attachment");
