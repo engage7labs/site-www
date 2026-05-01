@@ -23,7 +23,7 @@ const SECTION_TITLES: Record<string, { title: string; subtitle: string }> = {
     subtitle: "Review your generated health reports",
   },
   "/portal/trends": {
-    title: "Trends",
+    title: "Data Lab",
     subtitle: "Multi-signal trends, correlations, baselines, and volatility",
   },
   "/portal/insights": {

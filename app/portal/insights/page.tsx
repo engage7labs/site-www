@@ -2,8 +2,11 @@
 
 import {
   extractActivityInsights,
+  extractActivitySignalInsights,
   extractRecoveryInsights,
+  extractRecoverySignalInsights,
   extractSleepInsights,
+  extractSleepStageInsights,
   type InsightText,
 } from "@/lib/insights/extract";
 import { getDarthPayload, getDarthPresentation, selectDarthCopy, type DarthInsightBlock } from "@/lib/darth";
@@ -27,10 +30,12 @@ type Sections = Record<string, any>;
 
 interface Analysis {
   sections?: Sections;
+  sections_json?: unknown;
 }
 
 interface AnalysesPayload {
   analyses?: Analysis[];
+  items?: Analysis[];
   portal_data_status?: unknown;
 }
 
@@ -67,6 +72,38 @@ const PILLAR_COLOR: Record<string, string> = {
   recovery: "#6366f1",
   activity: "#f59e0b",
 };
+
+function coerceSections(value: unknown): Sections | null {
+  if (!value) return null;
+
+  if (typeof value === "string") {
+    try {
+      const parsed = JSON.parse(value);
+      return parsed && typeof parsed === "object" && !Array.isArray(parsed)
+        ? (parsed as Sections)
+        : null;
+    } catch {
+      return null;
+    }
+  }
+
+  return typeof value === "object" && !Array.isArray(value)
+    ? (value as Sections)
+    : null;
+}
+
+function getAnalysisSections(analysis: Analysis | null | undefined): Sections | null {
+  return coerceSections(analysis?.sections) ?? coerceSections(analysis?.sections_json);
+}
+
+function getAnalyses(payload: unknown): Analysis[] {
+  if (Array.isArray(payload)) return payload as Analysis[];
+  if (!payload || typeof payload !== "object") return [];
+  const record = payload as AnalysesPayload;
+  if (Array.isArray(record.analyses)) return record.analyses;
+  if (Array.isArray(record.items)) return record.items;
+  return [];
+}
 
 function priorityToConfidence(p?: string): "high" | "medium" | "low" {
   if (p === "high") return "high";
@@ -286,7 +323,7 @@ export default function InsightsPage() {
         }
 
         // Insights
-        const analyses: Analysis[] = analysesData.analyses ?? [];
+        const analyses: Analysis[] = getAnalyses(analysesData);
         if (analyses.length === 0) {
           setEmptyMessage("No analysis has been created yet. Update Data to generate Portal insights.");
           setEmpty(true);
@@ -294,8 +331,9 @@ export default function InsightsPage() {
           return;
         }
 
-        const latest = analyses.find((a) => a.sections) ?? analyses[0];
-        const sections = latest?.sections ?? null;
+        const latest =
+          analyses.find((analysis) => getAnalysisSections(analysis)) ?? analyses[0];
+        const sections = getAnalysisSections(latest);
         const presentation = getDarthPresentation(sections);
         const payload = getDarthPayload(sections);
         if (!payload && status?.darthStatus === "darth_missing") {
@@ -337,8 +375,11 @@ export default function InsightsPage() {
 
         const all = [
           ...extractSleepInsights(sections),
+          ...extractSleepStageInsights(sections),
           ...extractRecoveryInsights(sections),
+          ...extractRecoverySignalInsights(sections),
           ...extractActivityInsights(sections),
+          ...extractActivitySignalInsights(sections),
         ];
 
         all.sort((a, b) => (b.score ?? 0) - (a.score ?? 0));

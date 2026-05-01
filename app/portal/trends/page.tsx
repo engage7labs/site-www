@@ -736,8 +736,19 @@ export default function TrendsPage() {
           );
           const analyses = analysesData.analyses ?? [];
           // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          const latest = analyses.find((a: any) => a.sections);
-          if (latest?.sections) setLatestSections(latest.sections);
+          const latest = analyses.find((a: any) => a.sections ?? a.sections_json);
+          if (latest?.sections ?? latest?.sections_json) {
+            const raw = latest.sections ?? latest.sections_json;
+            if (typeof raw === "string") {
+              try {
+                setLatestSections(JSON.parse(raw));
+              } catch {
+                setLatestSections(null);
+              }
+            } else {
+              setLatestSections(raw);
+            }
+          }
         }
       } catch {
         // silent

@@ -31,7 +31,6 @@ interface NavItem {
 const NAV_ITEMS: NavItem[] = [
   { label: "Overview", href: "/portal", icon: LayoutDashboard },
   { label: "My Reports", href: "/portal/reports", icon: Upload },
-  { label: "Trends", href: "/portal/trends", icon: TrendingUp },
   {
     label: "Health",
     href: "/portal/health",
@@ -43,6 +42,7 @@ const NAV_ITEMS: NavItem[] = [
     ],
   },
   { label: "Insights", href: "/portal/insights", icon: Lightbulb },
+  { label: "Data Lab", href: "/portal/trends", icon: TrendingUp },
 ];
 
 const LOWER_NAV_ITEMS: NavItem[] = [
