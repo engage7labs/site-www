@@ -19,8 +19,8 @@ const SECTION_TITLES: Record<string, { title: string; subtitle: string }> = {
     subtitle: "Your health data at a glance",
   },
   "/portal/reports": {
-    title: "Data Updates",
-    subtitle: "Review timeline updates and generated health reports",
+    title: "My Reports",
+    subtitle: "Review your generated health reports",
   },
   "/portal/trends": {
     title: "Trends",

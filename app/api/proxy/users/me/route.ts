@@ -13,7 +13,7 @@
 import { signRequest } from "@/lib/api/signing";
 import { SESSION_COOKIE_NAME, verifyJwt } from "@/lib/auth-server";
 import { INTERNAL_API_BASE_URL } from "@/lib/server-config";
-import { deleteSupabaseAuthUser } from "@/lib/supabase-admin";
+import { deleteSupabaseAuthUserForAccount } from "@/lib/supabase-admin";
 import { cookies } from "next/headers";
 import { NextResponse } from "next/server";
 
@@ -105,7 +105,7 @@ export async function DELETE() {
     target_user_id: targetUserId,
   });
 
-  const authDelete = await deleteSupabaseAuthUser(targetUserId);
+  const authDelete = await deleteSupabaseAuthUserForAccount(targetUserId, email);
   if (!authDelete.ok) {
     logAccountDelete("account_delete_supabase_auth_failed", {
       target_user_id: targetUserId,

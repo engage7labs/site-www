@@ -261,3 +261,29 @@ export async function deleteSupabaseAuthUser(userId: string): Promise<{
     };
   }
 }
+
+export async function deleteSupabaseAuthUserForAccount(
+  userId: string,
+  email: string
+): Promise<{
+  ok: boolean;
+  reason?: string;
+  alreadyAbsent?: boolean;
+}> {
+  const primary = await deleteSupabaseAuthUser(userId);
+  if (primary.ok && primary.alreadyAbsent !== true) return primary;
+
+  const fallbackId = await findAuthUserIdByEmail(email).catch(() => null);
+  if (!fallbackId) {
+    if (primary.ok) return primary;
+    return { ok: false, reason: primary.reason };
+  }
+
+  if (fallbackId === userId) {
+    return primary;
+  }
+
+  const fallback = await deleteSupabaseAuthUser(fallbackId);
+  if (fallback.ok) return fallback;
+  return primary;
+}

@@ -30,7 +30,7 @@ interface NavItem {
 
 const NAV_ITEMS: NavItem[] = [
   { label: "Overview", href: "/portal", icon: LayoutDashboard },
-  { label: "Data Updates", href: "/portal/reports", icon: Upload },
+  { label: "My Reports", href: "/portal/reports", icon: Upload },
   { label: "Trends", href: "/portal/trends", icon: TrendingUp },
   {
     label: "Health",

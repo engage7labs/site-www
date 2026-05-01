@@ -16,7 +16,7 @@ const RESEND_API_KEY = process.env.RESEND_API_KEY ?? "";
 const EMAIL_FROM = process.env.EMAIL_FROM ?? "Engage7 Labs <noreply@engage7.ie>";
 const APP_URL = resolveCanonicalAppUrl().appUrl;
 const INLINE_LOGO_CID = "engage7-logo";
-const INLINE_LOGO_URL = "https://www.engage7.ie/logo-engage7-labs.svg";
+const INLINE_LOGO_URL = "https://www.engage7.ie/engage7-logo-192x192.png";
 const INLINE_LOGO_MARKUP = `    <div data-engage7-inline-logo="true" style="text-align:center;margin-bottom:24px;">
       <img
         src="cid:engage7-logo"
@@ -95,16 +95,16 @@ async function fetchInlineLogoAttachment(): Promise<EmailAttachment | null> {
       return null;
     }
 
-    const svg = await response.text();
+    const logoBytes = Buffer.from(await response.arrayBuffer());
     logInlineLogo("email_inline_logo_fetch_succeeded", {
       attached: true,
       status: response.status,
     });
     return {
-      filename: "logo-engage7-labs.svg",
-      content: Buffer.from(svg, "utf-8").toString("base64"),
+      filename: "engage7-logo.png",
+      content: logoBytes.toString("base64"),
       contentId: INLINE_LOGO_CID,
-      content_type: "image/svg+xml",
+      content_type: "image/png",
     };
   } catch (err) {
     logInlineLogo("email_inline_logo_fetch_failed", {
