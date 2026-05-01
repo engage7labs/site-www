@@ -1243,7 +1243,7 @@ export function HealthDashboard({
   const [data, setData] = useState<HealthDataResponse | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [period, setPeriod] = useState<Period>("all");
+  const [period, setPeriod] = useState<Period>("week");
 
   useEffect(() => {
     let cancelled = false;
