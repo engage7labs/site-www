@@ -459,7 +459,7 @@ function SleepTrendMini({
         ? "rgba(229,231,235,0.09)"
         : "rgba(148,163,184,0.18)";
 
-      const recent = data.slice(-14);
+      const recent = data.filter((p) => p.value != null).slice(-14);
       const days = recent.map((p) => p.date.slice(5));
       const values = recent.map((p) => p.value);
 
@@ -787,7 +787,17 @@ export default function PortalOverviewPage() {
 
   const plan = data?.plan ?? "trial";
   const uploads = data?.uploads ?? 0;
-  const sleepScore = data?.sleep_score != null ? `${data.sleep_score}h` : "—";
+  const healthSleepTrend = healthTrend(healthData?.data_points, ["sleep_hours"]);
+  const sleepPoints = healthSleepTrend.some((point) => point.value != null)
+    ? healthSleepTrend
+    : trends?.trends?.sleep;
+  const sleepMedian = median(sleepPoints);
+  const sleepScore =
+    sleepMedian != null
+      ? `${Number(sleepMedian.toFixed(1))}h`
+      : data?.sleep_score != null
+        ? `${data.sleep_score}h`
+        : "—";
   const recoveryTrend =
     data?.recovery_trend != null ? `${data.recovery_trend} ms` : "—";
   const healthStepsTrend = healthTrend(healthData?.data_points, ["total_steps", "steps"]);
@@ -799,17 +809,17 @@ export default function PortalOverviewPage() {
   const completeness = data?.data_completeness ?? "—";
   const featureLatestDate = latestFeatureDate({
     trends: {
-      sleep: trends?.trends?.sleep ?? [],
+      sleep: sleepPoints ?? [],
       hrv: trends?.trends?.hrv ?? [],
       hr: trends?.trends?.hr ?? [],
       steps: activityPoints ?? [],
     },
     analysis_count: trends?.analysis_count ?? healthData?.analysis_count ?? 0,
   });
-  const sleepRange = availableRange(trends?.trends?.sleep, featureLatestDate);
+  const sleepRange = availableRange(sleepPoints, featureLatestDate);
   const recoveryRange = availableRange(trends?.trends?.hrv, featureLatestDate);
   const activityRange = availableRange(activityPoints, featureLatestDate);
-  const sleepTrend = weeklyTrend(trends?.trends?.sleep, sleepRange, t.portal.metrics.weekTrend);
+  const sleepTrend = weeklyTrend(sleepPoints, sleepRange, t.portal.metrics.weekTrend);
   const recoveryWeekTrend = weeklyTrend(trends?.trends?.hrv, recoveryRange, t.portal.metrics.weekTrend);
   const activityTrend = weeklyTrend(activityPoints, activityRange, t.portal.metrics.weekTrend);
 
@@ -823,7 +833,7 @@ export default function PortalOverviewPage() {
           debugLabel="OVERVIEW_SLEEP_CARD"
           href="/portal/health/sleep"
           subtitle={
-            data?.sleep_score == null
+            sleepMedian == null && data?.sleep_score == null
               ? t.portal.metrics.noRecentData
               : medianSubtitle(sleepRange, t.portal.metrics)
           }
@@ -900,7 +910,7 @@ export default function PortalOverviewPage() {
       {/* ECharts — Sprint 17.4 / Sprint 25.9: always rendered, empty states when no data */}
       <div className="grid gap-4 lg:grid-cols-2">
         <SleepTrendMini
-          data={trends?.trends?.sleep ?? []}
+          data={sleepPoints ?? []}
           title={t.portal.sleepTrend}
           emptyTitle={t.portal.charts.sleepTrendEmpty.title}
           emptyMessage={t.portal.charts.sleepTrendEmpty.message}
