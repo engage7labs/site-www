@@ -18,7 +18,7 @@ import {
 } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { PortalSidebarItem } from "./portal-sidebar-item";
 
 interface NavItem {
@@ -49,6 +49,8 @@ const LOWER_NAV_ITEMS: NavItem[] = [
   { label: "Settings", href: "/portal/settings", icon: Settings },
 ];
 
+const FLYOUT_CLOSE_DELAY_MS = 200;
+
 function isActivePath(pathname: string, href: string): boolean {
   if (href === "/portal") return pathname === "/portal";
   return pathname.startsWith(href);
@@ -72,6 +74,33 @@ export function PortalSidebar({
     pathname.startsWith("/portal/health")
   );
   const [healthFlyoutOpen, setHealthFlyoutOpen] = useState(false);
+  const healthFlyoutCloseTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const clearHealthFlyoutCloseTimer = useCallback(() => {
+    if (healthFlyoutCloseTimerRef.current) {
+      clearTimeout(healthFlyoutCloseTimerRef.current);
+      healthFlyoutCloseTimerRef.current = null;
+    }
+  }, []);
+
+  const openHealthFlyout = useCallback(() => {
+    clearHealthFlyoutCloseTimer();
+    setHealthFlyoutOpen(true);
+  }, [clearHealthFlyoutCloseTimer]);
+
+  const scheduleHealthFlyoutClose = useCallback(() => {
+    clearHealthFlyoutCloseTimer();
+    healthFlyoutCloseTimerRef.current = setTimeout(() => {
+      setHealthFlyoutOpen(false);
+      healthFlyoutCloseTimerRef.current = null;
+    }, FLYOUT_CLOSE_DELAY_MS);
+  }, [clearHealthFlyoutCloseTimer]);
+
+  useEffect(() => {
+    return () => {
+      clearHealthFlyoutCloseTimer();
+    };
+  }, [clearHealthFlyoutCloseTimer]);
 
   const sidebarContent = (
     <div className="flex h-full flex-col">
@@ -116,12 +145,12 @@ export function PortalSidebar({
             <div
               key={item.href}
               className="relative"
-              onMouseEnter={() => collapsed && setHealthFlyoutOpen(true)}
-              onMouseLeave={() => collapsed && setHealthFlyoutOpen(false)}
+              onMouseEnter={() => collapsed && openHealthFlyout()}
+              onMouseLeave={() => collapsed && scheduleHealthFlyoutClose()}
               onBlur={(event) => {
                 const nextTarget = event.relatedTarget as Node | null;
                 if (!nextTarget || !event.currentTarget.contains(nextTarget)) {
-                  setHealthFlyoutOpen(false);
+                  scheduleHealthFlyoutClose();
                 }
               }}
             >
@@ -130,12 +159,13 @@ export function PortalSidebar({
                 type="button"
                 onClick={() => {
                   if (collapsed) {
+                    clearHealthFlyoutCloseTimer();
                     setHealthFlyoutOpen((prev) => !prev);
                   } else {
                     setHealthOpen((prev) => !prev);
                   }
                 }}
-                onFocus={() => collapsed && setHealthFlyoutOpen(true)}
+                onFocus={() => collapsed && openHealthFlyout()}
                 aria-haspopup={collapsed ? "menu" : undefined}
                 aria-expanded={collapsed ? healthFlyoutOpen : healthOpen}
                 className={`group flex w-full items-center gap-3 rounded-2xl px-3 py-2.5 text-sm font-medium transition-all ${
@@ -161,34 +191,44 @@ export function PortalSidebar({
                 )}
               </button>
               {collapsed && healthFlyoutOpen && (
-                <div
-                  role="menu"
-                  aria-label="Health sections"
-                  className="absolute left-full top-0 z-50 ml-2 min-w-40 rounded-xl border border-border bg-card p-2 shadow-xl"
-                >
-                  {item.children.map((child) => {
-                    const childActive = pathname === child.href;
-                    return (
-                      <Link
-                        key={child.href}
-                        href={child.href}
-                        role="menuitem"
-                        onClick={() => {
-                          setHealthFlyoutOpen(false);
-                          onCloseMobile();
-                        }}
-                        className={`flex items-center gap-2 rounded-lg px-3 py-2 text-xs font-medium transition-colors ${
-                          childActive
-                            ? "bg-accent/10 text-accent"
-                            : "text-muted-foreground hover:bg-muted/50 hover:text-foreground"
-                        }`}
-                      >
-                        <child.icon className="h-3.5 w-3.5 shrink-0" />
-                        {child.label}
-                      </Link>
-                    );
-                  })}
-                </div>
+                <>
+                  <div
+                    aria-hidden="true"
+                    className="absolute left-full top-0 z-40 h-full w-3"
+                  />
+                  <div
+                    role="menu"
+                    aria-label="Health sections"
+                    onMouseEnter={openHealthFlyout}
+                    onMouseLeave={scheduleHealthFlyoutClose}
+                    onFocus={openHealthFlyout}
+                    className="absolute left-full top-0 z-50 ml-2 min-w-40 rounded-xl border border-border bg-card p-2 shadow-xl"
+                  >
+                    {item.children.map((child) => {
+                      const childActive = pathname === child.href;
+                      return (
+                        <Link
+                          key={child.href}
+                          href={child.href}
+                          role="menuitem"
+                          onClick={() => {
+                            clearHealthFlyoutCloseTimer();
+                            setHealthFlyoutOpen(false);
+                            onCloseMobile();
+                          }}
+                          className={`flex items-center gap-2 rounded-lg px-3 py-2 text-xs font-medium transition-colors ${
+                            childActive
+                              ? "bg-accent/10 text-accent"
+                              : "text-muted-foreground hover:bg-muted/50 hover:text-foreground"
+                          }`}
+                        >
+                          <child.icon className="h-3.5 w-3.5 shrink-0" />
+                          {child.label}
+                        </Link>
+                      );
+                    })}
+                  </div>
+                </>
               )}
               {/* Children: Sleep, Recovery, Activity */}
               {!collapsed && healthOpen && (
