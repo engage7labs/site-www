@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Trash2, RefreshCw, HardDrive, AlertTriangle } from "lucide-react";
 
 interface BlobEntry {
@@ -139,7 +139,14 @@ export default function AdminBlobsPage() {
     );
   }
 
-  const displayBlobs = showAll ? data.blobs : data.orphans;
+  const displayBlobs = useMemo(() => {
+    const source = showAll ? data.blobs : data.orphans;
+    return [...source].sort((a, b) => {
+      const aTime = a.last_modified ? new Date(a.last_modified).getTime() : 0;
+      const bTime = b.last_modified ? new Date(b.last_modified).getTime() : 0;
+      return bTime - aTime;
+    });
+  }, [data.blobs, data.orphans, showAll]);
 
   return (
     <div className="flex flex-col gap-6">
