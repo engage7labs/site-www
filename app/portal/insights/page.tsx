@@ -115,11 +115,13 @@ function humanizeTechnicalText(value: string | null | undefined): string | null 
   if (!value) return null;
 
   const replacements: Array<[RegExp, string]> = [
-    [/\blast_7d\b/gi, "latest available 7-day window"],
-    [/\blast_30d\b/gi, "latest available 30-day window"],
-    [/\bbaseline_30d\b/gi, "your personal baseline"],
-    [/\bsleep_variability_cv\b/gi, "sleep variability"],
-    [/\bsteps_variability_cv\b/gi, "step variability"],
+    [/\blast_7d\b/gi, "recent week"],
+    [/\blast_30d\b/gi, "recent month"],
+    [/\bbaseline_30d\b/gi, "usual range"],
+    [/\bsleep[ _-]+variability[ _-]+cv\b/gi, "sleep regularity"],
+    [/\bsleep_variability_cv\b/gi, "sleep regularity"],
+    [/\bsteps[ _-]+variability[ _-]+cv\b/gi, "activity regularity"],
+    [/\bsteps_variability_cv\b/gi, "activity regularity"],
     [/\bhrv_sdnn_mean\b/gi, "HRV"],
     [/\bhrv_sdnn\b/gi, "HRV"],
     [/\bhr_resting\b/gi, "resting heart rate"],
@@ -129,6 +131,8 @@ function humanizeTechnicalText(value: string | null | undefined): string | null 
     [/\bactive_energy_cal\b/gi, "daily energy"],
     [/\btotal_energy_cal\b/gi, "daily energy"],
     [/\bsleep_hours\b/gi, "sleep duration"],
+    [/\brecovery_composite_score\b/gi, "recovery pattern"],
+    [/\bactivity_minutes\b/gi, "active minutes"],
   ];
 
   const cleaned = replacements
@@ -145,14 +149,22 @@ function hasRawTechnicalTrace(value: string | null | undefined): boolean {
   return Boolean(
     value &&
       (value.includes("|") ||
-        /\b(last_7d|last_30d|baseline_30d|sleep_variability_cv|steps_variability_cv|hrv_sdnn|hrv_sdnn_mean|hr_resting|resting_hr|hr_mean|total_steps|active_energy_cal|total_energy_cal|sleep_hours)\b/i.test(
+        /\b(last_7d|last_30d|baseline_30d|sleep[ _-]+variability[ _-]+cv|steps[ _-]+variability[ _-]+cv|sleep_variability_cv|steps_variability_cv|hrv_sdnn|hrv_sdnn_mean|hr_resting|resting_hr|hr_mean|total_steps|active_energy_cal|total_energy_cal|sleep_hours|recovery_composite_score)\b/i.test(
           value,
-        )),
+        ) ||
+        /\b[a-z]+_[a-z0-9_]+\b/.test(value)),
   );
 }
 
 function safeDarthEvidence(value: string | null | undefined): string | null {
   if (!value) return null;
+  if (value.includes("|")) return null;
+  const mapped = humanizeTechnicalText(value);
+  if (!mapped || hasRawTechnicalTrace(mapped)) return null;
+  return mapped;
+}
+
+function cleanVisibleText(value: string | null | undefined): string | null {
   const mapped = humanizeTechnicalText(value);
   if (!mapped || hasRawTechnicalTrace(mapped)) return null;
   return mapped;
@@ -291,6 +303,11 @@ function InsightCard({
   const trend = trendFromScore(insight.score);
   const color = PILLAR_COLOR[insight.pillar ?? "sleep"] ?? "#3dbe73";
   const icon = PILLAR_ICON[insight.pillar ?? "sleep"];
+  const headline = cleanVisibleText(insight.headline) ?? "Personal pattern";
+  const body =
+    cleanVisibleText(insight.body) ??
+    "This pattern comes from your own timeline, not population averages.";
+  const action = cleanVisibleText(insight.action);
 
   function getSignalLabel(pillar: string | undefined): string {
     if (pillar === "sleep") return strings.signals.sleep;
@@ -312,16 +329,16 @@ function InsightCard({
         <div className="flex items-center gap-2">
           <Lightbulb className="h-4 w-4 text-accent" />
           <h3 className="text-sm font-semibold text-card-foreground">
-            {insight.headline}
+            {headline}
           </h3>
         </div>
         <TrendIcon trend={trend} />
       </div>
       <p className="text-sm leading-relaxed text-muted-foreground">
-        {insight.body}
+        {body}
       </p>
-      {insight.action && (
-        <p className="text-xs text-accent/80 italic">→ {insight.action}</p>
+      {action && (
+        <p className="text-xs text-accent/80 italic">→ {action}</p>
       )}
 
       {/* Evidence sparkline */}
@@ -373,7 +390,7 @@ export default function InsightsPage() {
   const [empty, setEmpty] = useState(false);
   const [usingLegacyFallback, setUsingLegacyFallback] = useState(false);
   const [emptyMessage, setEmptyMessage] = useState<string>(
-    "As you update your data, Engage7 will identify repeated patterns from your own history."
+    "Insights will appear as Engage7 finds repeated patterns in your own timeline."
   );
   const [portalStatus, setPortalStatus] = useState<PortalDataStatus | null>(null);
 
@@ -396,7 +413,7 @@ export default function InsightsPage() {
         // Insights
         const analyses: Analysis[] = getAnalyses(analysesData);
         if (analyses.length === 0) {
-          setEmptyMessage("Your insights will appear after your first completed analysis.");
+          setEmptyMessage("Insights will appear as Engage7 finds repeated patterns in your own timeline.");
           setEmpty(true);
           setLoading(false);
           return;
@@ -409,8 +426,8 @@ export default function InsightsPage() {
         const payload = getDarthPayload(sections);
         setEmptyMessage(
           !payload || status?.darthStatus === "darth_missing"
-            ? "This analysis does not include the current semantic insight format yet."
-            : "As you update your data, Engage7 will identify repeated patterns from your own history."
+            ? "Insights will appear as Engage7 finds repeated patterns in your own timeline."
+            : "Insights will appear as Engage7 finds repeated patterns in your own timeline."
         );
 
         // Extract DARTH state + primary claim for header
@@ -446,7 +463,7 @@ export default function InsightsPage() {
         // INSIGHTS_LEGACY_SECTIONS_FALLBACK
         const fallbackInsights = extractLegacyInsights(sections);
         if (fallbackInsights.length > 0) {
-          setEmptyMessage("Showing insights from an earlier analysis format.");
+          setEmptyMessage("Showing earlier-format insights from your own history.");
         }
         setHeroBlock(null);
         setDarthInsights([]);
@@ -490,9 +507,9 @@ export default function InsightsPage() {
   if (empty || (insights.length === 0 && darthInsights.length === 0 && !heroBlock)) {
     const message =
       !portalStatus?.hasAnalyses || portalStatus.analysisStatus === "no_analysis"
-        ? "Your insights will appear after your first completed analysis."
+        ? "Insights will appear as Engage7 finds repeated patterns in your own timeline."
         : portalStatus.darthStatus === "darth_missing"
-          ? "This analysis does not include the current semantic insight format yet."
+          ? "Insights will appear as Engage7 finds repeated patterns in your own timeline."
           : emptyMessage;
 
     return (
@@ -524,12 +541,12 @@ export default function InsightsPage() {
         <div className="rounded-xl border border-accent/20 bg-accent/5 px-5 py-4 flex flex-col gap-2">
           {darthState && (
             <span className="text-xs font-semibold uppercase tracking-wider text-accent">
-              {STATE_LABELS[darthState] ?? darthState}
+              {STATE_LABELS[darthState] ?? "Current pattern"}
             </span>
           )}
           {darthClaim && (
             <p className="text-sm font-medium text-card-foreground leading-relaxed">
-              {darthClaim}
+              {cleanVisibleText(darthClaim) ?? "Engage7 is reading this pattern from your own history."}
             </p>
           )}
         </div>
@@ -545,12 +562,14 @@ export default function InsightsPage() {
             </span>
           </div>
           <h3 className="text-base font-semibold text-card-foreground leading-snug">
-            {heroBlock.copy.title}
+            {cleanVisibleText(heroBlock.copy.title) ?? "Personal pattern detected"}
           </h3>
           <p className="text-sm leading-relaxed text-muted-foreground">
-            {heroBlock.copy.body}
+            {cleanVisibleText(heroBlock.copy.body) ?? "This pattern comes from your own timeline, not population averages."}
           </p>
-          <p className="text-xs text-accent/80 italic">→ {heroBlock.copy.action}</p>
+          {cleanVisibleText(heroBlock.copy.action) && (
+            <p className="text-xs text-accent/80 italic">→ {cleanVisibleText(heroBlock.copy.action)}</p>
+          )}
           {safeDarthEvidence(heroBlock.copy.evidence) && (
             <div className="rounded-lg bg-muted/40 px-3 py-2">
               <span className="text-xs text-muted-foreground">
@@ -573,13 +592,15 @@ export default function InsightsPage() {
                 <div className="flex items-center gap-2">
                   <Lightbulb className="h-4 w-4 text-accent" />
                   <h3 className="text-sm font-semibold text-card-foreground">
-                    {copy.title}
+                    {cleanVisibleText(copy.title) ?? "Personal pattern"}
                   </h3>
                 </div>
                 <p className="text-sm leading-relaxed text-muted-foreground">
-                  {copy.body}
+                  {cleanVisibleText(copy.body) ?? "This pattern comes from your own timeline, not population averages."}
                 </p>
-                <p className="text-xs text-accent/80 italic">→ {copy.action}</p>
+                {cleanVisibleText(copy.action) && (
+                  <p className="text-xs text-accent/80 italic">→ {cleanVisibleText(copy.action)}</p>
+                )}
                 {safeDarthEvidence(copy.evidence) && (
                   <div className="rounded-lg bg-muted/40 px-3 py-2">
                     <span className="text-xs text-muted-foreground">

@@ -53,9 +53,9 @@ const COLORS = {
 };
 
 const TECHNICAL_LABELS: Record<string, string> = {
-  last_7d: "latest available 7-day window",
-  last_30d: "latest available 30-day window",
-  baseline_30d: "personal baseline",
+  last_7d: "recent week",
+  last_30d: "recent month",
+  baseline_30d: "usual range",
   yearly_summary: "long-term summary",
   hrv_sdnn: "HRV",
   hrv_sdnn_mean: "HRV",
@@ -67,8 +67,8 @@ const TECHNICAL_LABELS: Record<string, string> = {
   active_energy_cal: "active energy",
   total_energy_cal: "daily energy",
   sleep_hours: "sleep duration",
-  sleep_variability_cv: "sleep variability",
-  steps_variability_cv: "step variability",
+  sleep_variability_cv: "sleep regularity",
+  steps_variability_cv: "activity regularity",
   active_minutes: "active minutes",
 };
 
@@ -847,7 +847,7 @@ function TechnicalAvailability({
           Technical Data Available
         </h2>
         <p className="mt-1 text-xs text-muted-foreground">
-          Data Lab shows supporting evidence when the legacy scientific outputs
+          Data Lab shows supporting evidence when advanced analysis outputs
           exist for this analysis.
         </p>
       </div>
@@ -937,7 +937,7 @@ export default function TrendsPage() {
 
   if (portalStatus && !portalStatus.hasLegacyScientificData) {
     return (
-      <EmptyTrendsState message="This analysis has Portal data, but no legacy scientific Data Lab outputs yet. Feature timeline availability is not necessarily a blocker for Insights or Health." />
+      <EmptyTrendsState message="This analysis has Portal data, but the advanced Data Lab outputs are not available yet. Insights and Health may still be available." />
     );
   }
 

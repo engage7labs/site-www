@@ -152,7 +152,7 @@ export default function ReportsPage() {
       ) : (
         <div className="rounded-xl border border-border bg-card">
           <div className="overflow-x-auto">
-            <table className="w-full text-left text-sm">
+            <table className="w-full min-w-[720px] text-left text-sm">
               <thead>
                 <tr className="border-b border-border">
                   <th className="px-4 py-3 font-medium text-muted-foreground">

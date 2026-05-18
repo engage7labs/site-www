@@ -868,7 +868,7 @@ function DatasetEmptyState({
             status === "feature_store_parse_failed"
           ? "The stored health timeline could not be converted into dashboard data."
           : portalStatus.hasAnalyses && !portalStatus.hasFeatureTimeline
-            ? "An analysis exists for this account, but the longitudinal UserFeatureStore timeline is not available yet."
+            ? "An analysis exists for this account, but the stored health timeline is not available yet."
             : "No stored health timeline is available yet for this account.";
 
   return (

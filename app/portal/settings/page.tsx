@@ -92,22 +92,19 @@ export default function SettingsPage() {
   const [deleted, setDeleted] = useState(false);
 
   const canDelete = confirmText === "DELETE";
-  const isPt = locale.toLowerCase().startsWith("pt");
+  void locale;
   const protectionCopy = {
-    title: isPt ? "Proteger atualizações de dados" : "Protect data updates",
-    description: isPt
-      ? "Ajuda a evitar que exportações do Apple Health de outra pessoa sejam misturadas à sua linha do tempo. O Engage7 compara metadados minimizados antes de atualizar sua timeline processada."
-      : "Helps prevent Apple Health exports from another person being merged into your timeline. Engage7 compares privacy-minimized metadata before updating your processed timeline.",
-    on: isPt ? "Ligado" : "On",
-    off: isPt ? "Desligado" : "Off",
-    active: isPt
-      ? "Proteção ativa. Atualizações com diferença forte podem ser bloqueadas antes de alterar sua timeline."
-      : "Protection is active. Strong mismatches may be blocked before your timeline is changed.",
-    inactive: isPt
-      ? "A proteção está desligada. Atualizações futuras podem ser aceitas mesmo quando o conjunto de dados parecer diferente da sua timeline anterior."
-      : "Protection is off. Future updates may be accepted even when the dataset looks different from your previous timeline.",
-    saving: isPt ? "Salvando..." : "Saving...",
-    error: isPt ? "Não foi possível salvar esta configuração." : "Could not save this setting.",
+    title: "Protect data updates",
+    description:
+      "Helps prevent Apple Health exports from another person being merged into your timeline. Engage7 compares privacy-minimized metadata before updating your processed timeline.",
+    on: "On",
+    off: "Off",
+    active:
+      "Protection is active. Strong mismatches may be blocked before your timeline is changed.",
+    inactive:
+      "Protection is off. Future updates may be accepted even when the dataset looks different from your previous timeline.",
+    saving: "Saving...",
+    error: "Could not save this setting.",
   };
 
   const handleProtectionToggle = async () => {
@@ -226,7 +223,7 @@ export default function SettingsPage() {
               <div className="flex-1">
                 <p className="text-sm font-semibold text-card-foreground">Engage7 Premium</p>
                 <p className="text-xs text-muted-foreground mt-0.5">
-                  Full dashboard · Unlimited analyses · Longitudinal trends · DARTH insights
+                  Full dashboard · Unlimited analyses · Longitudinal trends · Personal insights
                 </p>
               </div>
               <p className="text-sm font-bold text-accent shrink-0">€7 / month</p>

@@ -36,6 +36,16 @@ function useIsAdminView(): boolean {
 
 type UploadStatus = "idle" | "uploading" | "queued" | "processing" | "completed" | "failed";
 
+function userFriendlyUploadError(message: string | null | undefined): string {
+  if (
+    message &&
+    /ETL produced no features CSV|no features CSV|processed features were unavailable/i.test(message)
+  ) {
+    return "We could not read health data from this ZIP. Please check that it is a valid Apple Health export.";
+  }
+  return message ?? "Analysis failed. Please try again.";
+}
+
 export default function PortalUploadPage() {
   const { t, locale } = useLocale();
   const router = useRouter();
@@ -79,9 +89,10 @@ export default function PortalUploadPage() {
         } else if (data.upload_status === "failed") {
           clearInterval(pollRef.current!);
           setStatus("failed");
-          setFailureMessage(data.error_message ?? "Analysis failed. Please try again.");
+          const message = userFriendlyUploadError(data.error_message);
+          setFailureMessage(message);
           clearProcessingStart();
-          toast.error(data.error_message ?? "Analysis failed. Please try again.");
+          toast.error(message);
         } else if (data.upload_status === "processing") {
           setStatus("processing");
         }

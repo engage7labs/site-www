@@ -109,7 +109,7 @@ function StatusNotice({ status }: StatusNoticeProps) {
   } else if (status.analysisStatus === "claim_import_in_progress") {
     message = "Your public analysis is being imported into your Portal.";
   } else if (!status.hasDarth) {
-    message = "Analysis data is available, but the DARTH guidance layer is not ready for this analysis yet.";
+    message = "Analysis data is available, but the current guidance layer is not ready for this analysis yet.";
   } else if (!status.hasFeatureTimeline) {
     message = "Analysis data is available, but the longitudinal feature timeline is not available for this account yet.";
   }
@@ -197,11 +197,8 @@ interface TrendSummary {
 }
 
 function CardDebugLabel({ label }: Readonly<{ label: string }>) {
-  return (
-    <div className="mb-2 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground/70">
-      {label}
-    </div>
-  );
+  void label;
+  return null;
 }
 
 function OverviewBlock({
