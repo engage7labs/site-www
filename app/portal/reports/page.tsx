@@ -9,20 +9,125 @@ interface AnalysisReport {
   created_at: string | null;
   report_label: string | null;
   summary: Record<string, unknown> | null;
+  sections?: Record<string, unknown> | null;
   dataset_hash: string | null;
+  upload_status?: string | null;
+}
+
+interface FeatureStoreSummary {
+  date_start: string | null;
+  date_end: string | null;
+  row_count: number | null;
+  updated_at: string | null;
+}
+
+interface HealthDataResponse {
+  feature_store: FeatureStoreSummary | null;
+}
+
+function asRecord(value: unknown): Record<string, unknown> | null {
+  return value && typeof value === "object" && !Array.isArray(value)
+    ? (value as Record<string, unknown>)
+    : null;
+}
+
+function stringValue(value: unknown): string | null {
+  return typeof value === "string" && value.trim() ? value.trim() : null;
+}
+
+function formatPeriodDate(value: string): string | null {
+  const date = new Date(`${value.slice(0, 10)}T00:00:00Z`);
+  if (Number.isNaN(date.getTime())) return null;
+  return date.toLocaleDateString("en-IE", {
+    day: "numeric",
+    month: "short",
+    year: "numeric",
+  });
+}
+
+function periodFromSource(source: Record<string, unknown> | null): {
+  start: string | null;
+  end: string | null;
+} {
+  if (!source) return { start: null, end: null };
+  const directStart =
+    stringValue(source.dataset_start) ?? stringValue(source.date_start);
+  const directEnd =
+    stringValue(source.dataset_end) ?? stringValue(source.date_end);
+  if (directStart || directEnd) return { start: directStart, end: directEnd };
+
+  const period = asRecord(source.period);
+  return {
+    start: stringValue(period?.start) ?? stringValue(period?.date_start),
+    end: stringValue(period?.end) ?? stringValue(period?.date_end),
+  };
+}
+
+function formatPeriodLabel(
+  report: AnalysisReport,
+  latestFeatureStore: FeatureStoreSummary | null,
+  isLatestReport: boolean,
+): string {
+  const summaryPeriod = periodFromSource(report.summary);
+  const sectionsPeriod =
+    periodFromSource(report.sections ?? null);
+  const baselinePeriod = periodFromSource(asRecord(report.sections?.baseline));
+  const start =
+    summaryPeriod.start ?? sectionsPeriod.start ?? baselinePeriod.start;
+  const end = summaryPeriod.end ?? sectionsPeriod.end ?? baselinePeriod.end;
+  const formattedStart = start ? formatPeriodDate(start) : null;
+  const formattedEnd = end ? formatPeriodDate(end) : null;
+
+  if (formattedStart && formattedEnd) return `${formattedStart} – ${formattedEnd}`;
+  if (formattedEnd) return `Timeline through ${formattedEnd}`;
+
+  const canUseLatestTimeline =
+    isLatestReport &&
+    report.upload_status !== "imported" &&
+    Boolean(latestFeatureStore?.date_end);
+  if (!canUseLatestTimeline) return "—";
+
+  const timelineStart = latestFeatureStore?.date_start
+    ? formatPeriodDate(latestFeatureStore.date_start)
+    : null;
+  const timelineEnd = latestFeatureStore?.date_end
+    ? formatPeriodDate(latestFeatureStore.date_end)
+    : null;
+  if (timelineStart && timelineEnd) return `${timelineStart} – ${timelineEnd}`;
+  if (timelineEnd) return `Timeline through ${timelineEnd}`;
+  return "—";
+}
+
+function reportName(report: AnalysisReport): string {
+  if (report.report_label) return report.report_label;
+  return report.upload_status === "imported"
+    ? "Claimed public analysis"
+    : "Health analysis";
+}
+
+function shortJobId(jobId: string): string {
+  return jobId.slice(0, 8);
 }
 
 export default function ReportsPage() {
   const [reports, setReports] = useState<AnalysisReport[]>([]);
+  const [featureStore, setFeatureStore] = useState<FeatureStoreSummary | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     (async () => {
       try {
-        const res = await fetch("/api/proxy/users/portal-analyses");
-        if (res.ok) {
-          const data = await res.json();
+        const [reportsRes, healthRes] = await Promise.allSettled([
+          fetch("/api/proxy/users/portal-analyses"),
+          fetch("/api/proxy/users/portal-health-data"),
+        ]);
+        if (reportsRes.status === "fulfilled" && reportsRes.value.ok) {
+          const data = await reportsRes.value.json();
           setReports(data.analyses ?? []);
+        }
+        if (healthRes.status === "fulfilled" && healthRes.value.ok) {
+          const data = (await healthRes.value.json()) as HealthDataResponse;
+          setFeatureStore(data.feature_store ?? null);
         }
       } catch {
         // silent
@@ -68,20 +173,14 @@ export default function ReportsPage() {
                 </tr>
               </thead>
               <tbody>
-                {reports.map((report) => {
+                {reports.map((report, index) => {
                   const dateStr = report.created_at
-                    ? new Date(report.created_at).toLocaleDateString("en-IE")
+                    ? new Date(report.created_at).toLocaleString("en-IE", {
+                        dateStyle: "medium",
+                        timeStyle: "short",
+                      })
                     : "—";
-                  const summary = report.summary as Record<
-                    string,
-                    unknown
-                  > | null;
-                  const period =
-                    summary?.dataset_start && summary?.dataset_end
-                      ? `${String(summary.dataset_start)} → ${String(
-                          summary.dataset_end
-                        )}`
-                      : "—";
+                  const period = formatPeriodLabel(report, featureStore, index === 0);
 
                   return (
                     <tr
@@ -92,9 +191,14 @@ export default function ReportsPage() {
                         {dateStr}
                       </td>
                       <td className="px-4 py-3">
-                        <div className="flex items-center gap-2 text-card-foreground">
-                          <FileText className="h-4 w-4 text-muted-foreground" />
-                          {report.report_label ?? "Health Analysis"}
+                        <div className="flex items-start gap-2 text-card-foreground">
+                          <FileText className="mt-0.5 h-4 w-4 text-muted-foreground" />
+                          <div>
+                            <p>{reportName(report)}</p>
+                            <p className="mt-0.5 font-mono text-[10px] text-muted-foreground">
+                              {shortJobId(report.job_id)}
+                            </p>
+                          </div>
                         </div>
                       </td>
                       <td className="px-4 py-3 text-xs text-muted-foreground">

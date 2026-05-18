@@ -71,6 +71,7 @@ export function PortalSidebar({
   const [healthOpen, setHealthOpen] = useState(
     pathname.startsWith("/portal/health")
   );
+  const [healthFlyoutOpen, setHealthFlyoutOpen] = useState(false);
 
   const sidebarContent = (
     <div className="flex h-full flex-col">
@@ -112,19 +113,31 @@ export function PortalSidebar({
       <nav className="flex flex-1 flex-col gap-1 px-3 py-4">
         {NAV_ITEMS.map((item) =>
           item.children ? (
-            <div key={item.href}>
+            <div
+              key={item.href}
+              className="relative"
+              onMouseEnter={() => collapsed && setHealthFlyoutOpen(true)}
+              onMouseLeave={() => collapsed && setHealthFlyoutOpen(false)}
+              onBlur={(event) => {
+                const nextTarget = event.relatedTarget as Node | null;
+                if (!nextTarget || !event.currentTarget.contains(nextTarget)) {
+                  setHealthFlyoutOpen(false);
+                }
+              }}
+            >
               {/* Parent: Health with toggle */}
               <button
                 type="button"
                 onClick={() => {
                   if (collapsed) {
-                    // When collapsed, just navigate
-                    window.location.href = item.href;
-                    onCloseMobile();
+                    setHealthFlyoutOpen((prev) => !prev);
                   } else {
                     setHealthOpen((prev) => !prev);
                   }
                 }}
+                onFocus={() => collapsed && setHealthFlyoutOpen(true)}
+                aria-haspopup={collapsed ? "menu" : undefined}
+                aria-expanded={collapsed ? healthFlyoutOpen : healthOpen}
                 className={`group flex w-full items-center gap-3 rounded-2xl px-3 py-2.5 text-sm font-medium transition-all ${
                   isActivePath(pathname, item.href)
                     ? "bg-accent/10 text-accent shadow-sm"
@@ -147,6 +160,36 @@ export function PortalSidebar({
                   />
                 )}
               </button>
+              {collapsed && healthFlyoutOpen && (
+                <div
+                  role="menu"
+                  aria-label="Health sections"
+                  className="absolute left-full top-0 z-50 ml-2 min-w-40 rounded-xl border border-border bg-card p-2 shadow-xl"
+                >
+                  {item.children.map((child) => {
+                    const childActive = pathname === child.href;
+                    return (
+                      <Link
+                        key={child.href}
+                        href={child.href}
+                        role="menuitem"
+                        onClick={() => {
+                          setHealthFlyoutOpen(false);
+                          onCloseMobile();
+                        }}
+                        className={`flex items-center gap-2 rounded-lg px-3 py-2 text-xs font-medium transition-colors ${
+                          childActive
+                            ? "bg-accent/10 text-accent"
+                            : "text-muted-foreground hover:bg-muted/50 hover:text-foreground"
+                        }`}
+                      >
+                        <child.icon className="h-3.5 w-3.5 shrink-0" />
+                        {child.label}
+                      </Link>
+                    );
+                  })}
+                </div>
+              )}
               {/* Children: Sleep, Recovery, Activity */}
               {!collapsed && healthOpen && (
                 <div className="ml-4 mt-0.5 flex flex-col gap-0.5 border-l border-border/50 pl-2">

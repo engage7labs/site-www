@@ -187,10 +187,13 @@ interface MetricCardProps {
 }
 
 type TrendState = "up" | "down" | "stable" | "unavailable";
+type TrendTone = "positive" | "warning" | "negative" | "neutral";
+type TrendMetric = "sleep" | "recovery" | "activity";
 
 interface TrendSummary {
   readonly state: TrendState;
   readonly label: string;
+  readonly tone?: TrendTone;
 }
 
 function CardDebugLabel({ label }: Readonly<{ label: string }>) {
@@ -221,9 +224,17 @@ function TrendIndicator({ trend }: Readonly<{ trend?: TrendSummary }>) {
       : trend.state === "down"
         ? ArrowDown
         : ArrowRight;
+  const toneClass =
+    trend.tone === "positive"
+      ? "text-emerald-600 dark:text-emerald-300"
+      : trend.tone === "warning"
+        ? "text-amber-600 dark:text-amber-300"
+        : trend.tone === "negative"
+          ? "text-rose-600 dark:text-rose-300"
+          : "text-muted-foreground";
 
   return (
-    <div className="mt-2 inline-flex items-center gap-1.5 text-[11px] font-medium text-muted-foreground">
+    <div className={`mt-2 inline-flex items-center gap-1.5 text-[11px] font-semibold ${toneClass}`}>
       <Icon className="h-3 w-3" aria-hidden="true" />
       <span>{trend.label}</span>
     </div>
@@ -434,6 +445,19 @@ function weeklyTrend(
   return latestMedian > previousMedian
     ? { state: "up", label: copy.up }
     : { state: "down", label: copy.down };
+}
+
+function trendWithMetricTone(trend: TrendSummary, metric: TrendMetric): TrendSummary {
+  if (trend.state === "unavailable") return { ...trend, tone: "neutral" };
+  if (metric === "activity") {
+    if (trend.state === "down") return { ...trend, tone: "warning" };
+    return { ...trend, tone: "positive" };
+  }
+  if (metric === "sleep" || metric === "recovery") {
+    if (trend.state === "up") return { ...trend, tone: "positive" };
+    if (trend.state === "down") return { ...trend, tone: "warning" };
+  }
+  return { ...trend, tone: "neutral" };
 }
 
 // ---------------------------------------------------------------------------
@@ -834,9 +858,18 @@ export default function PortalOverviewPage() {
   const sleepRange = availableRange(sleepPoints, featureLatestDate);
   const recoveryRange = availableRange(trends?.trends?.hrv, featureLatestDate);
   const activityRange = availableRange(activityPoints, featureLatestDate);
-  const sleepTrend = weeklyTrend(sleepPoints, sleepRange, t.portal.metrics.weekTrend);
-  const recoveryWeekTrend = weeklyTrend(trends?.trends?.hrv, recoveryRange, t.portal.metrics.weekTrend);
-  const activityTrend = weeklyTrend(activityPoints, activityRange, t.portal.metrics.weekTrend);
+  const sleepTrend = trendWithMetricTone(
+    weeklyTrend(sleepPoints, sleepRange, t.portal.metrics.weekTrend),
+    "sleep",
+  );
+  const recoveryWeekTrend = trendWithMetricTone(
+    weeklyTrend(trends?.trends?.hrv, recoveryRange, t.portal.metrics.weekTrend),
+    "recovery",
+  );
+  const activityTrend = trendWithMetricTone(
+    weeklyTrend(activityPoints, activityRange, t.portal.metrics.weekTrend),
+    "activity",
+  );
 
   return (
     <div className="flex flex-col gap-6">

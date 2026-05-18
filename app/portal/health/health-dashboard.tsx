@@ -23,7 +23,7 @@ import type { ElementType, ReactNode } from "react";
 import { useEffect, useMemo, useState } from "react";
 
 type HealthDomain = "sleep" | "recovery" | "activity";
-type Period = "week" | "month" | "year" | "all";
+type Period = "today" | "week" | "month" | "year" | "all";
 type JsonScalar = string | number | boolean | null;
 type UnknownRecord = Record<string, unknown>;
 
@@ -62,13 +62,14 @@ interface ChartSeries {
 }
 
 const PERIOD_LABELS: Record<Period, string> = {
+  today: "Today",
   week: "Last Week",
   month: "Last Month",
   year: "Last Year",
   all: "All Time",
 };
 
-const PERIODS: Period[] = ["week", "month", "year", "all"];
+const PERIODS: Period[] = ["today", "week", "month", "year", "all"];
 
 const COLORS = {
   sleep: "#3dbe73",
@@ -282,15 +283,34 @@ function filterByPeriod(
   const anchorPoint = domainPoints.at(-1) ?? all.at(-1);
   const anchor = anchorPoint ? parseDate(anchorPoint.date) : null;
 
+  if (period === "today") {
+    const latestDomainPoint = domainPoints.at(-1) ?? null;
+    const previousPoint = domainPoints.length >= 2
+      ? domainPoints[domainPoints.length - 2]
+      : null;
+    return {
+      points: latestDomainPoint ? [latestDomainPoint] : [],
+      comparisonPoints: previousPoint ? [previousPoint] : [],
+      hasAnyDomainData: domainPoints.length > 0,
+      hasDomainDataInRange: Boolean(latestDomainPoint),
+      rangeLabel: latestDomainPoint ? `Latest available day: ${formatDate(latestDomainPoint.date)}` : "Latest available day",
+      comparisonLabel: previousPoint
+        ? "Compared with previous available day"
+        : "Comparison unavailable",
+    };
+  }
+
   if (!anchor || period === "all") {
     return {
       points: domainPoints,
+      comparisonPoints: [],
       hasAnyDomainData: domainPoints.length > 0,
       hasDomainDataInRange: domainPoints.length > 0,
       rangeLabel:
         domainPoints.length > 0
           ? `${formatDate(domainPoints[0].date)} - ${formatDate(domainPoints[domainPoints.length - 1].date)}`
           : "No range",
+      comparisonLabel: null,
     };
   }
 
@@ -306,12 +326,14 @@ function filterByPeriod(
 
   return {
     points: domainFiltered,
+    comparisonPoints: [],
     hasAnyDomainData: domainPoints.length > 0,
     hasDomainDataInRange,
     rangeLabel:
       domainFiltered.length > 0
         ? `${formatDate(domainFiltered[0].date)} - ${formatDate(domainFiltered[domainFiltered.length - 1].date)}`
         : `${formatRangeDate(start)} - ${formatRangeDate(anchor)}`,
+    comparisonLabel: null,
   };
 }
 
@@ -504,6 +526,45 @@ function baselineComparison({
   return {
     value: current - baseline,
     label: formatDelta(current - baseline),
+    unit,
+    status: "valid",
+  };
+}
+
+function previousAvailableComparison({
+  current,
+  previous,
+  currentCount,
+  previousCount,
+  unit,
+}: Readonly<{
+  current: number | null;
+  previous: number | null;
+  currentCount: number;
+  previousCount: number;
+  unit: string;
+}>): ComparisonState {
+  if (current === null || currentCount === 0) {
+    return {
+      value: null,
+      label: "Insufficient data",
+      unit: "",
+      status: "missing",
+    };
+  }
+
+  if (previous === null || previousCount === 0) {
+    return {
+      value: null,
+      label: "Comparison unavailable",
+      unit: "",
+      status: "insufficient",
+    };
+  }
+
+  return {
+    value: current - previous,
+    label: formatDelta(current - previous),
     unit,
     status: "valid",
   };
@@ -1055,12 +1116,14 @@ function SleepDashboard({
 
 function RecoveryDashboard({
   points,
+  comparisonPoints,
   allPoints,
   sections,
   rangeLabel,
   period,
 }: Readonly<{
   points: HealthPoint[];
+  comparisonPoints: HealthPoint[];
   allPoints: HealthPoint[];
   sections: UnknownRecord | null;
   rangeLabel: string;
@@ -1072,6 +1135,12 @@ function RecoveryDashboard({
   const hrvVals = values(hrv);
   const hrVals = values(hr);
   const scoreVals = values(scores);
+  const previousHrvVals = values(
+    metricSeries(comparisonPoints, RECOVERY_HRV_KEYS, positiveMetricValue),
+  );
+  const previousHrVals = values(
+    metricSeries(comparisonPoints, RECOVERY_HR_KEYS, positiveMetricValue),
+  );
   const recoverySection = getSection(sections, "recovery_signals");
   const sectionScore = toNumber(recoverySection?.recovery_composite_score);
   const currentHrv = average(hrvVals);
@@ -1084,22 +1153,38 @@ function RecoveryDashboard({
   );
   const allHrv = average(allHrvVals);
   const allHr = average(allHrVals);
-  const hrvComparison = baselineComparison({
-    current: currentHrv,
-    baseline: allHrv,
-    currentCount: hrvVals.length,
-    baselineCount: allHrvVals.length,
-    period,
-    unit: "ms",
-  });
-  const hrComparison = baselineComparison({
-    current: currentHr,
-    baseline: allHr,
-    currentCount: hrVals.length,
-    baselineCount: allHrVals.length,
-    period,
-    unit: "bpm",
-  });
+  const hrvComparison = period === "today"
+    ? previousAvailableComparison({
+        current: currentHrv,
+        previous: average(previousHrvVals),
+        currentCount: hrvVals.length,
+        previousCount: previousHrvVals.length,
+        unit: "ms",
+      })
+    : baselineComparison({
+        current: currentHrv,
+        baseline: allHrv,
+        currentCount: hrvVals.length,
+        baselineCount: allHrvVals.length,
+        period,
+        unit: "ms",
+      });
+  const hrComparison = period === "today"
+    ? previousAvailableComparison({
+        current: currentHr,
+        previous: average(previousHrVals),
+        currentCount: hrVals.length,
+        previousCount: previousHrVals.length,
+        unit: "bpm",
+      })
+    : baselineComparison({
+        current: currentHr,
+        baseline: allHr,
+        currentCount: hrVals.length,
+        baselineCount: allHrVals.length,
+        period,
+        unit: "bpm",
+      });
   const readinessScore =
     average(scoreVals) ??
     estimatedReadinessScore({
@@ -1221,7 +1306,11 @@ function RecoveryDashboard({
 
       <ChartPanel
         title="Baseline Comparison"
-        subtitle="Selected range compared with your full stored timeline"
+        subtitle={
+          period === "today"
+            ? "Latest available day compared with the previous available day"
+            : "Selected range compared with your full stored timeline"
+        }
       >
         <div className="grid gap-3 sm:grid-cols-2">
           <div className="rounded-lg border border-border/60 bg-background/35 p-4">
@@ -1235,8 +1324,12 @@ function RecoveryDashboard({
             </p>
             <p className="mt-1 text-xs text-muted-foreground">
               {hrvComparison.status === "valid"
-                ? "Selected range vs full stored timeline."
-                : "A comparison needs enough current and baseline data."}
+                ? period === "today"
+                  ? "Latest available day vs previous available day."
+                  : "Selected range vs full stored timeline."
+                : period === "today"
+                  ? "Comparison unavailable."
+                  : "A comparison needs enough current and baseline data."}
             </p>
           </div>
           <div className="rounded-lg border border-border/60 bg-background/35 p-4">
@@ -1252,8 +1345,12 @@ function RecoveryDashboard({
             </p>
             <p className="mt-1 text-xs text-muted-foreground">
               {hrComparison.status === "valid"
-                ? "Selected range vs full stored timeline."
-                : "A comparison needs enough current and baseline data."}
+                ? period === "today"
+                  ? "Latest available day vs previous available day."
+                  : "Selected range vs full stored timeline."
+                : period === "today"
+                  ? "Comparison unavailable."
+                  : "A comparison needs enough current and baseline data."}
             </p>
           </div>
         </div>
@@ -1543,6 +1640,11 @@ export function HealthDashboard({
               <p className="mt-2 text-xs text-muted-foreground">
                 {filtered.rangeLabel} · {filtered.points.length} stored days
               </p>
+              {filtered.comparisonLabel && (
+                <p className="mt-1 text-xs text-muted-foreground">
+                  {filtered.comparisonLabel}
+                </p>
+              )}
             </div>
           </div>
           <PeriodSwitcher period={period} onChange={setPeriod} />
@@ -1570,6 +1672,7 @@ export function HealthDashboard({
           {domain === "recovery" && (
             <RecoveryDashboard
               points={filtered.points}
+              comparisonPoints={filtered.comparisonPoints}
               allPoints={allPoints}
               sections={sections}
               rangeLabel={filtered.rangeLabel}

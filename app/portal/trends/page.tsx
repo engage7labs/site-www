@@ -1165,14 +1165,14 @@ export default function TrendsPage() {
       )}
 
       {/* Baseline ranges */}
-      <div className="flex flex-col gap-3">
-        <h2 className="text-sm font-semibold uppercase tracking-wider text-muted-foreground">
+      <details className="group">
+        <summary className="cursor-pointer text-sm font-semibold uppercase tracking-wider text-muted-foreground/60 hover:text-muted-foreground transition-colors">
           Baseline Ranges
-        </h2>
-        <p className="text-xs text-muted-foreground max-w-2xl">
+        </summary>
+        <p className="mt-2 text-xs text-muted-foreground max-w-2xl">
           Your personal reference range from available historical data.
         </p>
-        <div className="grid gap-4 lg:grid-cols-2">
+        <div className="mt-3 grid gap-4 lg:grid-cols-2">
           {hasSleep && <WeeklyPatternsChart sleepByDay={sleepByDay} />}
           {hasBaseline ? (
             <BaselineRangesChart baseline={trends.baseline} />
@@ -1180,7 +1180,7 @@ export default function TrendsPage() {
             <InlineDataLabEmptyState message="Baseline data is unavailable for this dataset." />
           )}
         </div>
-      </div>
+      </details>
 
       {/* Correlations (secondary) */}
       {trends.correlations && (

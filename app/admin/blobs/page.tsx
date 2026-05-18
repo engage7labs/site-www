@@ -10,6 +10,7 @@ interface BlobEntry {
   last_modified: string | null;
   container: string;
   is_orphan: boolean;
+  status?: "linked" | "orphan" | "unknown";
 }
 
 interface BlobsResponse {
@@ -42,6 +43,8 @@ export default function AdminBlobsPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [deleting, setDeleting] = useState<string | null>(null);
+  const [bulkDeleting, setBulkDeleting] = useState(false);
+  const [bulkResult, setBulkResult] = useState<string | null>(null);
   const [showAll, setShowAll] = useState(false);
 
   const load = () => {
@@ -76,6 +79,37 @@ export default function AdminBlobsPage() {
     } finally {
       setDeleting(null);
     }
+  };
+
+  const handleDeleteAllOrphans = async () => {
+    if (!data || data.orphans.length === 0) return;
+    const message = `Delete ${data.orphan_count} confidently orphaned blob${data.orphan_count === 1 ? "" : "s"}, ${formatBytes(data.orphan_size_bytes)}? This cannot be undone.`;
+    if (!window.confirm(message)) return;
+
+    setBulkDeleting(true);
+    setBulkResult(null);
+    let succeeded = 0;
+    let failed = 0;
+
+    for (const blob of data.orphans) {
+      try {
+        const res = await fetch(
+          `/api/proxy/admin/blobs?container=${encodeURIComponent(blob.container)}&blob_path=${encodeURIComponent(blob.blob_path)}`,
+          { method: "DELETE" }
+        );
+        if (res.ok) {
+          succeeded += 1;
+        } else {
+          failed += 1;
+        }
+      } catch {
+        failed += 1;
+      }
+    }
+
+    setBulkResult(`Deleted ${succeeded} confidently orphaned blob${succeeded === 1 ? "" : "s"}. ${failed} failed.`);
+    setBulkDeleting(false);
+    load();
   };
 
   if (loading) {
@@ -116,14 +150,32 @@ export default function AdminBlobsPage() {
             Azure Blob — raw uploads &amp; results
           </p>
         </div>
-        <button
-          onClick={load}
-          className="flex items-center gap-2 rounded-lg border border-border px-3 py-2 text-sm text-muted-foreground hover:text-foreground transition-colors"
-        >
-          <RefreshCw className="h-3.5 w-3.5" />
-          Refresh
-        </button>
+        <div className="flex items-center gap-2">
+          {data.orphan_count > 0 && (
+            <button
+              onClick={handleDeleteAllOrphans}
+              disabled={bulkDeleting}
+              className="flex items-center gap-2 rounded-lg border border-destructive/40 px-3 py-2 text-sm text-destructive/80 hover:bg-destructive/10 hover:text-destructive transition-colors disabled:cursor-not-allowed disabled:opacity-50"
+            >
+              <Trash2 className="h-3.5 w-3.5" />
+              {bulkDeleting ? "Deleting..." : "Delete all orphans"}
+            </button>
+          )}
+          <button
+            onClick={load}
+            className="flex items-center gap-2 rounded-lg border border-border px-3 py-2 text-sm text-muted-foreground hover:text-foreground transition-colors"
+          >
+            <RefreshCw className="h-3.5 w-3.5" />
+            Refresh
+          </button>
+        </div>
       </div>
+
+      {bulkResult && (
+        <div className="rounded-lg border border-border bg-card px-4 py-3 text-sm text-muted-foreground">
+          {bulkResult}
+        </div>
+      )}
 
       {/* Summary cards */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
@@ -141,7 +193,7 @@ export default function AdminBlobsPage() {
           <p className="text-xl font-bold">{data.blobs.filter(b => b.container === "results").length}</p>
         </div>
         <div className={`rounded-xl border p-4 ${data.orphan_count > 0 ? "border-amber-500/40 bg-amber-500/5" : "border-border bg-card"}`}>
-          <p className="text-xs text-muted-foreground mb-1">Orphaned blobs</p>
+          <p className="text-xs text-muted-foreground mb-1">Confident orphans</p>
           <p className={`text-xl font-bold ${data.orphan_count > 0 ? "text-amber-400" : ""}`}>{data.orphan_count}</p>
           <p className="text-xs text-muted-foreground mt-1">{formatBytes(data.orphan_size_bytes)}</p>
         </div>
@@ -152,7 +204,7 @@ export default function AdminBlobsPage() {
         <div className="flex items-start gap-3 rounded-lg border border-amber-500/30 bg-amber-500/5 p-4">
           <AlertTriangle className="h-4 w-4 text-amber-400 mt-0.5 shrink-0" />
           <p className="text-sm text-amber-300">
-            {data.orphan_count} blob{data.orphan_count !== 1 ? "s" : ""} have no matching job in the database ({formatBytes(data.orphan_size_bytes)} wasted). These can be safely deleted.
+            {data.orphan_count} blob{data.orphan_count !== 1 ? "s" : ""} have no matching reference found by the current scanner ({formatBytes(data.orphan_size_bytes)}).
           </p>
         </div>
       )}
@@ -163,7 +215,7 @@ export default function AdminBlobsPage() {
           onClick={() => setShowAll(false)}
           className={`rounded-lg px-4 py-2 text-sm font-medium transition-colors ${!showAll ? "bg-accent text-accent-foreground" : "border border-border text-muted-foreground hover:text-foreground"}`}
         >
-          Orphans only ({data.orphan_count})
+          Confident orphans ({data.orphan_count})
         </button>
         <button
           onClick={() => setShowAll(true)}
@@ -177,7 +229,7 @@ export default function AdminBlobsPage() {
       {displayBlobs.length === 0 ? (
         <div className="rounded-xl border border-border bg-card p-8 text-center">
           <p className="text-sm text-muted-foreground">
-            {showAll ? "No blobs found." : "No orphaned blobs. All blobs have matching jobs."}
+            {showAll ? "No blobs found." : "No confidently orphaned blobs found by the current scanner."}
           </p>
         </div>
       ) : (
@@ -198,7 +250,7 @@ export default function AdminBlobsPage() {
                 const key = `${blob.container}/${blob.blob_path}`;
                 return (
                   <tr key={key} className={blob.is_orphan ? "bg-amber-500/5" : ""}>
-                    <td className="px-4 py-3 font-mono text-xs text-muted-foreground max-w-xs truncate">
+                    <td className="max-w-md whitespace-normal break-all px-4 py-3 font-mono text-xs text-muted-foreground">
                       {blob.blob_path}
                     </td>
                     <td className="px-4 py-3 text-xs text-muted-foreground">
@@ -211,9 +263,13 @@ export default function AdminBlobsPage() {
                       {formatDate(blob.last_modified)}
                     </td>
                     <td className="px-4 py-3">
-                      {blob.is_orphan ? (
+                      {blob.status === "orphan" || blob.is_orphan ? (
                         <span className="inline-flex items-center gap-1 rounded-full border border-amber-500/30 bg-amber-500/10 px-2 py-0.5 text-xs text-amber-400">
                           orphan
+                        </span>
+                      ) : blob.status === "unknown" ? (
+                        <span className="inline-flex items-center rounded-full border border-sky-500/30 bg-sky-500/10 px-2 py-0.5 text-xs text-sky-400">
+                          unmatched
                         </span>
                       ) : (
                         <span className="inline-flex items-center rounded-full border border-emerald-500/30 bg-emerald-500/10 px-2 py-0.5 text-xs text-emerald-400">
@@ -222,15 +278,19 @@ export default function AdminBlobsPage() {
                       )}
                     </td>
                     <td className="px-4 py-3">
-                      <button
-                        onClick={() => handleDelete(blob.container, blob.blob_path)}
-                        disabled={deleting === key}
-                        className="flex items-center gap-1 rounded px-2 py-1 text-xs text-destructive/70 hover:text-destructive hover:bg-destructive/10 transition-colors disabled:opacity-40"
-                        title="Delete blob"
-                      >
-                        <Trash2 className="h-3 w-3" />
-                        {deleting === key ? "Deleting…" : "Delete"}
-                      </button>
+                      {blob.status === "orphan" || blob.is_orphan ? (
+                        <button
+                          onClick={() => handleDelete(blob.container, blob.blob_path)}
+                          disabled={deleting === key}
+                          className="flex items-center gap-1 rounded px-2 py-1 text-xs text-destructive/70 hover:text-destructive hover:bg-destructive/10 transition-colors disabled:opacity-40"
+                          title="Delete orphaned blob"
+                        >
+                          <Trash2 className="h-3 w-3" />
+                          {deleting === key ? "Deleting..." : "Delete"}
+                        </button>
+                      ) : (
+                        <span className="text-xs text-muted-foreground">Protected</span>
+                      )}
                     </td>
                   </tr>
                 );

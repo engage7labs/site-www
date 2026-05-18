@@ -1,7 +1,7 @@
 "use client";
 
 import { Crown, Loader2, Mail, X } from "lucide-react";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
 
 interface PostAnalysisModalProps {
@@ -24,11 +24,21 @@ export function PostAnalysisModal({
   const [email, setEmail] = useState("");
   const [consentChecked, setConsentChecked] = useState(false);
   const [submitting, setSubmitting] = useState(false);
+  const [redirecting, setRedirecting] = useState(false);
   const [emailError, setEmailError] = useState<string | null>(null);
   const [submitError, setSubmitError] = useState<string | null>(null);
+  const redirectTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  useEffect(() => {
+    return () => {
+      if (redirectTimerRef.current) {
+        clearTimeout(redirectTimerRef.current);
+      }
+    };
+  }, []);
 
   const isValidEmail = useMemo(() => EMAIL_RE.test(email.trim()), [email]);
-  const canSubmit = isValidEmail && consentChecked && !submitting;
+  const canSubmit = isValidEmail && consentChecked && !submitting && !redirecting;
 
   if (!open) return null;
 
@@ -52,7 +62,10 @@ export function PostAnalysisModal({
     try {
       await onEmailSubmit(normalized, true);
       toast.success("Your 90-day premium trial has started");
-      window.location.href = "/portal";
+      setRedirecting(true);
+      redirectTimerRef.current = setTimeout(() => {
+        window.location.href = "/portal";
+      }, 3000);
     } catch (err) {
       setSubmitError(
         err instanceof Error
@@ -156,7 +169,7 @@ export function PostAnalysisModal({
               ) : (
                 <Crown className="h-4 w-4" />
               )}
-              Unlock Premium (90 days free)
+              {redirecting ? "Opening your Portal..." : "Unlock Premium (90 days free)"}
             </button>
           </div>
         </div>
