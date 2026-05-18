@@ -72,6 +72,9 @@ interface HealthData {
 
 interface OverviewData {
   plan: string;
+  plan_display?: string | null;
+  plan_status?: string | null;
+  consent_status?: string | null;
   trial_end_at: string | null;
   uploads: number;
   sleep_score: number | null;
@@ -295,12 +298,12 @@ function ShareCard({ title, description, button }: Readonly<{ title: string; des
   );
 }
 
-function planLabel(plan: string, labels: { trialStart: string; trial: string; premium: string; expired: string }): string {
-  if (plan === "trial_start") return labels.trialStart;
-  if (plan === "trial") return labels.trial;
-  if (plan === "premium") return labels.premium;
-  if (plan === "expired") return labels.expired;
-  return plan;
+function planLabel(data: OverviewData | null, labels: { none?: string; trial: string; premium: string; expired: string }): string {
+  if (data?.plan_display) return data.plan_display;
+  if (data?.plan === "trial" || data?.plan === "trial_start") return labels.trial;
+  if (data?.plan === "premium") return labels.premium;
+  if (data?.plan === "expired") return labels.expired;
+  return labels.none ?? "No plan";
 }
 
 function median(points?: TrendPoint[]): number | null {
@@ -839,7 +842,7 @@ export default function PortalOverviewPage() {
     );
   }
 
-  const plan = data?.plan ?? "trial";
+  const planStatus = data?.plan_status ?? null;
   const uploads = data?.uploads ?? 0;
   const healthSleepTrend = healthTrend(healthData?.data_points, ["sleep_hours"]);
   const sleepPoints = healthSleepTrend.some((point) => point.value != null)
@@ -970,11 +973,11 @@ export default function PortalOverviewPage() {
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
         <MetricCard
           label={t.portal.metrics.plan}
-          value={planLabel(plan, t.portal.planLabels)}
+          value={planLabel(data, t.portal.planLabels)}
           icon={Crown}
           debugLabel="OVERVIEW_PLAN_CARD"
           subtitle={
-            data?.trial_end_at
+            planStatus === "trialing" && data?.trial_end_at
               ? `${t.portal.metrics.until} ${new Date(data.trial_end_at).toLocaleDateString()}`
               : undefined
           }

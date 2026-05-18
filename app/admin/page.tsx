@@ -11,6 +11,7 @@ interface AdminMetrics {
   total_events: number;
   total_feedback: number;
   premium_unlock_events: number;
+  trial_unlock_completed_events?: number;
   conversion_rate_approx: number;
   analyses_per_user_avg: number;
   users_with_analysis: number;
@@ -145,7 +146,7 @@ export default function AdminOverviewPage() {
           label="Total events"
           value={metrics.total_events}
           icon={Zap}
-          sub={`${metrics.premium_unlock_events} premium unlocks`}
+          sub={`${metrics.trial_unlock_completed_events ?? metrics.premium_unlock_events} trial unlocks`}
         />
         <MetricCard
           label="Feedback"

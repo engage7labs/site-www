@@ -193,7 +193,7 @@ export async function POST(request: NextRequest) {
   };
 
   if (upstreamResponse.ok && data.email) {
-    const isNewUser = data.plan === "trial_start";
+    const isNewUser = data.is_new_user === true;
     logStructured("unlock_user_created_or_found", {
       email: data.email,
       plan: data.plan,

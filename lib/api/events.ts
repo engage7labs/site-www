@@ -3,12 +3,11 @@
 const SESSION_KEY = "engage7_session_id";
 const EVENTS_PROXY_PATH = "/api/proxy/events";
 
-// Sprint 37.8: `premium_unlock` removed — the conversion event is `trial_started`,
-// fired via PostHog (`trackTrialStarted`). Do NOT add it back to this union.
+// Legacy audit sink for non-PostHog actions that still need an operational row.
+// Product funnel events live in web/lib/telemetry/events.ts.
 export type UserEventType =
   | "analysis_completed"
   | "pdf_downloaded"
-  | "feedback_given"
   | "email_submitted"
   | "share_clicked";
 

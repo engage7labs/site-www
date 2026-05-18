@@ -16,6 +16,7 @@ const DISMISSED_KEY = "engage7_trial_banner_dismissed";
 
 interface OverviewData {
   plan: string;
+  plan_status?: string | null;
   trial_end_at: string | null;
 }
 
@@ -31,7 +32,7 @@ export function TrialExpiredBanner() {
     fetch("/api/proxy/users/portal-overview")
       .then((r) => r.json())
       .then((d: OverviewData) => {
-        const isExpiredPlan = d.plan === "expired";
+        const isExpiredPlan = d.plan_status === "expired" || d.plan === "expired";
         const isTrialExpired =
           d.plan === "trial" &&
           !!d.trial_end_at &&

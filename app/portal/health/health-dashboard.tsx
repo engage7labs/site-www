@@ -5,6 +5,7 @@ import { RecoveryScoreChart } from "@/components/insights/recovery-score-chart";
 import { DarthStatePanel } from "@/components/portal/darth-state-panel";
 import type { PortalDataStatus } from "@/lib/portal-data-status";
 import { parsePortalDataStatus } from "@/lib/portal-data-status";
+import { trackHealthDashboardViewed } from "@/lib/telemetry";
 import type { EChartsOption } from "echarts";
 import {
   Activity,
@@ -1567,6 +1568,10 @@ export function HealthDashboard({
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [period, setPeriod] = useState<Period>("week");
+
+  useEffect(() => {
+    trackHealthDashboardViewed(domain);
+  }, [domain]);
 
   useEffect(() => {
     let cancelled = false;

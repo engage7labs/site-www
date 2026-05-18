@@ -7,6 +7,10 @@ interface AdminUser {
   email: string;
   role: string;
   plan: string;
+  plan_display: string;
+  plan_status: string | null;
+  consent_status: string;
+  role_display: string;
   consent_given_at: string | null;
   created_at: string | null;
   last_login_at: string | null;
@@ -19,20 +23,20 @@ interface AdminUsersResponse {
   total: number;
 }
 
-function PlanBadge({ plan }: Readonly<{ plan: string }>) {
+function PlanBadge({ label, status }: Readonly<{ label: string; status?: string | null }>) {
   const colors: Record<string, string> = {
-    trial: "bg-blue-500/10 text-blue-400",
-    trial_start: "bg-yellow-500/10 text-yellow-500",
-    premium: "bg-emerald-500/10 text-emerald-400",
+    trialing: "bg-blue-500/10 text-blue-400",
+    active: "bg-emerald-500/10 text-emerald-400",
     expired: "bg-red-500/10 text-red-400",
+    none: "bg-muted text-muted-foreground",
   };
   return (
     <span
       className={`inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium ${
-        colors[plan] ?? "bg-muted text-muted-foreground"
+        colors[status ?? "none"] ?? "bg-muted text-muted-foreground"
       }`}
     >
-      {plan}
+      {label}
     </span>
   );
 }
@@ -144,12 +148,14 @@ export default function AdminUsersPage() {
                 <td className="px-4 py-3 text-foreground font-medium">
                   {user.email}
                 </td>
-                <td className="px-4 py-3 text-muted-foreground">{user.role}</td>
+                <td className="px-4 py-3 text-muted-foreground">{user.role_display}</td>
                 <td className="px-4 py-3">
-                  <PlanBadge plan={user.plan} />
+                  <PlanBadge label={user.plan_display} status={user.plan_status} />
                 </td>
                 <td className="px-4 py-3 text-xs text-muted-foreground">
-                  {user.consent_given_at ? fmt(user.consent_given_at) : "No"}
+                  {user.consent_given_at
+                    ? `Accepted on ${fmt(user.consent_given_at)}`
+                    : "Not accepted"}
                 </td>
                 <td className="px-4 py-3 text-xs text-muted-foreground">
                   {fmt(user.created_at)}

@@ -10,7 +10,11 @@ import {
 } from "@/components/shared/processing-view";
 import { Checkbox } from "@/components/ui/checkbox";
 import { SESSION_COOKIE_NAME } from "@/lib/auth-edge";
-import { trackUploadCompleted, trackUploadStarted } from "@/lib/telemetry";
+import {
+  trackUpdateDataCompleted,
+  trackUpdateDataFailed,
+  trackUpdateDataStarted,
+} from "@/lib/telemetry";
 import { Lock, CheckCircle } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -83,7 +87,7 @@ export default function PortalUploadPage() {
           clearInterval(pollRef.current!);
           setStatus("completed");
           clearProcessingStart();
-          trackUploadCompleted(activeJobId);
+          trackUpdateDataCompleted(activeJobId);
           toast.success("Analysis complete!");
           setTimeout(() => router.push("/portal/health"), 1500);
         } else if (data.upload_status === "failed") {
@@ -92,6 +96,7 @@ export default function PortalUploadPage() {
           const message = userFriendlyUploadError(data.error_message);
           setFailureMessage(message);
           clearProcessingStart();
+          trackUpdateDataFailed("processing_failed");
           toast.error(message);
         } else if (data.upload_status === "processing") {
           setStatus("processing");
@@ -108,7 +113,7 @@ export default function PortalUploadPage() {
     setStatus("uploading");
     setFailureMessage(null);
     setProcessingStartedAt(writeProcessingStart());
-    trackUploadStarted(selectedFile.size);
+    trackUpdateDataStarted();
 
     try {
       // Step 1 — get SAS URL + job_id from server (no file sent here)
@@ -167,6 +172,7 @@ export default function PortalUploadPage() {
       setActiveJobId(data.job_id);
       setStatus("queued");
     } catch (err) {
+      trackUpdateDataFailed("upload_failed");
       toast.error(err instanceof Error ? err.message : "Upload failed. Please try again.");
       clearProcessingStart();
       setStatus("idle");

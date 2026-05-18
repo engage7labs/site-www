@@ -7,7 +7,7 @@
 
 "use client";
 
-import { initPostHog } from "@/lib/telemetry";
+import { initPostHog, trackSiteVisited } from "@/lib/telemetry";
 import { useEffect, useRef } from "react";
 
 export function PostHogProvider({ children }: { children: React.ReactNode }) {
@@ -17,6 +17,7 @@ export function PostHogProvider({ children }: { children: React.ReactNode }) {
     if (fired.current) return;
     fired.current = true;
     initPostHog();
+    trackSiteVisited();
   }, []);
 
   return <>{children}</>;

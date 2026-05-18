@@ -20,7 +20,7 @@ import { createPollingManager } from "@/lib/polling";
 import {
   trackAnalysisCompleted,
   trackTeaserViewed,
-  trackTrialStarted,
+  trackTrialUnlockCompleted,
 } from "@/lib/telemetry";
 import {
   claimPublicAnalysis,
@@ -351,10 +351,7 @@ export default function ResultPage({
       );
     }
 
-    // Sprint 37.8: canonical PostHog conversion event (replaces legacy
-    // `premium_unlock` user-event which was non-canonical in both PostHog
-    // and the API events catalog).
-    trackTrialStarted(jobId);
+    trackTrialUnlockCompleted(jobId);
 
     // Sprint 37.8: surface email-delivery outcome from the proxy without
     // blocking the portal redirect. Show a calm warning toast if the

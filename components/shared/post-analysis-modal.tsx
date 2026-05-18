@@ -45,7 +45,7 @@ export function PostAnalysisModal({
   const handleUnlockPremium = async () => {
     const normalized = email.trim();
     if (!normalized) {
-      setEmailError("Email is required to unlock premium.");
+      setEmailError("Email is required to unlock Premium Free.");
       return;
     }
     if (!EMAIL_RE.test(normalized)) {
@@ -61,7 +61,7 @@ export function PostAnalysisModal({
 
     try {
       await onEmailSubmit(normalized, true);
-      toast.success("Your 90-day premium trial has started");
+      toast.success("Your 90-day Premium Free access has started");
       setRedirecting(true);
       redirectTimerRef.current = setTimeout(() => {
         window.location.href = "/portal";
@@ -97,10 +97,10 @@ export function PostAnalysisModal({
         <div className="p-6 space-y-5">
           <div className="space-y-1">
             <h2 className="text-xl font-semibold text-foreground">
-              Unlock your premium experience
+              Unlock Premium Free
             </h2>
             <p className="text-sm text-muted-foreground">
-              Get 90 days of free premium access — advanced trends, correlations, and a personal health portal.
+              Get 90 days of Premium Free access — advanced trends, correlations, and a personal health portal.
             </p>
           </div>
 
@@ -169,7 +169,7 @@ export function PostAnalysisModal({
               ) : (
                 <Crown className="h-4 w-4" />
               )}
-              {redirecting ? "Opening your Portal..." : "Unlock Premium (90 days free)"}
+              {redirecting ? "Opening your Portal..." : "Unlock Premium Free"}
             </button>
           </div>
         </div>

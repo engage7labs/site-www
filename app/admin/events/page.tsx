@@ -5,6 +5,9 @@ import { useEffect, useState } from "react";
 interface UserEvent {
   id: number;
   event_type: string;
+  event_display: string;
+  canonical_event: string;
+  is_legacy: boolean;
   session_id: string;
   job_id: string | null;
   created_at: string | null;
@@ -110,7 +113,12 @@ export default function AdminEventsPage() {
             {events.map((e) => (
               <tr key={e.id} className="hover:bg-muted/20 transition-colors">
                 <td className="px-4 py-3 font-medium text-card-foreground">
-                  {e.event_type}
+                  <span>{e.event_display ?? e.event_type}</span>
+                  {e.is_legacy && (
+                    <span className="ml-2 rounded-full bg-muted px-2 py-0.5 text-[10px] font-medium text-muted-foreground">
+                      legacy
+                    </span>
+                  )}
                 </td>
                 <td className="px-4 py-3 text-xs font-mono text-muted-foreground">
                   {e.job_id ? e.job_id.slice(0, 8) + "…" : "—"}

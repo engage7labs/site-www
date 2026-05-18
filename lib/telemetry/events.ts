@@ -1,87 +1,200 @@
 /**
- * Telemetry Events — Sprint 28.1
+ * Canonical Engage7 web telemetry.
  *
- * YODA §14: Only events with a clear GTM hypothesis are tracked.
- * Rule: If removing an event doesn't affect a funnel decision, remove it.
- *
- * Active funnel (8 events):
- *   upload_started → upload_completed → analysis_completed → teaser_viewed
- *   → premium_cta_clicked → trial_started → portal_opened → trial_reconfirmed
- *
- * NO sensitive physiological data is ever sent.
+ * PostHog is web/client only. Events are product-funnel signals, not job
+ * observability and never carry physiological values, filenames, raw errors,
+ * emails, blob paths, dates of health data, or section payloads.
  */
 
 import { capture } from "./posthog";
 import { getUserContext } from "./user-context";
 
-// ── Funnel step 1 ──────────────────────────────────────────────────────────
-// Hypothesis: drop-off between started and completed reveals UX friction.
+export const POSTHOG_EVENTS = [
+  "site_visited",
+  "public_upload_started",
+  "public_upload_completed",
+  "analysis_completed",
+  "teaser_viewed",
+  "trial_unlock_started",
+  "trial_unlock_completed",
+  "portal_opened",
+  "claim_import_started",
+  "claim_import_completed",
+  "report_viewed",
+  "health_dashboard_viewed",
+  "update_data_started",
+  "update_data_completed",
+  "update_data_failed",
+  "feedback_submitted",
+  "subscription_started",
+] as const;
 
-export function trackUploadStarted(fileSize?: number): void {
-  capture("upload_started", { ...getUserContext(), file_size: fileSize });
+export type PostHogEventName = (typeof POSTHOG_EVENTS)[number];
+
+type SafeTelemetryProperties = Partial<{
+  surface: string;
+  action: string;
+  status: string;
+  step: string;
+  plan_display: string;
+  plan_tier: string;
+  plan_status: string;
+  has_feature_timeline: boolean;
+  has_darth: boolean;
+  has_report: boolean;
+  source: "public" | "portal" | "admin";
+  job_id: string;
+  short_job_id: string;
+  error_code: string;
+}>;
+
+const SAFE_KEYS = new Set([
+  "surface",
+  "action",
+  "status",
+  "step",
+  "plan_display",
+  "plan_tier",
+  "plan_status",
+  "has_feature_timeline",
+  "has_darth",
+  "has_report",
+  "source",
+  "job_id",
+  "short_job_id",
+  "error_code",
+]);
+
+function safeProperties(
+  properties: SafeTelemetryProperties = {},
+): Record<string, unknown> {
+  const safe: Record<string, unknown> = {};
+  for (const [key, value] of Object.entries(properties)) {
+    if (value !== undefined && SAFE_KEYS.has(key)) {
+      safe[key] = value;
+    }
+  }
+  return safe;
 }
 
-// ── Funnel step 2 ──────────────────────────────────────────────────────────
-// Hypothesis: completion rate confirms upload reliability.
-
-export function trackUploadCompleted(jobId: string): void {
-  capture("upload_completed", { ...getUserContext(), job_id: jobId });
+export function trackEvent(
+  event: PostHogEventName,
+  properties?: SafeTelemetryProperties,
+): void {
+  capture(event, { ...getUserContext(), ...safeProperties(properties) });
 }
 
-// ── Funnel step 3 ──────────────────────────────────────────────────────────
-// Hypothesis: analysis_completed → teaser_viewed drop-off signals slow load or UX confusion.
-
-export function trackAnalysisCompleted(jobId: string): void {
-  capture("analysis_completed", { ...getUserContext(), job_id: jobId });
+export function trackSiteVisited(): void {
+  trackEvent("site_visited", { source: "public" });
 }
 
-// ── Funnel step 4 ──────────────────────────────────────────────────────────
-// Hypothesis: if teaser_viewed > 80%, the result page is landing correctly.
+export function trackPublicUploadStarted(): void {
+  trackEvent("public_upload_started", { source: "public", surface: "analyze" });
+}
+
+export function trackPublicUploadCompleted(jobId?: string): void {
+  trackEvent("public_upload_completed", {
+    source: "public",
+    surface: "analyze",
+    job_id: jobId,
+  });
+}
+
+export function trackAnalysisCompleted(jobId?: string): void {
+  trackEvent("analysis_completed", { source: "public", job_id: jobId });
+}
 
 export function trackTeaserViewed(jobId?: string): void {
-  capture("teaser_viewed", { ...getUserContext(), job_id: jobId });
+  trackEvent("teaser_viewed", { source: "public", surface: "teaser", job_id: jobId });
 }
 
-// ── Funnel step 5 ──────────────────────────────────────────────────────────
-// Hypothesis: premium_cta_clicked / teaser_viewed > 30% validates conversion intent.
-
-export function trackPremiumCtaClicked(ctaLocation: string): void {
-  capture("premium_cta_clicked", { ...getUserContext(), cta_location: ctaLocation });
+export function trackTrialUnlockStarted(surface = "teaser"): void {
+  trackEvent("trial_unlock_started", { source: "public", surface });
 }
 
-// ── Funnel step 6 ──────────────────────────────────────────────────────────
-// Hypothesis: trial_started is the primary conversion metric for free → paid.
-
-export function trackTrialStarted(jobId?: string): void {
-  capture("trial_started", { ...getUserContext(), job_id: jobId });
+export function trackTrialUnlockCompleted(jobId?: string): void {
+  trackEvent("trial_unlock_completed", {
+    source: "public",
+    surface: "teaser",
+    job_id: jobId,
+    plan_display: "Premium Free",
+    plan_tier: "premium",
+    plan_status: "trialing",
+  });
 }
-
-// ── Funnel step 7 ──────────────────────────────────────────────────────────
-// Hypothesis: portal_opened measures activation — user accessed depth layer after trial start.
 
 export function trackPortalOpened(): void {
-  capture("portal_opened", getUserContext());
+  trackEvent("portal_opened", { source: "portal", surface: "portal" });
 }
 
-// ── Funnel step 8 ──────────────────────────────────────────────────────────
-// Hypothesis: trial_reconfirmed measures retention intent after first portal session.
-
-export function trackTrialReconfirmed(): void {
-  capture("trial_reconfirmed", getUserContext());
+export function trackClaimImportStarted(jobId?: string): void {
+  trackEvent("claim_import_started", { source: "portal", job_id: jobId });
 }
 
-// ── Funnel step 9 ──────────────────────────────────────────────────────────
-// Hypothesis: account_activated measures how many users complete onboarding
-// (access code set). Sprint 30.2 / 31.1.
-
-export function trackAccountActivated(): void {
-  capture("account_activated", getUserContext());
+export function trackClaimImportCompleted(
+  jobId?: string,
+  status = "completed",
+): void {
+  trackEvent("claim_import_completed", { source: "portal", job_id: jobId, status });
 }
 
-// ── Funnel step 10 ─────────────────────────────────────────────────────────
-// Hypothesis: plan_upgraded is the primary monetisation conversion event.
-// Sprint 33.0.
-
-export function trackPlanUpgraded(): void {
-  capture("plan_upgraded", getUserContext());
+export function trackReportViewed(jobId?: string): void {
+  trackEvent("report_viewed", { source: "portal", surface: "report", job_id: jobId });
 }
+
+export function trackHealthDashboardViewed(surface: string): void {
+  trackEvent("health_dashboard_viewed", { source: "portal", surface });
+}
+
+export function trackUpdateDataStarted(): void {
+  trackEvent("update_data_started", { source: "portal", surface: "data_update" });
+}
+
+export function trackUpdateDataCompleted(jobId?: string): void {
+  trackEvent("update_data_completed", {
+    source: "portal",
+    surface: "data_update",
+    job_id: jobId,
+    status: "completed",
+  });
+}
+
+export function trackUpdateDataFailed(errorCode = "upload_failed"): void {
+  trackEvent("update_data_failed", {
+    source: "portal",
+    surface: "data_update",
+    status: "failed",
+    error_code: errorCode,
+  });
+}
+
+export function trackFeedbackSubmitted(properties: {
+  surface: string;
+  target_type: string;
+  sentiment: "yes" | "no";
+  source?: "public" | "portal" | "admin";
+}): void {
+  trackEvent("feedback_submitted", {
+    source: properties.source ?? "portal",
+    surface: properties.surface,
+    action: properties.target_type,
+    status: properties.sentiment,
+  });
+}
+
+export function trackSubscriptionStarted(): void {
+  trackEvent("subscription_started", {
+    source: "portal",
+    surface: "settings",
+    plan_display: "Premium",
+    plan_tier: "premium",
+    plan_status: "active",
+  });
+}
+
+// Backward-compatible helper names for existing imports.
+export const trackUploadStarted = trackPublicUploadStarted;
+export const trackUploadCompleted = trackPublicUploadCompleted;
+export const trackPremiumCtaClicked = trackTrialUnlockStarted;
+export const trackTrialStarted = trackTrialUnlockCompleted;
+export const trackPlanUpgraded = trackSubscriptionStarted;

@@ -9,16 +9,19 @@
 
 import { ThumbsDown, ThumbsUp } from "lucide-react";
 import { useCallback, useState } from "react";
+import { trackFeedbackSubmitted } from "@/lib/telemetry";
 
 interface BriefingFeedbackProps {
   /** Identifies what the feedback is about, e.g. "daily_briefing" */
   readonly feedbackType: string;
+  readonly surface?: "overview" | "insights" | "health" | "data_lab" | "report" | "portal";
   /** Optional context label */
   readonly context?: string;
 }
 
 export function BriefingFeedback({
   feedbackType,
+  surface = "overview",
   context,
 }: BriefingFeedbackProps) {
   const [submitted, setSubmitted] = useState<"yes" | "no" | null>(null);
@@ -33,9 +36,16 @@ export function BriefingFeedback({
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
-            feedback_type: `${feedbackType}_${value}`,
+            surface,
+            target_type: feedbackType,
+            sentiment: value,
             note: context ?? null,
           }),
+        });
+        trackFeedbackSubmitted({
+          surface,
+          target_type: feedbackType,
+          sentiment: value,
         });
         setSubmitted(value);
       } catch {

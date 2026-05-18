@@ -42,7 +42,7 @@ import {
   getSurprisingInsight,
 } from "@/lib/insights";
 import { generateInsights } from "@/lib/insights/engine";
-import { trackPremiumCtaClicked } from "@/lib/telemetry";
+import { trackTrialUnlockStarted } from "@/lib/telemetry";
 import type { AnalysisResult } from "@/lib/types/analysis";
 import { motion } from "framer-motion";
 import {
@@ -699,7 +699,7 @@ export function InsightPreview({
           <button
             type="button"
             onClick={() => {
-              trackPremiumCtaClicked("darth_teaser");
+              trackTrialUnlockStarted("darth_teaser");
               onOpenModal?.();
             }}
             className="mt-5 inline-flex w-full items-center justify-center gap-2 rounded-lg bg-[#e6b800] px-5 py-3 text-sm font-semibold text-[#1a1a1a] shadow-sm transition-colors duration-200 hover:bg-[#f2c94c] active:bg-[#c99a00] sm:w-fit"
@@ -1396,7 +1396,7 @@ export function InsightPreview({
               <button
                 type="button"
                 onClick={() => {
-                  trackPremiumCtaClicked("bottom");
+                  trackTrialUnlockStarted("bottom");
                   onOpenModal?.();
                 }}
                 className="inline-flex items-center gap-2 px-5 py-2.5 rounded-lg bg-[#e6b800] text-[#1a1a1a] text-sm font-medium shadow-sm transition-colors duration-200 hover:bg-[#f2c94c] active:bg-[#c99a00]"

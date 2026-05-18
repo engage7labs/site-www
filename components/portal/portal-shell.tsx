@@ -7,6 +7,11 @@ import {
   claimPendingPublicAnalysis,
   readPendingPublicClaim,
 } from "@/lib/public-analysis-claim";
+import {
+  trackClaimImportCompleted,
+  trackClaimImportStarted,
+  trackPortalOpened,
+} from "@/lib/telemetry";
 import { AdminViewBanner } from "../admin-view-banner";
 import { PasswordSetupAlert } from "./password-setup-alert";
 import { PortalHeader } from "./portal-header";
@@ -73,14 +78,21 @@ export function PortalShell({
   }, []);
 
   useEffect(() => {
+    trackPortalOpened();
+  }, []);
+
+  useEffect(() => {
     const pendingJobId = readPendingPublicClaim();
     if (!pendingJobId) return;
 
+    trackClaimImportStarted(pendingJobId);
     void claimPendingPublicAnalysis()
       .then(() => {
+        trackClaimImportCompleted(pendingJobId);
         toast.success("Your public analysis is now in your Portal.");
       })
       .catch(() => {
+        trackClaimImportCompleted(pendingJobId, "failed");
         toast.message("Your analysis is ready to import.", {
           description:
             "We could not import it automatically. You can retry now.",

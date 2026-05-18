@@ -8,6 +8,10 @@ interface AdminUserDetail {
   email: string;
   role: string;
   plan: string;
+  plan_display: string;
+  plan_status: string | null;
+  consent_status: string;
+  role_display: string;
   trial_start_at: string | null;
   trial_end_at: string | null;
   consent_given_at: string | null;
@@ -24,12 +28,18 @@ interface AdminUserDetail {
     id: number;
     job_id: string | null;
     feedback_type: string;
+    surface: string;
+    target_type: string;
+    sentiment: string;
+    source: string;
     note: string | null;
     created_at: string | null;
   }>;
   recent_events: Array<{
     id: number;
     event_type: string;
+    event_display: string;
+    is_legacy: boolean;
     job_id: string | null;
     created_at: string | null;
   }>;
@@ -58,6 +68,11 @@ function Section({
       {children}
     </div>
   );
+}
+
+function label(value: string | null | undefined): string {
+  if (!value) return "—";
+  return value.replace(/_/g, " ").replace(/\b\w/g, (char) => char.toUpperCase());
 }
 
 export default function AdminUserDetailPage() {
@@ -107,7 +122,7 @@ export default function AdminUserDetailPage() {
         <div>
           <h1 className="text-2xl font-bold text-foreground">{user.email}</h1>
           <p className="mt-1 text-sm text-muted-foreground">
-            {user.role} · {user.plan}
+            {user.role_display} · {user.plan_display}
           </p>
         </div>
         <a href="/admin/users" className="text-xs text-accent hover:underline">
@@ -119,10 +134,15 @@ export default function AdminUserDetailPage() {
         {[
           { label: "Created", value: fmt(user.created_at) },
           { label: "Last login", value: fmt(user.last_login_at) },
-          { label: "Consent given", value: fmt(user.consent_given_at) },
+          {
+            label: "Consent",
+            value: user.consent_given_at
+              ? `Accepted on ${fmt(user.consent_given_at)}`
+              : "Not accepted",
+          },
           { label: "Consent version", value: user.consent_version ?? "—" },
-          { label: "Trial start", value: fmt(user.trial_start_at) },
-          { label: "Trial end", value: fmt(user.trial_end_at) },
+          { label: "Premium Free start", value: fmt(user.trial_start_at) },
+          { label: "Premium Free end", value: fmt(user.trial_end_at) },
         ].map(({ label, value }) => (
           <div
             key={label}
@@ -174,7 +194,8 @@ export default function AdminUserDetailPage() {
                 className="py-2 flex items-center justify-between"
               >
                 <span className="text-sm text-card-foreground">
-                  {f.feedback_type}
+                  {label(f.surface)} · {label(f.target_type)} · {label(f.sentiment)}
+                  {f.source && f.source !== "current" ? ` (${label(f.source)})` : ""}
                   {f.note ? ` — "${f.note}"` : ""}
                 </span>
                 <span className="text-xs text-muted-foreground">
@@ -197,7 +218,8 @@ export default function AdminUserDetailPage() {
                 className="py-2 flex items-center justify-between"
               >
                 <span className="text-sm text-card-foreground">
-                  {e.event_type}
+                  {e.event_display ?? e.event_type}
+                  {e.is_legacy ? " (legacy)" : ""}
                 </span>
                 <span className="text-xs text-muted-foreground">
                   {fmt(e.created_at)}

@@ -6,6 +6,11 @@ interface FeedbackRow {
   id: number;
   job_id: string | null;
   feedback_type: string;
+  surface: string;
+  target_type: string;
+  target_id: string | null;
+  sentiment: "yes" | "no";
+  source: "current" | "legacy" | "migration";
   note: string | null;
   created_at: string | null;
 }
@@ -28,21 +33,25 @@ function fmt(iso: string | null): string {
 }
 
 const FEEDBACK_COLORS: Record<string, string> = {
-  made_sense: "bg-emerald-500/10 text-emerald-400",
-  not_sure: "bg-yellow-500/10 text-yellow-500",
-  didnt_make_sense: "bg-red-500/10 text-red-400",
+  yes: "bg-emerald-500/10 text-emerald-400",
+  no: "bg-red-500/10 text-red-400",
 };
 
-function FeedbackBadge({ type }: Readonly<{ type: string }>) {
+function FeedbackBadge({ sentiment }: Readonly<{ sentiment: string }>) {
   return (
     <span
       className={`inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium ${
-        FEEDBACK_COLORS[type] ?? "bg-muted text-muted-foreground"
+        FEEDBACK_COLORS[sentiment] ?? "bg-muted text-muted-foreground"
       }`}
     >
-      {type}
+      {sentiment === "yes" ? "Yes" : "No"}
     </span>
   );
+}
+
+function label(value: string | null | undefined): string {
+  if (!value) return "—";
+  return value.replace(/_/g, " ").replace(/\b\w/g, (char) => char.toUpperCase());
 }
 
 export default function AdminFeedbackPage() {
@@ -100,7 +109,7 @@ export default function AdminFeedbackPage() {
               key={type}
               className="flex items-center gap-2 rounded-lg border border-border bg-card px-3 py-2"
             >
-              <FeedbackBadge type={type} />
+              <span className="text-xs text-muted-foreground">{type}</span>
               <span className="text-sm font-semibold text-card-foreground">
                 {count}
               </span>
@@ -114,7 +123,7 @@ export default function AdminFeedbackPage() {
         <table className="w-full text-sm">
           <thead>
             <tr className="border-b border-border bg-muted/30">
-              {["Type", "Note", "Job ID", "When"].map((h) => (
+              {["When", "Surface", "Target", "Sentiment", "Note", "Job / Report", "Source"].map((h) => (
                 <th
                   key={h}
                   className="px-4 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider"
@@ -127,8 +136,22 @@ export default function AdminFeedbackPage() {
           <tbody className="divide-y divide-border">
             {(data?.feedback ?? []).map((f) => (
               <tr key={f.id} className="hover:bg-muted/20 transition-colors">
+                <td className="px-4 py-3 text-xs text-muted-foreground">
+                  {fmt(f.created_at)}
+                </td>
+                <td className="px-4 py-3 text-muted-foreground">
+                  {label(f.surface)}
+                </td>
+                <td className="px-4 py-3 text-muted-foreground">
+                  {label(f.target_type)}
+                  {f.target_id ? (
+                    <span className="ml-1 font-mono text-[10px] text-muted-foreground/70">
+                      {f.target_id.slice(0, 12)}
+                    </span>
+                  ) : null}
+                </td>
                 <td className="px-4 py-3">
-                  <FeedbackBadge type={f.feedback_type} />
+                  <FeedbackBadge sentiment={f.sentiment} />
                 </td>
                 <td className="px-4 py-3 text-muted-foreground">
                   {f.note ?? "—"}
@@ -137,14 +160,14 @@ export default function AdminFeedbackPage() {
                   {f.job_id ? f.job_id.slice(0, 8) + "…" : "—"}
                 </td>
                 <td className="px-4 py-3 text-xs text-muted-foreground">
-                  {fmt(f.created_at)}
+                  {label(f.source)}
                 </td>
               </tr>
             ))}
             {(data?.feedback ?? []).length === 0 && (
               <tr>
                 <td
-                  colSpan={4}
+                  colSpan={7}
                   className="px-4 py-8 text-center text-sm text-muted-foreground"
                 >
                   No feedback yet.

@@ -6,6 +6,9 @@ import { useEffect, useState } from "react";
 
 interface PortalOverviewSettingsData {
   plan?: string | null;
+  plan_display?: string | null;
+  plan_status?: string | null;
+  consent_status?: string | null;
   trial_end_at?: string | null;
   feature_store?: {
     date_end?: string | null;
@@ -35,6 +38,8 @@ export default function SettingsPage() {
   const [checkoutError, setCheckoutError] = useState<string | null>(null);
   const [paymentStatus, setPaymentStatus] = useState<"success" | "cancelled" | null>(null);
   const [plan, setPlan] = useState<string | null>(null);
+  const [planDisplay, setPlanDisplay] = useState<string | null>(null);
+  const [planStatus, setPlanStatus] = useState<string | null>(null);
   const [trialEnd, setTrialEnd] = useState<string | null>(null);
   const [timelineDateEnd, setTimelineDateEnd] = useState<string | null>(null);
   const [timelineRows, setTimelineRows] = useState<number | null>(null);
@@ -55,6 +60,8 @@ export default function SettingsPage() {
       .then((r) => r.json())
       .then((d: PortalOverviewSettingsData) => {
         setPlan(d.plan ?? null);
+        setPlanDisplay(d.plan_display ?? null);
+        setPlanStatus(d.plan_status ?? null);
         setTrialEnd(d.trial_end_at ?? null);
         setTimelineDateEnd(d.feature_store?.date_end ?? null);
         setTimelineRows(d.feature_store?.row_count ?? null);
@@ -183,10 +190,10 @@ export default function SettingsPage() {
     );
   }
 
-  const isPremium = plan === "premium";
+  const isPremium = planDisplay === "Premium" || plan === "premium";
   const trialEndDate = trialEnd ? new Date(trialEnd) : null;
-  const trialActive = plan === "trial" && trialEndDate && trialEndDate > new Date();
-  const trialExpired = (plan === "trial" && trialEndDate && trialEndDate <= new Date()) || plan === "expired";
+  const trialActive = planStatus === "trialing" && trialEndDate && trialEndDate > new Date();
+  const trialExpired = planStatus === "expired";
   const daysLeft = trialActive && trialEndDate
     ? Math.max(0, Math.ceil((trialEndDate.getTime() - Date.now()) / 86400000))
     : null;
@@ -214,8 +221,8 @@ export default function SettingsPage() {
           {isPremium && "You are on Premium — thank you for your support."}
           {trialActive && `Free access active${daysLeft !== null ? ` — ${daysLeft} day${daysLeft === 1 ? "" : "s"} remaining` : ""}.`}
           {trialExpired && "Your free access period has ended."}
-          {plan === "trial_start" && "Your account is being activated."}
-          {!plan && "Loading…"}
+          {planDisplay === "No plan" && "No plan is active for this account."}
+          {!planDisplay && "Loading…"}
         </p>
         {!isPremium && (
           <div className="flex flex-col gap-3">

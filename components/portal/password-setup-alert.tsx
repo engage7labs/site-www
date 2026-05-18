@@ -2,8 +2,7 @@
  * PasswordSetupAlert — Sprint 30.2
  *
  * Calm activation prompt. Language: "access code" not "password".
- * Shown when the user hasn't set a password yet (plan=trial_start or missing password).
- * Fires account_activated telemetry on success.
+ * Shown when the user hasn't set an access code yet.
  */
 "use client";
 
@@ -14,7 +13,6 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { trackAccountActivated } from "@/lib/telemetry/events";
 import { Eye, EyeOff, KeyRound, Loader2 } from "lucide-react";
 import { useEffect, useState } from "react";
 
@@ -72,7 +70,6 @@ export function PasswordSetupAlert() {
         setHasPassword(true);
         setStatus("success");
         setOpen(false);
-        trackAccountActivated();
       } else {
         const data = await res.json().catch(() => ({}));
         setError(

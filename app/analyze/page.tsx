@@ -24,8 +24,8 @@ import { submitAnalysisUpload } from "@/lib/api/analysis";
 import { ApiClientError } from "@/lib/api/client";
 import { getOrCreateSessionId } from "@/lib/api/events";
 import {
-  trackUploadCompleted,
-  trackUploadStarted,
+  trackPublicUploadCompleted,
+  trackPublicUploadStarted,
 } from "@/lib/telemetry";
 import { motion } from "framer-motion";
 import { CheckCircle2 } from "lucide-react";
@@ -87,7 +87,7 @@ export default function AnalyzePage() {
     setIsUploading(true);
     setProcessingStartedAt(writeProcessingStart());
 
-    trackUploadStarted(selectedFile.size);
+    trackPublicUploadStarted();
 
     void submitAnalysisUpload(
       selectedFile,
@@ -100,7 +100,7 @@ export default function AnalyzePage() {
         const sessionId = getOrCreateSessionId();
         window.localStorage.setItem(`engage7_job_${result.job_id}`, sessionId);
 
-        trackUploadCompleted(result.job_id);
+        trackPublicUploadCompleted(result.job_id);
         router.push(`/result/${result.job_id}`);
       })
       .catch((error: unknown) => {
