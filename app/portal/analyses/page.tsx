@@ -8,8 +8,18 @@ interface Analysis {
   job_id: string;
   created_at: string | null;
   report_label: string | null;
+  summary?: Record<string, unknown> | null;
+  sections?: Record<string, unknown> | null;
   upload_status: string;
   has_teaser: boolean;
+}
+
+interface FeatureStoreSummary {
+  date_end: string | null;
+}
+
+interface HealthDataResponse {
+  feature_store: FeatureStoreSummary | null;
 }
 
 function StatusBadge({ status }: { status: string }) {
@@ -41,6 +51,59 @@ function formatDate(iso: string | null): string {
   });
 }
 
+function formatCoverageDate(value: string | null): string {
+  if (!value) return "—";
+  const date = new Date(`${value.slice(0, 10)}T00:00:00Z`);
+  if (Number.isNaN(date.getTime())) return "—";
+  return date.toLocaleDateString("en-IE", {
+    day: "numeric",
+    month: "short",
+    year: "numeric",
+  });
+}
+
+function asRecord(value: unknown): Record<string, unknown> | null {
+  return value && typeof value === "object" && !Array.isArray(value)
+    ? (value as Record<string, unknown>)
+    : null;
+}
+
+function stringValue(value: unknown): string | null {
+  return typeof value === "string" && value.trim() ? value.trim() : null;
+}
+
+function dataThroughFromSource(source: Record<string, unknown> | null): string | null {
+  if (!source) return null;
+  const direct =
+    stringValue(source.dataset_end) ??
+    stringValue(source.date_end) ??
+    stringValue(source.data_through);
+  if (direct) return direct;
+
+  const period = asRecord(source.period);
+  return stringValue(period?.end) ?? stringValue(period?.date_end);
+}
+
+function analysisDataThrough(
+  analysis: Analysis,
+  featureStore: FeatureStoreSummary | null,
+  useFeatureStoreFallback: boolean,
+): string | null {
+  return (
+    dataThroughFromSource(analysis.summary ?? null) ??
+    dataThroughFromSource(analysis.sections ?? null) ??
+    dataThroughFromSource(asRecord(analysis.sections?.baseline)) ??
+    (useFeatureStoreFallback ? featureStore?.date_end ?? null : null)
+  );
+}
+
+function analysisTitle(analysis: Analysis): string {
+  const label = analysis.report_label?.trim();
+  if (!label) return analysis.upload_status === "imported" ? "Imported report" : "Data update";
+  if (/^Analysis\s+\d{1,2}\s+\w+\s+\d{4}$/i.test(label)) return "Data update";
+  return label;
+}
+
 function sortNewestFirst(items: Analysis[]): Analysis[] {
   return [...items].sort((a, b) => {
     const aTime = a.created_at ? new Date(a.created_at).getTime() : 0;
@@ -51,22 +114,43 @@ function sortNewestFirst(items: Analysis[]): Analysis[] {
 
 export default function AnalysesPage() {
   const [analyses, setAnalyses] = useState<Analysis[]>([]);
+  const [featureStore, setFeatureStore] = useState<FeatureStoreSummary | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    fetch("/api/proxy/portal/analyses")
-      .then(async (res) => {
-        if (!res.ok) throw new Error(`${res.status}`);
-        return res.json() as Promise<{ analyses: Analysis[] }>;
-      })
-      .then((data) => setAnalyses(sortNewestFirst(data.analyses ?? [])))
-      .catch((err: unknown) => setError(err instanceof Error ? err.message : String(err)))
-      .finally(() => setLoading(false));
+    (async () => {
+      try {
+        const [analysesRes, healthRes] = await Promise.allSettled([
+          fetch("/api/proxy/portal/analyses"),
+          fetch("/api/proxy/users/portal-health-data"),
+        ]);
+
+        if (analysesRes.status !== "fulfilled" || !analysesRes.value.ok) {
+          throw new Error(
+            analysesRes.status === "fulfilled"
+              ? `${analysesRes.value.status}`
+              : "Analyses unavailable",
+          );
+        }
+
+        const data = (await analysesRes.value.json()) as { analyses: Analysis[] };
+        setAnalyses(sortNewestFirst(data.analyses ?? []));
+
+        if (healthRes.status === "fulfilled" && healthRes.value.ok) {
+          const healthData = (await healthRes.value.json()) as HealthDataResponse;
+          setFeatureStore(healthData.feature_store ?? null);
+        }
+      } catch (err) {
+        setError(err instanceof Error ? err.message : String(err));
+      } finally {
+        setLoading(false);
+      }
+    })();
   }, []);
 
   return (
-    <div className="flex flex-col gap-6 max-w-2xl mx-auto px-4 md:px-8 mt-10">
+    <div className="flex flex-col gap-6 max-w-4xl mx-auto px-4 md:px-8 mt-10">
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-bold text-foreground">Data Updates</h1>
@@ -107,38 +191,60 @@ export default function AnalysesPage() {
             <thead>
               <tr className="border-b border-border bg-muted/30">
                 <th className="text-left px-4 py-3 text-xs font-medium text-muted-foreground">Analysis</th>
-                <th className="text-left px-4 py-3 text-xs font-medium text-muted-foreground">Date & time</th>
+                <th className="text-left px-4 py-3 text-xs font-medium text-muted-foreground">Uploaded at</th>
+                <th className="text-left px-4 py-3 text-xs font-medium text-muted-foreground">Data through</th>
                 <th className="text-left px-4 py-3 text-xs font-medium text-muted-foreground">Status</th>
                 <th className="px-4 py-3"></th>
               </tr>
             </thead>
             <tbody className="divide-y divide-border">
-              {analyses.map((a) => (
-                <tr key={a.job_id} className="hover:bg-muted/20 transition-colors">
-                  <td className="px-4 py-3">
-                    <p className="font-medium text-foreground">{a.report_label ?? "Analysis"}</p>
-                    <p className="text-xs text-muted-foreground font-mono">{a.job_id.slice(0, 8)}</p>
-                  </td>
-                  <td className="px-4 py-3 text-muted-foreground">
-                    {formatDate(a.created_at)}
-                  </td>
-                  <td className="px-4 py-3">
-                    <StatusBadge status={a.upload_status} />
-                  </td>
-                  <td className="px-4 py-3 text-right">
-                    {a.has_teaser && (a.upload_status === "completed" || a.upload_status === "imported") && (
-                      <a
-                        href={`/api/proxy/portal/teaser?job_id=${a.job_id}`}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="text-xs text-accent hover:underline"
-                      >
-                        View teaser →
-                      </a>
-                    )}
-                  </td>
-                </tr>
-              ))}
+              {analyses.map((a, index) => {
+                const useFeatureStoreFallback =
+                  index === 0 &&
+                  (a.upload_status === "completed" || a.upload_status === "imported");
+                const dataThrough = analysisDataThrough(
+                  a,
+                  featureStore,
+                  useFeatureStoreFallback,
+                );
+                const title = analysisTitle(a);
+                const showOriginalLabel = a.report_label && a.report_label !== title;
+
+                return (
+                  <tr key={a.job_id} className="hover:bg-muted/20 transition-colors">
+                    <td className="px-4 py-3">
+                      <p className="font-medium text-foreground">{title}</p>
+                      {showOriginalLabel && (
+                        <p className="text-xs text-muted-foreground">
+                          Report label: {a.report_label}
+                        </p>
+                      )}
+                      <p className="text-xs text-muted-foreground font-mono">{a.job_id.slice(0, 8)}</p>
+                    </td>
+                    <td className="px-4 py-3 text-muted-foreground">
+                      {formatDate(a.created_at)}
+                    </td>
+                    <td className="px-4 py-3 text-muted-foreground">
+                      {formatCoverageDate(dataThrough)}
+                    </td>
+                    <td className="px-4 py-3">
+                      <StatusBadge status={a.upload_status} />
+                    </td>
+                    <td className="px-4 py-3 text-right">
+                      {a.has_teaser && (a.upload_status === "completed" || a.upload_status === "imported") && (
+                        <a
+                          href={`/api/proxy/portal/teaser?job_id=${a.job_id}`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="text-xs text-accent hover:underline"
+                        >
+                          View teaser →
+                        </a>
+                      )}
+                    </td>
+                  </tr>
+                );
+              })}
             </tbody>
           </table>
         </div>
