@@ -10,7 +10,7 @@ interface BlobEntry {
   last_modified: string | null;
   container: string;
   is_orphan: boolean;
-  status?: "linked" | "orphan" | "unknown";
+  status?: "linked" | "user-owned" | "public active" | "public expired" | "unmatched" | "orphan" | "protected";
 }
 
 interface BlobsResponse {
@@ -46,6 +46,8 @@ export default function AdminBlobsPage() {
   const [bulkDeleting, setBulkDeleting] = useState(false);
   const [bulkResult, setBulkResult] = useState<string | null>(null);
   const [showAll, setShowAll] = useState(false);
+  const [pageSize, setPageSize] = useState<20 | 50 | 100 | "all">(20);
+  const [page, setPage] = useState(1);
 
   const load = () => {
     setLoading(true);
@@ -63,6 +65,7 @@ export default function AdminBlobsPage() {
   };
 
   useEffect(() => { load(); }, []);
+  useEffect(() => { setPage(1); }, [showAll, pageSize]);
 
   const handleDelete = async (container: string, blobPath: string) => {
     const key = `${container}/${blobPath}`;
@@ -144,6 +147,30 @@ export default function AdminBlobsPage() {
     const bTime = b.last_modified ? new Date(b.last_modified).getTime() : 0;
     return bTime - aTime;
   });
+  const totalPages = pageSize === "all" ? 1 : Math.max(1, Math.ceil(displayBlobs.length / pageSize));
+  const currentPage = Math.min(page, totalPages);
+  const pagedBlobs = pageSize === "all"
+    ? displayBlobs
+    : displayBlobs.slice((currentPage - 1) * pageSize, currentPage * pageSize);
+  const pageNumbers = Array.from({ length: totalPages }, (_, index) => index + 1);
+
+  const renderStatus = (blob: BlobEntry) => {
+    const status = blob.status ?? (blob.is_orphan ? "orphan" : "protected");
+    const classes: Record<string, string> = {
+      linked: "border-emerald-500/30 bg-emerald-500/10 text-emerald-400",
+      "user-owned": "border-indigo-500/30 bg-indigo-500/10 text-indigo-300",
+      "public active": "border-sky-500/30 bg-sky-500/10 text-sky-400",
+      "public expired": "border-amber-500/30 bg-amber-500/10 text-amber-400",
+      unmatched: "border-zinc-500/30 bg-zinc-500/10 text-zinc-300",
+      orphan: "border-amber-500/30 bg-amber-500/10 text-amber-400",
+      protected: "border-zinc-500/30 bg-zinc-500/10 text-zinc-300",
+    };
+    return (
+      <span className={`inline-flex items-center rounded-full border px-2 py-0.5 text-xs ${classes[status] ?? classes.protected}`}>
+        {status}
+      </span>
+    );
+  };
 
   return (
     <div className="flex flex-col gap-6">
@@ -213,6 +240,19 @@ export default function AdminBlobsPage() {
         </div>
       )}
 
+      <div className="rounded-lg border border-border bg-card p-4">
+        <p className="mb-3 text-xs font-medium uppercase tracking-wide text-muted-foreground">Status legend</p>
+        <div className="grid gap-2 text-xs text-muted-foreground sm:grid-cols-2 lg:grid-cols-4">
+          <p><span className="text-emerald-400">linked</span> exact DB reference found</p>
+          <p><span className="text-indigo-300">user-owned</span> private artifact associated with a user</p>
+          <p><span className="text-sky-400">public active</span> public artifact within 30-day TTL</p>
+          <p><span className="text-amber-400">public expired</span> public artifact older than TTL and cleanup-eligible if unclaimed</p>
+          <p><span className="text-zinc-300">unmatched</span> known runtime namespace without exact DB reference</p>
+          <p><span className="text-amber-400">orphan</span> no reference and safe to delete</p>
+          <p><span className="text-zinc-300">protected</span> delete disabled</p>
+        </div>
+      </div>
+
       {/* Toggle */}
       <div className="flex gap-2">
         <button
@@ -227,6 +267,48 @@ export default function AdminBlobsPage() {
         >
           All blobs ({data.total_count})
         </button>
+      </div>
+
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <p className="text-xs text-muted-foreground">
+          Showing {pagedBlobs.length} of {displayBlobs.length} blob{displayBlobs.length === 1 ? "" : "s"}
+        </p>
+        <div className="flex items-center gap-2">
+          <select
+            value={pageSize}
+            onChange={(event) => setPageSize(event.target.value === "all" ? "all" : Number(event.target.value) as 20 | 50 | 100)}
+            className="rounded-lg border border-border bg-background px-2 py-1 text-xs text-foreground"
+            aria-label="Page size"
+          >
+            <option value={20}>20</option>
+            <option value={50}>50</option>
+            <option value={100}>100</option>
+            <option value="all">All</option>
+          </select>
+          <button
+            onClick={() => setPage((value) => Math.max(1, value - 1))}
+            disabled={currentPage <= 1}
+            className="rounded border border-border px-2 py-1 text-xs text-muted-foreground disabled:opacity-40"
+          >
+            Previous
+          </button>
+          {pageNumbers.map((pageNumber) => (
+            <button
+              key={pageNumber}
+              onClick={() => setPage(pageNumber)}
+              className={`min-w-8 rounded border px-2 py-1 text-xs ${pageNumber === currentPage ? "border-accent bg-accent text-accent-foreground" : "border-border text-muted-foreground"}`}
+            >
+              {pageNumber}
+            </button>
+          ))}
+          <button
+            onClick={() => setPage((value) => Math.min(totalPages, value + 1))}
+            disabled={currentPage >= totalPages}
+            className="rounded border border-border px-2 py-1 text-xs text-muted-foreground disabled:opacity-40"
+          >
+            Next
+          </button>
+        </div>
       </div>
 
       {/* Table */}
@@ -250,8 +332,9 @@ export default function AdminBlobsPage() {
               </tr>
             </thead>
             <tbody className="divide-y divide-border">
-              {displayBlobs.map((blob) => {
+              {pagedBlobs.map((blob) => {
                 const key = `${blob.container}/${blob.blob_path}`;
+                const canDelete = blob.status === "orphan" || blob.status === "public expired" || blob.is_orphan;
                 return (
                   <tr key={key} className={blob.is_orphan ? "bg-amber-500/5" : ""}>
                     <td className="max-w-md whitespace-normal break-all px-4 py-3 font-mono text-xs text-muted-foreground">
@@ -267,22 +350,10 @@ export default function AdminBlobsPage() {
                       {formatDate(blob.last_modified)}
                     </td>
                     <td className="px-4 py-3">
-                      {blob.status === "orphan" || blob.is_orphan ? (
-                        <span className="inline-flex items-center gap-1 rounded-full border border-amber-500/30 bg-amber-500/10 px-2 py-0.5 text-xs text-amber-400">
-                          orphan
-                        </span>
-                      ) : blob.status === "unknown" ? (
-                        <span className="inline-flex items-center rounded-full border border-sky-500/30 bg-sky-500/10 px-2 py-0.5 text-xs text-sky-400">
-                          unmatched
-                        </span>
-                      ) : (
-                        <span className="inline-flex items-center rounded-full border border-emerald-500/30 bg-emerald-500/10 px-2 py-0.5 text-xs text-emerald-400">
-                          linked
-                        </span>
-                      )}
+                      {renderStatus(blob)}
                     </td>
                     <td className="px-4 py-3">
-                      {blob.status === "orphan" || blob.is_orphan ? (
+                      {canDelete ? (
                         <button
                           onClick={() => handleDelete(blob.container, blob.blob_path)}
                           disabled={deleting === key}
