@@ -21,7 +21,6 @@ import {
   getDarthPresentation,
   getDarthTeaser,
   selectDarthCopy,
-  selectDarthCta,
 } from "@/lib/darth";
 import {
   buildActivityChart,
@@ -82,6 +81,12 @@ interface InsightPreviewProps {
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 type Sections = Record<string, any>;
 type InsightSection = "recovery" | "activity";
+
+const PREMIUM_PORTAL_CTA = "Open your Premium Free Portal";
+const PREMIUM_PORTAL_HELPER =
+  "Enter your email to unlock 90 days of Premium Free access.";
+const PREMIUM_PORTAL_BUTTON_CLASS =
+  "inline-flex items-center justify-center gap-2 rounded-lg bg-[#175cff] px-6 py-3 text-sm font-semibold text-white shadow-lg shadow-[#175cff]/25 ring-1 ring-[#8fb0ff]/50 transition-colors duration-200 hover:bg-[#0f49d8] active:bg-[#0b38a8] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#8fb0ff] focus-visible:ring-offset-2 focus-visible:ring-offset-background";
 
 const SECTION_TARGET_IDS: Record<InsightSection, string[]> = {
   recovery: ["recovery-desktop", "recovery-mobile"],
@@ -270,10 +275,6 @@ export function InsightPreview({
         block,
         copy: selectDarthCopy(block.copy, locale),
       })),
-    [darthPresentation, locale]
-  );
-  const darthCta = useMemo(
-    () => selectDarthCta(darthPresentation?.cta, locale),
     [darthPresentation, locale]
   );
   const darthProofCharts = useMemo(() => {
@@ -702,11 +703,14 @@ export function InsightPreview({
               trackTrialUnlockStarted("darth_teaser");
               onOpenModal?.();
             }}
-            className="mt-5 inline-flex w-full items-center justify-center gap-2 rounded-lg bg-[#e6b800] px-5 py-3 text-sm font-semibold text-[#1a1a1a] shadow-sm transition-colors duration-200 hover:bg-[#f2c94c] active:bg-[#c99a00] sm:w-fit"
+            className={`mt-5 w-full sm:w-fit ${PREMIUM_PORTAL_BUTTON_CLASS}`}
           >
             <Crown className="h-4 w-4" />
-            {teaser.cta}
+            {PREMIUM_PORTAL_CTA}
           </button>
+          <p className="mt-2 text-xs leading-relaxed text-muted-foreground">
+            {PREMIUM_PORTAL_HELPER}
+          </p>
         </div>
         <div className="mt-5 md:mt-0">{renderTeaserVisual(teaser)}</div>
       </motion.section>
@@ -1391,7 +1395,7 @@ export function InsightPreview({
               initial={{ opacity: 0, y: 12 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.4, delay: 0.45 }}
-              className="mt-5 flex flex-col sm:flex-row items-center justify-center gap-3"
+              className="mt-5 flex flex-col items-center justify-center gap-2 text-center"
             >
               <button
                 type="button"
@@ -1399,11 +1403,14 @@ export function InsightPreview({
                   trackTrialUnlockStarted("bottom");
                   onOpenModal?.();
                 }}
-                className="inline-flex items-center gap-2 px-5 py-2.5 rounded-lg bg-[#e6b800] text-[#1a1a1a] text-sm font-medium shadow-sm transition-colors duration-200 hover:bg-[#f2c94c] active:bg-[#c99a00]"
+                className={PREMIUM_PORTAL_BUTTON_CLASS}
               >
                 <Crown className="h-4 w-4" />
-                {darthTeaser?.cta ?? darthCta ?? t.result.preview.fullReport.downloadButton}
+                {PREMIUM_PORTAL_CTA}
               </button>
+              <p className="max-w-sm text-xs leading-relaxed text-muted-foreground">
+                {PREMIUM_PORTAL_HELPER}
+              </p>
             </motion.div>
 
             {/* Plan comparison cards (Sprint 18.6.5, localized Sprint 25.4) */}

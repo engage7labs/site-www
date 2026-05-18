@@ -97,10 +97,10 @@ export function PostAnalysisModal({
         <div className="p-6 space-y-5">
           <div className="space-y-1">
             <h2 className="text-xl font-semibold text-foreground">
-              Unlock Premium Free
+              Open your Premium Free Portal
             </h2>
             <p className="text-sm text-muted-foreground">
-              Get 90 days of Premium Free access — advanced trends, correlations, and a personal health portal.
+              Enter your email to unlock 90 days of Premium Free access.
             </p>
           </div>
 
@@ -162,14 +162,14 @@ export function PostAnalysisModal({
               type="button"
               onClick={handleUnlockPremium}
               disabled={!canSubmit}
-              className="inline-flex items-center gap-2 rounded-lg bg-[#e6b800] px-5 py-2.5 text-sm font-medium text-[#1a1a1a] shadow-sm transition-colors duration-200 hover:bg-[#f2c94c] active:bg-[#c99a00] disabled:cursor-not-allowed disabled:opacity-50 dark:text-[#1a1a1a]"
+              className="inline-flex w-full items-center justify-center gap-2 rounded-lg bg-[#175cff] px-5 py-3 text-sm font-semibold text-white shadow-lg shadow-[#175cff]/25 ring-1 ring-[#8fb0ff]/50 transition-colors duration-200 hover:bg-[#0f49d8] active:bg-[#0b38a8] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#8fb0ff] focus-visible:ring-offset-2 focus-visible:ring-offset-background disabled:cursor-not-allowed disabled:opacity-50 sm:w-auto"
             >
               {submitting ? (
                 <Loader2 className="h-4 w-4 animate-spin" />
               ) : (
                 <Crown className="h-4 w-4" />
               )}
-              {redirecting ? "Opening your Portal..." : "Unlock Premium Free"}
+              {redirecting ? "Opening your Portal..." : "Open your Premium Free Portal"}
             </button>
           </div>
         </div>

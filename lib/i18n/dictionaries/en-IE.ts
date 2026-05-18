@@ -337,7 +337,7 @@ export const enIE = {
         title: "Unlock your complete analysis",
         description:
           "See trends over time, correlations between your signals, and access your personal portal — free for 90 days.",
-        downloadButton: "Unlock Premium (90 days free)",
+        downloadButton: "Open your Premium Free Portal",
         runAnother: "Run another analysis",
       },
     },
