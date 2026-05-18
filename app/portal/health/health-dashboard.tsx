@@ -62,7 +62,7 @@ interface ChartSeries {
 }
 
 const PERIOD_LABELS: Record<Period, string> = {
-  today: "Today",
+  today: "Last day",
   week: "Last Week",
   month: "Last Month",
   year: "Last Year",
@@ -293,7 +293,7 @@ function filterByPeriod(
       comparisonPoints: previousPoint ? [previousPoint] : [],
       hasAnyDomainData: domainPoints.length > 0,
       hasDomainDataInRange: Boolean(latestDomainPoint),
-      rangeLabel: latestDomainPoint ? `Latest available day: ${formatDate(latestDomainPoint.date)}` : "Latest available day",
+      rangeLabel: latestDomainPoint ? `Latest complete day available: ${formatDate(latestDomainPoint.date)}` : "Latest complete day available",
       comparisonLabel: previousPoint
         ? "Compared with previous available day"
         : "Comparison unavailable",
@@ -1308,7 +1308,7 @@ function RecoveryDashboard({
         title="Baseline Comparison"
         subtitle={
           period === "today"
-            ? "Latest available day compared with the previous available day"
+            ? "Latest complete day available compared with the previous available day"
             : "Selected range compared with your full stored timeline"
         }
       >
@@ -1325,7 +1325,7 @@ function RecoveryDashboard({
             <p className="mt-1 text-xs text-muted-foreground">
               {hrvComparison.status === "valid"
                 ? period === "today"
-                  ? "Latest available day vs previous available day."
+                  ? "Latest complete day available vs previous available day."
                   : "Selected range vs full stored timeline."
                 : period === "today"
                   ? "Comparison unavailable."
@@ -1346,7 +1346,7 @@ function RecoveryDashboard({
             <p className="mt-1 text-xs text-muted-foreground">
               {hrComparison.status === "valid"
                 ? period === "today"
-                  ? "Latest available day vs previous available day."
+                  ? "Latest complete day available vs previous available day."
                   : "Selected range vs full stored timeline."
                 : period === "today"
                   ? "Comparison unavailable."
@@ -1369,6 +1369,10 @@ function ActivityDashboard({
   sections: UnknownRecord | null;
 }>) {
   const steps = metricSeries(points, ACTIVITY_STEPS_KEYS, plausibleDailySteps);
+  const hiddenStepOutliers = points.filter((point) => {
+    const value = valueFor(point, ACTIVITY_STEPS_KEYS);
+    return value !== null && plausibleDailySteps(value) === null;
+  }).length;
   const energy = metricSeries(points, ["active_energy_cal", "total_active_energy"]);
   const distance = metricSeries(points, ["distance_km", "total_distance"]);
   const exercise = metricSeries(points, [
@@ -1446,17 +1450,24 @@ function ActivityDashboard({
 
       <ChartPanel title="Steps Trend" subtitle={`Daily steps - ${rangeLabel}`}>
         {stepsVals.length > 0 ? (
-          <EChart
-            height={320}
-            option={lineChartOption(points, [
-              {
-                name: "Steps",
-                color: COLORS.steps,
-                data: steps.map((point) => point.value),
-                type: "bar",
-              },
-            ])}
-          />
+          <div className="flex flex-col gap-2">
+            <EChart
+              height={320}
+              option={lineChartOption(points, [
+                {
+                  name: "Steps",
+                  color: COLORS.steps,
+                  data: steps.map((point) => point.value),
+                  type: "bar",
+                },
+              ])}
+            />
+            {hiddenStepOutliers > 0 && (
+              <p className="text-xs text-muted-foreground">
+                {hiddenStepOutliers} extreme step {hiddenStepOutliers === 1 ? "value is" : "values are"} hidden from chart scale.
+              </p>
+            )}
+          </div>
         ) : (
           <MetricState
             Icon={Footprints}

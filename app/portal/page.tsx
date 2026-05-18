@@ -39,6 +39,8 @@ const COLORS = {
   steps: "#5eead4",
 };
 
+const EXTREME_DAILY_STEPS = 200_000;
+
 const OVERVIEW_HEADER_EVENT = "engage7:overview-header-subtitle";
 
 interface TrendPoint {
@@ -334,6 +336,16 @@ function healthTrend(points: HealthPoint[] | undefined, keys: string[]): TrendPo
     }));
 }
 
+function plausibleStepsTrend(points: TrendPoint[] | undefined): TrendPoint[] | undefined {
+  return points?.map((point) => ({
+    ...point,
+    value:
+      point.value != null && point.value > EXTREME_DAILY_STEPS
+        ? null
+        : point.value,
+  }));
+}
+
 function getDateKey(point: TrendPoint): string {
   return point.date.slice(0, 10);
 }
@@ -361,6 +373,12 @@ function latestFeatureDate(trendsData: TrendsData | null): string | null {
     .map(getDateKey)
     .sort();
   return dates.at(-1) ?? null;
+}
+
+function effectiveLatestCompleteDay(data: OverviewData | null, fallbackLatestDate: string | null): string | null {
+  const dataThrough = data?.feature_store?.date_end?.slice(0, 10) ?? null;
+  const anchor = dataThrough ?? fallbackLatestDate;
+  return anchor ? shiftDateKey(anchor, -1) : null;
 }
 
 function availableRange(points: TrendPoint[] | undefined, latestDate: string | null) {
@@ -827,7 +845,37 @@ export default function PortalOverviewPage() {
   const sleepPoints = healthSleepTrend.some((point) => point.value != null)
     ? healthSleepTrend
     : trends?.trends?.sleep;
-  const sleepMedian = median(sleepPoints);
+  const healthHrvTrend = healthTrend(healthData?.data_points, [
+    "hrv_sdnn_mean",
+    "hrv_sdnn_mean_median",
+    "hrv_sdnn",
+    "hrv",
+  ]);
+  const recoveryPoints = healthHrvTrend.some((point) => point.value != null)
+    ? healthHrvTrend
+    : trends?.trends?.hrv;
+  const healthStepsTrend = healthTrend(healthData?.data_points, ["total_steps", "steps"]);
+  const rawActivityPoints = healthStepsTrend.some((point) => point.value != null)
+    ? healthStepsTrend
+    : trends?.trends?.steps;
+  const activityPoints = plausibleStepsTrend(rawActivityPoints);
+  const featureLatestDate = latestFeatureDate({
+    trends: {
+      sleep: sleepPoints ?? [],
+      hrv: recoveryPoints ?? [],
+      hr: trends?.trends?.hr ?? [],
+      steps: activityPoints ?? [],
+    },
+    analysis_count: trends?.analysis_count ?? healthData?.analysis_count ?? 0,
+  });
+  const completeLatestDate = effectiveLatestCompleteDay(data, featureLatestDate);
+  const completeWindowStart = completeLatestDate ? shiftDateKey(completeLatestDate, -6) : null;
+  const sleepRange = availableRange(sleepPoints, completeLatestDate);
+  const recoveryRange = availableRange(recoveryPoints, completeLatestDate);
+  const activityRange = availableRange(activityPoints, completeLatestDate);
+  const sleepMedian = median(pointsInRange(sleepPoints, sleepRange?.start ?? null, sleepRange?.end ?? null));
+  const recoveryMedian = median(pointsInRange(recoveryPoints, recoveryRange?.start ?? null, recoveryRange?.end ?? null));
+  const stepsMedian = median(pointsInRange(activityPoints, activityRange?.start ?? null, activityRange?.end ?? null));
   const sleepScore =
     sleepMedian != null
       ? `${Number(sleepMedian.toFixed(1))}h`
@@ -835,32 +883,39 @@ export default function PortalOverviewPage() {
         ? `${data.sleep_score}h`
         : "—";
   const recoveryTrend =
-    data?.recovery_trend != null ? `${data.recovery_trend} ms` : "—";
-  const healthStepsTrend = healthTrend(healthData?.data_points, ["total_steps", "steps"]);
-  const activityPoints = healthStepsTrend.some((point) => point.value != null)
-    ? healthStepsTrend
-    : trends?.trends?.steps;
-  const stepsMedian = median(activityPoints);
+    recoveryMedian != null
+      ? `${Number(recoveryMedian.toFixed(1))} ms`
+      : data?.recovery_trend != null
+        ? `${data.recovery_trend} ms`
+        : "—";
   const activity = stepsMedian != null ? Math.round(stepsMedian).toLocaleString() : "—";
-  const completeness = data?.data_completeness ?? "—";
-  const featureLatestDate = latestFeatureDate({
-    trends: {
-      sleep: sleepPoints ?? [],
-      hrv: trends?.trends?.hrv ?? [],
-      hr: trends?.trends?.hr ?? [],
-      steps: activityPoints ?? [],
-    },
-    analysis_count: trends?.analysis_count ?? healthData?.analysis_count ?? 0,
+  const completeWindowPoints = pointsInRange(
+    healthTrend(healthData?.data_points, ["sleep_hours"]),
+    sleepRange?.start ?? completeWindowStart,
+    completeLatestDate,
+  );
+  const completeWindowHealthPoints = (healthData?.data_points ?? []).filter((point) => {
+    if (!completeLatestDate) return false;
+    const date = point.date.slice(0, 10);
+    return completeWindowStart ? date >= completeWindowStart && date <= completeLatestDate : false;
   });
-  const sleepRange = availableRange(sleepPoints, featureLatestDate);
-  const recoveryRange = availableRange(trends?.trends?.hrv, featureLatestDate);
-  const activityRange = availableRange(activityPoints, featureLatestDate);
+  const availableSignals = [
+    completeWindowPoints.some((point) => point.value != null),
+    pointsInRange(recoveryPoints, recoveryRange?.start ?? null, recoveryRange?.end ?? null).some((point) => point.value != null),
+    pointsInRange(activityPoints, activityRange?.start ?? null, activityRange?.end ?? null).some((point) => point.value != null),
+    completeWindowHealthPoints.some((point) =>
+      valueFor(point, ["active_energy_cal", "total_active_energy", "distance_km", "total_distance"]) != null
+    ),
+  ].filter(Boolean).length;
+  const completeness = healthData?.data_points?.length && completeLatestDate
+    ? `${availableSignals}/4 signals`
+    : data?.data_completeness ?? "—";
   const sleepTrend = trendWithMetricTone(
     weeklyTrend(sleepPoints, sleepRange, t.portal.metrics.weekTrend),
     "sleep",
   );
   const recoveryWeekTrend = trendWithMetricTone(
-    weeklyTrend(trends?.trends?.hrv, recoveryRange, t.portal.metrics.weekTrend),
+    weeklyTrend(recoveryPoints, recoveryRange, t.portal.metrics.weekTrend),
     "recovery",
   );
   const activityTrend = trendWithMetricTone(
@@ -891,7 +946,7 @@ export default function PortalOverviewPage() {
           debugLabel="OVERVIEW_RECOVERY_CARD"
           href="/portal/health/recovery"
           subtitle={
-            data?.recovery_trend == null
+            recoveryMedian == null && data?.recovery_trend == null
               ? t.portal.metrics.noRecentData
               : medianSubtitle(recoveryRange, t.portal.metrics)
           }
@@ -960,10 +1015,10 @@ export default function PortalOverviewPage() {
           debugLabel="OVERVIEW_SLEEP_TREND_CHART"
         />
         <HealthRadar
-          sleep={data?.sleep_score ?? null}
+          sleep={sleepMedian ?? data?.sleep_score ?? null}
           hr={median(trends?.trends?.hr)}
-          hrv={data?.recovery_trend ?? null}
-          steps={median(activityPoints)}
+          hrv={recoveryMedian ?? data?.recovery_trend ?? null}
+          steps={stepsMedian}
           title={t.portal.healthBalance}
           emptyTitle={t.portal.charts.healthBalanceEmpty.title}
           emptyMessage={t.portal.charts.healthBalanceEmpty.message}
