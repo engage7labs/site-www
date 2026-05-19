@@ -1,5 +1,6 @@
 "use client";
 
+import { useLocale } from "@/components/providers/locale-provider";
 import { LocaleSwitcher } from "@/components/shared/locale-switcher";
 import { ThemeSwitcher } from "@/components/shared/theme-switcher";
 import { LogOut, Menu, Upload, UserRound } from "lucide-react";
@@ -18,6 +19,7 @@ export function PortalHeader({
   sectionTitle,
   sectionSubtitle,
 }: PortalHeaderProps) {
+  const { t } = useLocale();
   const router = useRouter();
   const [isAdminView, setIsAdminView] = useState(false);
   const [userEmail, setUserEmail] = useState<string | null>(null);
@@ -94,7 +96,7 @@ export function PortalHeader({
             </span>
             {isAdminView && (
               <span className="shrink-0 rounded bg-amber-500/10 px-1.5 py-0.5 text-[10px] font-medium text-amber-700 dark:text-amber-300">
-                read-only
+                {t.common.readOnly}
               </span>
             )}
           </div>
@@ -105,7 +107,7 @@ export function PortalHeader({
             className="flex items-center gap-1.5 rounded-lg bg-[#e6b800] px-3 py-1.5 text-sm font-medium text-[#1a1a1a] shadow-sm transition-colors hover:bg-[#f2c94c] active:bg-[#c99a00]"
           >
             <Upload className="h-4 w-4" />
-            <span className="hidden sm:inline">Update Data</span>
+            <span className="hidden sm:inline">{t.common.updateData}</span>
           </Link>
         )}
         <ThemeSwitcher />
@@ -115,7 +117,7 @@ export function PortalHeader({
           className="flex items-center gap-2 rounded-lg px-3 py-2 text-sm text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
         >
           <LogOut className="h-4 w-4" />
-          <span className="hidden sm:inline">Sign out</span>
+          <span className="hidden sm:inline">{t.common.signOut}</span>
         </button>
       </div>
     </header>

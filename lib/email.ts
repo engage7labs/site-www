@@ -11,6 +11,7 @@
  */
 
 import { resolveCanonicalAppUrl } from "@/lib/canonical-app-url";
+import { normalizeLocale, type Locale } from "@/lib/i18n";
 
 const RESEND_API_KEY = process.env.RESEND_API_KEY ?? "";
 const EMAIL_FROM = process.env.EMAIL_FROM ?? "Engage7 Labs <noreply@engage7.ie>";
@@ -181,39 +182,167 @@ function authEmailLogoMarkup(): string {
   return EMAIL_LOGO_MARKUP;
 }
 
-export function passwordSetupEmail(resetUrl: string): {
+const emailCopy: Record<
+  Locale,
+  {
+    setup: {
+      subject: string;
+      title: string;
+      body: string;
+      button: string;
+      footer: string;
+    };
+    reset: {
+      subject: string;
+      title: string;
+      intro: string;
+      body: string;
+      button: string;
+      footer: string;
+      privacy: string;
+    };
+    welcome: {
+      subject: string;
+      title: string;
+      intro: string;
+      body: string;
+      button: string;
+      footer: string;
+      privacy: string;
+    };
+    insight: {
+      subject: string;
+      title: string;
+      intro: string;
+      button: string;
+      footer: string;
+    };
+  }
+> = {
+  en: {
+    setup: {
+      subject: "Set your Engage7 password",
+      title: "Set your password",
+      body: "Click the button below to create a password for your Engage7 account. This link expires in 1 hour.",
+      button: "Set Password",
+      footer:
+        "If you didn't request this, you can safely ignore this email.<br />This link will expire in 1 hour.",
+    },
+    reset: {
+      subject: "Reset your Engage7 password",
+      title: "Reset your password.",
+      intro:
+        "We received a request to reset the password for your Engage7 account.",
+      body:
+        "Use the private link below to choose a new password. This link expires in 1 hour.",
+      button: "Reset password →",
+      footer:
+        "If you didn't request this, you can safely ignore this email.<br>This link will expire in 1 hour.",
+      privacy: "Privacy Policy",
+    },
+    welcome: {
+      subject: "Your health insights are ready",
+      title: "Your data is telling a story.",
+      intro:
+        "We've analysed your Apple Health data and found patterns worth exploring.",
+      body: "Your personal dashboard is ready — built entirely from your own data.",
+      button: "Open your dashboard →",
+      footer:
+        "This link is private and opens directly to your data.<br>It stays active for 24 hours.",
+      privacy: "Privacy Policy",
+    },
+    insight: {
+      subject: "New insight from your health data — Engage7",
+      title: "A new insight from your data",
+      intro:
+        "Visit your dashboard to explore what this means and view your full longitudinal trends.",
+      button: "View in Dashboard",
+      footer:
+        "You received this because your latest analysis revealed a meaningful insight.<br />Engage7 — Personal health insights from your wearable data.",
+    },
+  },
+  "pt-BR": {
+    setup: {
+      subject: "Defina sua senha do Engage7",
+      title: "Defina sua senha",
+      body: "Clique no botão abaixo para criar uma senha para sua conta Engage7. Este link expira em 1 hora.",
+      button: "Definir senha",
+      footer:
+        "Se você não solicitou isso, pode ignorar este email com segurança.<br />Este link expira em 1 hora.",
+    },
+    reset: {
+      subject: "Redefina sua senha do Engage7",
+      title: "Redefina sua senha.",
+      intro:
+        "Recebemos uma solicitação para redefinir a senha da sua conta Engage7.",
+      body:
+        "Use o link privado abaixo para escolher uma nova senha. Este link expira em 1 hora.",
+      button: "Redefinir senha →",
+      footer:
+        "Se você não solicitou isso, pode ignorar este email com segurança.<br>Este link expira em 1 hora.",
+      privacy: "Política de Privacidade",
+    },
+    welcome: {
+      subject: "Seus insights de saúde estão prontos",
+      title: "Seus dados estão contando uma história.",
+      intro:
+        "Analisamos seus dados do Apple Health e encontramos padrões que vale explorar.",
+      body:
+        "Seu painel pessoal está pronto — construído inteiramente a partir dos seus próprios dados.",
+      button: "Abrir seu painel →",
+      footer:
+        "Este link é privado e abre diretamente os seus dados.<br>Ele fica ativo por 24 horas.",
+      privacy: "Política de Privacidade",
+    },
+    insight: {
+      subject: "Novo insight dos seus dados de saúde — Engage7",
+      title: "Um novo insight dos seus dados",
+      intro:
+        "Acesse seu painel para explorar o que isso significa e ver suas tendências longitudinais completas.",
+      button: "Ver no painel",
+      footer:
+        "Você recebeu isto porque sua análise mais recente revelou um insight relevante.<br />Engage7 — insights pessoais de saúde a partir dos seus dados.",
+    },
+  },
+};
+
+function copyFor(locale?: string): (typeof emailCopy)[Locale] {
+  return emailCopy[normalizeLocale(locale)];
+}
+
+export function passwordSetupEmail(resetUrl: string, locale: Locale = "en"): {
   subject: string;
   html: string;
 } {
+  const copy = copyFor(locale).setup;
   return {
-    subject: "Set your Engage7 password",
+    subject: copy.subject,
     html: `
       <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; max-width: 480px; margin: 0 auto; padding: 32px 24px;">
-        <h2 style="color: #111827; margin-bottom: 16px;">Set your password</h2>
+        <h2 style="color: #111827; margin-bottom: 16px;">${copy.title}</h2>
         <p style="color: #4b5563; line-height: 1.6; margin-bottom: 24px;">
-          Click the button below to create a password for your Engage7 account.
-          This link expires in 1 hour.
+          ${copy.body}
         </p>
         <a href="${resetUrl}" style="display: inline-block; background-color: #10b981; color: #ffffff; padding: 12px 28px; border-radius: 8px; text-decoration: none; font-weight: 600; font-size: 14px;">
-          Set Password
+          ${copy.button}
         </a>
         <p style="color: #9ca3af; font-size: 12px; margin-top: 32px; line-height: 1.5;">
-          If you didn't request this, you can safely ignore this email.<br />
-          This link will expire in 1 hour.
+          ${copy.footer}
         </p>
       </div>
     `,
   };
 }
 
-export function passwordResetEmail(resetUrl: string): {
+export function passwordResetEmail(resetUrl: string, locale: Locale = "en"): {
   subject: string;
   html: string;
 } {
+  const copy = copyFor(locale).reset;
   return {
-    subject: "Reset your Engage7 password",
+    subject: copy.subject,
     html: `<!DOCTYPE html>
-<html lang="en">
+<html lang="${normalizeLocale(locale)}">
 <head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"></head>
 <body style="margin:0;padding:0;background:#0f0f0f;">
   <div style="font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;max-width:480px;margin:0 auto;padding:40px 24px;background:#0f0f0f;color:#e5e7eb;">
@@ -223,31 +352,30 @@ ${authEmailLogoMarkup()}
     <p style="font-size:13px;color:#6b7280;margin:0 0 32px 0;letter-spacing:0.05em;text-transform:uppercase;">Engage7</p>
 
     <h1 style="font-size:24px;font-weight:700;color:#ffffff;margin:0 0 16px 0;line-height:1.3;">
-      Reset your password.
+      ${copy.title}
     </h1>
 
     <p style="font-size:15px;color:#9ca3af;line-height:1.7;margin:0 0 12px 0;">
-      We received a request to reset the password for your Engage7 account.
+      ${copy.intro}
     </p>
 
     <p style="font-size:15px;color:#9ca3af;line-height:1.7;margin:0 0 32px 0;">
-      Use the private link below to choose a new password. This link expires in 1 hour.
+      ${copy.body}
     </p>
 
     <a href="${resetUrl}"
        style="display:inline-block;background:#e6b800;color:#0f0f0f;padding:14px 32px;border-radius:8px;text-decoration:none;font-weight:700;font-size:15px;letter-spacing:0.01em;">
-      Reset password →
+      ${copy.button}
     </a>
 
     <p style="font-size:12px;color:#4b5563;margin:40px 0 0 0;line-height:1.6;">
-      If you didn't request this, you can safely ignore this email.<br>
-      This link will expire in 1 hour.
+      ${copy.footer}
     </p>
 
     <hr style="border:none;border-top:1px solid #1f2937;margin:32px 0;">
 
     <p style="font-size:11px;color:#374151;margin:0;line-height:1.5;">
-      Engage7 · Personal health insights · <a href="${APP_URL}/privacy" style="color:#4b5563;">Privacy Policy</a>
+      Engage7 · Personal health insights · <a href="${APP_URL}/privacy" style="color:#4b5563;">${copy.privacy}</a>
     </p>
 
   </div>
@@ -269,11 +397,12 @@ export { APP_URL };
  *
  * @param accessLink - Magic link or portal URL for direct access
  */
-export function welcomeEmail(accessLink: string): { subject: string; html: string } {
+export function welcomeEmail(accessLink: string, locale: Locale = "en"): { subject: string; html: string } {
+  const copy = copyFor(locale).welcome;
   return {
-    subject: "Your health insights are ready",
+    subject: copy.subject,
     html: `<!DOCTYPE html>
-<html lang="en">
+<html lang="${normalizeLocale(locale)}">
 <head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"></head>
 <body style="margin:0;padding:0;background:#0f0f0f;">
   <div style="font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;max-width:480px;margin:0 auto;padding:40px 24px;background:#0f0f0f;color:#e5e7eb;">
@@ -283,31 +412,30 @@ ${authEmailLogoMarkup()}
     <p style="font-size:13px;color:#6b7280;margin:0 0 32px 0;letter-spacing:0.05em;text-transform:uppercase;">Engage7</p>
 
     <h1 style="font-size:24px;font-weight:700;color:#ffffff;margin:0 0 16px 0;line-height:1.3;">
-      Your data is telling a story.
+      ${copy.title}
     </h1>
 
     <p style="font-size:15px;color:#9ca3af;line-height:1.7;margin:0 0 12px 0;">
-      We've analysed your Apple Health data and found patterns worth exploring.
+      ${copy.intro}
     </p>
 
     <p style="font-size:15px;color:#9ca3af;line-height:1.7;margin:0 0 32px 0;">
-      Your personal dashboard is ready — built entirely from your own data.
+      ${copy.body}
     </p>
 
     <a href="${accessLink}"
        style="display:inline-block;background:#e6b800;color:#0f0f0f;padding:14px 32px;border-radius:8px;text-decoration:none;font-weight:700;font-size:15px;letter-spacing:0.01em;">
-      Open your dashboard →
+      ${copy.button}
     </a>
 
     <p style="font-size:12px;color:#4b5563;margin:40px 0 0 0;line-height:1.6;">
-      This link is private and opens directly to your data.<br>
-      It stays active for 24 hours.
+      ${copy.footer}
     </p>
 
     <hr style="border:none;border-top:1px solid #1f2937;margin:32px 0;">
 
     <p style="font-size:11px;color:#374151;margin:0;line-height:1.5;">
-      Engage7 · Personal health insights · <a href="${APP_URL}/privacy" style="color:#4b5563;">Privacy Policy</a>
+      Engage7 · Personal health insights · <a href="${APP_URL}/privacy" style="color:#4b5563;">${copy.privacy}</a>
     </p>
 
   </div>
@@ -327,31 +455,30 @@ export function premiumWelcomeEmail(): { subject: string; html: string } {
 // Insight Email — Sprint 17.7
 // ---------------------------------------------------------------------------
 
-export function insightEmail(insight: string): {
+export function insightEmail(insight: string, locale: Locale = "en"): {
   subject: string;
   html: string;
 } {
   const portalUrl = `${APP_URL}/portal/health`;
+  const copy = copyFor(locale).insight;
   return {
-    subject: "New insight from your health data — Engage7",
+    subject: copy.subject,
     html: `
       <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; max-width: 480px; margin: 0 auto; padding: 32px 24px;">
-        <h2 style="color: #111827; margin-bottom: 16px;">A new insight from your data</h2>
+        <h2 style="color: #111827; margin-bottom: 16px;">${copy.title}</h2>
         <div style="background-color: #f0fdf4; border: 1px solid #bbf7d0; border-radius: 8px; padding: 16px; margin-bottom: 24px;">
           <p style="color: #166534; line-height: 1.6; margin: 0; font-size: 15px;">
             ${insight}
           </p>
         </div>
         <p style="color: #4b5563; line-height: 1.6; margin-bottom: 24px;">
-          Visit your dashboard to explore what this means and view your full
-          longitudinal trends.
+          ${copy.intro}
         </p>
         <a href="${portalUrl}" style="display: inline-block; background-color: #10b981; color: #ffffff; padding: 12px 28px; border-radius: 8px; text-decoration: none; font-weight: 600; font-size: 14px;">
-          View in Dashboard
+          ${copy.button}
         </a>
         <p style="color: #9ca3af; font-size: 12px; margin-top: 32px; line-height: 1.5;">
-          You received this because your latest analysis revealed a meaningful insight.<br />
-          Engage7 — Personal health insights from your wearable data.
+          ${copy.footer}
         </p>
       </div>
     `,

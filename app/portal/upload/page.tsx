@@ -88,7 +88,7 @@ export default function PortalUploadPage() {
           setStatus("completed");
           clearProcessingStart();
           trackUpdateDataCompleted(activeJobId);
-          toast.success("Analysis complete!");
+          toast.success(t.common.status.complete);
           setTimeout(() => router.push("/portal/health"), 1500);
         } else if (data.upload_status === "failed") {
           clearInterval(pollRef.current!);
@@ -200,8 +200,8 @@ export default function PortalUploadPage() {
               {status === "completed" ? (
                 <>
                   <CheckCircle className="mx-auto h-10 w-10 text-emerald-400" />
-                  <h2 className="text-lg font-semibold text-foreground">Analysis complete</h2>
-                  <p className="text-sm text-muted-foreground">Redirecting to your portal…</p>
+                  <h2 className="text-lg font-semibold text-foreground">{t.common.status.complete}</h2>
+                  <p className="text-sm text-muted-foreground">{t.common.redirecting}</p>
                 </>
               ) : (
                 <ProcessingView
@@ -253,8 +253,8 @@ export default function PortalUploadPage() {
                 isUploading={isUploading}
                 disabled={!consentGiven || isUploading}
                 t={t}
-                buttonLabel="Update Data"
-                buttonLoadingLabel="Updating data..."
+                buttonLabel={t.common.updateData}
+                buttonLoadingLabel={t.common.saving}
                 consentSlot={
                   <label className="flex items-start gap-3 text-xs text-muted-foreground leading-snug cursor-pointer">
                     <Checkbox

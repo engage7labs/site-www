@@ -1,6 +1,7 @@
 "use client";
 
 import { useLocale } from "@/components/providers/locale-provider";
+import { LOCALE_NAMES, SUPPORTED_LOCALES, type Locale } from "@/lib/i18n";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useState } from "react";
 
@@ -14,13 +15,14 @@ interface PortalOverviewSettingsData {
     date_end?: string | null;
     row_count?: number | null;
   } | null;
+  preferred_locale?: string | null;
 }
 
-function formatSettingsDate(value: string | null): string | null {
+function formatSettingsDate(value: string | null, locale: Locale): string | null {
   if (!value) return null;
   const date = new Date(value);
   if (Number.isNaN(date.getTime())) return null;
-  return date.toLocaleDateString("en-IE", {
+  return date.toLocaleDateString(locale === "pt-BR" ? "pt-BR" : "en-IE", {
     year: "numeric",
     month: "short",
     day: "numeric",
@@ -28,7 +30,7 @@ function formatSettingsDate(value: string | null): string | null {
 }
 
 export default function SettingsPage() {
-  const { locale } = useLocale();
+  const { locale, setSessionLocale, t } = useLocale();
   const router = useRouter();
   const searchParams = useSearchParams();
   const [showDeleteModal, setShowDeleteModal] = useState(false);
@@ -47,6 +49,9 @@ export default function SettingsPage() {
   const [protectionLoading, setProtectionLoading] = useState(true);
   const [protectionSaving, setProtectionSaving] = useState(false);
   const [protectionError, setProtectionError] = useState<string | null>(null);
+  const [preferredLocale, setPreferredLocale] = useState<Locale>(locale);
+  const [languageSaving, setLanguageSaving] = useState(false);
+  const [languageStatus, setLanguageStatus] = useState<"saved" | "error" | null>(null);
 
   useEffect(() => {
     const ps = searchParams.get("payment");
@@ -65,6 +70,9 @@ export default function SettingsPage() {
         setTrialEnd(d.trial_end_at ?? null);
         setTimelineDateEnd(d.feature_store?.date_end ?? null);
         setTimelineRows(d.feature_store?.row_count ?? null);
+        if (d.preferred_locale === "pt-BR" || d.preferred_locale === "en") {
+          setPreferredLocale(d.preferred_locale);
+        }
       })
       .catch(() => {});
     fetch("/api/proxy/users/health-footprint")
@@ -74,10 +82,10 @@ export default function SettingsPage() {
         setProtectionLoading(false);
       })
       .catch(() => {
-        setProtectionError("Protection settings are unavailable right now.");
+        setProtectionError(t.portal.settings.protection.unavailable);
         setProtectionLoading(false);
       });
-  }, [searchParams, router]);
+  }, [searchParams, router, t.portal.settings.protection.unavailable]);
 
   const handleUpgrade = async () => {
     setCheckoutLoading(true);
@@ -99,19 +107,25 @@ export default function SettingsPage() {
   const [deleted, setDeleted] = useState(false);
 
   const canDelete = confirmText === "DELETE";
-  void locale;
-  const protectionCopy = {
-    title: "Protect data updates",
-    description:
-      "Helps prevent Apple Health exports from another person being merged into your timeline. Engage7 compares privacy-minimized metadata before updating your processed timeline.",
-    on: "On",
-    off: "Off",
-    active:
-      "Protection is active. Strong mismatches may be blocked before your timeline is changed.",
-    inactive:
-      "Protection is off. Future updates may be accepted even when the dataset looks different from your previous timeline.",
-    saving: "Saving...",
-    error: "Could not save this setting.",
+  const protectionCopy = t.portal.settings.protection;
+
+  const handlePreferredLocaleSave = async () => {
+    setLanguageSaving(true);
+    setLanguageStatus(null);
+    try {
+      const res = await fetch("/api/proxy/users/preferences", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ preferred_locale: preferredLocale }),
+      });
+      if (!res.ok) throw new Error(t.portal.settings.languageError);
+      setSessionLocale(preferredLocale);
+      setLanguageStatus("saved");
+    } catch {
+      setLanguageStatus("error");
+    } finally {
+      setLanguageSaving(false);
+    }
   };
 
   const handleProtectionToggle = async () => {
@@ -146,9 +160,9 @@ export default function SettingsPage() {
       if (!res.ok) {
         const data = await res.json().catch(() => ({}));
         throw new Error(
-          (data as { detail?: string; error?: string }).detail ||
+            (data as { detail?: string; error?: string }).detail ||
             (data as { detail?: string; error?: string }).error ||
-            "Deletion failed. Please try again."
+            t.portal.settings.deleteFailed
         );
       }
       // Session cookie cleared by proxy on success — show success then redirect
@@ -158,7 +172,7 @@ export default function SettingsPage() {
       setDeleteError(
         err instanceof Error
           ? err.message
-          : "An unexpected error occurred. Please try again."
+          : t.portal.settings.deleteUnexpected
       );
       setDeleting(false);
     }
@@ -182,9 +196,9 @@ export default function SettingsPage() {
             />
           </svg>
         </div>
-        <p className="text-lg font-medium text-foreground">Account deleted</p>
+        <p className="text-lg font-medium text-foreground">{t.portal.settings.deletedTitle}</p>
         <p className="text-sm text-muted-foreground">
-          Your Engage7 account deletion has completed. Redirecting…
+          {t.portal.settings.deletedBody}
         </p>
       </div>
     );
@@ -197,7 +211,7 @@ export default function SettingsPage() {
   const daysLeft = trialActive && trialEndDate
     ? Math.max(0, Math.ceil((trialEndDate.getTime() - Date.now()) / 86400000))
     : null;
-  const formattedTimelineDate = formatSettingsDate(timelineDateEnd);
+  const formattedTimelineDate = formatSettingsDate(timelineDateEnd, locale);
 
   return (
     <div className="flex flex-col gap-6">
@@ -205,35 +219,48 @@ export default function SettingsPage() {
       {/* Payment success / cancelled notification */}
       {paymentStatus === "success" && (
         <div className="rounded-xl border border-emerald-500/30 bg-emerald-500/10 px-4 py-3 text-sm text-emerald-400">
-          ✓ Payment confirmed — your account has been upgraded to Premium.
+          {t.portal.settings.paymentSuccess}
         </div>
       )}
       {paymentStatus === "cancelled" && (
         <div className="rounded-xl border border-border bg-muted/30 px-4 py-3 text-sm text-muted-foreground">
-          Payment was cancelled. Your plan is unchanged.
+          {t.portal.settings.paymentCancelled}
         </div>
       )}
 
       {/* Billing section — Sprint 33.0 */}
       <div className="rounded-xl border border-border bg-card p-5">
-        <h2 className="text-sm font-semibold text-card-foreground mb-1">Plan &amp; Billing</h2>
+        <h2 className="text-sm font-semibold text-card-foreground mb-1">
+          {t.portal.settings.planBilling}
+        </h2>
         <p className="text-xs text-muted-foreground mb-4">
-          {isPremium && "You are on Premium — thank you for your support."}
-          {trialActive && `Free access active${daysLeft !== null ? ` — ${daysLeft} day${daysLeft === 1 ? "" : "s"} remaining` : ""}.`}
-          {trialExpired && "Your free access period has ended."}
-          {planDisplay === "No plan" && "No plan is active for this account."}
-          {!planDisplay && "Loading…"}
+          {isPremium && t.portal.settings.premiumThanks}
+          {trialActive &&
+            `${t.portal.settings.freeAccessActive}${
+              daysLeft !== null
+                ? ` — ${t.portal.settings.daysRemaining
+                    .replace("{count}", String(daysLeft))
+                    .replaceAll("{plural}", daysLeft === 1 ? "" : "s")}`
+                : ""
+            }.`}
+          {trialExpired && t.portal.settings.freeAccessEnded}
+          {planDisplay === "No plan" && t.portal.settings.noPlanActive}
+          {!planDisplay && t.portal.loading}
         </p>
         {!isPremium && (
           <div className="flex flex-col gap-3">
             <div className="flex items-start gap-3 rounded-lg border border-accent/20 bg-accent/5 p-4">
               <div className="flex-1">
-                <p className="text-sm font-semibold text-card-foreground">Engage7 Premium</p>
+                <p className="text-sm font-semibold text-card-foreground">
+                  {t.portal.settings.premiumName}
+                </p>
                 <p className="text-xs text-muted-foreground mt-0.5">
-                  Full dashboard · Unlimited analyses · Longitudinal trends · Personal insights
+                  {t.portal.settings.premiumDescription}
                 </p>
               </div>
-              <p className="text-sm font-bold text-accent shrink-0">€7 / month</p>
+              <p className="text-sm font-bold text-accent shrink-0">
+                {t.portal.settings.premiumPrice}
+              </p>
             </div>
             {checkoutError && (
               <p className="text-xs text-destructive">{checkoutError}</p>
@@ -243,7 +270,7 @@ export default function SettingsPage() {
               disabled={checkoutLoading}
               className="self-start rounded-lg bg-accent px-4 py-2 text-sm font-semibold text-accent-foreground hover:bg-accent/90 transition-colors disabled:opacity-60 disabled:cursor-not-allowed"
             >
-              {checkoutLoading ? "Redirecting…" : "Upgrade to Premium →"}
+              {checkoutLoading ? t.common.redirecting : t.portal.settings.upgradeToPremium}
             </button>
           </div>
         )}
@@ -253,60 +280,87 @@ export default function SettingsPage() {
         {/* Account section */}
         <div className="rounded-xl border border-border bg-card p-5">
           <h2 className="text-sm font-semibold text-card-foreground">
-            Account
+            {t.portal.settings.accountTitle}
           </h2>
           <p className="mt-2 text-sm text-muted-foreground">
-            Your Engage7 account controls Portal access, plan state, settings,
-            and account deletion.
+            {t.portal.settings.accountBody}
           </p>
           <p className="mt-3 text-xs text-muted-foreground">
-            Supabase stores login and control-plane metadata. Raw Apple Health
-            XML is not stored in Supabase.
+            {t.portal.settings.accountNote}
           </p>
         </div>
 
         {/* Profile section */}
         <div className="rounded-xl border border-border bg-card p-5">
           <h2 className="text-sm font-semibold text-card-foreground">
-            Profile
+            {t.portal.settings.profileTitle}
           </h2>
           <p className="mt-2 text-sm text-muted-foreground">
-            Account details and preferences will be configurable here in a
-            future update.
+            {t.portal.settings.profileBody}
           </p>
         </div>
 
-        {/* Export placeholder */}
         <div className="rounded-xl border border-border bg-card p-5">
           <h2 className="text-sm font-semibold text-card-foreground">
-            Export / Download
+            {t.portal.settings.languageTitle}
           </h2>
           <p className="mt-2 text-sm text-muted-foreground">
-            A self-serve export center is not available yet. Your reports remain
-            available in My Reports, and account deletion is available below.
+            {t.portal.settings.languageBody}
           </p>
+          <select
+            value={preferredLocale}
+            onChange={(event) => setPreferredLocale(event.target.value as Locale)}
+            className="mt-4 w-full rounded-md border border-border bg-background px-3 py-2 text-sm text-foreground"
+          >
+            {SUPPORTED_LOCALES.map((loc) => (
+              <option key={loc} value={loc}>
+                {LOCALE_NAMES[loc]}
+              </option>
+            ))}
+          </select>
+          <button
+            type="button"
+            onClick={handlePreferredLocaleSave}
+            disabled={languageSaving}
+            className="mt-3 rounded-md bg-accent px-3 py-1.5 text-xs font-semibold text-accent-foreground disabled:opacity-60"
+          >
+            {languageSaving ? t.common.saving : t.common.save}
+          </button>
+          <p className="mt-2 text-xs text-muted-foreground">
+            {t.portal.settings.languageSessionNote}
+          </p>
+          {languageStatus === "saved" && (
+            <p className="mt-2 text-xs text-emerald-400">
+              {t.portal.settings.languageSaved}
+            </p>
+          )}
+          {languageStatus === "error" && (
+            <p className="mt-2 text-xs text-destructive">
+              {t.portal.settings.languageError}
+            </p>
+          )}
         </div>
+      </div>
+
+      <div className="rounded-xl border border-border bg-card p-5">
+        <h2 className="text-sm font-semibold text-card-foreground">
+          {t.portal.settings.exportTitle}
+        </h2>
+        <p className="mt-2 text-sm text-muted-foreground">
+          {t.portal.settings.exportBody}
+        </p>
       </div>
 
       {/* Data & Privacy section */}
       <div className="rounded-xl border border-border bg-card p-5">
         <h2 className="text-sm font-semibold text-card-foreground">
-          Data &amp; Privacy
+          {t.portal.settings.dataPrivacyTitle}
         </h2>
         <p className="mt-2 max-w-3xl text-sm text-muted-foreground">
-          Engage7 uses your Apple Health export to build a processed
-          physiological timeline. Raw upload files are temporary. Processed
-          daily features and report artifacts may be kept so your Portal can
-          show Health, Insights, Data Lab, and My Reports.
+          {t.portal.settings.dataPrivacyBody}
         </p>
         <div className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-5">
-          {[
-            ["Raw ZIP/XML", "Temporary Azure Blob storage under lifecycle rules."],
-            ["Processed timeline", "Used for Portal dashboards and freshness."],
-            ["Reports", "Kept so you can reopen completed analyses."],
-            ["Account metadata", "Stored for login, plan, and settings."],
-            ["Delete account", "Removes app-owned account data."],
-          ].map(([label, description]) => (
+          {Object.values(t.portal.settings.privacyItems).map(([label, description]) => (
             <div
               key={label}
               className="rounded-lg border border-border/70 bg-muted/20 px-3 py-2"
@@ -321,9 +375,7 @@ export default function SettingsPage() {
           ))}
         </div>
         <p className="mt-4 text-xs leading-relaxed text-muted-foreground">
-          Azure Blob Storage holds raw and processed artifacts according to
-          lifecycle rules. Supabase stores account, control-plane, report, and
-          timeline metadata needed to run the authenticated Portal.
+          {t.portal.settings.dataPrivacyFooter}
         </p>
       </div>
 
@@ -337,14 +389,11 @@ export default function SettingsPage() {
               {protectionCopy.description}
             </p>
             <p className="mt-2 max-w-2xl text-xs leading-relaxed text-muted-foreground">
-              This is not medical identity verification. It uses
-              privacy-minimized metadata and does not expose raw Apple Health
-              content, raw device details, date of birth, or sex in Settings.
-              You can turn it off for testing or intentional advanced cases.
+              {protectionCopy.note}
             </p>
             <p className="mt-3 text-xs text-muted-foreground">
               {protectionSaving
-                ? protectionCopy.saving
+                ? t.common.saving
                 : protectionEnabled
                   ? protectionCopy.active
                   : protectionCopy.inactive}
@@ -384,30 +433,30 @@ export default function SettingsPage() {
         <div className="mt-4 grid gap-3 sm:grid-cols-3">
           <div className="rounded-lg border border-border/70 bg-muted/20 px-3 py-2">
             <p className="text-xs font-semibold text-card-foreground">
-              Timeline protection
+              {protectionCopy.timelineProtection}
             </p>
             <p className="mt-1 text-xs text-muted-foreground">
               {protectionLoading
-                ? "Loading..."
+                ? t.common.loading
                 : protectionEnabled
-                  ? "On"
-                  : "Off"}
+                  ? protectionCopy.on
+                  : protectionCopy.off}
             </p>
           </div>
           <div className="rounded-lg border border-border/70 bg-muted/20 px-3 py-2">
             <p className="text-xs font-semibold text-card-foreground">
-              Processed timeline
+              {protectionCopy.processedTimeline}
             </p>
             <p className="mt-1 text-xs text-muted-foreground">
-              {timelineRows && timelineRows > 0 ? "Available" : "Not available"}
+              {timelineRows && timelineRows > 0 ? t.common.available : t.common.notAvailable}
             </p>
           </div>
           <div className="rounded-lg border border-border/70 bg-muted/20 px-3 py-2">
             <p className="text-xs font-semibold text-card-foreground">
-              Latest data through
+              {protectionCopy.latestDataThrough}
             </p>
             <p className="mt-1 text-xs text-muted-foreground">
-              {formattedTimelineDate ?? "Not available"}
+              {formattedTimelineDate ?? t.common.notAvailable}
             </p>
           </div>
         </div>
@@ -416,14 +465,10 @@ export default function SettingsPage() {
       {/* Delete account section */}
       <div className="rounded-xl border border-destructive/40 bg-card p-5">
         <h2 className="text-sm font-semibold text-destructive">
-          Delete my account and data
+          {t.portal.settings.deleteTitle}
         </h2>
         <p className="mt-2 text-sm text-muted-foreground">
-          This deletes your Engage7 account and app-owned data. Reports,
-          processed timeline metadata, data update events, and footprint records
-          are removed by app cleanup and database cascade behavior. Temporary
-          raw upload files are governed by Azure storage lifecycle rules. This
-          action cannot be undone.
+          {t.portal.settings.deleteBody}
         </p>
         <button
           type="button"
@@ -434,7 +479,7 @@ export default function SettingsPage() {
           }}
           className="mt-4 inline-flex items-center rounded-md border border-destructive/50 px-4 py-2 text-sm font-medium text-destructive hover:bg-destructive/5 transition-colors"
         >
-          Delete account
+          {t.portal.settings.deleteButton}
         </button>
       </div>
 
@@ -448,14 +493,12 @@ export default function SettingsPage() {
           />
           <div className="relative w-full max-w-md rounded-xl border border-border bg-card shadow-xl p-6 space-y-4">
             <h3 className="text-lg font-semibold text-foreground">
-              Confirm account deletion
+              {t.portal.settings.deleteConfirmTitle}
             </h3>
             <p className="text-sm text-muted-foreground">
-              This will delete your Engage7 account and app-owned Portal data.
-              Raw temporary upload files remain governed by storage lifecycle
-              rules. To confirm, type{" "}
+              {t.portal.settings.deleteConfirmBody}{" "}
               <span className="font-mono font-bold text-foreground">
-                DELETE
+                {t.portal.settings.deleteConfirmToken}
               </span>{" "}
               below.
             </p>
@@ -463,7 +506,7 @@ export default function SettingsPage() {
               type="text"
               value={confirmText}
               onChange={(e) => setConfirmText(e.target.value)}
-              placeholder="Type DELETE to confirm"
+              placeholder={t.portal.settings.deletePlaceholder}
               className="w-full rounded-md border border-border bg-background px-3 py-2 text-sm text-foreground outline-none placeholder:text-muted-foreground focus:border-destructive"
               autoComplete="off"
             />
@@ -477,7 +520,7 @@ export default function SettingsPage() {
                 disabled={deleting}
                 className="rounded-md px-4 py-2 text-sm text-muted-foreground hover:text-foreground disabled:opacity-50"
               >
-                Cancel
+                {t.common.cancel}
               </button>
               <button
                 type="button"
@@ -485,7 +528,7 @@ export default function SettingsPage() {
                 disabled={!canDelete || deleting}
                 className="rounded-md bg-destructive px-4 py-2 text-sm font-medium text-white hover:bg-destructive/90 disabled:cursor-not-allowed disabled:opacity-50"
               >
-                {deleting ? "Deleting..." : "Delete permanently"}
+                {deleting ? t.portal.settings.deleting : t.portal.settings.deletePermanently}
               </button>
             </div>
           </div>

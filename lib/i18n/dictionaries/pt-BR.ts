@@ -343,6 +343,8 @@ export const ptBR: Dictionary = {
           "Veja tendências ao longo do tempo, correlações entre seus sinais e acesse seu portal pessoal — grátis por 90 dias.",
         downloadButton: "Desbloquear análise completa (90 dias grátis)",
         runAnother: "Executar outra análise",
+        emailWarning:
+          "Não conseguimos enviar seu email de boas-vindas — seu Portal continua aberto.",
       },
     },
 
@@ -351,12 +353,45 @@ export const ptBR: Dictionary = {
       downloadPDF: "Baixar Relatório PDF",
       downloadData: "Baixar Dados Processados",
     },
+    premiumModal: {
+      title: "Abra seu Portal Premium Free",
+      description: "Informe seu email para liberar 90 dias de acesso Premium Free.",
+      emailLabel: "Seu email",
+      emailRequired: "O email é necessário para liberar o Premium Free.",
+      emailInvalid: "Informe um endereço de email válido.",
+      consent:
+        "Concordo em armazenar meus insights de saúde processados para que o Engage7 mostre tendências e insights no Portal. Posso excluir esses dados a qualquer momento nas configurações do Portal.",
+      success: "Seu acesso Premium Free de 90 dias começou",
+      genericError: "Algo deu errado. Tente novamente.",
+      opening: "Abrindo seu Portal...",
+      open: "Abrir meu Portal Premium Free",
+    },
 
     error: {
       title: "Erro na Análise",
       description:
         "Ocorreu um erro durante a análise. Por favor, tente novamente ou entre em contato com o suporte.",
       retryButton: "Tentar Novamente",
+      notFoundTitle: "Resultado não encontrado",
+      notFoundDescription:
+        "Este job de análise não foi encontrado. Ele pode ter expirado ou o link pode estar incorreto.",
+      failedTitle: "Tivemos dificuldade para processar este arquivo",
+      failedHint:
+        "Isso pode acontecer com exportações não suportadas ou incompletas. Você pode tentar novamente com outro arquivo.",
+      calmDefault:
+        "Não conseguimos concluir sua análise. Tente enviar novamente.",
+      calmTimeout:
+        "Sua análise demorou mais que o esperado. Tente novamente — a maioria dos arquivos processa em menos de dois minutos.",
+      calmInterrupted:
+        "Sua análise foi interrompida. Isso pode acontecer em períodos de alto tráfego. Tente novamente.",
+      calmStalled:
+        "Sua análise não terminou o processamento. Tente enviar novamente.",
+      calmMissing:
+        "Alguns resultados não estavam disponíveis após o processamento. Tente novamente.",
+      calmNetwork:
+        "Não conseguimos conectar para processar seus dados. Verifique sua conexão e tente novamente.",
+      calmInvalid:
+        "Não conseguimos ler os dados deste arquivo. Confirme que você está enviando uma exportação do Apple Health (.zip).",
     },
 
     backToAnalyze: "Executar Outra Análise",
@@ -370,9 +405,107 @@ export const ptBR: Dictionary = {
     retry: "Tentar Novamente",
     cancel: "Cancelar",
     close: "Fechar",
+    save: "Salvar",
+    saving: "Salvando...",
+    saved: "Salvo",
     next: "Próximo",
     previous: "Anterior",
     viewDetails: "Ver Detalhes",
+    yes: "Sim",
+    no: "Não",
+    available: "Disponível",
+    unavailable: "Indisponível",
+    notAvailable: "Não disponível",
+    unknown: "Desconhecido",
+    updateData: "Atualizar Dados",
+    signOut: "Sair",
+    readOnly: "somente leitura",
+    tryAgain: "Tentar novamente",
+    redirecting: "Redirecionando...",
+    status: {
+      completed: "Concluído",
+      complete: "Completo",
+      failed: "Falhou",
+      imported: "Importado",
+      updated: "Atualizado",
+      processing: "Processando",
+      queued: "Na fila",
+      valid: "Válido",
+      estimated: "Estimado",
+      insufficient: "Insuficiente",
+      unavailable: "Indisponível",
+      missing: "Ausente",
+      publicActive: "Público ativo",
+      publicExpired: "Público expirado",
+      userOwned: "Do usuário",
+      linked: "Vinculado",
+      protected: "Protegido",
+      cleanupCandidates: "Candidatos à limpeza",
+    },
+    metrics: {
+      sleepDuration: "Duração do sono",
+      sleepStages: "Estágios do sono",
+      hrv: "VFC",
+      restingHeartRate: "Frequência cardíaca de repouso",
+      heartRate: "Frequência cardíaca",
+      recoveryScore: "Pontuação de recuperação",
+      readiness: "Prontidão",
+      bodyMassChange: "Mudança de massa corporal",
+      steps: "Passos",
+      activeEnergy: "Energia ativa",
+      distance: "Distância",
+      activeMinutes: "Minutos ativos",
+      consistency: "Consistência",
+      efficiency: "Eficiência",
+      baseline: "Linha de base",
+      personalBaseline: "Linha de base pessoal",
+    },
+  },
+
+  auth: {
+    forgot: {
+      checkEmailTitle: "Verifique seu email",
+      checkEmailBody:
+        "Se existir uma conta para este email, enviaremos instruções de recuperação.",
+      title: "Redefinir sua senha",
+      body: "Informe seu email e enviaremos um link para redefinir sua senha.",
+      send: "Enviar link de redefinição",
+      backToLogin: "Voltar ao login",
+      deliveryFailed:
+        "Não conseguimos enviar o email agora. Tente novamente mais tarde.",
+      genericError: "Algo deu errado",
+      networkError: "Erro de rede — tente novamente",
+    },
+    reset: {
+      linkUnavailableTitle: "Link indisponível",
+      linkUnavailableBody:
+        "Este link já foi usado ou expirou. Solicite um novo link de acesso.",
+      requestNewLink: "Solicitar novo link",
+      accessCodeCreated: "Código de acesso criado",
+      passwordUpdated: "Senha atualizada",
+      takingToPortal: "Levando você para o Portal Engage7...",
+      passwordSet: "Sua senha foi definida. Você já pode entrar.",
+      signIn: "Entrar",
+      createAccessCode: "Crie seu código de acesso",
+      setPassword: "Defina sua senha",
+      welcomeBody:
+        "Escolha um código de acesso para retornar ao Portal Engage7 quando quiser.",
+      resetBody: "Escolha uma senha forte para sua conta Engage7.",
+      accessCodePlaceholder: "Código de acesso (mín. 8 caracteres)",
+      passwordPlaceholder: "Nova senha (mín. 8 caracteres)",
+      confirmAccessCode: "Confirmar código de acesso",
+      confirmPassword: "Confirmar senha",
+      mismatch: "As senhas não coincidem",
+      submitAccessCode: "Criar código de acesso",
+      submitPassword: "Definir senha",
+      failed: "Falha ao redefinir a senha",
+      networkError: "Erro de rede — tente novamente",
+    },
+  },
+
+  feedback: {
+    helpful: "Isso foi útil?",
+    thanks: "Obrigado pelo feedback.",
   },
 
   // Privacy Policy
@@ -482,6 +615,80 @@ export const ptBR: Dictionary = {
   // Portal
   portal: {
     loading: "Carregando…",
+    shell: {
+      sections: {
+        overview: {
+          title: "Visão geral",
+          subtitle: "Seus dados de saúde em um resumo",
+        },
+        reports: {
+          title: "Meus relatórios",
+          subtitle: "Revise seus relatórios de saúde gerados",
+        },
+        dataLab: {
+          title: "Data Lab",
+          subtitle:
+            "Evidências avançadas, tendências e contexto técnico da sua análise.",
+        },
+        insights: {
+          title: "Insights",
+          subtitle:
+            "Padrões detectados nos seus dados — baseados no seu histórico, não em médias gerais",
+        },
+        settings: {
+          title: "Configurações",
+          subtitle: "Gerencie suas preferências do Portal",
+        },
+        upload: {
+          title: "Atualizar Dados",
+          subtitle: "Atualize sua linha do tempo do Apple Health",
+        },
+        health: {
+          title: "Saúde",
+          subtitle: "Sono, Recuperação e Atividade ao longo do tempo",
+        },
+        sleep: {
+          title: "Sono",
+          subtitle: "Duração, estágios, consistência e eficiência do sono",
+        },
+        recovery: {
+          title: "Recuperação",
+          subtitle: "VFC, frequência cardíaca, prontidão e comparação com linha de base",
+        },
+        activity: {
+          title: "Atividade",
+          subtitle: "Passos, energia, distância e consistência de atividade",
+        },
+      },
+      claimImported: "Sua análise pública agora está no seu Portal.",
+      claimReady: "Sua análise está pronta para importação.",
+      claimRetryDescription:
+        "Não conseguimos importá-la automaticamente. Você pode tentar novamente agora.",
+      retry: "Tentar novamente",
+      imported: "Análise importada.",
+      importStillFailed:
+        "A importação ainda não foi concluída. Tente novamente mais tarde.",
+    },
+    statusNotice: {
+      noAnalysis:
+        "Nenhuma análise foi criada ainda. Atualize sua linha do tempo do Apple Health para iniciar o Portal.",
+      processing:
+        "Sua análise mais recente ainda está processando. Os cartões disponíveis do Portal serão atualizados quando terminar.",
+      failed:
+        "A análise mais recente não foi concluída. Os dados existentes do Portal continuam visíveis quando disponíveis.",
+      importing: "Sua análise pública está sendo importada para o Portal.",
+      darthMissing:
+        "Os dados da análise estão disponíveis, mas a camada de orientação atual ainda não está pronta para esta análise.",
+      timelineMissing:
+        "Os dados da análise estão disponíveis, mas a linha do tempo longitudinal ainda não está disponível para esta conta.",
+    },
+    headerSubtitle: {
+      timelineUpdatedThrough: "Linha do tempo atualizada até {date}",
+      noRecentAnalysis:
+        "Nenhuma análise recente ainda. Atualize Dados para renovar sua linha do tempo do Apple Health.",
+      latestAnalysisAvailable: "A análise mais recente está disponível.",
+      latestAnalysisFrom: "Análise mais recente disponível desde {date}",
+    },
     shareCard: {
       title: "Compartilhar Engage7",
       description: "Compartilhe a página do produto com amigos — não seus dados.",
@@ -564,6 +771,136 @@ export const ptBR: Dictionary = {
         activity: "atividade",
       },
     },
+    settings: {
+      paymentSuccess: "Pagamento confirmado — sua conta foi atualizada para Premium.",
+      paymentCancelled: "O pagamento foi cancelado. Seu plano não foi alterado.",
+      planBilling: "Plano e cobrança",
+      premiumThanks: "Você está no Premium — obrigado pelo apoio.",
+      freeAccessActive: "Acesso gratuito ativo",
+      daysRemaining: "{count} dia{plural} restante{plural}",
+      freeAccessEnded: "Seu período de acesso gratuito terminou.",
+      noPlanActive: "Nenhum plano está ativo para esta conta.",
+      premiumName: "Engage7 Premium",
+      premiumDescription:
+        "Painel completo · Análises ilimitadas · Tendências longitudinais · Insights pessoais",
+      premiumPrice: "€7 / mês",
+      upgradeToPremium: "Atualizar para Premium →",
+      accountTitle: "Conta",
+      accountBody:
+        "Sua conta Engage7 controla o acesso ao Portal, estado do plano, configurações e exclusão da conta.",
+      accountNote:
+        "O Supabase armazena metadados de login e controle. O XML bruto do Apple Health não é armazenado no Supabase.",
+      profileTitle: "Perfil",
+      profileBody:
+        "Detalhes da conta e preferências serão configuráveis aqui em uma atualização futura.",
+      languageTitle: "Idioma preferido",
+      languageBody:
+        "Escolha o idioma que o Engage7 deve usar quando você entrar em sessões futuras.",
+      languageSessionNote:
+        "O seletor de idioma no cabeçalho altera apenas esta sessão. Salvar aqui atualiza a preferência da sua conta.",
+      languageSaved: "Idioma preferido salvo.",
+      languageError: "Não foi possível salvar esta preferência de idioma.",
+      exportTitle: "Exportar / baixar",
+      exportBody:
+        "Um centro de exportação self-service ainda não está disponível. Seus relatórios permanecem em Meus relatórios, e a exclusão da conta está disponível abaixo.",
+      dataPrivacyTitle: "Dados e privacidade",
+      dataPrivacyBody:
+        "O Engage7 usa sua exportação do Apple Health para construir uma linha do tempo fisiológica processada. Arquivos brutos enviados são temporários. Recursos diários processados e artefatos de relatório podem ser mantidos para que o Portal mostre Saúde, Insights, Data Lab e Meus relatórios.",
+      dataPrivacyFooter:
+        "O Azure Blob Storage mantém artefatos brutos e processados conforme regras de ciclo de vida. O Supabase armazena metadados de conta, controle, relatório e linha do tempo necessários para operar o Portal autenticado.",
+      privacyItems: {
+        raw: ["ZIP/XML bruto", "Armazenamento temporário no Azure Blob conforme regras de ciclo de vida."],
+        timeline: ["Linha do tempo processada", "Usada para painéis do Portal e atualização dos dados."],
+        reports: ["Relatórios", "Mantidos para que você possa reabrir análises concluídas."],
+        account: ["Metadados da conta", "Armazenados para login, plano e configurações."],
+        delete: ["Excluir conta", "Remove dados da conta pertencentes ao app."],
+      },
+      protection: {
+        title: "Proteger atualizações de dados",
+        description:
+          "Ajuda a evitar que exportações do Apple Health de outra pessoa sejam mescladas à sua linha do tempo. O Engage7 compara metadados minimizados antes de atualizar sua linha do tempo processada.",
+        note:
+          "Isto não é verificação de identidade médica. Usa metadados minimizados e não expõe conteúdo bruto do Apple Health, detalhes brutos de dispositivos, data de nascimento ou sexo nas Configurações. Você pode desativar para testes ou casos avançados intencionais.",
+        on: "Ativado",
+        off: "Desativado",
+        active:
+          "A proteção está ativa. Divergências fortes podem ser bloqueadas antes que sua linha do tempo seja alterada.",
+        inactive:
+          "A proteção está desativada. Atualizações futuras podem ser aceitas mesmo quando o conjunto de dados parecer diferente da linha do tempo anterior.",
+        error: "Não foi possível salvar esta configuração.",
+        unavailable: "As configurações de proteção estão indisponíveis agora.",
+        timelineProtection: "Proteção da linha do tempo",
+        processedTimeline: "Linha do tempo processada",
+        latestDataThrough: "Dados mais recentes até",
+      },
+      deleteTitle: "Excluir minha conta e dados",
+      deleteBody:
+        "Isto exclui sua conta Engage7 e os dados pertencentes ao app. Relatórios, metadados da linha do tempo processada, eventos de atualização de dados e registros de footprint são removidos pela limpeza do app e por cascata do banco de dados. Arquivos brutos temporários seguem as regras de ciclo de vida do Azure Storage. Esta ação não pode ser desfeita.",
+      deleteButton: "Excluir conta",
+      deletedTitle: "Conta excluída",
+      deletedBody: "A exclusão da sua conta Engage7 foi concluída. Redirecionando…",
+      deleteConfirmTitle: "Confirmar exclusão da conta",
+      deleteConfirmBody:
+        "Isto excluirá sua conta Engage7 e os dados do Portal pertencentes ao app. Arquivos brutos temporários continuam seguindo as regras de ciclo de vida do armazenamento. Para confirmar, digite",
+      deleteConfirmToken: "DELETE",
+      deletePlaceholder: "Digite DELETE para confirmar",
+      deleteFailed: "A exclusão falhou. Tente novamente.",
+      deleteUnexpected: "Ocorreu um erro inesperado. Tente novamente.",
+      deletePermanently: "Excluir permanentemente",
+      deleting: "Excluindo...",
+    },
+    health: {
+      periods: {
+        today: "Último dia",
+        week: "Última semana",
+        month: "Último mês",
+        year: "Último ano",
+        all: "Todo o período",
+      },
+      domains: {
+        sleep: {
+          title: "Sono",
+          subtitle: "Duração, estágios, consistência e sinais de qualidade do sono",
+        },
+        recovery: {
+          title: "Recuperação",
+          subtitle: "VFC, carga cardíaca, prontidão e movimento contra linha de base",
+        },
+        activity: {
+          title: "Atividade",
+          subtitle: "Passos, energia, distância e consistência ao longo do tempo",
+        },
+      },
+      loading: "Carregando dados de saúde...",
+      outsidePeriod:
+        "Há dados de {domain} fora de {period}. Selecione um período mais amplo para ver os registros armazenados.",
+      sleepDurationUnavailable:
+        "A duração do sono não está disponível no período selecionado.",
+      sleepDurationMissing: "Duração do sono ausente",
+      sleepStagesUnavailable: "Estágios do sono indisponíveis",
+      consistency: "Consistência",
+      efficiency: "Eficiência",
+      averageHrv: "VFC média",
+      hrvVsBaseline: "VFC vs linha de base",
+      baselineComparison: "Comparação com linha de base",
+      comparisonUnavailable: "Comparação indisponível.",
+      activeEnergyAverage: "Energia ativa média de {value} calorias.",
+      energyDistanceSubtitle: "Energia ativa com sobreposição de distância quando disponível",
+      bestVsLowest: "Melhor vs menor",
+      stepRangeAnchors: "Referências do intervalo de passos",
+      bestDay: "Melhor dia",
+      lowestDay: "Menor dia",
+      insufficientData: "Dados insuficientes",
+    },
+  },
+
+  darthChrome: {
+    keyFinding: "Principal achado",
+    evidence: "Evidência",
+    confidence: "Confiança",
+    currentPattern: "Padrão atual",
+    lightAdjustments: "Ajustes leves",
+    supportingSignals: "Sinais de apoio",
   },
 
   // Teaser (insight-preview)

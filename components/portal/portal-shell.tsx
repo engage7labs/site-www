@@ -3,6 +3,7 @@
 import { usePathname } from "next/navigation";
 import { useCallback, useEffect, useState } from "react";
 import { toast } from "sonner";
+import { useLocale } from "@/components/providers/locale-provider";
 import {
   claimPendingPublicAnalysis,
   readPendingPublicClaim,
@@ -18,50 +19,6 @@ import { PortalHeader } from "./portal-header";
 import { PortalSidebar } from "./portal-sidebar";
 import { TrialExpiredBanner } from "./trial-expired-banner";
 
-const SECTION_TITLES: Record<string, { title: string; subtitle: string }> = {
-  "/portal": {
-    title: "Overview",
-    subtitle: "Your health data at a glance",
-  },
-  "/portal/reports": {
-    title: "My Reports",
-    subtitle: "Review your generated health reports",
-  },
-  "/portal/trends": {
-    title: "Data Lab",
-    subtitle: "Advanced evidence, trends, and technical context from your analysis.",
-  },
-  "/portal/insights": {
-    title: "Insights",
-    subtitle:
-      "Patterns detected from your data — based on your own history, not averages",
-  },
-  "/portal/settings": {
-    title: "Settings",
-    subtitle: "Manage your portal preferences",
-  },
-  "/portal/upload": {
-    title: "Update Data",
-    subtitle: "Refresh your Apple Health timeline",
-  },
-  "/portal/health": {
-    title: "Health",
-    subtitle: "Longitudinal Sleep, Recovery & Activity",
-  },
-  "/portal/health/sleep": {
-    title: "Sleep",
-    subtitle: "Sleep duration, stages, consistency, and efficiency",
-  },
-  "/portal/health/recovery": {
-    title: "Recovery",
-    subtitle: "HRV, heart rate, readiness, and baseline comparison",
-  },
-  "/portal/health/activity": {
-    title: "Activity",
-    subtitle: "Steps, energy, distance, and activity consistency",
-  },
-};
-
 const STORAGE_KEY = "engage7_portal_sidebar_collapsed";
 const OVERVIEW_HEADER_EVENT = "engage7:overview-header-subtitle";
 
@@ -71,6 +28,19 @@ export function PortalShell({
   const [collapsed, setCollapsed] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
   const [overviewSubtitle, setOverviewSubtitle] = useState<string | null>(null);
+  const { t } = useLocale();
+  const sectionTitles = {
+    "/portal": t.portal.shell.sections.overview,
+    "/portal/reports": t.portal.shell.sections.reports,
+    "/portal/trends": t.portal.shell.sections.dataLab,
+    "/portal/insights": t.portal.shell.sections.insights,
+    "/portal/settings": t.portal.shell.sections.settings,
+    "/portal/upload": t.portal.shell.sections.upload,
+    "/portal/health": t.portal.shell.sections.health,
+    "/portal/health/sleep": t.portal.shell.sections.sleep,
+    "/portal/health/recovery": t.portal.shell.sections.recovery,
+    "/portal/health/activity": t.portal.shell.sections.activity,
+  };
 
   useEffect(() => {
     const stored = localStorage.getItem(STORAGE_KEY);
@@ -89,26 +59,25 @@ export function PortalShell({
     void claimPendingPublicAnalysis()
       .then(() => {
         trackClaimImportCompleted(pendingJobId);
-        toast.success("Your public analysis is now in your Portal.");
+        toast.success(t.portal.shell.claimImported);
       })
       .catch(() => {
         trackClaimImportCompleted(pendingJobId, "failed");
-        toast.message("Your analysis is ready to import.", {
-          description:
-            "We could not import it automatically. You can retry now.",
+        toast.message(t.portal.shell.claimReady, {
+          description: t.portal.shell.claimRetryDescription,
           action: {
-            label: "Retry",
+            label: t.portal.shell.retry,
             onClick: () => {
               void claimPendingPublicAnalysis()
-                .then(() => toast.success("Analysis imported."))
+                .then(() => toast.success(t.portal.shell.imported))
                 .catch(() =>
-                  toast.error("Import still did not complete. Please try again later."),
+                  toast.error(t.portal.shell.importStillFailed),
                 );
             },
           },
         });
       });
-  }, []);
+  }, [t.portal.shell]);
 
   useEffect(() => {
     const handleOverviewSubtitle = (event: Event) => {
@@ -136,8 +105,8 @@ export function PortalShell({
 
   const pathname = usePathname();
   const section =
-    SECTION_TITLES[pathname] ??
-    Object.entries(SECTION_TITLES).find(([k]) =>
+    sectionTitles[pathname as keyof typeof sectionTitles] ??
+    Object.entries(sectionTitles).find(([k]) =>
       pathname.startsWith(k + "/")
     )?.[1] ??
     undefined;

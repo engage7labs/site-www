@@ -1,5 +1,6 @@
 "use client";
 
+import { useLocale } from "@/components/providers/locale-provider";
 import { Eye, EyeOff, Loader2 } from "lucide-react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Suspense, useEffect, useState } from "react";
@@ -10,6 +11,7 @@ function logSetup(event: string, fields: Record<string, unknown> = {}): void {
 }
 
 function ResetPasswordForm() {
+  const { t } = useLocale();
   const searchParams = useSearchParams();
   const router = useRouter();
   const token = searchParams.get("token") ?? "";
@@ -53,12 +55,12 @@ function ResetPasswordForm() {
         if (isWelcome) logSetup("welcome_access_code_setup_succeeded");
       } else {
         const data = await res.json().catch(() => ({}));
-        setError(data.error ?? "Failed to reset password");
+        setError(data.error ?? t.auth.reset.failed);
         setStatus("error");
         if (isWelcome) logSetup("welcome_access_code_setup_failed");
       }
     } catch {
-      setError("Network error — please try again");
+      setError(t.auth.reset.networkError);
       setStatus("error");
       if (isWelcome) logSetup("welcome_access_code_setup_failed");
     }
@@ -69,17 +71,16 @@ function ResetPasswordForm() {
       <div className="min-h-screen flex items-center justify-center bg-background px-4">
         <div className="max-w-sm w-full text-center space-y-4">
           <h1 className="text-xl font-semibold text-foreground">
-            Link unavailable
+            {t.auth.reset.linkUnavailableTitle}
           </h1>
           <p className="text-sm text-muted-foreground">
-            This link has already been used or has expired. Please request a
-            new access link.
+            {t.auth.reset.linkUnavailableBody}
           </p>
           <a
             href="/auth/forgot-password"
             className="inline-block text-sm text-accent hover:underline"
           >
-            Request a new link
+            {t.auth.reset.requestNewLink}
           </a>
         </div>
       </div>
@@ -106,12 +107,12 @@ function ResetPasswordForm() {
             </svg>
           </div>
           <h1 className="text-xl font-semibold text-foreground">
-            {isWelcome ? "Access code created" : "Password updated"}
+            {isWelcome ? t.auth.reset.accessCodeCreated : t.auth.reset.passwordUpdated}
           </h1>
           <p className="text-sm text-muted-foreground">
             {isWelcome
-              ? "Taking you to your Engage7 portal..."
-              : "Your password has been set. You can now sign in."}
+              ? t.auth.reset.takingToPortal
+              : t.auth.reset.passwordSet}
           </p>
           {isWelcome ? (
             <Loader2 className="h-5 w-5 animate-spin text-muted-foreground mx-auto" />
@@ -120,7 +121,7 @@ function ResetPasswordForm() {
               href="/login"
               className="inline-block rounded-md bg-accent px-6 py-2 text-sm font-medium text-white hover:bg-accent/90 transition-colors"
             >
-              Sign in
+              {t.auth.reset.signIn}
             </a>
           )}
         </div>
@@ -133,12 +134,12 @@ function ResetPasswordForm() {
       <form onSubmit={handleSubmit} className="max-w-sm w-full space-y-6">
         <div className="text-center space-y-1">
           <h1 className="text-xl font-semibold text-foreground">
-            {isWelcome ? "Create your access code" : "Set your password"}
+            {isWelcome ? t.auth.reset.createAccessCode : t.auth.reset.setPassword}
           </h1>
           <p className="text-sm text-muted-foreground">
             {isWelcome
-              ? "Choose an access code so you can return to your Engage7 portal anytime."
-              : "Choose a strong password for your Engage7 account."}
+              ? t.auth.reset.welcomeBody
+              : t.auth.reset.resetBody}
           </p>
         </div>
 
@@ -148,8 +149,8 @@ function ResetPasswordForm() {
               type={showPassword ? "text" : "password"}
               placeholder={
                 isWelcome
-                  ? "Access code (min 8 characters)"
-                  : "New password (min 8 characters)"
+                  ? t.auth.reset.accessCodePlaceholder
+                  : t.auth.reset.passwordPlaceholder
               }
               value={password}
               onChange={(e) => setPassword(e.target.value)}
@@ -174,7 +175,7 @@ function ResetPasswordForm() {
 
           <input
             type="password"
-            placeholder={isWelcome ? "Confirm access code" : "Confirm password"}
+            placeholder={isWelcome ? t.auth.reset.confirmAccessCode : t.auth.reset.confirmPassword}
             value={confirm}
             onChange={(e) => setConfirm(e.target.value)}
             minLength={8}
@@ -184,7 +185,7 @@ function ResetPasswordForm() {
           />
 
           {confirm && password !== confirm && (
-            <p className="text-xs text-destructive">Passwords do not match</p>
+            <p className="text-xs text-destructive">{t.auth.reset.mismatch}</p>
           )}
         </div>
 
@@ -198,7 +199,7 @@ function ResetPasswordForm() {
           className="w-full rounded-lg bg-accent px-4 py-2.5 text-sm font-medium text-white hover:bg-accent/90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
         >
           {status === "loading" && <Loader2 className="h-4 w-4 animate-spin" />}
-          {isWelcome ? "Create access code" : "Set Password"}
+          {isWelcome ? t.auth.reset.submitAccessCode : t.auth.reset.submitPassword}
         </button>
       </form>
     </div>

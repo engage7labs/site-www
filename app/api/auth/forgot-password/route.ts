@@ -10,6 +10,7 @@
 
 import { signJwt } from "@/lib/auth-server";
 import { APP_URL, passwordResetEmail, sendEmail } from "@/lib/email";
+import { normalizeLocale, type Locale } from "@/lib/i18n";
 import { findAuthUserIdByEmail } from "@/lib/supabase-admin";
 import { NextRequest, NextResponse } from "next/server";
 
@@ -20,7 +21,7 @@ function logPasswordReset(event: string, fields: Record<string, unknown>): void 
 }
 
 export async function POST(req: NextRequest) {
-  let body: { email?: string };
+  let body: { email?: string; locale?: string };
   try {
     body = await req.json();
   } catch {
@@ -31,6 +32,7 @@ export async function POST(req: NextRequest) {
   }
 
   const email = body.email?.trim().toLowerCase();
+  const locale: Locale = normalizeLocale(body.locale);
   if (!email || !/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)) {
     return NextResponse.json(
       { error: "Invalid email address" },
@@ -65,7 +67,7 @@ export async function POST(req: NextRequest) {
     const resetUrl = `${APP_URL}/auth/reset-password?token=${encodeURIComponent(
       resetToken
     )}`;
-    const { subject, html } = passwordResetEmail(resetUrl);
+    const { subject, html } = passwordResetEmail(resetUrl, locale);
 
     const emailResult = await sendEmail({ to: email, subject, html });
     if (!emailResult.ok) {

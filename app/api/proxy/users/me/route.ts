@@ -26,6 +26,38 @@ function logAccountDelete(
   console.log(JSON.stringify({ event, ...fields }));
 }
 
+export async function GET() {
+  const cookieStore = await cookies();
+  const token = cookieStore.get(SESSION_COOKIE_NAME)?.value;
+  if (!token) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+
+  const session = verifyJwt(token);
+  if (!session?.sub) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+
+  const path = `/api/users/me?email=${encodeURIComponent(session.sub)}`;
+  const sigHeaders = signRequest("GET", path);
+  try {
+    const upstreamResponse = await fetch(`${INTERNAL_API_BASE_URL}${path}`, {
+      method: "GET",
+      headers: { ...sigHeaders },
+      cache: "no-store",
+    });
+    const data = await upstreamResponse
+      .json()
+      .catch(() => ({ detail: `Upstream error ${upstreamResponse.status}` }));
+    return NextResponse.json(data, { status: upstreamResponse.status });
+  } catch {
+    return NextResponse.json(
+      { detail: "User service unavailable" },
+      { status: 503 }
+    );
+  }
+}
+
 export async function DELETE() {
   const cookieStore = await cookies();
   const token = cookieStore.get(SESSION_COOKIE_NAME)?.value;

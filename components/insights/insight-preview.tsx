@@ -20,6 +20,7 @@ import {
   getDarthPayload,
   getDarthPresentation,
   getDarthTeaser,
+  resolveDarthPresentationLocale,
   selectDarthCopy,
 } from "@/lib/darth";
 import {
@@ -269,13 +270,17 @@ export function InsightPreview({
     assertDarthContract(darthPayload);
     return true;
   }, [darthPayload, usesDarthTeaser]);
+  const darthLocale = useMemo(
+    () => resolveDarthPresentationLocale(darthPresentation, locale),
+    [darthPresentation, locale]
+  );
   const darthSupporting = useMemo(
     () =>
       (darthPresentation?.supporting ?? []).map((block) => ({
         block,
-        copy: selectDarthCopy(block.copy, locale),
+        copy: selectDarthCopy(block.copy, darthLocale),
       })),
-    [darthPresentation, locale]
+    [darthPresentation, darthLocale]
   );
   const darthProofCharts = useMemo(() => {
     const roleOrder: Record<DarthProofChart["role"], number> = {

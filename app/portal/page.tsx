@@ -99,24 +99,25 @@ interface OverviewData {
 
 interface StatusNoticeProps {
   readonly status: PortalDataStatus | null;
+  readonly copy: typeof import("@/lib/i18n/dictionaries/en-IE").enIE.portal.statusNotice;
 }
 
-function StatusNotice({ status }: StatusNoticeProps) {
+function StatusNotice({ status, copy }: StatusNoticeProps) {
   if (!status) return null;
 
   let message: string | null = null;
   if (!status.hasAnalyses || status.analysisStatus === "no_analysis") {
-    message = "No analysis has been created yet. Refresh your Apple Health timeline to start your Portal.";
+    message = copy.noAnalysis;
   } else if (status.analysisStatus === "analysis_processing" || status.analysisStatus === "update_data_processing") {
-    message = "Your latest analysis is still processing. Available Portal cards will update when it finishes.";
+    message = copy.processing;
   } else if (status.analysisStatus === "analysis_failed" || status.analysisStatus === "update_data_failed") {
-    message = "The latest analysis did not complete. Existing Portal data is still shown where available.";
+    message = copy.failed;
   } else if (status.analysisStatus === "claim_import_in_progress") {
-    message = "Your public analysis is being imported into your Portal.";
+    message = copy.importing;
   } else if (!status.hasDarth) {
-    message = "Analysis data is available, but the current guidance layer is not ready for this analysis yet.";
+    message = copy.darthMissing;
   } else if (!status.hasFeatureTimeline) {
-    message = "Analysis data is available, but the longitudinal feature timeline is not available for this account yet.";
+    message = copy.timelineMissing;
   }
 
   if (!message) return null;
@@ -419,25 +420,29 @@ function medianSubtitle(
     .replace("{end}", range.end);
 }
 
-function formatHeaderDate(iso: string): string {
-  return new Date(iso).toLocaleDateString("en-IE", {
+function formatHeaderDate(iso: string, locale: string): string {
+  return new Date(iso).toLocaleDateString(locale === "pt-BR" ? "pt-BR" : "en-IE", {
     year: "numeric",
     month: "long",
     day: "numeric",
   });
 }
 
-function latestTimelineSubtitle(data: OverviewData | null | undefined): string {
+function latestTimelineSubtitle(
+  data: OverviewData | null | undefined,
+  locale: string,
+  copy: typeof import("@/lib/i18n/dictionaries/en-IE").enIE.portal.headerSubtitle
+): string {
   const dateEnd = data?.feature_store?.date_end;
   if (dateEnd) {
-    return `Timeline updated through ${formatHeaderDate(dateEnd)}`;
+    return copy.timelineUpdatedThrough.replace("{date}", formatHeaderDate(dateEnd, locale));
   }
 
   const latest = data?.latest_analysis;
-  if (!latest) return "No recent analysis yet. Update Data to refresh your Apple Health timeline.";
-  if (!latest.created_at) return "Latest analysis is available.";
+  if (!latest) return copy.noRecentAnalysis;
+  if (!latest.created_at) return copy.latestAnalysisAvailable;
 
-  return `Latest analysis available from ${formatHeaderDate(latest.created_at)}`;
+  return copy.latestAnalysisFrom.replace("{date}", formatHeaderDate(latest.created_at, locale));
 }
 
 function weeklyTrend(
@@ -749,7 +754,7 @@ function HealthRadar({
 }
 
 export default function PortalOverviewPage() {
-  const { t } = useLocale();
+  const { t, locale } = useLocale();
   const [data, setData] = useState<OverviewData | null>(null);
   const [trends, setTrends] = useState<TrendsData | null>(null);
   const [healthData, setHealthData] = useState<HealthData | null>(null);
@@ -823,7 +828,7 @@ export default function PortalOverviewPage() {
     if (loading) return;
     window.dispatchEvent(
       new CustomEvent(OVERVIEW_HEADER_EVENT, {
-        detail: { subtitle: latestTimelineSubtitle(data) },
+        detail: { subtitle: latestTimelineSubtitle(data, locale, t.portal.headerSubtitle) },
       })
     );
 
@@ -832,7 +837,7 @@ export default function PortalOverviewPage() {
         new CustomEvent(OVERVIEW_HEADER_EVENT, { detail: { subtitle: null } })
       );
     };
-  }, [data, loading]);
+  }, [data, loading, locale, t.portal.headerSubtitle]);
 
   if (loading) {
     return (
@@ -1002,7 +1007,7 @@ export default function PortalOverviewPage() {
         <DailyBriefing />
       </OverviewBlock>
 
-      <StatusNotice status={portalStatus} />
+      <StatusNotice status={portalStatus} copy={t.portal.statusNotice} />
 
       <OverviewBlock label="OVERVIEW_COMPARE_IMPROVE_COMPONENT">
         <CompareImproveBlock result={compareImprove} />

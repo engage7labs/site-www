@@ -9,7 +9,7 @@ import {
   extractSleepStageInsights,
   type InsightText,
 } from "@/lib/insights/extract";
-import { getDarthPayload, getDarthPresentation, selectDarthCopy, type DarthInsightBlock } from "@/lib/darth";
+import { getDarthPayload, getDarthPresentation, resolveDarthPresentationLocale, selectDarthCopy, type DarthInsightBlock } from "@/lib/darth";
 import type { PortalDataStatus } from "@/lib/portal-data-status";
 import { parsePortalDataStatus } from "@/lib/portal-data-status";
 import { useLocale } from "@/components/providers/locale-provider";
@@ -437,16 +437,17 @@ export default function InsightsPage() {
         }
 
         // INSIGHTS_DARTH_PRESENTATION
+        const darthLocale = resolveDarthPresentationLocale(presentation, locale);
         const hero = presentation?.hero
           ? {
               block: presentation.hero,
-              copy: selectDarthCopy(presentation.hero.copy, locale),
+              copy: selectDarthCopy(presentation.hero.copy, darthLocale),
             }
           : null;
         const supporting = (presentation?.supporting ?? [])
           .map((block) => ({
             block,
-            copy: selectDarthCopy(block.copy, locale),
+            copy: selectDarthCopy(block.copy, darthLocale),
           }))
           .filter(isDarthDisplayBlock);
 
@@ -541,7 +542,7 @@ export default function InsightsPage() {
         <div className="rounded-xl border border-accent/20 bg-accent/5 px-5 py-4 flex flex-col gap-2">
           {darthState && (
             <span className="text-xs font-semibold uppercase tracking-wider text-accent">
-              {STATE_LABELS[darthState] ?? "Current pattern"}
+              {STATE_LABELS[darthState] ?? t.darthChrome.currentPattern}
             </span>
           )}
           {darthClaim && (
@@ -558,7 +559,7 @@ export default function InsightsPage() {
           <div className="flex items-center gap-2">
             <Lightbulb className="h-4 w-4 text-accent" />
             <span className="text-[10px] font-semibold uppercase tracking-wider text-accent">
-              Key finding
+              {t.darthChrome.keyFinding}
             </span>
           </div>
           <h3 className="text-base font-semibold text-card-foreground leading-snug">

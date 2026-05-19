@@ -15,6 +15,7 @@ import { signRequest } from "@/lib/api/signing";
 import { SESSION_COOKIE_NAME, signJwt } from "@/lib/auth-server";
 import { resolveCanonicalAppUrl } from "@/lib/canonical-app-url";
 import { welcomeEmail, sendEmail } from "@/lib/email";
+import { normalizeLocale, type Locale } from "@/lib/i18n";
 import { ensureSupabaseAuthUser } from "@/lib/supabase-admin";
 import { INTERNAL_API_BASE_URL } from "@/lib/server-config";
 import { NextRequest, NextResponse } from "next/server";
@@ -78,10 +79,11 @@ function createWelcomeAccessLink(email: string, userId?: string): WelcomeAccessL
 
 async function deliverWelcomeEmail(
   email: string,
-  userId?: string
+  userId?: string,
+  locale: Locale = "en"
 ): Promise<EmailDelivery> {
   const accessLink = createWelcomeAccessLink(email, userId);
-  const template = welcomeEmail(accessLink.url);
+  const template = welcomeEmail(accessLink.url, locale);
 
   logStructured("welcome_email_send_attempt", {
     email,
@@ -128,10 +130,19 @@ export async function POST(request: NextRequest) {
   const sigHeaders = signRequest("POST", path);
   const rawBody = await request.text();
   let forwardedBody = rawBody;
+  let requestLocale: Locale = "en";
 
   try {
-    const parsed = JSON.parse(rawBody) as { email?: unknown; user_id?: unknown };
+    const parsed = JSON.parse(rawBody) as {
+      email?: unknown;
+      user_id?: unknown;
+      preferred_locale?: unknown;
+    };
     const email = typeof parsed.email === "string" ? parsed.email.trim().toLowerCase() : "";
+    requestLocale =
+      typeof parsed.preferred_locale === "string"
+        ? normalizeLocale(parsed.preferred_locale)
+        : "en";
 
     if (email && typeof parsed.user_id !== "string") {
       logStructured("unlock_supabase_auth_user_resolve_attempt", { email });
@@ -154,7 +165,13 @@ export async function POST(request: NextRequest) {
         email,
         auth_user_created: authUser.created === true,
       });
-      forwardedBody = JSON.stringify({ ...parsed, user_id: authUser.userId });
+      forwardedBody = JSON.stringify({
+        ...parsed,
+        preferred_locale: requestLocale,
+        user_id: authUser.userId,
+      });
+    } else {
+      forwardedBody = JSON.stringify({ ...parsed, preferred_locale: requestLocale });
     }
   } catch {
     // Let the API return its existing validation response for malformed JSON.
@@ -202,7 +219,7 @@ export async function POST(request: NextRequest) {
 
     if (isNewUser) {
       const userId = typeof data.id === "string" ? data.id : undefined;
-      emailDelivery = await deliverWelcomeEmail(data.email, userId);
+      emailDelivery = await deliverWelcomeEmail(data.email, userId, requestLocale);
     } else {
       emailDelivery = {
         status: "skipped_existing_user",

@@ -1,5 +1,6 @@
 "use client";
 
+import { useLocale } from "@/components/providers/locale-provider";
 import { Crown, Loader2, Mail, X } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
@@ -21,6 +22,7 @@ export function PostAnalysisModal({
   onClose,
   onEmailSubmit,
 }: Readonly<PostAnalysisModalProps>) {
+  const { t } = useLocale();
   const [email, setEmail] = useState("");
   const [consentChecked, setConsentChecked] = useState(false);
   const [submitting, setSubmitting] = useState(false);
@@ -45,11 +47,11 @@ export function PostAnalysisModal({
   const handleUnlockPremium = async () => {
     const normalized = email.trim();
     if (!normalized) {
-      setEmailError("Email is required to unlock Premium Free.");
+      setEmailError(t.result.premiumModal.emailRequired);
       return;
     }
     if (!EMAIL_RE.test(normalized)) {
-      setEmailError("Please enter a valid email address.");
+      setEmailError(t.result.premiumModal.emailInvalid);
       return;
     }
     if (!consentChecked) {
@@ -61,7 +63,7 @@ export function PostAnalysisModal({
 
     try {
       await onEmailSubmit(normalized, true);
-      toast.success("Your 90-day Premium Free access has started");
+      toast.success(t.result.premiumModal.success);
       setRedirecting(true);
       redirectTimerRef.current = setTimeout(() => {
         window.location.href = "/portal";
@@ -70,7 +72,7 @@ export function PostAnalysisModal({
       setSubmitError(
         err instanceof Error
           ? err.message
-          : "Something went wrong. Please try again."
+          : t.result.premiumModal.genericError
       );
       setSubmitting(false);
     }
@@ -89,7 +91,7 @@ export function PostAnalysisModal({
           type="button"
           onClick={onClose}
           className="absolute right-3 top-3 rounded-md p-1 text-muted-foreground hover:text-foreground"
-          aria-label="Close"
+          aria-label={t.common.close}
         >
           <X className="h-4 w-4" />
         </button>
@@ -97,10 +99,10 @@ export function PostAnalysisModal({
         <div className="p-6 space-y-5">
           <div className="space-y-1">
             <h2 className="text-xl font-semibold text-foreground">
-              Open your Premium Free Portal
+              {t.result.premiumModal.title}
             </h2>
             <p className="text-sm text-muted-foreground">
-              Enter your email to unlock 90 days of Premium Free access.
+              {t.result.premiumModal.description}
             </p>
           </div>
 
@@ -112,7 +114,7 @@ export function PostAnalysisModal({
             >
               <span className="inline-flex items-center gap-2">
                 <Mail className="h-4 w-4" />
-                Your email
+                {t.result.premiumModal.emailLabel}
               </span>
             </label>
             <input
@@ -145,9 +147,7 @@ export function PostAnalysisModal({
               htmlFor="consent-checkbox"
               className="text-xs text-muted-foreground leading-relaxed cursor-pointer"
             >
-              I agree to store my processed health insights so Engage7 can
-              show me trends and portal insights. I can delete this data at
-              any time from portal settings.
+              {t.result.premiumModal.consent}
             </label>
           </div>
 
@@ -169,7 +169,7 @@ export function PostAnalysisModal({
               ) : (
                 <Crown className="h-4 w-4" />
               )}
-              {redirecting ? "Opening your Portal..." : "Open your Premium Free Portal"}
+              {redirecting ? t.result.premiumModal.opening : t.result.premiumModal.open}
             </button>
           </div>
         </div>

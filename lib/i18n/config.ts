@@ -5,32 +5,32 @@
  * for the Engage7 web application.
  */
 
-export const SUPPORTED_LOCALES = ["en-IE", "pt-BR", "hi-IN"] as const;
+export const SUPPORTED_LOCALES = ["en", "pt-BR"] as const;
 export type Locale = (typeof SUPPORTED_LOCALES)[number];
 
-export const DEFAULT_LOCALE: Locale = "en-IE";
+export type RuntimeLocale = "en-IE" | "pt-BR" | "hi-IN";
+
+export const DEFAULT_LOCALE: Locale = "en";
 
 export const LOCALE_NAMES: Record<Locale, string> = {
-  "en-IE": "English",
+  en: "English",
   "pt-BR": "Português",
-  "hi-IN": "हिन्दी",
 };
 
 /**
  * Maps browser locale codes to supported application locales.
  *
  * Mapping rules:
- * - en-IE, en-GB, en-US, en => en-IE
+ * - en-IE, en-GB, en-US, en => en
  * - pt-BR, pt-PT, pt => pt-BR
- * - hi-IN, hi => hi-IN
- * - anything else => en-IE
+ * - anything else => en
  */
 export function mapLocale(browserLocale: string): Locale {
   const normalized = browserLocale.toLowerCase();
 
   // English variants
   if (normalized.startsWith("en")) {
-    return "en-IE";
+    return "en";
   }
 
   // Portuguese variants
@@ -38,11 +38,21 @@ export function mapLocale(browserLocale: string): Locale {
     return "pt-BR";
   }
 
-  // Hindi variants
-  if (normalized.startsWith("hi")) {
-    return "hi-IN";
-  }
-
   // Default fallback
   return DEFAULT_LOCALE;
+}
+
+export function normalizeLocale(value: string | null | undefined): Locale {
+  if (!value) return DEFAULT_LOCALE;
+  if (value === "en" || value === "en-IE") return "en";
+  if (value === "pt-BR") return "pt-BR";
+  return mapLocale(value);
+}
+
+export function isSupportedLocale(value: string | null | undefined): value is Locale {
+  return value === "en" || value === "pt-BR";
+}
+
+export function toRuntimeLocale(locale: string | null | undefined): RuntimeLocale {
+  return normalizeLocale(locale) === "pt-BR" ? "pt-BR" : "en-IE";
 }

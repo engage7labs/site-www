@@ -7,7 +7,7 @@
 "use client";
 
 import type { Locale } from "@/lib/i18n/config";
-import { DEFAULT_LOCALE } from "@/lib/i18n/config";
+import { DEFAULT_LOCALE, normalizeLocale } from "@/lib/i18n/config";
 import { detectLocale, saveLocale } from "@/lib/i18n/detect-locale";
 import { getDictionary, type Dictionary } from "@/lib/i18n/dictionaries";
 import React, { createContext, useContext, useEffect, useState } from "react";
@@ -15,6 +15,7 @@ import React, { createContext, useContext, useEffect, useState } from "react";
 interface LocaleContextValue {
   locale: Locale;
   setLocale: (locale: Locale) => void;
+  setSessionLocale: (locale: Locale) => void;
   t: Dictionary;
 }
 
@@ -37,16 +38,42 @@ export function LocaleProvider({ children }: LocaleProviderProps) {
     setLocaleState(detectedLocale);
     setDictionary(getDictionary(detectedLocale));
     setMounted(true);
+
+    if (typeof document !== "undefined") {
+      document.documentElement.lang = detectedLocale;
+    }
+
+    let cancelled = false;
+    fetch("/api/proxy/users/me", { cache: "no-store" })
+      .then((res) => (res.ok ? res.json() : null))
+      .then((data: { preferred_locale?: string } | null) => {
+        if (cancelled || !data?.preferred_locale) return;
+        const preferredLocale = normalizeLocale(data.preferred_locale);
+        setLocaleState(preferredLocale);
+        setDictionary(getDictionary(preferredLocale));
+        saveLocale(preferredLocale);
+        if (typeof document !== "undefined") {
+          document.documentElement.lang = preferredLocale;
+        }
+      })
+      .catch(() => {
+        // Anonymous/public sessions are expected to return 401 here.
+      });
+
+    return () => {
+      cancelled = true;
+    };
   }, []);
 
   const setLocale = (newLocale: Locale) => {
-    setLocaleState(newLocale);
-    setDictionary(getDictionary(newLocale));
-    saveLocale(newLocale);
+    const normalized = normalizeLocale(newLocale);
+    setLocaleState(normalized);
+    setDictionary(getDictionary(normalized));
+    saveLocale(normalized);
 
     // Update html lang attribute
     if (typeof document !== "undefined") {
-      document.documentElement.lang = newLocale;
+      document.documentElement.lang = normalized;
     }
   };
 
@@ -56,7 +83,9 @@ export function LocaleProvider({ children }: LocaleProviderProps) {
   }
 
   return (
-    <LocaleContext.Provider value={{ locale, setLocale, t: dictionary }}>
+    <LocaleContext.Provider
+      value={{ locale, setLocale, setSessionLocale: setLocale, t: dictionary }}
+    >
       {children}
     </LocaleContext.Provider>
   );

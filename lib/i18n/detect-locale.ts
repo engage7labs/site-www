@@ -6,12 +6,14 @@
 
 import {
   DEFAULT_LOCALE,
+  normalizeLocale,
   mapLocale,
   SUPPORTED_LOCALES,
   type Locale,
 } from "./config";
 
-const LOCALE_STORAGE_KEY = "engage7-locale";
+export const LOCALE_STORAGE_KEY = "engage7-locale";
+export const LOCALE_COOKIE_KEY = "engage7_locale";
 
 /**
  * Detects the user's locale from localStorage or browser preferences.
@@ -30,8 +32,11 @@ export function detectLocale(): Locale {
   // Check for previously stored locale
   try {
     const stored = localStorage.getItem(LOCALE_STORAGE_KEY);
-    if (stored && SUPPORTED_LOCALES.includes(stored as Locale)) {
-      return stored as Locale;
+    if (stored) {
+      const normalized = normalizeLocale(stored);
+      if (SUPPORTED_LOCALES.includes(normalized)) {
+        return normalized;
+      }
     }
   } catch (error) {
     // localStorage might be unavailable
@@ -39,9 +44,15 @@ export function detectLocale(): Locale {
   }
 
   // Detect from browser
-  const browserLocale = navigator.language || navigator.languages?.[0];
-  if (browserLocale) {
-    return mapLocale(browserLocale);
+  const browserLocales =
+    navigator.languages && navigator.languages.length > 0
+      ? navigator.languages
+      : [navigator.language].filter(Boolean);
+  for (const browserLocale of browserLocales) {
+    const mapped = mapLocale(browserLocale);
+    if (SUPPORTED_LOCALES.includes(mapped)) {
+      return mapped;
+    }
   }
 
   return DEFAULT_LOCALE;
@@ -55,6 +66,9 @@ export function saveLocale(locale: Locale): void {
 
   try {
     localStorage.setItem(LOCALE_STORAGE_KEY, locale);
+    document.cookie = `${LOCALE_COOKIE_KEY}=${encodeURIComponent(
+      locale
+    )}; Path=/; Max-Age=31536000; SameSite=Lax`;
   } catch (error) {
     console.warn("Failed to save locale to localStorage:", error);
   }

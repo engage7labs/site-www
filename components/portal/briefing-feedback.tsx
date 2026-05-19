@@ -7,6 +7,7 @@
 
 "use client";
 
+import { useLocale } from "@/components/providers/locale-provider";
 import { ThumbsDown, ThumbsUp } from "lucide-react";
 import { useCallback, useState } from "react";
 import { trackFeedbackSubmitted } from "@/lib/telemetry";
@@ -24,6 +25,7 @@ export function BriefingFeedback({
   surface = "overview",
   context,
 }: BriefingFeedbackProps) {
+  const { t } = useLocale();
   const [submitted, setSubmitted] = useState<"yes" | "no" | null>(null);
   const [sending, setSending] = useState(false);
 
@@ -61,14 +63,14 @@ export function BriefingFeedback({
   if (submitted) {
     return (
       <p className="text-xs text-muted-foreground/70 italic">
-        Thanks for the feedback.
+        {t.feedback.thanks}
       </p>
     );
   }
 
   return (
     <div className="flex items-center gap-3">
-      <span className="text-xs text-muted-foreground">Was this helpful?</span>
+      <span className="text-xs text-muted-foreground">{t.feedback.helpful}</span>
       <button
         type="button"
         onClick={() => submit("yes")}
@@ -76,7 +78,7 @@ export function BriefingFeedback({
         className="inline-flex items-center gap-1 rounded-md border border-border px-2.5 py-1 text-xs text-muted-foreground transition-colors hover:bg-accent/10 hover:text-foreground disabled:opacity-50"
       >
         <ThumbsUp className="h-3 w-3" />
-        Yes
+        {t.common.yes}
       </button>
       <button
         type="button"
@@ -85,7 +87,7 @@ export function BriefingFeedback({
         className="inline-flex items-center gap-1 rounded-md border border-border px-2.5 py-1 text-xs text-muted-foreground transition-colors hover:bg-accent/10 hover:text-foreground disabled:opacity-50"
       >
         <ThumbsDown className="h-3 w-3" />
-        No
+        {t.common.no}
       </button>
     </div>
   );

@@ -1,9 +1,11 @@
 "use client";
 
+import { useLocale } from "@/components/providers/locale-provider";
 import { Loader2 } from "lucide-react";
 import { useState } from "react";
 
 export default function ForgotPasswordPage() {
+  const { locale, t } = useLocale();
   const [email, setEmail] = useState("");
   const [status, setStatus] = useState<
     "idle" | "loading" | "accepted" | "error"
@@ -21,7 +23,7 @@ export default function ForgotPasswordPage() {
       const res = await fetch("/api/auth/forgot-password", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email: email.trim().toLowerCase() }),
+        body: JSON.stringify({ email: email.trim().toLowerCase(), locale }),
       });
 
       const data = await res.json().catch(() => ({}));
@@ -31,13 +33,13 @@ export default function ForgotPasswordPage() {
       } else {
         setError(
           data.code === "email_delivery_failed"
-            ? "We couldn't send the email right now. Please try again later."
-            : data.error ?? "Something went wrong"
+            ? t.auth.forgot.deliveryFailed
+            : data.error ?? t.auth.forgot.genericError
         );
         setStatus("error");
       }
     } catch {
-      setError("Network error — please try again");
+      setError(t.auth.forgot.networkError);
       setStatus("error");
     }
   }
@@ -62,17 +64,16 @@ export default function ForgotPasswordPage() {
             </svg>
           </div>
           <h1 className="text-xl font-semibold text-foreground">
-            Check your email
+            {t.auth.forgot.checkEmailTitle}
           </h1>
           <p className="text-sm text-muted-foreground">
-            If an account exists for this email, we&apos;ll send recovery
-            instructions.
+            {t.auth.forgot.checkEmailBody}
           </p>
           <a
             href="/login"
             className="inline-block text-sm text-accent hover:underline"
           >
-            Back to login
+            {t.auth.forgot.backToLogin}
           </a>
         </div>
       </div>
@@ -84,11 +85,10 @@ export default function ForgotPasswordPage() {
       <form onSubmit={handleSubmit} className="max-w-sm w-full space-y-6">
         <div className="text-center space-y-1">
           <h1 className="text-xl font-semibold text-foreground">
-            Reset your password
+            {t.auth.forgot.title}
           </h1>
           <p className="text-sm text-muted-foreground">
-            Enter your email and we&apos;ll send you a link to reset your
-            password.
+            {t.auth.forgot.body}
           </p>
         </div>
 
@@ -114,7 +114,7 @@ export default function ForgotPasswordPage() {
           className="w-full rounded-lg bg-accent px-4 py-2.5 text-sm font-medium text-white hover:bg-accent/90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
         >
           {status === "loading" && <Loader2 className="h-4 w-4 animate-spin" />}
-          Send reset link
+          {t.auth.forgot.send}
         </button>
 
         <div className="text-center">
@@ -122,7 +122,7 @@ export default function ForgotPasswordPage() {
             href="/login"
             className="text-sm text-muted-foreground hover:text-foreground transition-colors"
           >
-            Back to login
+            {t.auth.forgot.backToLogin}
           </a>
         </div>
       </form>

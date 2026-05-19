@@ -1,5 +1,6 @@
 "use client";
 
+import { useLocale } from "@/components/providers/locale-provider";
 import { EChart } from "@/components/insights/echart";
 import { RecoveryScoreChart } from "@/components/insights/recovery-score-chart";
 import { DarthStatePanel } from "@/components/portal/darth-state-panel";
@@ -61,14 +62,6 @@ interface ChartSeries {
   yAxisIndex?: number;
   stack?: string;
 }
-
-const PERIOD_LABELS: Record<Period, string> = {
-  today: "Last day",
-  week: "Last Week",
-  month: "Last Month",
-  year: "Last Year",
-  all: "All Time",
-};
 
 const PERIODS: Period[] = ["today", "week", "month", "year", "all"];
 
@@ -705,6 +698,7 @@ function PeriodSwitcher({
   period,
   onChange,
 }: Readonly<{ period: Period; onChange: (period: Period) => void }>) {
+  const { t } = useLocale();
   return (
     <div className="flex flex-wrap gap-1 rounded-lg bg-muted/40 p-0.5">
       {PERIODS.map((item) => (
@@ -718,7 +712,7 @@ function PeriodSwitcher({
               : "text-muted-foreground hover:text-foreground"
           }`}
         >
-          {PERIOD_LABELS[item]}
+          {t.portal.health.periods[item]}
         </button>
       ))}
     </div>
@@ -726,6 +720,7 @@ function PeriodSwitcher({
 }
 
 function TruthBadge({ status }: Readonly<{ status: string }>) {
+  const { t } = useLocale();
   const tone =
     status === "valid"
       ? "border-emerald-500/20 bg-emerald-500/10 text-emerald-300"
@@ -738,7 +733,7 @@ function TruthBadge({ status }: Readonly<{ status: string }>) {
     <span
       className={`inline-flex rounded-full border px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider ${tone}`}
     >
-      {status}
+      {t.common.status[status as keyof typeof t.common.status] ?? status}
     </span>
   );
 }
@@ -839,10 +834,11 @@ function InsightPanel({
 }
 
 function LoadingState() {
+  const { t } = useLocale();
   return (
     <div className="flex flex-col gap-6">
       <div className="portal-panel rounded-lg border border-border/70 bg-card/85 p-6">
-        <p className="text-sm text-muted-foreground">Loading health data...</p>
+        <p className="text-sm text-muted-foreground">{t.portal.health.loading}</p>
       </div>
     </div>
   );
@@ -852,31 +848,32 @@ function DatasetEmptyState({
   status,
   portalStatus,
 }: Readonly<{ status: string | undefined; portalStatus: PortalDataStatus | null }>) {
+  const { t } = useLocale();
   const message =
     !portalStatus?.hasAnalyses || portalStatus.analysisStatus === "no_analysis"
-      ? "No analysis has been created yet. Update Data before using the Health dashboards."
+      ? t.portal.statusNotice.noAnalysis
       : portalStatus.analysisStatus === "analysis_processing"
-        ? "Your latest analysis is still processing. The longitudinal health timeline will appear when it is ready."
+        ? t.portal.statusNotice.processing
         : portalStatus.analysisStatus === "analysis_failed"
-          ? "The latest analysis did not complete, so the health timeline is not available from that run."
+          ? t.portal.statusNotice.failed
           : portalStatus.featureTimelineStatus === "blob_unavailable" ||
               status === "blob_storage_unavailable"
-      ? "The stored health timeline is not available in this environment."
+      ? t.common.notAvailable
       : portalStatus.featureTimelineStatus === "blob_missing" ||
           status === "feature_store_blob_missing"
-        ? "A health timeline record exists, but the stored daily data could not be read."
+        ? t.common.unavailable
         : portalStatus.featureTimelineStatus === "parse_failed" ||
             status === "feature_store_parse_failed"
-          ? "The stored health timeline could not be converted into dashboard data."
+          ? t.common.unavailable
           : portalStatus.hasAnalyses && !portalStatus.hasFeatureTimeline
-            ? "An analysis exists for this account, but the stored health timeline is not available yet."
-            : "No stored health timeline is available yet for this account.";
+            ? t.portal.statusNotice.timelineMissing
+            : t.common.notAvailable;
 
   return (
     <div className="portal-panel rounded-lg border border-border/70 bg-card/85 p-8 text-center">
       <Info className="mx-auto mb-3 h-9 w-9 text-muted-foreground/45" />
       <p className="text-sm font-medium text-card-foreground">
-        Health timeline unavailable
+        {t.common.notAvailable}
       </p>
       <p className="mx-auto mt-2 max-w-md text-sm leading-relaxed text-muted-foreground">
         {message}
@@ -894,15 +891,19 @@ function DomainEmptyState({
   hasAnyDomainData: boolean;
   period: Period;
 }>) {
+  const { t } = useLocale();
   const meta = DOMAIN_META[domain];
+  const domainCopy = t.portal.health.domains[domain];
   const body = hasAnyDomainData
-    ? `${meta.title} data exists outside ${PERIOD_LABELS[period]}. Select a wider range to view the stored records.`
-    : `${meta.title} metrics were not present in the stored Apple Health data for this account.`;
+    ? t.portal.health.outsidePeriod
+        .replace("{domain}", domainCopy.title)
+        .replace("{period}", t.portal.health.periods[period])
+    : `${domainCopy.title} metrics were not present in the stored Apple Health data for this account.`;
 
   return (
     <MetricState
       Icon={meta.Icon}
-      title={`No ${meta.title.toLowerCase()} data in this view`}
+      title={`No ${domainCopy.title.toLowerCase()} data in this view`}
       body={body}
     />
   );
@@ -1564,6 +1565,7 @@ function ActivityDashboard({
 export function HealthDashboard({
   domain,
 }: Readonly<{ domain: HealthDomain }>) {
+  const { t } = useLocale();
   const [data, setData] = useState<HealthDataResponse | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -1630,6 +1632,7 @@ export function HealthDashboard({
   }
 
   const meta = DOMAIN_META[domain];
+  const domainCopy = t.portal.health.domains[domain];
   const { Icon } = meta;
 
   return (
@@ -1648,10 +1651,10 @@ export function HealthDashboard({
             </span>
             <div>
               <h2 className="text-lg font-semibold text-card-foreground">
-                {meta.title}
+                {domainCopy.title}
               </h2>
               <p className="mt-1 max-w-2xl text-sm text-muted-foreground">
-                {meta.subtitle}
+                {domainCopy.subtitle}
               </p>
               <p className="mt-2 text-xs text-muted-foreground">
                 {filtered.rangeLabel} · {filtered.points.length} stored days

@@ -7,6 +7,7 @@
 
 import { SESSION_COOKIE_NAME, verifyJwt } from "@/lib/auth-server";
 import { insightEmail, sendEmail } from "@/lib/email";
+import { normalizeLocale, type Locale } from "@/lib/i18n";
 import { getPreviewInsight } from "@/lib/insights/preview-insight";
 import { cookies } from "next/headers";
 import { NextRequest, NextResponse } from "next/server";
@@ -45,7 +46,7 @@ export async function POST(request: NextRequest) {
   }
 
   // --- Parse body ---
-  let body: { sections?: Record<string, unknown> };
+  let body: { sections?: Record<string, unknown>; locale?: string };
   try {
     body = await request.json();
   } catch {
@@ -53,6 +54,7 @@ export async function POST(request: NextRequest) {
   }
 
   const sections = body.sections ?? null;
+  const locale: Locale = normalizeLocale(body.locale);
 
   // --- Generate insight ---
   const insight = getPreviewInsight(
@@ -66,7 +68,7 @@ export async function POST(request: NextRequest) {
   }
 
   // --- Send email ---
-  const { subject, html } = insightEmail(insight);
+  const { subject, html } = insightEmail(insight, locale);
   const result = await sendEmail({ to: session.sub, subject, html });
 
   if (!result.ok) {

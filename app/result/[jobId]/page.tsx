@@ -91,11 +91,10 @@ function NotFoundView() {
         <AlertCircle className="h-12 w-12 text-destructive" />
         <div className="space-y-2">
           <h1 className="text-2xl font-semibold text-foreground">
-            Result Not Found
+            {t.result.error.notFoundTitle}
           </h1>
           <p className="text-muted-foreground max-w-md">
-            This analysis job could not be found. It may have expired or the
-            link is incorrect.
+            {t.result.error.notFoundDescription}
           </p>
         </div>
         <Link
@@ -124,19 +123,18 @@ function FailedView({ error }: Readonly<{ error: string | null }>) {
         <AlertCircle className="h-12 w-12 text-amber-500" />
         <div className="space-y-2">
           <h1 className="text-2xl font-semibold text-foreground">
-            We had trouble processing this file
+            {t.result.error.failedTitle}
           </h1>
           <p className="text-muted-foreground max-w-md">{calmMessage}</p>
           <p className="text-sm text-muted-foreground max-w-md">
-            This can happen with unsupported or incomplete exports. You can try
-            again with a different file.
+            {t.result.error.failedHint}
           </p>
         </div>
         <Link
           href="/analyze"
           className="inline-flex items-center px-5 py-2.5 rounded-md bg-accent text-white text-sm font-medium hover:bg-accent/90 transition-colors"
         >
-          Try again
+          {t.common.tryAgain}
         </Link>
       </motion.div>
     </PageShell>
@@ -148,22 +146,22 @@ function FailedView({ error }: Readonly<{ error: string | null }>) {
  */
 function getCalmErrorMessage(error: string | null, t: any): string {
   if (!error)
-    return "We weren't able to complete your analysis. Please try uploading again.";
+    return t.result.error.calmDefault;
 
   // Map technical errors to calm messages
   const errorMap: Record<string, string> = {
     timeout:
-      "Your analysis took longer than expected. Please try again — most files process in under two minutes.",
+      t.result.error.calmTimeout,
     interrupted:
-      "Your analysis was interrupted. This sometimes happens during high traffic. Please try again.",
+      t.result.error.calmInterrupted,
     stalled:
-      "Your analysis didn't finish processing. Please try uploading again.",
+      t.result.error.calmStalled,
     missing:
-      "Some of your results weren't available after processing. Please try again.",
+      t.result.error.calmMissing,
     network:
-      "We couldn't connect to process your data. Please check your connection and try again.",
+      t.result.error.calmNetwork,
     invalid:
-      "We couldn't read the data in this file. Please make sure you're uploading an Apple Health export (.zip).",
+      t.result.error.calmInvalid,
   };
 
   // Check for known error patterns
@@ -269,6 +267,7 @@ export default function ResultPage({
 }: Readonly<{
   params: Promise<{ jobId: string }>;
 }>) {
+  const { locale, t } = useLocale();
   const [result, setResult] = useState<AnalysisResult | null>(null);
   const [jobId, setJobId] = useState<string | null>(null);
   const [isNotFound, setIsNotFound] = useState(false);
@@ -327,6 +326,7 @@ export default function ResultPage({
       body: JSON.stringify({
         email,
         consent,
+        preferred_locale: locale,
         job_id: jobId,
         analysis_data: analysisData,
       }),
@@ -364,7 +364,7 @@ export default function ResultPage({
     if (status && status !== "sent" && status !== "skipped_existing_user") {
       const { toast } = await import("sonner");
       toast.warning(
-        "We couldn't send your welcome email — your portal is still open."
+        t.result.preview.fullReport.emailWarning
       );
     }
   };

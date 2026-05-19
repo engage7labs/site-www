@@ -2,9 +2,7 @@
  * Hindi (India) Dictionary
  */
 
-import type { Dictionary } from "./en-IE";
-
-export const hiIN: Dictionary = {
+export const hiIN = {
   // Navigation
   nav: {
     logo: "Engage7",

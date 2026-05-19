@@ -1,5 +1,6 @@
 "use client";
 
+import { useLocale } from "@/components/providers/locale-provider";
 import { Logo } from "@/components/shared/logo";
 import {
   Activity,
@@ -22,6 +23,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { PortalSidebarItem } from "./portal-sidebar-item";
 
 interface NavItem {
+  key: "overview" | "reports" | "health" | "sleep" | "recovery" | "activity" | "insights" | "dataLab" | "settings";
   label: string;
   href: string;
   icon: React.ElementType;
@@ -29,24 +31,25 @@ interface NavItem {
 }
 
 const NAV_ITEMS: NavItem[] = [
-  { label: "Overview", href: "/portal", icon: LayoutDashboard },
-  { label: "My Reports", href: "/portal/reports", icon: Upload },
+  { key: "overview", label: "Overview", href: "/portal", icon: LayoutDashboard },
+  { key: "reports", label: "My Reports", href: "/portal/reports", icon: Upload },
   {
+    key: "health",
     label: "Health",
     href: "/portal/health",
     icon: Activity,
     children: [
-      { label: "Sleep", href: "/portal/health/sleep", icon: Moon },
-      { label: "Recovery", href: "/portal/health/recovery", icon: Heart },
-      { label: "Activity", href: "/portal/health/activity", icon: Zap },
+      { key: "sleep", label: "Sleep", href: "/portal/health/sleep", icon: Moon },
+      { key: "recovery", label: "Recovery", href: "/portal/health/recovery", icon: Heart },
+      { key: "activity", label: "Activity", href: "/portal/health/activity", icon: Zap },
     ],
   },
-  { label: "Insights", href: "/portal/insights", icon: Lightbulb },
-  { label: "Data Lab", href: "/portal/trends", icon: TrendingUp },
+  { key: "insights", label: "Insights", href: "/portal/insights", icon: Lightbulb },
+  { key: "dataLab", label: "Data Lab", href: "/portal/trends", icon: TrendingUp },
 ];
 
 const LOWER_NAV_ITEMS: NavItem[] = [
-  { label: "Settings", href: "/portal/settings", icon: Settings },
+  { key: "settings", label: "Settings", href: "/portal/settings", icon: Settings },
 ];
 
 const FLYOUT_CLOSE_DELAY_MS = 200;
@@ -69,6 +72,7 @@ export function PortalSidebar({
   onToggleCollapse,
   onCloseMobile,
 }: PortalSidebarProps) {
+  const { t } = useLocale();
   const pathname = usePathname();
   const [healthOpen, setHealthOpen] = useState(
     pathname.startsWith("/portal/health")
@@ -180,7 +184,7 @@ export function PortalSidebar({
                     collapsed ? "w-0 opacity-0" : "w-auto opacity-100"
                   }`}
                 >
-                  {item.label}
+                  {t.portal.shell.sections[item.key].title}
                 </span>
                 {!collapsed && (
                   <ChevronDown
@@ -198,7 +202,7 @@ export function PortalSidebar({
                   />
                   <div
                     role="menu"
-                    aria-label="Health sections"
+                    aria-label={t.portal.shell.sections.health.title}
                     onMouseEnter={openHealthFlyout}
                     onMouseLeave={scheduleHealthFlyoutClose}
                     onFocus={openHealthFlyout}
@@ -223,7 +227,7 @@ export function PortalSidebar({
                           }`}
                         >
                           <child.icon className="h-3.5 w-3.5 shrink-0" />
-                          {child.label}
+                          {t.portal.shell.sections[child.key].title}
                         </Link>
                       );
                     })}
@@ -247,7 +251,7 @@ export function PortalSidebar({
                         }`}
                       >
                         <child.icon className="h-3.5 w-3.5 shrink-0" />
-                        {child.label}
+                        {t.portal.shell.sections[child.key].title}
                       </Link>
                     );
                   })}
@@ -259,7 +263,7 @@ export function PortalSidebar({
               key={item.href}
               href={item.href}
               icon={item.icon}
-              label={item.label}
+              label={t.portal.shell.sections[item.key].title}
               active={isActivePath(pathname, item.href)}
               collapsed={collapsed}
               onClick={onCloseMobile}
@@ -274,7 +278,7 @@ export function PortalSidebar({
             key={item.href}
             href={item.href}
             icon={item.icon}
-            label={item.label}
+            label={t.portal.shell.sections[item.key].title}
             active={isActivePath(pathname, item.href)}
             collapsed={collapsed}
             onClick={onCloseMobile}

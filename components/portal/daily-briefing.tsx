@@ -20,7 +20,7 @@ import {
 } from "lucide-react";
 import { useEffect, useState } from "react";
 import { BriefingFeedback } from "./briefing-feedback";
-import { selectDarthCopy, selectDarthCta, type DarthPresentation } from "@/lib/darth";
+import { resolveDarthPresentationLocale, selectDarthCopy, selectDarthCta, type DarthPresentation } from "@/lib/darth";
 import { useLocale } from "@/components/providers/locale-provider";
 
 // ---------------------------------------------------------------------------
@@ -113,7 +113,7 @@ function benchmarkLabel(text: string): string {
 // ---------------------------------------------------------------------------
 
 export function DailyBriefing() {
-  const { locale } = useLocale();
+  const { locale, t } = useLocale();
   const [data, setData] = useState<DailyBriefingData | null>(null);
   const [loading, setLoading] = useState(true);
 
@@ -144,16 +144,17 @@ export function DailyBriefing() {
 
   if (!data?.briefing) return null;
 
+  const darthLocale = resolveDarthPresentationLocale(data.presentation, locale);
   const darthHero = data.presentation?.hero
-    ? selectDarthCopy(data.presentation.hero.copy, locale)
+    ? selectDarthCopy(data.presentation.hero.copy, darthLocale)
     : null;
   const darthSupporting = (data.presentation?.supporting ?? [])
     .map((block) => ({
       block,
-      copy: selectDarthCopy(block.copy, locale),
+      copy: selectDarthCopy(block.copy, darthLocale),
     }))
     .filter((entry) => entry.copy);
-  const darthCta = selectDarthCta(data.presentation?.cta, locale);
+  const darthCta = selectDarthCta(data.presentation?.cta, darthLocale);
 
   if (data.presentation?.hero && darthHero) {
     return (
@@ -169,7 +170,7 @@ export function DailyBriefing() {
               </h2>
               {data.narrative_state && (
                 <span className="text-[10px] text-muted-foreground/60 font-medium uppercase tracking-wider">
-                  {Math.round(data.narrative_state.confidence * 100)}% confidence
+                  {Math.round(data.narrative_state.confidence * 100)}% {t.darthChrome.confidence.toLowerCase()}
                 </span>
               )}
             </div>
@@ -188,7 +189,7 @@ export function DailyBriefing() {
         {darthSupporting.length > 0 && (
           <div>
             <h3 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-2">
-              Supporting signals
+              {t.darthChrome.supportingSignals}
             </h3>
             <div className="space-y-2">
               {darthSupporting.map(({ block, copy }) => (
@@ -210,7 +211,7 @@ export function DailyBriefing() {
         {darthCta && (
           <div>
             <h3 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-2">
-              Light adjustments
+              {t.darthChrome.lightAdjustments}
             </h3>
             <p className="text-sm text-card-foreground/85 flex items-start gap-2">
               <ArrowRight className="h-3.5 w-3.5 mt-0.5 shrink-0 text-accent/70" />
@@ -251,7 +252,7 @@ export function DailyBriefing() {
               <span className={cfg.color}>{cfg.label.toLowerCase()}</span>
             </h2>
             <span className="text-[10px] text-muted-foreground/60 font-medium uppercase tracking-wider">
-              {Math.round(b.confidence * 100)}% confidence
+              {Math.round(b.confidence * 100)}% {t.darthChrome.confidence.toLowerCase()}
             </span>
           </div>
           <p className="text-sm text-muted-foreground mt-0.5">
@@ -312,7 +313,7 @@ export function DailyBriefing() {
       {b.actions.length > 0 && (
         <div>
           <h3 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-2">
-            Light adjustments
+            {t.darthChrome.lightAdjustments}
           </h3>
           <div className="space-y-1.5">
             {b.actions.map((act, i) => (
