@@ -89,6 +89,16 @@ export interface DarthTeaser {
   subtext: string;
   action: string;
   cta: string;
+  copy?: Record<
+    DarthLocale,
+    {
+      headline: string;
+      subtext: string;
+      action: string;
+      cta: string;
+      evidence?: Record<string, string>;
+    }
+  >;
   badge: {
     icon: "crown";
     label: "Free";

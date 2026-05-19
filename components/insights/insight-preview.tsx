@@ -83,9 +83,6 @@ interface InsightPreviewProps {
 type Sections = Record<string, any>;
 type InsightSection = "recovery" | "activity";
 
-const PREMIUM_PORTAL_CTA = "Open your Premium Free Portal";
-const PREMIUM_PORTAL_HELPER =
-  "Enter your email to unlock 90 days of Premium Free access.";
 const PREMIUM_PORTAL_BUTTON_CLASS =
   "inline-flex items-center justify-center gap-2 rounded-lg bg-[#175cff] px-6 py-3 text-sm font-semibold text-white shadow-lg shadow-[#175cff]/25 ring-1 ring-[#8fb0ff]/50 transition-colors duration-200 hover:bg-[#0f49d8] active:bg-[#0b38a8] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#8fb0ff] focus-visible:ring-offset-2 focus-visible:ring-offset-background";
 
@@ -220,6 +217,11 @@ function teaserEvidenceDetails(evidence: DarthTeaser["evidence"][number]): strin
   return [formatTeaserEvidenceValue(evidence), evidence.comparison].filter(
     (detail): detail is string => Boolean(detail)
   );
+}
+
+function resolveTeaserCopy(teaser: DarthTeaser, locale: string) {
+  const runtimeLocale = locale === "pt-BR" ? "pt-BR" : "en-IE";
+  return teaser.copy?.[runtimeLocale] ?? teaser.copy?.["en-IE"] ?? null;
 }
 
 // ---------------------------------------------------------------------------
@@ -614,6 +616,7 @@ export function InsightPreview({
   }
 
   function renderTeaserVisual(teaser: DarthTeaser) {
+    const teaserCopy = resolveTeaserCopy(teaser, locale);
     const evidence = teaser.evidence?.[0] ?? null;
     const visual = teaser.visual;
     const metricLabel = visual.metric?.replaceAll("_", " ") ?? null;
@@ -660,7 +663,8 @@ export function InsightPreview({
         {evidence && (
           <div className="mt-3 border-t border-border/50 pt-3">
             <p className="text-sm font-semibold leading-snug text-foreground">
-              {evidence.statement}
+              {(evidence.metric && teaserCopy?.evidence?.[evidence.metric]) ||
+                evidence.statement}
             </p>
             {evidenceDetails.length > 0 && (
               <p className="mt-1 text-xs leading-relaxed text-muted-foreground">
@@ -674,6 +678,11 @@ export function InsightPreview({
   }
 
   function renderDarthTeaser(teaser: DarthTeaser) {
+    const teaserCopy = resolveTeaserCopy(teaser, locale);
+    const headline = teaserCopy?.headline ?? teaser.headline;
+    const subtext = teaserCopy?.subtext ?? teaser.subtext;
+    const action = teaserCopy?.action ?? teaser.action;
+    const cta = teaserCopy?.cta ?? t.result.preview.fullReport.downloadButton;
     return (
       <motion.section
         initial={{ opacity: 0, y: 12 }}
@@ -685,21 +694,21 @@ export function InsightPreview({
           <div className="mb-4 flex flex-wrap items-center gap-2">
             <span className="inline-flex items-center gap-1.5 rounded-full bg-[#e6b800] px-2.5 py-1 text-[11px] font-semibold text-[#1a1a1a]">
               <Crown className="h-3.5 w-3.5" />
-              {teaser.badge?.label ?? "Free"}
+              {t.result.preview.plans.free.name}
             </span>
             <span className="rounded-full border border-border/70 px-2.5 py-1 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
               {teaser.archetype}
             </span>
           </div>
           <h2 className="text-2xl font-semibold leading-tight text-foreground md:text-3xl">
-            {teaser.headline}
+            {headline}
           </h2>
           <p className="mt-3 text-sm leading-relaxed text-muted-foreground md:text-base">
-            {teaser.subtext}
+            {subtext}
           </p>
           <div className="mt-5 rounded-lg border border-[#e6b800]/30 bg-[#e6b800]/[0.04] p-4">
             <p className="text-base font-semibold leading-snug text-foreground">
-              {teaser.action}
+              {action}
             </p>
           </div>
           <button
@@ -711,10 +720,10 @@ export function InsightPreview({
             className={`mt-5 w-full sm:w-fit ${PREMIUM_PORTAL_BUTTON_CLASS}`}
           >
             <Crown className="h-4 w-4" />
-            {PREMIUM_PORTAL_CTA}
+            {cta}
           </button>
           <p className="mt-2 text-xs leading-relaxed text-muted-foreground">
-            {PREMIUM_PORTAL_HELPER}
+            {t.result.premiumModal.description}
           </p>
         </div>
         <div className="mt-5 md:mt-0">{renderTeaserVisual(teaser)}</div>
@@ -1411,10 +1420,10 @@ export function InsightPreview({
                 className={PREMIUM_PORTAL_BUTTON_CLASS}
               >
                 <Crown className="h-4 w-4" />
-                {PREMIUM_PORTAL_CTA}
+                {t.result.preview.fullReport.downloadButton}
               </button>
               <p className="max-w-sm text-xs leading-relaxed text-muted-foreground">
-                {PREMIUM_PORTAL_HELPER}
+                {t.result.premiumModal.description}
               </p>
             </motion.div>
 

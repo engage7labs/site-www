@@ -266,6 +266,16 @@ export const ptBR: Dictionary = {
       completed: "Análise Concluída",
       failed: "Análise Falhou",
     },
+    processingView: {
+      uploadingTitle: "Enviando seus dados",
+      uploadingBody: "Mantenha esta aba aberta enquanto transferimos seu arquivo com segurança.",
+      uploadingFootnote: "Exportações grandes do Apple Health podem levar um momento.",
+      analyzingTitle: "Analisando seus dados",
+      analyzingBody: "Normalmente termina em 30-90 segundos",
+      delayedTitle: "Ainda estamos trabalhando na sua análise...",
+      delayedBody:
+        "Está levando mais tempo que o esperado, mas ainda estamos processando seus dados.",
+    },
 
     summary: {
       title: "Resumo Executivo",
@@ -496,6 +506,7 @@ export const ptBR: Dictionary = {
       confirmAccessCode: "Confirmar código de acesso",
       confirmPassword: "Confirmar senha",
       mismatch: "As senhas não coincidem",
+      passwordMismatch: "Os códigos não coincidem",
       submitAccessCode: "Criar código de acesso",
       submitPassword: "Definir senha",
       failed: "Falha ao redefinir a senha",
@@ -669,6 +680,99 @@ export const ptBR: Dictionary = {
       importStillFailed:
         "A importação ainda não foi concluída. Tente novamente mais tarde.",
     },
+    accessCode: {
+      bannerPrefix: "Proteja seu acesso —",
+      bannerLink: "crie um código de acesso",
+      bannerSuffix: "para voltar de qualquer dispositivo.",
+      title: "Crie seu código de acesso",
+      description:
+        "Escolha um código pessoal para voltar ao seu painel de qualquer dispositivo. Pelo menos 8 caracteres.",
+      save: "Salvar código de acesso",
+      genericError: "Algo deu errado — tente novamente",
+      networkError: "Erro de rede — tente novamente",
+    },
+    compareImprove: {
+      title: "Comparar e melhorar",
+      compare: "Comparar",
+      interpret: "Interpretar",
+      improve: "Melhorar",
+      range: "intervalo",
+      labels: {
+        sleep: "Duração do sono",
+        hr: "Frequência cardíaca de repouso",
+        hrv: "Variabilidade da frequência cardíaca",
+        steps: "Passos diários",
+      },
+      details: {
+        sleepGood: "Sua duração do sono está dentro de uma faixa saudável.",
+        sleepLow: "Seu sono está mais curto que a faixa saudável típica.",
+        sleepHigh: "Seu sono está mais longo que o necessário para a maioria das pessoas.",
+        hrGood: "Sua frequência cardíaca de repouso está em uma faixa confortável.",
+        hrLow: "Sua frequência cardíaca de repouso está abaixo da média — muitas vezes sinal de bom condicionamento.",
+        hrHigh:
+          "Sua frequência cardíaca de repouso está mais alta. Estresse, hidratação e condicionamento podem influenciar isso.",
+        hrvGood: "Sua VFC sugere um sistema nervoso bem equilibrado.",
+        hrvLow: "Sua VFC está mais baixa, o que pode refletir estresse acumulado.",
+        hrvHigh: "Sua VFC está bem alta — normalmente sinal de boa capacidade de recuperação.",
+        stepsGood: "Sua atividade diária está em uma faixa sustentável.",
+        stepsLow: "Sua contagem de passos está abaixo da faixa comumente recomendada.",
+        stepsHigh: "Você está muito ativo — garanta que a recuperação acompanhe o ritmo.",
+      },
+      interpretations: {
+        sleepRecoveryAligned: "Sono e recuperação estão alinhados",
+        sleepRecoveryAlignedBody:
+          "Sua duração do sono apoia a recuperação do sistema nervoso. Este é um sinal positivo forte.",
+        sleepRecoveryPressure: "Sono e recuperação estão sob pressão",
+        sleepRecoveryPressureBody:
+          "Sono mais curto junto com VFC mais baixa sugere que seu corpo pode se beneficiar de descanso mais consistente.",
+        sleepGoodRecoveryLag: "Bom sono, mas recuperação atrasada",
+        sleepGoodRecoveryLagBody:
+          "Você está dormindo o suficiente, mas sua VFC continua baixa. Fatores como estresse ou horários inconsistentes podem estar envolvidos.",
+        activeEfficient: "Estilo de vida ativo com resposta cardiovascular eficiente",
+        activeEfficientBody:
+          "Seu movimento diário é sólido e sua frequência cardíaca de repouso fica baixa — sinal de bom condicionamento cardiovascular.",
+        lowerActivityHigherHr: "Menos atividade e frequência cardíaca de repouso mais alta",
+        lowerActivityHigherHrBody:
+          "Menos movimento diário tende a acompanhar frequência cardíaca de repouso mais alta. Pequenos aumentos de atividade podem ajudar.",
+        variablePatterns: "Sono e atividade estão variáveis",
+        variablePatternsBody:
+          "Sua rotina varia mais que a média de um dia para outro. Estabilizar sono ou movimento pode criar um efeito positivo nos dois.",
+        consistentPattern: "Padrão de estilo de vida consistente",
+        consistentPatternBody:
+          "Seu sono e sua atividade estão estáveis no dia a dia. Essa consistência apoia energia e recuperação confiáveis.",
+        sleepAffectsHr: "O sono tem efeito mensurável na sua frequência cardíaca",
+        sleepAffectsHrLower:
+          "Nos seus dados, mais sono tende a reduzir sua frequência cardíaca. Essa conexão é forte o suficiente para acompanhar ao longo do tempo.",
+        sleepAffectsHrHigher:
+          "Nos seus dados, mais sono se associa a uma frequência cardíaca ligeiramente mais alta. Essa conexão é forte o suficiente para acompanhar ao longo do tempo.",
+      },
+      improvements: {
+        earlierBedtime: "Tente dormir 20 minutos mais cedo nesta semana",
+        earlierBedtimeReason:
+          "Sua mediana de sono é {current}h — até uma pequena mudança para {target}h pode melhorar como você se sente.",
+        consistentBedtime: "Escolha um horário de dormir consistente pelos próximos 5 dias",
+        consistentBedtimeReason:
+          "Seu horário de sono varia bastante. Um horário fixo, mesmo nos fins de semana, ajuda a estabilizar sua energia.",
+        lunchWalk: "Adicione uma caminhada de 10 minutos depois do almoço",
+        lunchWalkReason:
+          "Seus passos diários ficam em torno de {steps}. Uma caminhada curta é a forma mais simples de aumentar isso.",
+        recoveryBalance: "Equilibre muita atividade com tempo deliberado de recuperação",
+        recoveryBalanceReason:
+          "Você se movimenta bastante, mas sua frequência cardíaca de repouso sugere que seu corpo pode precisar de mais pausa.",
+        slowBreathing: "Tente 5 minutos de respiração lenta antes de dormir",
+        slowBreathingReason:
+          "Sua VFC está mais baixa. Respiração guiada pode ativar o sistema parassimpático e apoiar a recuperação.",
+        maintainRoutine: "Mantenha o que está fazendo — seus sinais de recuperação estão fortes",
+        maintainRoutineReason:
+          "Bom sono e VFC saudável sugerem que sua rotina atual funciona bem.",
+        hydrationStress: "Observe hidratação e estresse nesta semana",
+        hydrationStressReason:
+          "Uma frequência cardíaca de repouso de {hr} bpm está mais alta. Hidratação e manejo do estresse podem ajudar.",
+        keepUploading: "Continue enviando dados regularmente para insights mais ricos",
+        keepUploadingReason:
+          "Mais pontos de dados permitem identificar tendências e dar sugestões melhores e mais personalizadas.",
+      },
+    },
     statusNotice: {
       noAnalysis:
         "Nenhuma análise foi criada ainda. Atualize sua linha do tempo do Apple Health para iniciar o Portal.",
@@ -693,6 +797,82 @@ export const ptBR: Dictionary = {
       title: "Compartilhar Engage7",
       description: "Compartilhe a página do produto com amigos — não seus dados.",
       button: "Compartilhar",
+    },
+    dataLab: {
+      title: "Data Lab",
+      subtitle: "Evidências avançadas, tendências e contexto técnico da sua análise.",
+      advancedReference: "Análise avançada para referência.",
+      correlationDisclaimer: "Correlações não implicam causalidade.",
+      loading: "Carregando...",
+      loadError: "Os dados avançados de tendência não puderam ser carregados agora.",
+      empty:
+        "O Data Lab aparecerá quando o Engage7 tiver dados suficientes de análises concluídas.",
+      unavailable:
+        "Esta análise tem dados do Portal, mas os resultados avançados do Data Lab ainda não estão disponíveis. Insights e Saúde ainda podem estar disponíveis.",
+      technicalDataAvailable: "Dados técnicos disponíveis",
+      technicalDataDescription:
+        "O Data Lab mostra evidências de apoio quando os resultados avançados existem para esta análise.",
+      available: "Disponível",
+      unavailableLabel: "Indisponível",
+      trendCharts: "Gráficos de tendência",
+      trendChartsAvailable: "Movimento longitudinal dos sinais ao longo do tempo.",
+      trendChartsUnavailable:
+        "Dados avançados de tendência ainda não estão disponíveis para esta análise.",
+      baselineRanges: "Faixas de linha de base",
+      baselineRangesTitle: "Suas faixas de linha de base",
+      baselineRangesDescription:
+        "Sua faixa de referência pessoal a partir dos dados históricos disponíveis.",
+      baselineUnavailable: "Dados de linha de base indisponíveis para este conjunto de dados.",
+      correlations: "Correlações",
+      signalCorrelations: "Correlações entre sinais",
+      signalCorrelationsReference: "Correlações entre sinais (referência)",
+      correlationsAvailable:
+        "Sinais que se moveram juntos no seu histórico. Isso não prova causa e efeito.",
+      correlationsUnavailable: "Dados de correlação indisponíveis para este conjunto de dados.",
+      volatility: "Volatilidade",
+      volatilityAvailable: "Quanto um sinal variou no período selecionado.",
+      volatilityUnavailable: "Dados de volatilidade indisponíveis para este conjunto de dados.",
+      dataPoints: "{count} pontos de dados",
+      averageSleep: "Sono médio",
+      averageHrv: "VFC média",
+      averageRestingHeartRate: "Frequência cardíaca de repouso média",
+      averageDailySteps: "Passos diários médios",
+      hours: "horas",
+      steps: "passos",
+      sleepTrend: "Tendência de sono",
+      recoveryTrend: "Tendência de recuperação",
+      activityTrend: "Tendência de atividade",
+      sleepDuration: "Duração do sono",
+      restingHeartRate: "Frequência cardíaca de repouso",
+      dailySteps: "Passos diários",
+      activeMinutes: "Minutos ativos",
+      weeklySleepPatterns: "Padrões semanais de sono",
+      weeklySleepPatternsDescription: "Sono médio por dia da semana",
+      whatChangedMost: "O que mais mudou",
+      trendNarrative: {
+        rising:
+          "Seu sinal de {signal} vem subindo, atualmente em torno de {latest} {unit} (média: {mean} {unit}).",
+        falling:
+          "Seu sinal de {signal} vem caindo, atualmente em torno de {latest} {unit} (média: {mean} {unit}).",
+        stable:
+          "Seu sinal de {signal} ficou estável em torno de {mean} {unit} ao longo de {count} pontos de dados.",
+      },
+      biggestChangeIncreased:
+        "Seu sinal de {signal} aumentou cerca de {pct}% entre a primeira e a segunda metade dos seus dados.",
+      biggestChangeDecreased:
+        "Seu sinal de {signal} diminuiu cerca de {pct}% entre a primeira e a segunda metade dos seus dados.",
+    },
+    reportDetail: {
+      myReports: "Meus relatórios",
+      notFoundTitle: "Relatório não encontrado",
+      notFoundDescription:
+        "Este relatório não pôde ser carregado. Ele pode ter expirado ou o link pode estar incorreto.",
+      loading: "Carregando relatório...",
+      stillWorking: "Ainda trabalhando na sua análise...",
+      autoUpdates: "Esta página é atualizada automaticamente.",
+      failedTitle: "Tivemos dificuldade para processar este arquivo",
+      failedDescription:
+        "Isso pode acontecer com exportações incompatíveis ou incompletas. Tente novamente.",
     },
     metrics: {
       plan: "Plano",

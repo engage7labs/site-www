@@ -1,5 +1,6 @@
 "use client";
 
+import { useLocale } from "@/components/providers/locale-provider";
 import { Clock } from "lucide-react";
 
 export const PROCESSING_START_KEY = "engage7_processing_start";
@@ -47,17 +48,19 @@ export function ProcessingView({
   elapsedSeconds: number;
   delayed?: boolean;
 }>) {
+  const { t } = useLocale();
   const isUploading = phase === "uploading";
+  const copy = t.result.processingView;
   const heading = isUploading
-    ? "Uploading your data"
+    ? copy.uploadingTitle
     : delayed
-      ? "Still working on your analysis..."
-      : "Analyzing your data";
+      ? copy.delayedTitle
+      : copy.analyzingTitle;
   const subtext = isUploading
-    ? "Keep this tab open while we securely transfer your file."
+    ? copy.uploadingBody
     : delayed
-      ? "This is taking longer than expected, but we're still processing your data."
-      : "Typically completes in 30-90 seconds";
+      ? copy.delayedBody
+      : copy.analyzingBody;
 
   return (
     <div className="flex flex-col items-center justify-center py-24 space-y-6 text-center">
@@ -76,8 +79,8 @@ export function ProcessingView({
         <Clock className="h-4 w-4" />
         <span>
           {isUploading
-            ? "Large Apple Health exports can take a moment."
-            : "Typically completes in 30-90 seconds"}
+            ? copy.uploadingFootnote
+            : copy.analyzingBody}
         </span>
       </div>
     </div>

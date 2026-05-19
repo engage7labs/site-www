@@ -820,8 +820,8 @@ export default function PortalOverviewPage() {
   }, []);
 
   const compareImprove = useMemo(
-    () => generateCompareImprove(data, trends, sections),
-    [data, trends, sections]
+    () => generateCompareImprove(data, trends, sections, t.portal.compareImprove),
+    [data, trends, sections, t.portal.compareImprove]
   );
 
   useEffect(() => {

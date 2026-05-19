@@ -245,7 +245,7 @@ export default function AdminBlobsPage() {
         <div className="grid gap-2 text-xs text-muted-foreground sm:grid-cols-2 lg:grid-cols-4">
           <p><span className="text-emerald-400">linked</span> exact DB reference found</p>
           <p><span className="text-indigo-300">user-owned</span> private artifact associated with a user</p>
-          <p><span className="text-sky-400">public active</span> public artifact within 30-day TTL</p>
+          <p><span className="text-sky-400">public active</span> public artifact within 7-day controlled-launch TTL</p>
           <p><span className="text-amber-400">public expired</span> public artifact older than TTL and cleanup-eligible if unclaimed</p>
           <p><span className="text-zinc-300">unmatched</span> known runtime namespace without exact DB reference</p>
           <p><span className="text-amber-400">orphan</span> no reference and safe to delete</p>

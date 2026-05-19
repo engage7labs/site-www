@@ -16,6 +16,8 @@
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 type AnyRecord = Record<string, any>;
+type CompareImproveCopy =
+  typeof import("@/lib/i18n/dictionaries/en-IE").enIE.portal.compareImprove;
 
 // ---------------------------------------------------------------------------
 // Types
@@ -81,10 +83,10 @@ function round1(n: number): number {
 // Heuristic reference ranges (simple, non-clinical)
 // ---------------------------------------------------------------------------
 const RANGES = {
-  sleep: { low: 6.5, high: 9, unit: "h", label: "Sleep duration" },
-  hr: { low: 50, high: 85, unit: "bpm", label: "Resting heart rate" },
-  hrv: { low: 25, high: 100, unit: "ms", label: "Heart rate variability" },
-  steps: { low: 5000, high: 12000, unit: "", label: "Daily steps" },
+  sleep: { low: 6.5, high: 9, unit: "h" },
+  hr: { low: 50, high: 85, unit: "bpm" },
+  hrv: { low: 25, high: 100, unit: "ms" },
+  steps: { low: 5000, high: 12000, unit: "" },
 } as const;
 
 // ---------------------------------------------------------------------------
@@ -93,7 +95,8 @@ const RANGES = {
 
 function buildComparisons(
   overview: AnyRecord | null,
-  trends: AnyRecord | null
+  trends: AnyRecord | null,
+  copy: CompareImproveCopy
 ): CompareItem[] {
   const items: CompareItem[] = [];
 
@@ -104,16 +107,16 @@ function buildComparisons(
     const status =
       sleepVal >= r.low && sleepVal <= r.high ? "good" : "attention";
     items.push({
-      label: r.label,
+      label: copy.labels.sleep,
       userValue: `${round1(sleepVal)}${r.unit}`,
       referenceRange: `${r.low}–${r.high}${r.unit}`,
       status,
       detail:
         status === "good"
-          ? "Your sleep duration is within a healthy range."
+          ? copy.details.sleepGood
           : sleepVal < r.low
-          ? "Your sleep is shorter than the typical healthy range."
-          : "Your sleep is longer than what most people need.",
+          ? copy.details.sleepLow
+          : copy.details.sleepHigh,
     });
   }
 
@@ -123,16 +126,16 @@ function buildComparisons(
     const r = RANGES.hr;
     const status = hrMed >= r.low && hrMed <= r.high ? "good" : "attention";
     items.push({
-      label: r.label,
+      label: copy.labels.hr,
       userValue: `${Math.round(hrMed)} ${r.unit}`,
       referenceRange: `${r.low}–${r.high} ${r.unit}`,
       status,
       detail:
         status === "good"
-          ? "Your resting heart rate sits in a comfortable range."
+          ? copy.details.hrGood
           : hrMed < r.low
-          ? "Your resting heart rate is lower than average — often a sign of good fitness."
-          : "Your resting heart rate is on the higher side. Stress, dehydration, or fitness can influence this.",
+          ? copy.details.hrLow
+          : copy.details.hrHigh,
     });
   }
 
@@ -143,16 +146,16 @@ function buildComparisons(
     const r = RANGES.hrv;
     const status = hrvMed >= r.low && hrvMed <= r.high ? "good" : "attention";
     items.push({
-      label: r.label,
+      label: copy.labels.hrv,
       userValue: `${Math.round(hrvMed)} ${r.unit}`,
       referenceRange: `${r.low}–${r.high} ${r.unit}`,
       status,
       detail:
         status === "good"
-          ? "Your HRV suggests a well-balanced nervous system."
+          ? copy.details.hrvGood
           : hrvMed < r.low
-          ? "Your HRV is on the lower side, which can reflect accumulated stress."
-          : "Your HRV is notably high — typically a sign of strong recovery capacity.",
+          ? copy.details.hrvLow
+          : copy.details.hrvHigh,
     });
   }
 
@@ -163,16 +166,16 @@ function buildComparisons(
     const status =
       stepsMed >= r.low && stepsMed <= r.high ? "good" : "attention";
     items.push({
-      label: r.label,
+      label: copy.labels.steps,
       userValue: `${Math.round(stepsMed).toLocaleString()}`,
       referenceRange: `${r.low.toLocaleString()}–${r.high.toLocaleString()}`,
       status,
       detail:
         status === "good"
-          ? "Your daily activity sits in a sustainable range."
+          ? copy.details.stepsGood
           : stepsMed < r.low
-          ? "Your step count is below the commonly recommended range."
-          : "You're very active — make sure recovery keeps pace.",
+          ? copy.details.stepsLow
+          : copy.details.stepsHigh,
     });
   }
 
@@ -186,7 +189,8 @@ function buildComparisons(
 function buildInterpretations(
   overview: AnyRecord | null,
   trends: AnyRecord | null,
-  sections: AnyRecord | null
+  sections: AnyRecord | null,
+  copy: CompareImproveCopy
 ): InterpretItem[] {
   const items: InterpretItem[] = [];
 
@@ -196,18 +200,18 @@ function buildInterpretations(
   if (sleepVal != null && hrvVal != null) {
     if (sleepVal >= 7 && hrvVal >= 30) {
       items.push({
-        headline: "Sleep and recovery are aligned",
-        body: "Your sleep duration supports your nervous system recovery. This is a strong positive signal.",
+        headline: copy.interpretations.sleepRecoveryAligned,
+        body: copy.interpretations.sleepRecoveryAlignedBody,
       });
     } else if (sleepVal < 6.5 && hrvVal < 30) {
       items.push({
-        headline: "Both sleep and recovery are under pressure",
-        body: "Shorter sleep paired with lower HRV suggests your body may benefit from more consistent rest.",
+        headline: copy.interpretations.sleepRecoveryPressure,
+        body: copy.interpretations.sleepRecoveryPressureBody,
       });
     } else if (sleepVal >= 7 && hrvVal < 30) {
       items.push({
-        headline: "Good sleep but recovery lags behind",
-        body: "You're sleeping enough, but your HRV is still low. Other factors like stress or inconsistent timing may be involved.",
+        headline: copy.interpretations.sleepGoodRecoveryLag,
+        body: copy.interpretations.sleepGoodRecoveryLagBody,
       });
     }
   }
@@ -218,13 +222,13 @@ function buildInterpretations(
   if (stepsMed != null && hrMed != null) {
     if (stepsMed >= 7000 && hrMed <= 70) {
       items.push({
-        headline: "Active lifestyle with efficient cardiovascular response",
-        body: "Your daily movement is solid and your resting heart rate stays low — a sign of good cardiovascular fitness.",
+        headline: copy.interpretations.activeEfficient,
+        body: copy.interpretations.activeEfficientBody,
       });
     } else if (stepsMed < 5000 && hrMed > 75) {
       items.push({
-        headline: "Lower activity and higher resting heart rate",
-        body: "Less daily movement tends to pair with higher resting heart rate. Small increases in activity can help.",
+        headline: copy.interpretations.lowerActivityHigherHr,
+        body: copy.interpretations.lowerActivityHigherHrBody,
       });
     }
   }
@@ -239,13 +243,13 @@ function buildInterpretations(
   if (sleepVol != null && stepsVol != null) {
     if (sleepVol > 20 && stepsVol > 40) {
       items.push({
-        headline: "Both sleep and activity patterns are variable",
-        body: "Your day-to-day routine swings more than average. Stabilizing either sleep or movement can create a positive ripple across both.",
+        headline: copy.interpretations.variablePatterns,
+        body: copy.interpretations.variablePatternsBody,
       });
     } else if (sleepVol < 15 && stepsVol < 30) {
       items.push({
-        headline: "Consistent lifestyle pattern",
-        body: "Both your sleep and activity are steady from day to day. This consistency supports reliable energy and recovery.",
+        headline: copy.interpretations.consistentPattern,
+        body: copy.interpretations.consistentPatternBody,
       });
     }
   }
@@ -253,13 +257,11 @@ function buildInterpretations(
   // Correlation-based interpretation (from sections)
   const sleepHrCorr = safeNum(sections?.correlations?.sleep_hours?.hr_mean);
   if (sleepHrCorr != null && Math.abs(sleepHrCorr) > 0.2) {
-    const direction =
-      sleepHrCorr < 0
-        ? "more sleep tends to lower your heart rate"
-        : "more sleep is associated with a slightly higher heart rate";
     items.push({
-      headline: "Sleep has a measurable effect on your heart rate",
-      body: `In your data, ${direction}. This connection is strong enough to track over time.`,
+      headline: copy.interpretations.sleepAffectsHr,
+      body: sleepHrCorr < 0
+        ? copy.interpretations.sleepAffectsHrLower
+        : copy.interpretations.sleepAffectsHrHigher,
     });
   }
 
@@ -273,7 +275,8 @@ function buildInterpretations(
 function buildImprovements(
   overview: AnyRecord | null,
   trends: AnyRecord | null,
-  sections: AnyRecord | null
+  sections: AnyRecord | null,
+  copy: CompareImproveCopy
 ): ImproveItem[] {
   const items: ImproveItem[] = [];
 
@@ -286,28 +289,26 @@ function buildImprovements(
   // Sleep-based suggestions
   if (sleepVal != null && sleepVal < 6.5) {
     items.push({
-      suggestion: "Try going to bed 20 minutes earlier this week",
-      reason: `Your median sleep is ${round1(
-        sleepVal
-      )}h — even a small shift toward ${round1(
-        sleepVal + 0.3
-      )}h can improve how you feel.`,
+      suggestion: copy.improvements.earlierBedtime,
+      reason: copy.improvements.earlierBedtimeReason
+        .replace("{current}", String(round1(sleepVal)))
+        .replace("{target}", String(round1(sleepVal + 0.3))),
     });
   } else if (sleepVol != null && sleepVol > 20) {
     items.push({
-      suggestion: "Pick a consistent bedtime for the next 5 days",
-      reason:
-        "Your sleep timing varies quite a bit. A fixed bedtime, even on weekends, helps stabilize your energy.",
+      suggestion: copy.improvements.consistentBedtime,
+      reason: copy.improvements.consistentBedtimeReason,
     });
   }
 
   // Activity-based suggestions
   if (stepsMed != null && stepsMed < 5000) {
     items.push({
-      suggestion: "Add a 10-minute walk after lunch",
-      reason: `Your daily steps average around ${Math.round(
-        stepsMed
-      ).toLocaleString()}. A short walk is the easiest way to boost that.`,
+      suggestion: copy.improvements.lunchWalk,
+      reason: copy.improvements.lunchWalkReason.replace(
+        "{steps}",
+        Math.round(stepsMed).toLocaleString(),
+      ),
     });
   } else if (
     stepsMed != null &&
@@ -316,18 +317,16 @@ function buildImprovements(
     hrMed > 75
   ) {
     items.push({
-      suggestion: "Balance high activity with deliberate recovery time",
-      reason:
-        "You move a lot but your resting heart rate suggests your body may need more downtime.",
+      suggestion: copy.improvements.recoveryBalance,
+      reason: copy.improvements.recoveryBalanceReason,
     });
   }
 
   // Recovery-based suggestions
   if (hrvVal != null && hrvVal < 25) {
     items.push({
-      suggestion: "Try 5 minutes of slow breathing before bed",
-      reason:
-        "Your HRV is on the lower side. Breathwork can activate your parasympathetic system and support recovery.",
+      suggestion: copy.improvements.slowBreathing,
+      reason: copy.improvements.slowBreathingReason,
     });
   } else if (
     hrvVal != null &&
@@ -336,29 +335,27 @@ function buildImprovements(
     sleepVal >= 7
   ) {
     items.push({
-      suggestion:
-        "Maintain what you're doing — your recovery signals are strong",
-      reason:
-        "Good sleep and healthy HRV suggest your current routine works well.",
+      suggestion: copy.improvements.maintainRoutine,
+      reason: copy.improvements.maintainRoutineReason,
     });
   }
 
   // HR-based
   if (hrMed != null && hrMed > 80) {
     items.push({
-      suggestion: "Check hydration and stress levels this week",
-      reason: `A resting heart rate of ${Math.round(
-        hrMed
-      )} bpm is on the higher side. Hydration and stress management can help.`,
+      suggestion: copy.improvements.hydrationStress,
+      reason: copy.improvements.hydrationStressReason.replace(
+        "{hr}",
+        String(Math.round(hrMed)),
+      ),
     });
   }
 
   // General fallback if no specific insights
   if (items.length === 0 && (overview?.uploads ?? 0) > 0) {
     items.push({
-      suggestion: "Keep uploading data regularly for richer insights",
-      reason:
-        "More data points allow us to spot trends and give you better, more personalized suggestions.",
+      suggestion: copy.improvements.keepUploading,
+      reason: copy.improvements.keepUploadingReason,
     });
   }
 
@@ -372,7 +369,8 @@ function buildImprovements(
 export function generateCompareImprove(
   overview: AnyRecord | null,
   trends: AnyRecord | null,
-  sections: AnyRecord | null
+  sections: AnyRecord | null,
+  copy: CompareImproveCopy
 ): CompareImproveResult {
   const safeOverview =
     overview && typeof overview === "object" ? overview : ({} as AnyRecord);
@@ -381,16 +379,18 @@ export function generateCompareImprove(
   const safeSections =
     sections && typeof sections === "object" ? sections : ({} as AnyRecord);
 
-  const comparisons = buildComparisons(safeOverview, safeTrends);
+  const comparisons = buildComparisons(safeOverview, safeTrends, copy);
   const interpretations = buildInterpretations(
     safeOverview,
     safeTrends,
-    safeSections
+    safeSections,
+    copy,
   );
   const improvements = buildImprovements(
     safeOverview,
     safeTrends,
-    safeSections
+    safeSections,
+    copy,
   );
 
   return {

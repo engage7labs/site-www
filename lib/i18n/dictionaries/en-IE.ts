@@ -262,6 +262,16 @@ export const enIE = {
       completed: "Analysis Complete",
       failed: "Analysis Failed",
     },
+    processingView: {
+      uploadingTitle: "Uploading your data",
+      uploadingBody: "Keep this tab open while we securely transfer your file.",
+      uploadingFootnote: "Large Apple Health exports can take a moment.",
+      analyzingTitle: "Analyzing your data",
+      analyzingBody: "Typically completes in 30-90 seconds",
+      delayedTitle: "Still working on your analysis...",
+      delayedBody:
+        "This is taking longer than expected, but we're still processing your data.",
+    },
 
     summary: {
       title: "Executive Summary",
@@ -492,6 +502,7 @@ export const enIE = {
       confirmAccessCode: "Confirm access code",
       confirmPassword: "Confirm password",
       mismatch: "Passwords do not match",
+      passwordMismatch: "Codes do not match",
       submitAccessCode: "Create access code",
       submitPassword: "Set Password",
       failed: "Failed to reset password",
@@ -663,6 +674,99 @@ export const enIE = {
       imported: "Analysis imported.",
       importStillFailed: "Import still did not complete. Please try again later.",
     },
+    accessCode: {
+      bannerPrefix: "Secure your access —",
+      bannerLink: "create an access code",
+      bannerSuffix: "to return from any device.",
+      title: "Create your access code",
+      description:
+        "Choose a personal code to return to your dashboard from any device. At least 8 characters.",
+      save: "Save access code",
+      genericError: "Something went wrong — please try again",
+      networkError: "Network error — please try again",
+    },
+    compareImprove: {
+      title: "Compare & Improve",
+      compare: "Compare",
+      interpret: "Interpret",
+      improve: "Improve",
+      range: "range",
+      labels: {
+        sleep: "Sleep duration",
+        hr: "Resting heart rate",
+        hrv: "Heart rate variability",
+        steps: "Daily steps",
+      },
+      details: {
+        sleepGood: "Your sleep duration is within a healthy range.",
+        sleepLow: "Your sleep is shorter than the typical healthy range.",
+        sleepHigh: "Your sleep is longer than what most people need.",
+        hrGood: "Your resting heart rate sits in a comfortable range.",
+        hrLow: "Your resting heart rate is lower than average — often a sign of good fitness.",
+        hrHigh:
+          "Your resting heart rate is on the higher side. Stress, dehydration, or fitness can influence this.",
+        hrvGood: "Your HRV suggests a well-balanced nervous system.",
+        hrvLow: "Your HRV is on the lower side, which can reflect accumulated stress.",
+        hrvHigh: "Your HRV is notably high — typically a sign of strong recovery capacity.",
+        stepsGood: "Your daily activity sits in a sustainable range.",
+        stepsLow: "Your step count is below the commonly recommended range.",
+        stepsHigh: "You're very active — make sure recovery keeps pace.",
+      },
+      interpretations: {
+        sleepRecoveryAligned: "Sleep and recovery are aligned",
+        sleepRecoveryAlignedBody:
+          "Your sleep duration supports your nervous system recovery. This is a strong positive signal.",
+        sleepRecoveryPressure: "Both sleep and recovery are under pressure",
+        sleepRecoveryPressureBody:
+          "Shorter sleep paired with lower HRV suggests your body may benefit from more consistent rest.",
+        sleepGoodRecoveryLag: "Good sleep but recovery lags behind",
+        sleepGoodRecoveryLagBody:
+          "You're sleeping enough, but your HRV is still low. Other factors like stress or inconsistent timing may be involved.",
+        activeEfficient: "Active lifestyle with efficient cardiovascular response",
+        activeEfficientBody:
+          "Your daily movement is solid and your resting heart rate stays low — a sign of good cardiovascular fitness.",
+        lowerActivityHigherHr: "Lower activity and higher resting heart rate",
+        lowerActivityHigherHrBody:
+          "Less daily movement tends to pair with higher resting heart rate. Small increases in activity can help.",
+        variablePatterns: "Both sleep and activity patterns are variable",
+        variablePatternsBody:
+          "Your day-to-day routine swings more than average. Stabilizing either sleep or movement can create a positive ripple across both.",
+        consistentPattern: "Consistent lifestyle pattern",
+        consistentPatternBody:
+          "Both your sleep and activity are steady from day to day. This consistency supports reliable energy and recovery.",
+        sleepAffectsHr: "Sleep has a measurable effect on your heart rate",
+        sleepAffectsHrLower:
+          "In your data, more sleep tends to lower your heart rate. This connection is strong enough to track over time.",
+        sleepAffectsHrHigher:
+          "In your data, more sleep is associated with a slightly higher heart rate. This connection is strong enough to track over time.",
+      },
+      improvements: {
+        earlierBedtime: "Try going to bed 20 minutes earlier this week",
+        earlierBedtimeReason:
+          "Your median sleep is {current}h — even a small shift toward {target}h can improve how you feel.",
+        consistentBedtime: "Pick a consistent bedtime for the next 5 days",
+        consistentBedtimeReason:
+          "Your sleep timing varies quite a bit. A fixed bedtime, even on weekends, helps stabilize your energy.",
+        lunchWalk: "Add a 10-minute walk after lunch",
+        lunchWalkReason:
+          "Your daily steps average around {steps}. A short walk is the easiest way to boost that.",
+        recoveryBalance: "Balance high activity with deliberate recovery time",
+        recoveryBalanceReason:
+          "You move a lot but your resting heart rate suggests your body may need more downtime.",
+        slowBreathing: "Try 5 minutes of slow breathing before bed",
+        slowBreathingReason:
+          "Your HRV is on the lower side. Breathwork can activate your parasympathetic system and support recovery.",
+        maintainRoutine: "Maintain what you're doing — your recovery signals are strong",
+        maintainRoutineReason:
+          "Good sleep and healthy HRV suggest your current routine works well.",
+        hydrationStress: "Check hydration and stress levels this week",
+        hydrationStressReason:
+          "A resting heart rate of {hr} bpm is on the higher side. Hydration and stress management can help.",
+        keepUploading: "Keep uploading data regularly for richer insights",
+        keepUploadingReason:
+          "More data points allow us to spot trends and give you better, more personalized suggestions.",
+      },
+    },
     statusNotice: {
       noAnalysis:
         "No analysis has been created yet. Refresh your Apple Health timeline to start your Portal.",
@@ -687,6 +791,82 @@ export const enIE = {
       title: "Share Engage7",
       description: "Share the product homepage with friends — not your data.",
       button: "Share",
+    },
+    dataLab: {
+      title: "Data Lab",
+      subtitle: "Advanced evidence, trends, and technical context from your analysis.",
+      advancedReference: "Advanced analysis for reference.",
+      correlationDisclaimer: "Correlations do not imply causation.",
+      loading: "Loading...",
+      loadError: "Advanced trend data could not be loaded right now.",
+      empty:
+        "Data Lab will appear after Engage7 has enough completed analysis data.",
+      unavailable:
+        "This analysis has Portal data, but the advanced Data Lab outputs are not available yet. Insights and Health may still be available.",
+      technicalDataAvailable: "Technical Data Available",
+      technicalDataDescription:
+        "Data Lab shows supporting evidence when advanced analysis outputs exist for this analysis.",
+      available: "Available",
+      unavailableLabel: "Unavailable",
+      trendCharts: "Trend charts",
+      trendChartsAvailable: "Longitudinal signal movement over time.",
+      trendChartsUnavailable:
+        "Advanced trend data is not available for this analysis yet.",
+      baselineRanges: "Baseline ranges",
+      baselineRangesTitle: "Your Baseline Ranges",
+      baselineRangesDescription:
+        "Your personal reference range from available historical data.",
+      baselineUnavailable: "Baseline data is unavailable for this dataset.",
+      correlations: "Correlations",
+      signalCorrelations: "Signal Correlations",
+      signalCorrelationsReference: "Signal Correlations (reference)",
+      correlationsAvailable:
+        "Signals that moved together in your historical data. This does not prove cause and effect.",
+      correlationsUnavailable: "Correlation data is unavailable for this dataset.",
+      volatility: "Volatility",
+      volatilityAvailable: "How much a signal varied across the selected period.",
+      volatilityUnavailable: "Volatility data is unavailable for this dataset.",
+      dataPoints: "{count} data points",
+      averageSleep: "Average sleep",
+      averageHrv: "Average HRV",
+      averageRestingHeartRate: "Average resting heart rate",
+      averageDailySteps: "Average daily steps",
+      hours: "hours",
+      steps: "steps",
+      sleepTrend: "Sleep Trend",
+      recoveryTrend: "Recovery Trend",
+      activityTrend: "Activity Trend",
+      sleepDuration: "Sleep duration",
+      restingHeartRate: "Resting heart rate",
+      dailySteps: "Daily steps",
+      activeMinutes: "Active minutes",
+      weeklySleepPatterns: "Weekly Sleep Patterns",
+      weeklySleepPatternsDescription: "Average sleep by day of week",
+      whatChangedMost: "What Changed Most",
+      trendNarrative: {
+        rising:
+          "Your {signal} has been trending upward, currently around {latest} {unit} (average: {mean} {unit}).",
+        falling:
+          "Your {signal} has been trending downward, currently around {latest} {unit} (average: {mean} {unit}).",
+        stable:
+          "Your {signal} has been stable around {mean} {unit} across {count} data points.",
+      },
+      biggestChangeIncreased:
+        "Your {signal} increased by about {pct}% between the first and second half of your data.",
+      biggestChangeDecreased:
+        "Your {signal} decreased by about {pct}% between the first and second half of your data.",
+    },
+    reportDetail: {
+      myReports: "My Reports",
+      notFoundTitle: "Report not found",
+      notFoundDescription:
+        "This report could not be loaded. It may have expired or the link is incorrect.",
+      loading: "Loading report...",
+      stillWorking: "Still working on your analysis...",
+      autoUpdates: "This page updates automatically.",
+      failedTitle: "We had trouble processing this file",
+      failedDescription:
+        "This can happen with unsupported or incomplete exports. Please try again.",
     },
     metrics: {
       plan: "Plan",

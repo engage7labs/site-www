@@ -1,5 +1,6 @@
 "use client";
 
+import { useLocale } from "@/components/providers/locale-provider";
 import type {
   CompareImproveResult,
   CompareItem,
@@ -31,13 +32,21 @@ function StatusIcon({ status }: { status: CompareItem["status"] }) {
   }
 }
 
-function CompareSection({ items }: { items: CompareItem[] }) {
+function CompareSection({
+  items,
+  title,
+  rangeLabel,
+}: {
+  items: CompareItem[];
+  title: string;
+  rangeLabel: string;
+}) {
   if (items.length === 0) return null;
   return (
     <div>
       <div className="flex items-center gap-2 mb-3">
         <Scale className="h-4 w-4 text-indigo-400" />
-        <h3 className="text-sm font-semibold text-card-foreground">Compare</h3>
+        <h3 className="text-sm font-semibold text-card-foreground">{title}</h3>
       </div>
       <div className="grid gap-2">
         {items.map((item) => (
@@ -52,7 +61,7 @@ function CompareSection({ items }: { items: CompareItem[] }) {
                   {item.label}
                 </span>
                 <span className="text-xs text-muted-foreground">
-                  {item.userValue} · range {item.referenceRange}
+                  {item.userValue} · {rangeLabel} {item.referenceRange}
                 </span>
               </div>
               <p className="text-xs text-muted-foreground mt-0.5">
@@ -66,14 +75,20 @@ function CompareSection({ items }: { items: CompareItem[] }) {
   );
 }
 
-function InterpretSection({ items }: { items: InterpretItem[] }) {
+function InterpretSection({
+  items,
+  title,
+}: {
+  items: InterpretItem[];
+  title: string;
+}) {
   if (items.length === 0) return null;
   return (
     <div>
       <div className="flex items-center gap-2 mb-3">
         <TrendingUp className="h-4 w-4 text-sky-400" />
         <h3 className="text-sm font-semibold text-card-foreground">
-          Interpret
+          {title}
         </h3>
       </div>
       <div className="grid gap-2">
@@ -93,13 +108,19 @@ function InterpretSection({ items }: { items: InterpretItem[] }) {
   );
 }
 
-function ImproveSection({ items }: { items: ImproveItem[] }) {
+function ImproveSection({
+  items,
+  title,
+}: {
+  items: ImproveItem[];
+  title: string;
+}) {
   if (items.length === 0) return null;
   return (
     <div>
       <div className="flex items-center gap-2 mb-3">
         <Lightbulb className="h-4 w-4 text-amber-400" />
-        <h3 className="text-sm font-semibold text-card-foreground">Improve</h3>
+        <h3 className="text-sm font-semibold text-card-foreground">{title}</h3>
       </div>
       <div className="grid gap-2">
         {items.map((item) => (
@@ -129,6 +150,7 @@ export function CompareImproveBlock({
 }: {
   result: CompareImproveResult | null | undefined;
 }) {
+  const { t } = useLocale();
   if (!result?.hasData) return null;
 
   const comparisons = Array.isArray(result.comparisons)
@@ -146,13 +168,23 @@ export function CompareImproveBlock({
       <div className="flex items-center gap-2 mb-4">
         <Sparkles className="h-5 w-5 text-accent" />
         <h2 className="text-lg font-semibold text-card-foreground">
-          Compare & Improve
+          {t.portal.compareImprove.title}
         </h2>
       </div>
       <div className="grid gap-5 lg:grid-cols-3">
-        <CompareSection items={comparisons} />
-        <InterpretSection items={interpretations} />
-        <ImproveSection items={improvements} />
+        <CompareSection
+          items={comparisons}
+          title={t.portal.compareImprove.compare}
+          rangeLabel={t.portal.compareImprove.range}
+        />
+        <InterpretSection
+          items={interpretations}
+          title={t.portal.compareImprove.interpret}
+        />
+        <ImproveSection
+          items={improvements}
+          title={t.portal.compareImprove.improve}
+        />
       </div>
     </div>
   );

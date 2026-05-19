@@ -6,6 +6,7 @@
  */
 "use client";
 
+import { useLocale } from "@/components/providers/locale-provider";
 import {
   Dialog,
   DialogContent,
@@ -19,6 +20,7 @@ import { useEffect, useState } from "react";
 const DISMISSED_KEY = "engage7_access_code_dismissed";
 
 export function PasswordSetupAlert() {
+  const { t } = useLocale();
   const [hasPassword, setHasPassword] = useState<boolean | null>(null);
   const [dismissed, setDismissed] = useState(false);
   const [open, setOpen] = useState(false);
@@ -73,12 +75,12 @@ export function PasswordSetupAlert() {
       } else {
         const data = await res.json().catch(() => ({}));
         setError(
-          (data as { error?: string }).error ?? "Something went wrong — please try again"
+          (data as { error?: string }).error ?? t.portal.accessCode.genericError
         );
         setStatus("error");
       }
     } catch {
-      setError("Network error — please try again");
+      setError(t.portal.accessCode.networkError);
       setStatus("error");
     }
   }
@@ -89,19 +91,19 @@ export function PasswordSetupAlert() {
       <div className="mx-4 mt-3 sm:mx-6 rounded-lg border border-accent/30 bg-accent/5 px-4 py-3 flex items-center gap-3 text-sm">
         <KeyRound className="h-4 w-4 shrink-0 text-accent" />
         <span className="text-foreground/80 flex-1">
-          Secure your access —{" "}
+          {t.portal.accessCode.bannerPrefix}{" "}
           <button
             onClick={() => setOpen(true)}
             className="font-medium text-accent underline underline-offset-2 hover:text-accent/80 transition-colors"
           >
-            create an access code
+            {t.portal.accessCode.bannerLink}
           </button>{" "}
-          to return from any device.
+          {t.portal.accessCode.bannerSuffix}
         </span>
         <button
           onClick={handleDismiss}
           className="text-muted-foreground hover:text-foreground transition-colors text-xs"
-          aria-label="Dismiss"
+          aria-label={t.common.close}
         >
           ✕
         </button>
@@ -110,10 +112,9 @@ export function PasswordSetupAlert() {
       <Dialog open={open} onOpenChange={setOpen}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Create your access code</DialogTitle>
+            <DialogTitle>{t.portal.accessCode.title}</DialogTitle>
             <DialogDescription>
-              Choose a personal code to return to your dashboard from any device.
-              At least 8 characters.
+              {t.portal.accessCode.description}
             </DialogDescription>
           </DialogHeader>
 
@@ -121,7 +122,7 @@ export function PasswordSetupAlert() {
             <div className="relative">
               <input
                 type={showPassword ? "text" : "password"}
-                placeholder="Access code (min 8 characters)"
+                placeholder={t.auth.reset.accessCodePlaceholder}
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 minLength={8}
@@ -145,7 +146,7 @@ export function PasswordSetupAlert() {
 
             <input
               type="password"
-              placeholder="Confirm access code"
+                placeholder={t.auth.reset.confirmAccessCode}
               value={confirm}
               onChange={(e) => setConfirm(e.target.value)}
               minLength={8}
@@ -155,7 +156,7 @@ export function PasswordSetupAlert() {
             />
 
             {confirm && password !== confirm && (
-              <p className="text-xs text-destructive">Codes do not match</p>
+              <p className="text-xs text-destructive">{t.auth.reset.passwordMismatch}</p>
             )}
 
             {error && <p className="text-sm text-destructive">{error}</p>}
@@ -168,7 +169,7 @@ export function PasswordSetupAlert() {
               {status === "loading" && (
                 <Loader2 className="h-4 w-4 animate-spin" />
               )}
-              Save access code
+              {t.portal.accessCode.save}
             </button>
           </form>
         </DialogContent>

@@ -1,6 +1,7 @@
 "use client";
 
 import { InsightPreview } from "@/components/insights";
+import { useLocale } from "@/components/providers/locale-provider";
 import { getPortalAnalysisResult } from "@/lib/api/analysis";
 import { trackReportViewed } from "@/lib/telemetry";
 import type { AnalysisResult } from "@/lib/types/analysis";
@@ -15,6 +16,7 @@ export default function PortalReportPage({
   params,
 }: Readonly<{ params: Promise<{ jobId: string }> }>) {
   const { jobId } = use(params);
+  const { t } = useLocale();
 
   const [result, setResult] = useState<AnalysisResult | null>(null);
   const [notFound, setNotFound] = useState(false);
@@ -74,7 +76,7 @@ export default function PortalReportPage({
       className="inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors"
     >
       <ArrowLeft className="h-4 w-4" />
-      My Reports
+      {t.portal.reportDetail.myReports}
     </Link>
   );
 
@@ -85,11 +87,10 @@ export default function PortalReportPage({
         <div className="flex flex-col items-center justify-center py-24 gap-4 text-center">
           <AlertCircle className="h-12 w-12 text-destructive" />
           <h1 className="text-xl font-semibold text-foreground">
-            Report not found
+            {t.portal.reportDetail.notFoundTitle}
           </h1>
           <p className="text-sm text-muted-foreground max-w-sm">
-            This report could not be loaded. It may have expired or the link is
-            incorrect.
+            {t.portal.reportDetail.notFoundDescription}
           </p>
         </div>
       </div>
@@ -100,7 +101,9 @@ export default function PortalReportPage({
     return (
       <div className="flex flex-col items-center justify-center py-24 gap-4">
         <Loader2 className="h-10 w-10 text-accent animate-spin" />
-        <p className="text-sm text-muted-foreground">Loading report…</p>
+        <p className="text-sm text-muted-foreground">
+          {t.portal.reportDetail.loading}
+        </p>
       </div>
     );
   }
@@ -124,16 +127,16 @@ export default function PortalReportPage({
           <div>
             <h1 className="text-xl font-semibold text-foreground">
               {elapsedSeconds > 60
-                ? "Still working on your analysis…"
-                : "Analysing your data"}
+                ? t.portal.reportDetail.stillWorking
+                : t.result.processingView.analyzingTitle}
             </h1>
             <p className="mt-1 text-sm text-muted-foreground">
-              This page updates automatically.
+              {t.portal.reportDetail.autoUpdates}
             </p>
           </div>
           <div className="flex items-center gap-2 text-xs text-muted-foreground">
             <Clock className="h-4 w-4" />
-            Typically completes in 30–90 seconds
+            {t.result.processingView.analyzingBody}
           </div>
         </div>
       </div>
@@ -147,17 +150,17 @@ export default function PortalReportPage({
         <div className="flex flex-col items-center justify-center py-24 gap-4 text-center">
           <AlertCircle className="h-12 w-12 text-amber-500" />
           <h1 className="text-xl font-semibold text-foreground">
-            We had trouble processing this file
+            {t.portal.reportDetail.failedTitle}
           </h1>
           <p className="text-sm text-muted-foreground max-w-sm">
             {result.error ??
-              "This can happen with unsupported or incomplete exports. Please try again."}
+              t.portal.reportDetail.failedDescription}
           </p>
           <Link
             href="/portal/upload"
             className="inline-flex items-center rounded-md bg-accent px-4 py-2 text-sm font-medium text-white hover:bg-accent/90 transition-colors"
           >
-            Try again
+            {t.common.tryAgain}
           </Link>
         </div>
       </div>

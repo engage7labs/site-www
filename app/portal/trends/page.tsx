@@ -2,6 +2,7 @@
 
 import type { PortalDataStatus } from "@/lib/portal-data-status";
 import { parsePortalDataStatus } from "@/lib/portal-data-status";
+import { useLocale } from "@/components/providers/locale-provider";
 import type { EChartsOption } from "echarts";
 import {
   Activity,
@@ -41,9 +42,6 @@ const LIGHT_TEXT = "#E5E7EB";
 const TOOLTIP_TEXT = "#111827";
 const TOOLTIP_BG = "#F9FAFB";
 const WEEK_DAYS = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
-const DATA_LAB_SUBTITLE =
-  "Advanced evidence, trends, and technical context from your analysis.";
-
 const COLORS = {
   sleep: "#3dbe73",
   hr: "#e5a336",
@@ -143,16 +141,35 @@ function trendNarrative(
   signal: string,
   vals: number[],
   unit: string,
+  copy: {
+    rising: string;
+    falling: string;
+    stable: string;
+  },
 ): string {
   if (vals.length === 0) return "";
   const direction = computeTrendDirection(vals);
   const mean = avg(vals)!;
   const latest = vals[vals.length - 1];
-  if (direction === "rising")
-    return `Your ${signal} has been trending upward, currently around ${latest.toFixed(1)} ${unit} (average: ${mean.toFixed(1)} ${unit}).`;
-  if (direction === "falling")
-    return `Your ${signal} has been trending downward, currently around ${latest.toFixed(1)} ${unit} (average: ${mean.toFixed(1)} ${unit}).`;
-  return `Your ${signal} has been stable around ${mean.toFixed(1)} ${unit} across ${vals.length} data points.`;
+  if (direction === "rising") {
+    return copy.rising
+      .replace("{signal}", signal)
+      .replace("{latest}", latest.toFixed(1))
+      .replaceAll("{unit}", unit)
+      .replace("{mean}", mean.toFixed(1));
+  }
+  if (direction === "falling") {
+    return copy.falling
+      .replace("{signal}", signal)
+      .replace("{latest}", latest.toFixed(1))
+      .replaceAll("{unit}", unit)
+      .replace("{mean}", mean.toFixed(1));
+  }
+  return copy.stable
+    .replace("{signal}", signal)
+    .replace("{mean}", mean.toFixed(1))
+    .replaceAll("{unit}", unit)
+    .replace("{count}", String(vals.length));
 }
 
 function hasTrendPoints(points: TrendPoint[]): boolean {
@@ -288,6 +305,7 @@ function SectionChart({
 function WeeklyPatternsChart({
   sleepByDay,
 }: Readonly<{ sleepByDay: number[] }>) {
+  const { t } = useLocale();
   const containerRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -355,10 +373,10 @@ function WeeklyPatternsChart({
     <div className="portal-panel rounded-xl border border-border/70 bg-card/85 p-4">
       <div className="mb-2">
         <h3 className="text-sm font-semibold text-card-foreground">
-          Weekly Sleep Patterns
+          {t.portal.dataLab.weeklySleepPatterns}
         </h3>
         <span className="text-xs text-muted-foreground">
-          Average sleep by day of week
+          {t.portal.dataLab.weeklySleepPatternsDescription}
         </span>
       </div>
       <div ref={containerRef} className="h-48 w-full" />
@@ -373,6 +391,7 @@ function WeeklyPatternsChart({
 function BaselineRangesChart({
   baseline,
 }: Readonly<{ baseline: Record<string, unknown> | null }>) {
+  const { t } = useLocale();
   const containerRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -400,10 +419,10 @@ function BaselineRangesChart({
       const stepsM = bMetrics.total_steps ?? {};
 
       const metrics = [
-        "Sleep duration (h)",
-        "HRV (ms)",
-        "Resting heart rate (bpm)",
-        "Daily steps (k)",
+        `${t.portal.dataLab.sleepDuration} (h)`,
+        `${t.common.metrics.hrv} (ms)`,
+        `${t.portal.dataLab.restingHeartRate} (bpm)`,
+        `${t.portal.dataLab.dailySteps} (k)`,
       ];
       const baselines = [
         sleepM.median ?? 7.2,
@@ -492,10 +511,10 @@ function BaselineRangesChart({
     <div className="portal-panel rounded-xl border border-border/70 bg-card/85 p-4">
       <div className="mb-2">
         <h3 className="text-sm font-semibold text-card-foreground">
-          Your Baseline Ranges
+          {t.portal.dataLab.baselineRangesTitle}
         </h3>
         <span className="text-xs text-muted-foreground">
-          Your personal reference range from available historical data.
+          {t.portal.dataLab.baselineRangesDescription}
         </span>
       </div>
       <div ref={containerRef} className="h-48 w-full" />
@@ -510,6 +529,7 @@ function BaselineRangesChart({
 function CorrelationHeatmapChart({
   correlations,
 }: Readonly<{ correlations: Record<string, unknown> | null }>) {
+  const { t } = useLocale();
   const containerRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -526,11 +546,11 @@ function CorrelationHeatmapChart({
       const axisLabelColor = isDark ? LIGHT_TEXT : "#5f6368";
 
       const metrics = [
-        humanizeTechnicalLabel("sleep_hours"),
-        humanizeTechnicalLabel("hrv_sdnn_mean"),
-        humanizeTechnicalLabel("hr_mean"),
-        humanizeTechnicalLabel("total_steps"),
-        humanizeTechnicalLabel("active_minutes"),
+        t.portal.dataLab.sleepDuration,
+        t.common.metrics.hrv,
+        t.portal.dataLab.restingHeartRate,
+        t.portal.dataLab.dailySteps,
+        t.portal.dataLab.activeMinutes,
       ];
       const corrData: number[][] = [];
       if (correlations && typeof correlations === "object") {
@@ -629,11 +649,10 @@ function CorrelationHeatmapChart({
     <div className="portal-panel rounded-xl border border-border/70 bg-card/85 p-4">
       <div className="mb-2">
         <h3 className="text-sm font-semibold text-card-foreground">
-          Signal Correlations
+          {t.portal.dataLab.signalCorrelations}
         </h3>
         <span className="text-xs text-muted-foreground">
-          Signals that moved together in your historical data. This does not
-          prove cause and effect.
+          {t.portal.dataLab.correlationsAvailable}
         </span>
       </div>
       <div ref={containerRef} className="h-72 w-full" />
@@ -651,6 +670,7 @@ function StatCard({
   unit,
   count,
 }: Readonly<{ label: string; value: string; unit: string; count: number }>) {
+  const { t } = useLocale();
   return (
     <div className="portal-panel rounded-xl border border-border/70 bg-card/85 px-4 py-3">
       <span className="text-[10px] font-medium uppercase tracking-wider text-muted-foreground">
@@ -662,28 +682,31 @@ function StatCard({
           {unit}
         </span>
       </p>
-      <p className="text-[10px] text-muted-foreground">{count} data points</p>
+      <p className="text-[10px] text-muted-foreground">
+        {t.portal.dataLab.dataPoints.replace("{count}", String(count))}
+      </p>
     </div>
   );
 }
 
 function DataLabHeader() {
+  const { t } = useLocale();
   return (
     <div className="flex flex-col gap-3">
       <div>
         <h1 className="text-2xl font-semibold tracking-normal text-foreground">
-          Data Lab
+          {t.portal.dataLab.title}
         </h1>
         <p className="mt-1 text-sm text-muted-foreground">
-          {DATA_LAB_SUBTITLE}
+          {t.portal.dataLab.subtitle}
         </p>
       </div>
       <div className="flex flex-wrap gap-2 text-xs text-muted-foreground">
         <span className="rounded-full border border-border/70 bg-muted/30 px-3 py-1">
-          Advanced analysis for reference.
+          {t.portal.dataLab.advancedReference}
         </span>
         <span className="rounded-full border border-border/70 bg-muted/30 px-3 py-1">
-          Correlations do not imply causation.
+          {t.portal.dataLab.correlationDisclaimer}
         </span>
       </div>
     </div>
@@ -739,12 +762,21 @@ function detectBiggestChange(
   hrvVals: number[],
   hrVals: number[],
   stepVals: number[],
+  copy: {
+    sleepDuration: string;
+    restingHeartRate: string;
+    dailySteps: string;
+    hours: string;
+    steps: string;
+    biggestChangeIncreased: string;
+    biggestChangeDecreased: string;
+  },
 ): string | null {
   const signals: { name: string; vals: number[]; unit: string }[] = [
-    { name: "sleep duration", vals: sleepVals, unit: "hours" },
+    { name: copy.sleepDuration, vals: sleepVals, unit: copy.hours },
     { name: "HRV", vals: hrvVals, unit: "ms" },
-    { name: "resting heart rate", vals: hrVals, unit: "bpm" },
-    { name: "daily steps", vals: stepVals, unit: "steps" },
+    { name: copy.restingHeartRate, vals: hrVals, unit: "bpm" },
+    { name: copy.dailySteps, vals: stepVals, unit: copy.steps },
   ];
 
   let biggest = "";
@@ -760,8 +792,13 @@ function detectBiggestChange(
     const pct = Math.abs(((avgSecond - avgFirst) / (avgFirst || 1)) * 100);
     if (pct > biggestPct) {
       biggestPct = pct;
-      const dir = avgSecond > avgFirst ? "increased" : "decreased";
-      biggest = `Your ${s.name} ${dir} by about ${pct.toFixed(0)}% between the first and second half of your data.`;
+      const template =
+        avgSecond > avgFirst
+          ? copy.biggestChangeIncreased
+          : copy.biggestChangeDecreased;
+      biggest = template
+        .replace("{signal}", s.name)
+        .replace("{pct}", pct.toFixed(0));
     }
   }
 
@@ -809,34 +846,35 @@ function TechnicalAvailability({
   hasCorrelations: boolean;
   hasVolatility: boolean;
 }>) {
+  const { t } = useLocale();
   const items = [
     {
-      label: "Trend charts",
+      label: t.portal.dataLab.trendCharts,
       available: hasTrendData,
       message: hasTrendData
-        ? "Longitudinal signal movement over time."
-        : "Advanced trend data is not available for this analysis yet.",
+        ? t.portal.dataLab.trendChartsAvailable
+        : t.portal.dataLab.trendChartsUnavailable,
     },
     {
-      label: "Baseline ranges",
+      label: t.portal.dataLab.baselineRanges,
       available: hasBaseline,
       message: hasBaseline
-        ? "Your personal reference range from available historical data."
-        : "Baseline data is unavailable for this dataset.",
+        ? t.portal.dataLab.baselineRangesDescription
+        : t.portal.dataLab.baselineUnavailable,
     },
     {
-      label: "Correlations",
+      label: t.portal.dataLab.correlations,
       available: hasCorrelations,
       message: hasCorrelations
-        ? "Signals that moved together in your historical data. This does not prove cause and effect."
-        : "Correlation data is unavailable for this dataset.",
+        ? t.portal.dataLab.correlationsAvailable
+        : t.portal.dataLab.correlationsUnavailable,
     },
     {
-      label: "Volatility",
+      label: t.portal.dataLab.volatility,
       available: hasVolatility,
       message: hasVolatility
-        ? "How much a signal varied across the selected period."
-        : "Volatility data is unavailable for this dataset.",
+        ? t.portal.dataLab.volatilityAvailable
+        : t.portal.dataLab.volatilityUnavailable,
     },
   ];
 
@@ -844,11 +882,10 @@ function TechnicalAvailability({
     <div className="portal-panel rounded-xl border border-border/70 bg-card/85 p-4">
       <div className="mb-3">
         <h2 className="text-sm font-semibold uppercase tracking-wider text-muted-foreground">
-          Technical Data Available
+          {t.portal.dataLab.technicalDataAvailable}
         </h2>
         <p className="mt-1 text-xs text-muted-foreground">
-          Data Lab shows supporting evidence when advanced analysis outputs
-          exist for this analysis.
+          {t.portal.dataLab.technicalDataDescription}
         </p>
       </div>
       <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
@@ -862,7 +899,9 @@ function TechnicalAvailability({
                 {item.label}
               </span>
               <span className="text-[10px] uppercase tracking-wider text-muted-foreground">
-                {item.available ? "Available" : "Unavailable"}
+                {item.available
+                  ? t.portal.dataLab.available
+                  : t.portal.dataLab.unavailableLabel}
               </span>
             </div>
             <p className="mt-1 text-xs leading-relaxed text-muted-foreground">
@@ -880,6 +919,7 @@ function TechnicalAvailability({
 // ---------------------------------------------------------------------------
 
 export default function TrendsPage() {
+  const { t } = useLocale();
   const [trendsData, setTrendsData] = useState<TrendsData | null>(null);
   const [portalStatus, setPortalStatus] = useState<PortalDataStatus | null>(null);
   const [loading, setLoading] = useState(true);
@@ -918,26 +958,26 @@ export default function TrendsPage() {
     return (
       <div className="flex flex-col gap-6">
         <DataLabHeader />
-        <p className="text-sm text-muted-foreground">Loading&hellip;</p>
+        <p className="text-sm text-muted-foreground">{t.portal.dataLab.loading}</p>
       </div>
     );
   }
 
   if (!trendsData) {
     return (
-      <EmptyTrendsState message="Advanced trend data could not be loaded right now." />
+      <EmptyTrendsState message={t.portal.dataLab.loadError} />
     );
   }
 
   if (trendsData.analysis_count === 0 || portalStatus?.analysisStatus === "no_analysis") {
     return (
-      <EmptyTrendsState message="Data Lab will appear after Engage7 has enough completed analysis data." />
+      <EmptyTrendsState message={t.portal.dataLab.empty} />
     );
   }
 
   if (portalStatus && !portalStatus.hasLegacyScientificData) {
     return (
-      <EmptyTrendsState message="This analysis has Portal data, but the advanced Data Lab outputs are not available yet. Insights and Health may still be available." />
+      <EmptyTrendsState message={t.portal.dataLab.unavailable} />
     );
   }
 
@@ -960,18 +1000,18 @@ export default function TrendsPage() {
   const avgSteps = avg(stepVals);
 
   // Narratives
-  const sleepNarrative = trendNarrative("sleep duration", sleepVals, "hours");
+  const sleepNarrative = trendNarrative(t.portal.dataLab.sleepDuration, sleepVals, t.portal.dataLab.hours, t.portal.dataLab.trendNarrative);
   const recoveryNarrative =
     hrvVals.length > 0
-      ? trendNarrative("HRV", hrvVals, "ms")
+      ? trendNarrative(t.common.metrics.hrv, hrvVals, "ms", t.portal.dataLab.trendNarrative)
       : hrVals.length > 0
-        ? trendNarrative("resting heart rate", hrVals, "bpm")
+        ? trendNarrative(t.portal.dataLab.restingHeartRate, hrVals, "bpm", t.portal.dataLab.trendNarrative)
         : "";
   const activityNarrative =
     stepVals.length > 0
-      ? trendNarrative("daily steps", stepVals, "steps")
+      ? trendNarrative(t.portal.dataLab.dailySteps, stepVals, t.portal.dataLab.steps, t.portal.dataLab.trendNarrative)
       : activityVals.length > 0
-        ? trendNarrative("active minutes", activityVals, "minutes")
+        ? trendNarrative(t.portal.dataLab.activeMinutes, activityVals, "minutes", t.portal.dataLab.trendNarrative)
         : "";
 
   // Biggest change
@@ -980,6 +1020,7 @@ export default function TrendsPage() {
     hrvVals,
     hrVals,
     stepVals,
+    t.portal.dataLab,
   );
 
   // Weekly sleep patterns
@@ -1024,15 +1065,15 @@ export default function TrendsPage() {
       <div className="grid gap-3 grid-cols-2 lg:grid-cols-4">
         {avgSleep != null && (
           <StatCard
-            label="Average sleep"
+            label={t.portal.dataLab.averageSleep}
             value={avgSleep.toFixed(1)}
-            unit="hours"
+            unit={t.portal.dataLab.hours}
             count={sleepVals.length}
           />
         )}
         {avgHrv != null && (
           <StatCard
-            label="Average HRV"
+            label={t.portal.dataLab.averageHrv}
             value={Math.round(avgHrv).toString()}
             unit="ms"
             count={hrvVals.length}
@@ -1040,7 +1081,7 @@ export default function TrendsPage() {
         )}
         {avgHr != null && (
           <StatCard
-            label="Average resting heart rate"
+            label={t.portal.dataLab.averageRestingHeartRate}
             value={Math.round(avgHr).toString()}
             unit="bpm"
             count={hrVals.length}
@@ -1048,11 +1089,11 @@ export default function TrendsPage() {
         )}
         {avgSteps != null && (
           <StatCard
-            label="Average daily steps"
+            label={t.portal.dataLab.averageDailySteps}
             value={avgSteps.toLocaleString("en-IE", {
               maximumFractionDigits: 0,
             })}
-            unit="steps"
+            unit={t.portal.dataLab.steps}
             count={stepVals.length}
           />
         )}
@@ -1062,15 +1103,15 @@ export default function TrendsPage() {
       {hasSleep && (
         <TrendSection
           icon={<Moon className="h-4 w-4 text-[#3dbe73]" />}
-          title="Sleep Trend"
-          description="Longitudinal signal movement over time."
+          title={t.portal.dataLab.sleepTrend}
+          description={t.portal.dataLab.trendChartsAvailable}
           narrative={sleepNarrative}
         >
           <SectionChart
             dates={sleepDates}
             series={[
               {
-                name: "Sleep duration",
+                name: t.portal.dataLab.sleepDuration,
                 data: sleepVals,
                 color: COLORS.sleep,
               },
@@ -1083,20 +1124,20 @@ export default function TrendsPage() {
       {hasRecovery && (
         <TrendSection
           icon={<Heart className="h-4 w-4 text-[#6366f1]" />}
-          title="Recovery Trend"
-          description="Longitudinal signal movement over time."
+          title={t.portal.dataLab.recoveryTrend}
+          description={t.portal.dataLab.trendChartsAvailable}
           narrative={recoveryNarrative}
         >
           <SectionChart
             dates={hrvDates.length >= hrDates.length ? hrvDates : hrDates}
             series={[
               ...(hrvVals.length > 0
-                ? [{ name: "HRV (ms)", data: hrvVals, color: COLORS.hrv }]
+                ? [{ name: `${t.common.metrics.hrv} (ms)`, data: hrvVals, color: COLORS.hrv }]
                 : []),
               ...(hrVals.length > 0
                 ? [
                     {
-                      name: "Resting heart rate",
+                      name: t.portal.dataLab.restingHeartRate,
                       data: hrVals,
                       color: COLORS.hr,
                       yAxisIndex: hrvVals.length > 0 ? 1 : 0,
@@ -1112,8 +1153,8 @@ export default function TrendsPage() {
       {hasActivity && (
         <TrendSection
           icon={<Activity className="h-4 w-4 text-[#f59e0b]" />}
-          title="Activity Trend"
-          description="Longitudinal signal movement over time."
+          title={t.portal.dataLab.activityTrend}
+          description={t.portal.dataLab.trendChartsAvailable}
           narrative={activityNarrative}
         >
           <SectionChart
@@ -1126,7 +1167,7 @@ export default function TrendsPage() {
               ...(stepVals.length > 0
                 ? [
                     {
-                      name: "Daily steps",
+                      name: t.portal.dataLab.dailySteps,
                       data: stepVals,
                       color: COLORS.steps,
                     },
@@ -1135,7 +1176,7 @@ export default function TrendsPage() {
               ...(activityVals.length > 0
                 ? [
                     {
-                      name: "Active minutes",
+                      name: t.portal.dataLab.activeMinutes,
                       data: activityVals,
                       color: COLORS.activity,
                       yAxisIndex: stepVals.length > 0 ? 1 : 0,
@@ -1153,7 +1194,7 @@ export default function TrendsPage() {
           <div className="flex items-center gap-2">
             <TrendingUpIcon className="h-4 w-4 text-accent" />
             <h2 className="text-sm font-semibold uppercase tracking-wider text-muted-foreground">
-              What Changed Most
+              {t.portal.dataLab.whatChangedMost}
             </h2>
           </div>
           <div className="portal-panel rounded-xl border border-accent/20 bg-accent/[0.03] px-5 py-4">
@@ -1167,17 +1208,17 @@ export default function TrendsPage() {
       {/* Baseline ranges */}
       <details className="group">
         <summary className="cursor-pointer text-sm font-semibold uppercase tracking-wider text-muted-foreground/60 hover:text-muted-foreground transition-colors">
-          Baseline Ranges
+          {t.portal.dataLab.baselineRanges}
         </summary>
         <p className="mt-2 text-xs text-muted-foreground max-w-2xl">
-          Your personal reference range from available historical data.
+          {t.portal.dataLab.baselineRangesDescription}
         </p>
         <div className="mt-3 grid gap-4 lg:grid-cols-2">
           {hasSleep && <WeeklyPatternsChart sleepByDay={sleepByDay} />}
           {hasBaseline ? (
             <BaselineRangesChart baseline={trends.baseline} />
           ) : (
-            <InlineDataLabEmptyState message="Baseline data is unavailable for this dataset." />
+            <InlineDataLabEmptyState message={t.portal.dataLab.baselineUnavailable} />
           )}
         </div>
       </details>
@@ -1186,11 +1227,10 @@ export default function TrendsPage() {
       {trends.correlations && (
         <details className="group">
           <summary className="cursor-pointer text-sm font-semibold uppercase tracking-wider text-muted-foreground/60 hover:text-muted-foreground transition-colors">
-            Signal Correlations (reference)
+            {t.portal.dataLab.signalCorrelationsReference}
           </summary>
           <p className="mt-2 text-xs text-muted-foreground max-w-2xl">
-            Signals that moved together in your historical data. This does not
-            prove cause and effect.
+            {t.portal.dataLab.correlationsAvailable}
           </p>
           <div className="mt-3">
             <CorrelationHeatmapChart correlations={trends.correlations} />
