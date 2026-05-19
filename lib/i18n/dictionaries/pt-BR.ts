@@ -1041,7 +1041,8 @@ export const ptBR: Dictionary = {
     },
     health: {
       periods: {
-        today: "Último dia",
+        today: "Hoje",
+        last_day: "Último dia",
         week: "Última semana",
         month: "Último mês",
         year: "Último ano",
@@ -1064,6 +1065,9 @@ export const ptBR: Dictionary = {
       loading: "Carregando dados de saúde...",
       loadError: "Os dados de saúde não puderam ser carregados.",
       unableToLoad: "Não foi possível carregar os dados de saúde",
+      todayRaw: "Hoje",
+      todayRawWithDate: "Hoje: {date}",
+      todayMayBePartial: "Último dia armazenado; pode estar parcial.",
       latestCompleteDay: "Último dia completo disponível",
       latestCompleteDayWithDate: "Último dia completo disponível: {date}",
       comparedWithPreviousAvailableDay: "Comparado com o dia disponível anterior",
@@ -1089,6 +1093,7 @@ export const ptBR: Dictionary = {
       latestNight: "Noite mais recente",
       sleepDuration: "Duração do sono",
       nightlySleepHours: "Horas de sono por noite",
+      sleepH: "Sono (h)",
       sleepDurationMissing: "Duração do sono ausente",
       noSleepDurationValues:
         "Nenhum valor de duração do sono está presente neste intervalo selecionado.",
@@ -1106,6 +1111,15 @@ export const ptBR: Dictionary = {
       patternNeedsMoreDays: "O padrão precisa de mais dias",
       weekdayPatternNeedsWeek:
         "É necessária pelo menos uma semana de registros de sono para um padrão por dia da semana.",
+      weekDays: {
+        mon: "seg",
+        tue: "ter",
+        wed: "qua",
+        thu: "qui",
+        fri: "sex",
+        sat: "sáb",
+        sun: "dom",
+      },
       consistency: "Consistência",
       efficiency: "Eficiência",
       notEnough: "Insuficiente",
@@ -1163,6 +1177,9 @@ export const ptBR: Dictionary = {
         "A análise armazenada não incluiu pontuação de recuperação ou prontidão.",
       baselineComparison: "Comparação com linha de base",
       comparisonUnavailable: "Comparação indisponível.",
+      todayNoComparison: "Hoje pode estar parcial, então a comparação de dia completo não é exibida.",
+      todayNoFullDayComparison:
+        "Hoje pode estar parcial; a comparação de dia completo usa Último dia.",
       latestComparedWithPrevious:
         "Último dia completo disponível comparado com o dia disponível anterior",
       selectedRangeVsTimeline:

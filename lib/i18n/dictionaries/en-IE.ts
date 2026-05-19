@@ -1035,7 +1035,8 @@ export const enIE = {
     },
     health: {
       periods: {
-        today: "Last day",
+        today: "Today",
+        last_day: "Last day",
         week: "Last week",
         month: "Last month",
         year: "Last year",
@@ -1058,6 +1059,9 @@ export const enIE = {
       loading: "Loading health data...",
       loadError: "Health data could not be loaded.",
       unableToLoad: "Unable to load health data",
+      todayRaw: "Today",
+      todayRawWithDate: "Today: {date}",
+      todayMayBePartial: "Latest stored day; may be partial.",
       latestCompleteDay: "Latest complete day available",
       latestCompleteDayWithDate: "Latest complete day available: {date}",
       comparedWithPreviousAvailableDay: "Compared with previous available day",
@@ -1083,6 +1087,7 @@ export const enIE = {
       latestNight: "Latest night",
       sleepDuration: "Sleep Duration",
       nightlySleepHours: "Nightly sleep hours",
+      sleepH: "Sleep (h)",
       sleepDurationMissing: "Sleep duration missing",
       noSleepDurationValues:
         "No sleep duration values are present in this selected range.",
@@ -1100,6 +1105,15 @@ export const enIE = {
       patternNeedsMoreDays: "Pattern needs more days",
       weekdayPatternNeedsWeek:
         "At least a week of sleep records is needed for a weekday pattern.",
+      weekDays: {
+        mon: "Mon",
+        tue: "Tue",
+        wed: "Wed",
+        thu: "Thu",
+        fri: "Fri",
+        sat: "Sat",
+        sun: "Sun",
+      },
       consistency: "Consistency",
       efficiency: "Efficiency",
       notEnough: "Not enough",
@@ -1157,6 +1171,9 @@ export const enIE = {
         "The stored analysis did not include a recovery or readiness score.",
       baselineComparison: "Baseline Comparison",
       comparisonUnavailable: "Comparison unavailable.",
+      todayNoComparison: "Today may be partial, so full-day comparison is not shown.",
+      todayNoFullDayComparison:
+        "Today may be partial; full-day comparison uses Last day.",
       latestComparedWithPrevious:
         "Latest complete day available compared with the previous available day",
       selectedRangeVsTimeline:

@@ -25,7 +25,7 @@ import type { ElementType, ReactNode } from "react";
 import { useEffect, useMemo, useState } from "react";
 
 type HealthDomain = "sleep" | "recovery" | "activity";
-type Period = "today" | "week" | "month" | "year" | "all";
+type Period = "today" | "last_day" | "week" | "month" | "year" | "all";
 type JsonScalar = string | number | boolean | null;
 type UnknownRecord = Record<string, unknown>;
 type HealthCopy =
@@ -65,7 +65,7 @@ interface ChartSeries {
   stack?: string;
 }
 
-const PERIODS: Period[] = ["today", "week", "month", "year", "all"];
+const PERIODS: Period[] = ["today", "last_day", "week", "month", "year", "all"];
 
 const COLORS = {
   sleep: "#3dbe73",
@@ -155,6 +155,8 @@ const DOMAIN_KEYS: Record<HealthDomain, string[][]> = {
 };
 
 const WEEK_DAYS = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
+const WEEK_DAY_KEYS = ["mon", "tue", "wed", "thu", "fri", "sat", "sun"] as const;
+const STEP_DISPLAY_CAP = 80_000;
 
 function isRecord(value: unknown): value is UnknownRecord {
   return value !== null && typeof value === "object" && !Array.isArray(value);
@@ -234,12 +236,12 @@ function dateTime(point: HealthPoint): number {
   return parseDate(point.date)?.getTime() ?? 0;
 }
 
-function formatDate(value: string): string {
+function formatChartDate(value: string, locale: string): string {
   const parsed = parseDate(value);
   if (!parsed) return value;
-  return parsed.toLocaleDateString("en-IE", {
-    month: "short",
+  return parsed.toLocaleDateString(locale === "pt-BR" ? "pt-BR" : "en-IE", {
     day: "numeric",
+    month: "short",
   });
 }
 
@@ -279,6 +281,15 @@ function getPeriodStart(anchor: Date, period: Period): Date {
   return start;
 }
 
+function latestRawAndValidDays(domainPoints: HealthPoint[]) {
+  const latestRawDay = domainPoints.at(-1) ?? null;
+  const lastValidDay =
+    domainPoints.length >= 2 ? domainPoints[domainPoints.length - 2] : latestRawDay;
+  const previousValidDay =
+    domainPoints.length >= 3 ? domainPoints[domainPoints.length - 3] : null;
+  return { latestRawDay, lastValidDay, previousValidDay };
+}
+
 function filterByPeriod(
   points: HealthPoint[],
   domain: HealthDomain,
@@ -288,28 +299,44 @@ function filterByPeriod(
 ) {
   const all = sortedPoints(points);
   const domainPoints = all.filter((point) => domainHasData(domain, point));
-  const anchorPoint = domainPoints.at(-1) ?? all.at(-1);
+  const { latestRawDay, lastValidDay, previousValidDay } =
+    latestRawAndValidDays(domainPoints);
+  const anchorPoint = lastValidDay ?? domainPoints.at(-1) ?? all.at(-1);
   const anchor = anchorPoint ? parseDate(anchorPoint.date) : null;
 
   if (period === "today") {
-    const latestDomainPoint = domainPoints.at(-1) ?? null;
-    const previousPoint = domainPoints.length >= 2
-      ? domainPoints[domainPoints.length - 2]
-      : null;
     return {
-      points: latestDomainPoint ? [latestDomainPoint] : [],
-      comparisonPoints: previousPoint ? [previousPoint] : [],
+      points: latestRawDay ? [latestRawDay] : [],
+      comparisonPoints: [],
       hasAnyDomainData: domainPoints.length > 0,
-      hasDomainDataInRange: Boolean(latestDomainPoint),
-      rangeLabel: latestDomainPoint
+      hasDomainDataInRange: Boolean(latestRawDay),
+      rangeLabel: latestRawDay
+        ? copy.todayRawWithDate.replace(
+            "{date}",
+            formatDisplayDate(latestRawDay.date, locale),
+          )
+        : copy.todayRaw,
+      comparisonLabel: copy.todayMayBePartial,
+      isTodayRaw: true,
+    };
+  }
+
+  if (period === "last_day") {
+    return {
+      points: lastValidDay ? [lastValidDay] : [],
+      comparisonPoints: previousValidDay ? [previousValidDay] : [],
+      hasAnyDomainData: domainPoints.length > 0,
+      hasDomainDataInRange: Boolean(lastValidDay),
+      rangeLabel: lastValidDay
         ? copy.latestCompleteDayWithDate.replace(
             "{date}",
-            formatDisplayDate(latestDomainPoint.date, locale),
+            formatDisplayDate(lastValidDay.date, locale),
           )
         : copy.latestCompleteDay,
-      comparisonLabel: previousPoint
+      comparisonLabel: previousValidDay
         ? copy.comparedWithPreviousAvailableDay
         : copy.comparisonUnavailable,
+      isTodayRaw: false,
     };
   }
 
@@ -324,6 +351,7 @@ function filterByPeriod(
           ? `${formatDisplayDate(domainPoints[0].date, locale)} - ${formatDisplayDate(domainPoints[domainPoints.length - 1].date, locale)}`
           : copy.noRange,
       comparisonLabel: null,
+      isTodayRaw: false,
     };
   }
 
@@ -347,6 +375,7 @@ function filterByPeriod(
         ? `${formatDisplayDate(domainFiltered[0].date, locale)} - ${formatDisplayDate(domainFiltered[domainFiltered.length - 1].date, locale)}`
         : `${formatDisplayDateObject(start, locale)} - ${formatDisplayDateObject(anchor, locale)}`,
     comparisonLabel: null,
+    isTodayRaw: false,
   };
 }
 
@@ -594,8 +623,8 @@ function previousAvailableComparison({
   };
 }
 
-function buildAxisDates(points: HealthPoint[]): string[] {
-  return points.map((point) => formatDate(point.date));
+function buildAxisDates(points: HealthPoint[], locale: string): string[] {
+  return points.map((point) => formatChartDate(point.date, locale));
 }
 
 function chartBase(): Pick<
@@ -629,16 +658,49 @@ function chartBase(): Pick<
   };
 }
 
+function tooltipValue(value: unknown, locale: string): string {
+  return typeof value === "number"
+    ? value.toLocaleString(locale === "pt-BR" ? "pt-BR" : "en-IE")
+    : String(value ?? "");
+}
+
+function chartTooltipFormatter(locale: string) {
+  return (params: unknown) => {
+    const items = Array.isArray(params) ? params : [params];
+    const first = items[0] as { axisValueLabel?: string; axisValue?: string } | undefined;
+    const rows = items
+      .map((item) => {
+        const point = item as {
+          marker?: string;
+          seriesName?: string;
+          value?: unknown;
+        };
+        if (point.value == null) return null;
+        return `${point.marker ?? ""}${point.seriesName ?? ""}: ${tooltipValue(point.value, locale)}`;
+      })
+      .filter(Boolean);
+    return [first?.axisValueLabel ?? first?.axisValue, ...rows]
+      .filter(Boolean)
+      .join("<br/>");
+  };
+}
+
 function lineChartOption(
   points: HealthPoint[],
   series: ChartSeries[],
+  locale: string,
   dualAxis = false,
+  yMax?: number,
 ): EChartsOption {
   return {
     ...chartBase(),
+    tooltip: {
+      ...(chartBase().tooltip as UnknownRecord),
+      formatter: chartTooltipFormatter(locale),
+    },
     xAxis: {
       ...(chartBase().xAxis as UnknownRecord),
-      data: buildAxisDates(points),
+      data: buildAxisDates(points, locale),
     },
     yAxis: dualAxis
       ? [
@@ -660,6 +722,7 @@ function lineChartOption(
         ]
       : {
           type: "value",
+          max: yMax,
           axisLabel: { color: "#94a3b8", fontSize: 10 },
           splitLine: {
             lineStyle: {
@@ -783,7 +846,7 @@ function SignalCard({
   status: string;
   Icon: ElementType;
 }>) {
-  const { t } = useLocale();
+  const { t, locale } = useLocale();
   return (
     <div className="portal-panel rounded-lg border border-border/70 bg-card/85 px-4 py-3">
       <div className="mb-3 flex items-start justify-between gap-3">
@@ -865,7 +928,7 @@ function InsightPanel({
 }
 
 function LoadingState() {
-  const { t } = useLocale();
+  const { t, locale } = useLocale();
   return (
     <div className="flex flex-col gap-6">
       <div className="portal-panel rounded-lg border border-border/70 bg-card/85 p-6">
@@ -879,7 +942,7 @@ function DatasetEmptyState({
   status,
   portalStatus,
 }: Readonly<{ status: string | undefined; portalStatus: PortalDataStatus | null }>) {
-  const { t } = useLocale();
+  const { t, locale } = useLocale();
   const message =
     !portalStatus?.hasAnalyses || portalStatus.analysisStatus === "no_analysis"
       ? t.portal.statusNotice.noAnalysis
@@ -922,7 +985,7 @@ function DomainEmptyState({
   hasAnyDomainData: boolean;
   period: Period;
 }>) {
-  const { t } = useLocale();
+  const { t, locale } = useLocale();
   const meta = DOMAIN_META[domain];
   const domainCopy = t.portal.health.domains[domain];
   const body = hasAnyDomainData
@@ -954,7 +1017,7 @@ function SleepDashboard({
   sections: UnknownRecord | null;
   rangeLabel: string;
 }>) {
-  const { t } = useLocale();
+  const { t, locale } = useLocale();
   const sleepPoints = points.filter((point) =>
     hasAnyValue(point, [SLEEP_DURATION_KEYS]),
   );
@@ -1074,11 +1137,11 @@ function SleepDashboard({
             height={310}
             option={lineChartOption(sleepPoints, [
               {
-                name: "Sleep (h)",
+                name: t.portal.health.sleepH,
                 color: COLORS.sleep,
                 data: sleep.map((point) => point.value),
               },
-            ])}
+            ], locale)}
           />
         ) : (
           <MetricState
@@ -1104,6 +1167,7 @@ function SleepDashboard({
                   type: "bar",
                   stack: "stages",
                 })),
+                locale,
               )}
             />
           ) : (
@@ -1134,16 +1198,17 @@ function SleepDashboard({
                   WEEK_DAYS.map((day) => ({ date: day })),
                   [
                     {
-                      name: "Sleep (h)",
+                      name: t.portal.health.sleepH,
                       color: COLORS.sleep,
                       data: weekly,
                       type: "bar",
                     },
                   ],
+                  locale,
                 ),
                 xAxis: {
                   ...(chartBase().xAxis as UnknownRecord),
-                  data: WEEK_DAYS,
+                  data: WEEK_DAY_KEYS.map((day) => t.portal.health.weekDays[day]),
                 },
               }}
             />
@@ -1175,7 +1240,7 @@ function RecoveryDashboard({
   rangeLabel: string;
   period: Period;
 }>) {
-  const { t } = useLocale();
+  const { t, locale } = useLocale();
   const hrv = metricSeries(points, RECOVERY_HRV_KEYS, positiveMetricValue);
   const hr = metricSeries(points, RECOVERY_HR_KEYS, positiveMetricValue);
   const scores = metricSeries(points, RECOVERY_SCORE_KEYS);
@@ -1200,8 +1265,16 @@ function RecoveryDashboard({
   );
   const allHrv = average(allHrvVals);
   const allHr = average(allHrVals);
+  const todayComparisonUnavailable: ComparisonState = {
+    value: null,
+    label: t.portal.health.comparisonUnavailable,
+    unit: "",
+    status: "insufficient",
+  };
   const hrvComparison = period === "today"
-    ? previousAvailableComparison({
+    ? todayComparisonUnavailable
+    : period === "last_day"
+      ? previousAvailableComparison({
         current: currentHrv,
         previous: average(previousHrvVals),
         currentCount: hrvVals.length,
@@ -1219,7 +1292,9 @@ function RecoveryDashboard({
         copy: t.portal.health,
       });
   const hrComparison = period === "today"
-    ? previousAvailableComparison({
+    ? todayComparisonUnavailable
+    : period === "last_day"
+      ? previousAvailableComparison({
         current: currentHr,
         previous: average(previousHrVals),
         currentCount: hrVals.length,
@@ -1333,6 +1408,7 @@ function RecoveryDashboard({
                     yAxisIndex: hrvVals.length > 0 ? 1 : 0,
                   },
                 ].filter((item) => item.data.some((value) => value !== null)),
+                locale,
                 hrvVals.length > 0 && hrVals.length > 0,
               )}
             />
@@ -1369,6 +1445,8 @@ function RecoveryDashboard({
         title={t.portal.health.baselineComparison}
         subtitle={
           period === "today"
+            ? t.portal.health.todayNoComparison
+            : period === "last_day"
             ? t.portal.health.latestComparedWithPrevious
             : t.portal.health.selectedRangeVsTimeline
         }
@@ -1386,10 +1464,12 @@ function RecoveryDashboard({
             <p className="mt-1 text-xs text-muted-foreground">
               {hrvComparison.status === "valid"
                 ? period === "today"
+                  ? t.portal.health.todayNoFullDayComparison
+                  : period === "last_day"
                   ? t.portal.health.latestVsPrevious
                   : t.portal.health.selectedVsTimeline
                 : period === "today"
-                  ? t.portal.health.comparisonUnavailable
+                  ? t.portal.health.todayNoFullDayComparison
                   : t.portal.health.comparisonNeedsData}
             </p>
           </div>
@@ -1407,10 +1487,12 @@ function RecoveryDashboard({
             <p className="mt-1 text-xs text-muted-foreground">
               {hrComparison.status === "valid"
                 ? period === "today"
+                  ? t.portal.health.todayNoFullDayComparison
+                  : period === "last_day"
                   ? t.portal.health.latestVsPrevious
                   : t.portal.health.selectedVsTimeline
                 : period === "today"
-                  ? t.portal.health.comparisonUnavailable
+                  ? t.portal.health.todayNoFullDayComparison
                   : t.portal.health.comparisonNeedsData}
             </p>
           </div>
@@ -1424,16 +1506,23 @@ function ActivityDashboard({
   points,
   rangeLabel,
   sections,
+  period,
 }: Readonly<{
   points: HealthPoint[];
   rangeLabel: string;
   sections: UnknownRecord | null;
+  period: Period;
 }>) {
   const { t, locale } = useLocale();
   const steps = metricSeries(points, ACTIVITY_STEPS_KEYS, plausibleDailySteps);
+  const stepDisplayCap = period === "all" ? STEP_DISPLAY_CAP : undefined;
   const hiddenStepOutliers = points.filter((point) => {
     const value = valueFor(point, ACTIVITY_STEPS_KEYS);
-    return value !== null && plausibleDailySteps(value) === null;
+    return (
+      value !== null &&
+      (plausibleDailySteps(value) === null ||
+        (stepDisplayCap !== undefined && value > stepDisplayCap))
+    );
   }).length;
   const energy = metricSeries(points, ["active_energy_cal", "total_active_energy"]);
   const distance = metricSeries(points, ["distance_km", "total_distance"]);
@@ -1532,10 +1621,16 @@ function ActivityDashboard({
                 {
                   name: t.portal.health.steps,
                   color: COLORS.steps,
-                  data: steps.map((point) => point.value),
+                  data: steps.map((point) =>
+                    point.value !== null &&
+                    stepDisplayCap !== undefined &&
+                    point.value > stepDisplayCap
+                      ? null
+                      : point.value,
+                  ),
                   type: "bar",
                 },
-              ])}
+              ], locale, false, stepDisplayCap)}
             />
             {hiddenStepOutliers > 0 && (
               <p className="text-xs text-muted-foreground">
@@ -1581,6 +1676,7 @@ function ActivityDashboard({
                 ] satisfies ChartSeries[]).filter((item) =>
                   item.data.some((value) => value !== null),
                 ),
+                locale,
                 energyVals.length > 0 && distanceVals.length > 0,
               )}
             />
@@ -1650,7 +1746,7 @@ export function HealthDashboard({
   const [data, setData] = useState<HealthDataResponse | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [period, setPeriod] = useState<Period>("week");
+  const [period, setPeriod] = useState<Period>("last_day");
 
   useEffect(() => {
     trackHealthDashboardViewed(domain);
@@ -1723,7 +1819,7 @@ export function HealthDashboard({
   return (
     <div className="flex flex-col gap-6">
       <div className="portal-panel rounded-lg border border-border/70 bg-card/85 p-5">
-        <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+        <div className="flex flex-col gap-4">
           <div className="flex items-start gap-3">
             <span
               className="mt-0.5 inline-flex h-10 w-10 items-center justify-center rounded-lg"
@@ -1755,7 +1851,9 @@ export function HealthDashboard({
               )}
             </div>
           </div>
-          <PeriodSwitcher period={period} onChange={setPeriod} />
+          <div className="border-t border-border/50 pt-4">
+            <PeriodSwitcher period={period} onChange={setPeriod} />
+          </div>
         </div>
       </div>
 
@@ -1792,6 +1890,7 @@ export function HealthDashboard({
               points={filtered.points}
               rangeLabel={filtered.rangeLabel}
               sections={sections}
+              period={period}
             />
           )}
         </>
