@@ -28,6 +28,8 @@ type HealthDomain = "sleep" | "recovery" | "activity";
 type Period = "today" | "week" | "month" | "year" | "all";
 type JsonScalar = string | number | boolean | null;
 type UnknownRecord = Record<string, unknown>;
+type HealthCopy =
+  typeof import("@/lib/i18n/dictionaries/en-IE").enIE.portal.health;
 
 interface HealthPoint {
   date: string;
@@ -271,6 +273,7 @@ function filterByPeriod(
   points: HealthPoint[],
   domain: HealthDomain,
   period: Period,
+  copy: HealthCopy,
 ) {
   const all = sortedPoints(points);
   const domainPoints = all.filter((point) => domainHasData(domain, point));
@@ -287,10 +290,15 @@ function filterByPeriod(
       comparisonPoints: previousPoint ? [previousPoint] : [],
       hasAnyDomainData: domainPoints.length > 0,
       hasDomainDataInRange: Boolean(latestDomainPoint),
-      rangeLabel: latestDomainPoint ? `Latest complete day available: ${formatDate(latestDomainPoint.date)}` : "Latest complete day available",
+      rangeLabel: latestDomainPoint
+        ? copy.latestCompleteDayWithDate.replace(
+            "{date}",
+            formatDate(latestDomainPoint.date),
+          )
+        : copy.latestCompleteDay,
       comparisonLabel: previousPoint
-        ? "Compared with previous available day"
-        : "Comparison unavailable",
+        ? copy.comparedWithPreviousAvailableDay
+        : copy.comparisonUnavailable,
     };
   }
 
@@ -303,7 +311,7 @@ function filterByPeriod(
       rangeLabel:
         domainPoints.length > 0
           ? `${formatDate(domainPoints[0].date)} - ${formatDate(domainPoints[domainPoints.length - 1].date)}`
-          : "No range",
+          : copy.noRange,
       comparisonLabel: null,
     };
   }
@@ -384,8 +392,12 @@ function latestPointWith(
   );
 }
 
-function formatValue(value: number | null, digits = 0): string {
-  if (value === null) return "Not available";
+function formatValue(
+  value: number | null,
+  digits = 0,
+  unavailableLabel = "Not available",
+): string {
+  if (value === null) return unavailableLabel;
   return value.toLocaleString("en-IE", {
     maximumFractionDigits: digits,
     minimumFractionDigits: digits,
@@ -473,6 +485,7 @@ function baselineComparison({
   baselineCount,
   period,
   unit,
+  copy,
 }: Readonly<{
   current: number | null;
   baseline: number | null;
@@ -480,11 +493,15 @@ function baselineComparison({
   baselineCount: number;
   period: Period;
   unit: string;
+  copy: Pick<
+    HealthCopy,
+    "comparisonUnavailable" | "insufficientData" | "notEnoughBaselineData"
+  >;
 }>): ComparisonState {
   if (current === null || currentCount === 0) {
     return {
       value: null,
-      label: "Insufficient data",
+      label: copy.insufficientData,
       unit: "",
       status: "missing",
     };
@@ -493,7 +510,7 @@ function baselineComparison({
   if (period === "all") {
     return {
       value: null,
-      label: "Comparison unavailable",
+      label: copy.comparisonUnavailable,
       unit: "",
       status: "insufficient",
     };
@@ -502,7 +519,7 @@ function baselineComparison({
   if (baseline === null || baselineCount < 7) {
     return {
       value: null,
-      label: "Not enough baseline data",
+      label: copy.notEnoughBaselineData,
       unit: "",
       status: "insufficient",
     };
@@ -511,7 +528,7 @@ function baselineComparison({
   if (currentCount < 3) {
     return {
       value: null,
-      label: "Insufficient data",
+      label: copy.insufficientData,
       unit: "",
       status: "insufficient",
     };
@@ -531,17 +548,19 @@ function previousAvailableComparison({
   currentCount,
   previousCount,
   unit,
+  copy,
 }: Readonly<{
   current: number | null;
   previous: number | null;
   currentCount: number;
   previousCount: number;
   unit: string;
+  copy: Pick<HealthCopy, "comparisonUnavailable" | "insufficientData">;
 }>): ComparisonState {
   if (current === null || currentCount === 0) {
     return {
       value: null,
-      label: "Insufficient data",
+      label: copy.insufficientData,
       unit: "",
       status: "missing",
     };
@@ -550,7 +569,7 @@ function previousAvailableComparison({
   if (previous === null || previousCount === 0) {
     return {
       value: null,
-      label: "Comparison unavailable",
+      label: copy.comparisonUnavailable,
       unit: "",
       status: "insufficient",
     };
@@ -753,6 +772,7 @@ function SignalCard({
   status: string;
   Icon: ElementType;
 }>) {
+  const { t } = useLocale();
   return (
     <div className="portal-panel rounded-lg border border-border/70 bg-card/85 px-4 py-3">
       <div className="mb-3 flex items-start justify-between gap-3">
@@ -771,7 +791,7 @@ function SignalCard({
         )}
       </p>
       <p className="mt-1 text-[10px] text-muted-foreground">
-        {count} tracked days
+        {t.portal.health.trackedDays.replace("{count}", String(count))}
       </p>
     </div>
   );
@@ -898,12 +918,15 @@ function DomainEmptyState({
     ? t.portal.health.outsidePeriod
         .replace("{domain}", domainCopy.title)
         .replace("{period}", t.portal.health.periods[period])
-    : `${domainCopy.title} metrics were not present in the stored Apple Health data for this account.`;
+    : t.portal.health.domainMetricsMissing.replace("{domain}", domainCopy.title);
 
   return (
     <MetricState
       Icon={meta.Icon}
-      title={`No ${domainCopy.title.toLowerCase()} data in this view`}
+      title={t.portal.health.noDomainDataInView.replace(
+        "{domain}",
+        domainCopy.title.toLowerCase(),
+      )}
       body={body}
     />
   );
@@ -1131,6 +1154,7 @@ function RecoveryDashboard({
   rangeLabel: string;
   period: Period;
 }>) {
+  const { t } = useLocale();
   const hrv = metricSeries(points, RECOVERY_HRV_KEYS, positiveMetricValue);
   const hr = metricSeries(points, RECOVERY_HR_KEYS, positiveMetricValue);
   const scores = metricSeries(points, RECOVERY_SCORE_KEYS);
@@ -1162,6 +1186,7 @@ function RecoveryDashboard({
         currentCount: hrvVals.length,
         previousCount: previousHrvVals.length,
         unit: "ms",
+        copy: t.portal.health,
       })
     : baselineComparison({
         current: currentHrv,
@@ -1170,6 +1195,7 @@ function RecoveryDashboard({
         baselineCount: allHrvVals.length,
         period,
         unit: "ms",
+        copy: t.portal.health,
       });
   const hrComparison = period === "today"
     ? previousAvailableComparison({
@@ -1178,6 +1204,7 @@ function RecoveryDashboard({
         currentCount: hrVals.length,
         previousCount: previousHrVals.length,
         unit: "bpm",
+        copy: t.portal.health,
       })
     : baselineComparison({
         current: currentHr,
@@ -1186,6 +1213,7 @@ function RecoveryDashboard({
         baselineCount: allHrVals.length,
         period,
         unit: "bpm",
+        copy: t.portal.health,
       });
   const readinessScore =
     average(scoreVals) ??
@@ -1206,13 +1234,19 @@ function RecoveryDashboard({
 
   return (
     <div className="flex flex-col gap-5">
-      <InsightPanel title="Recovery insight">
+      <InsightPanel title={t.portal.health.recoveryInsight}>
         <p>
           {readinessScore !== null
-            ? `Readiness for this range is ${Math.round(readinessScore)} out of 100.`
-            : "No readiness score is available, so the dashboard is using HRV and heart-rate signals directly."}
+            ? t.portal.health.readinessForRange.replace(
+                "{score}",
+                String(Math.round(readinessScore)),
+              )
+            : t.portal.health.noReadinessScore}
           {currentHrv !== null
-            ? ` HRV averages ${currentHrv.toFixed(1)} ms in this range.`
+            ? ` ${t.portal.health.hrvAverageInRange.replace(
+                "{value}",
+                currentHrv.toFixed(1),
+              )}`
             : ""}
           {typeof recoverySection?.score_note === "string"
             ? ` ${recoverySection.score_note}`
@@ -1223,31 +1257,31 @@ function RecoveryDashboard({
       <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
         <SignalCard
           Icon={TrendingUp}
-          label="Average HRV"
-          value={formatValue(currentHrv, 1)}
+          label={t.portal.health.averageHrv}
+          value={formatValue(currentHrv, 1, t.common.notAvailable)}
           unit={currentHrv === null ? "" : "ms"}
           count={hrvVals.length}
           status={statusFor(hrvVals.length)}
         />
         <SignalCard
           Icon={HeartPulse}
-          label="Average HR"
-          value={formatValue(currentHr, 0)}
+          label={t.portal.health.averageHr}
+          value={formatValue(currentHr, 0, t.common.notAvailable)}
           unit={currentHr === null ? "" : "bpm"}
           count={hrVals.length}
           status={statusFor(hrVals.length)}
         />
         <SignalCard
           Icon={Gauge}
-          label="Readiness"
-          value={formatValue(readinessScore, 0)}
+          label={t.portal.health.readiness}
+          value={formatValue(readinessScore, 0, t.common.notAvailable)}
           unit={readinessScore === null ? "" : "/ 100"}
           count={readinessCount}
           status={statusFor(readinessCount, scoreVals.length === 0 && readinessScore !== null)}
         />
         <SignalCard
           Icon={BarChart3}
-          label="HRV vs Baseline"
+          label={t.portal.health.hrvVsBaseline}
           value={hrvComparison.label}
           unit={hrvComparison.unit}
           count={hrvVals.length}
@@ -1257,8 +1291,8 @@ function RecoveryDashboard({
 
       <div className="grid gap-4 xl:grid-cols-[minmax(0,1.6fr)_minmax(260px,0.8fr)]">
         <ChartPanel
-          title="HRV and Heart Rate"
-          subtitle={`Recovery markers over time - ${rangeLabel}`}
+          title={t.portal.health.hrvAndHeartRate}
+          subtitle={`${t.portal.health.recoveryMarkersOverTime} - ${rangeLabel}`}
         >
           {hrvVals.length > 0 || hrVals.length > 0 ? (
             <EChart
@@ -1267,12 +1301,12 @@ function RecoveryDashboard({
                 points,
                 [
                   {
-                    name: "HRV (ms)",
+                    name: t.portal.health.hrvMs,
                     color: COLORS.hrv,
                     data: hrv.map((point) => point.value),
                   },
                   {
-                    name: "HR (bpm)",
+                    name: t.portal.health.hrBpm,
                     color: COLORS.hr,
                     data: hr.map((point) => point.value),
                     yAxisIndex: hrvVals.length > 0 ? 1 : 0,
@@ -1284,34 +1318,34 @@ function RecoveryDashboard({
           ) : (
             <MetricState
               Icon={HeartPulse}
-              title="Recovery signals missing"
-              body="HRV and heart-rate metrics are not present in this selected range."
+              title={t.portal.health.recoverySignalsMissing}
+              body={t.portal.health.recoverySignalsMissingBody}
             />
           )}
         </ChartPanel>
 
         <ChartPanel
-          title="Readiness"
-          subtitle="Composite score when stored by the backend"
+          title={t.portal.health.readiness}
+          subtitle={t.portal.health.compositeScoreStored}
         >
           {readinessScore !== null ? (
             <RecoveryScoreChart score={readinessScore} height={250} label="" />
           ) : (
             <MetricState
               Icon={Gauge}
-              title="Score unavailable"
-              body="The stored analysis did not include a recovery or readiness score."
+              title={t.portal.health.scoreUnavailable}
+              body={t.portal.health.scoreUnavailableBody}
             />
           )}
         </ChartPanel>
       </div>
 
       <ChartPanel
-        title="Baseline Comparison"
+        title={t.portal.health.baselineComparison}
         subtitle={
           period === "today"
-            ? "Latest complete day available compared with the previous available day"
-            : "Selected range compared with your full stored timeline"
+            ? t.portal.health.latestComparedWithPrevious
+            : t.portal.health.selectedRangeVsTimeline
         }
       >
         <div className="grid gap-3 sm:grid-cols-2">
@@ -1327,16 +1361,16 @@ function RecoveryDashboard({
             <p className="mt-1 text-xs text-muted-foreground">
               {hrvComparison.status === "valid"
                 ? period === "today"
-                  ? "Latest complete day available vs previous available day."
-                  : "Selected range vs full stored timeline."
+                  ? t.portal.health.latestVsPrevious
+                  : t.portal.health.selectedVsTimeline
                 : period === "today"
-                  ? "Comparison unavailable."
-                  : "A comparison needs enough current and baseline data."}
+                  ? t.portal.health.comparisonUnavailable
+                  : t.portal.health.comparisonNeedsData}
             </p>
           </div>
           <div className="rounded-lg border border-border/60 bg-background/35 p-4">
             <p className="text-xs font-semibold text-muted-foreground">
-              Heart Rate
+              {t.portal.health.heartRate}
             </p>
             <p className="mt-2 text-2xl font-semibold text-card-foreground">
               {displayValueWithUnit(
@@ -1348,11 +1382,11 @@ function RecoveryDashboard({
             <p className="mt-1 text-xs text-muted-foreground">
               {hrComparison.status === "valid"
                 ? period === "today"
-                  ? "Latest complete day available vs previous available day."
-                  : "Selected range vs full stored timeline."
+                  ? t.portal.health.latestVsPrevious
+                  : t.portal.health.selectedVsTimeline
                 : period === "today"
-                  ? "Comparison unavailable."
-                  : "A comparison needs enough current and baseline data."}
+                  ? t.portal.health.comparisonUnavailable
+                  : t.portal.health.comparisonNeedsData}
             </p>
           </div>
         </div>
@@ -1370,6 +1404,7 @@ function ActivityDashboard({
   rangeLabel: string;
   sections: UnknownRecord | null;
 }>) {
+  const { t } = useLocale();
   const steps = metricSeries(points, ACTIVITY_STEPS_KEYS, plausibleDailySteps);
   const hiddenStepOutliers = points.filter((point) => {
     const value = valueFor(point, ACTIVITY_STEPS_KEYS);
@@ -1401,16 +1436,22 @@ function ActivityDashboard({
 
   return (
     <div className="flex flex-col gap-5">
-      <InsightPanel title="Activity insight">
+      <InsightPanel title={t.portal.health.activityInsight}>
         <p>
           {stepsVals.length > 0
-            ? `This range averages ${formatValue(average(stepsVals), 0)} steps per tracked day.`
-            : "Step data is not available in this range."}
+            ? t.portal.health.activityRangeAverageSteps.replace(
+                "{value}",
+                formatValue(average(stepsVals), 0, t.common.notAvailable),
+              )
+            : t.portal.health.stepDataUnavailable}
           {energyVals.length > 0
-            ? ` Active energy averages ${formatValue(average(energyVals), 0)} calories.`
+            ? ` ${t.portal.health.activeEnergyAverage.replace(
+                "{value}",
+                formatValue(average(energyVals), 0, t.common.notAvailable),
+              )}`
             : ""}
           {isRecord(activitySection?.active_energy_cal)
-            ? " The latest backend activity summary includes active-energy coverage."
+            ? ` ${t.portal.health.backendActivityCoverage}`
             : ""}
         </p>
       </InsightPanel>
@@ -1418,46 +1459,53 @@ function ActivityDashboard({
       <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
         <SignalCard
           Icon={Footprints}
-          label="Average Steps"
-          value={formatValue(average(stepsVals), 0)}
-          unit={stepsVals.length ? "steps" : ""}
+          label={t.portal.health.averageSteps}
+          value={formatValue(average(stepsVals), 0, t.common.notAvailable)}
+          unit={stepsVals.length ? t.portal.health.stepsUnit : ""}
           count={stepsVals.length}
           status={statusFor(stepsVals.length)}
         />
         <SignalCard
           Icon={Flame}
-          label="Active Energy"
-          value={formatValue(average(energyVals), 0)}
+          label={t.portal.health.activeEnergy}
+          value={formatValue(average(energyVals), 0, t.common.notAvailable)}
           unit={energyVals.length ? "Cal" : ""}
           count={energyVals.length}
           status={statusFor(energyVals.length)}
         />
         <SignalCard
           Icon={Route}
-          label="Distance"
-          value={formatValue(average(distanceVals), 2)}
+          label={t.portal.health.distance}
+          value={formatValue(average(distanceVals), 2, t.common.notAvailable)}
           unit={distanceVals.length ? "km" : ""}
           count={distanceVals.length}
           status={statusFor(distanceVals.length)}
         />
         <SignalCard
           Icon={BarChart3}
-          label="Consistency"
-          value={stepStd === null ? "Not enough" : `+/-${formatValue(stepStd, 0)}`}
-          unit={stepStd === null ? "" : "steps"}
+          label={t.portal.health.consistency}
+          value={
+            stepStd === null
+              ? t.portal.health.notEnough
+              : `+/-${formatValue(stepStd, 0, t.common.notAvailable)}`
+          }
+          unit={stepStd === null ? "" : t.portal.health.stepsUnit}
           count={stepsVals.length}
           status={statusFor(stepsVals.length, stepStd !== null)}
         />
       </div>
 
-      <ChartPanel title="Steps Trend" subtitle={`Daily steps - ${rangeLabel}`}>
+      <ChartPanel
+        title={t.portal.health.stepsTrend}
+        subtitle={`${t.portal.health.dailySteps} - ${rangeLabel}`}
+      >
         {stepsVals.length > 0 ? (
           <div className="flex flex-col gap-2">
             <EChart
               height={320}
               option={lineChartOption(points, [
                 {
-                  name: "Steps",
+                  name: t.portal.health.steps,
                   color: COLORS.steps,
                   data: steps.map((point) => point.value),
                   type: "bar",
@@ -1466,23 +1514,26 @@ function ActivityDashboard({
             />
             {hiddenStepOutliers > 0 && (
               <p className="text-xs text-muted-foreground">
-                {hiddenStepOutliers} extreme step {hiddenStepOutliers === 1 ? "value is" : "values are"} hidden from chart scale.
+                {t.portal.health.hiddenStepOutliers.replace(
+                  "{count}",
+                  String(hiddenStepOutliers),
+                )}
               </p>
             )}
           </div>
         ) : (
           <MetricState
             Icon={Footprints}
-            title="Steps missing"
-            body="No step-count values are present in the selected range."
+            title={t.portal.health.stepsMissing}
+            body={t.portal.health.noStepCountValues}
           />
         )}
       </ChartPanel>
 
       <div className="grid gap-4 xl:grid-cols-2">
         <ChartPanel
-          title="Energy and Distance"
-          subtitle="Active energy with distance overlay where available"
+          title={t.portal.health.energyAndDistance}
+          subtitle={t.portal.health.energyDistanceSubtitle}
         >
           {energyVals.length > 0 || distanceVals.length > 0 ? (
             <EChart
@@ -1491,13 +1542,13 @@ function ActivityDashboard({
                 points,
                 ([
                   {
-                    name: "Energy (Cal)",
+                    name: t.portal.health.energyCal,
                     color: COLORS.energy,
                     data: energy.map((point) => point.value),
                     type: "bar",
                   },
                   {
-                    name: "Distance (km)",
+                    name: t.portal.health.distanceKm,
                     color: COLORS.distance,
                     data: distance.map((point) => point.value),
                     yAxisIndex: energyVals.length > 0 ? 1 : 0,
@@ -1511,18 +1562,21 @@ function ActivityDashboard({
           ) : (
             <MetricState
               Icon={Activity}
-              title="Energy and distance unavailable"
-              body="The stored export does not contain active energy or distance values for this range."
+              title={t.portal.health.energyAndDistanceUnavailable}
+              body={t.portal.health.energyAndDistanceUnavailableBody}
             />
           )}
         </ChartPanel>
 
-        <ChartPanel title="Best vs Lowest" subtitle="Step-count range anchors">
+        <ChartPanel
+          title={t.portal.health.bestVsLowest}
+          subtitle={t.portal.health.stepRangeAnchors}
+        >
           {best && lowest ? (
             <div className="grid gap-3 sm:grid-cols-2">
               <div className="rounded-lg border border-emerald-500/20 bg-emerald-500/10 p-4">
                 <p className="text-xs font-semibold uppercase tracking-wider text-emerald-300">
-                  Best day
+                  {t.portal.health.bestDay}
                 </p>
                 <p className="mt-3 text-2xl font-semibold text-card-foreground">
                   {formatValue(best.value, 0)}
@@ -1533,7 +1587,7 @@ function ActivityDashboard({
               </div>
               <div className="rounded-lg border border-border/70 bg-background/35 p-4">
                 <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-                  Lowest day
+                  {t.portal.health.lowestDay}
                 </p>
                 <p className="mt-3 text-2xl font-semibold text-card-foreground">
                   {formatValue(lowest.value, 0)}
@@ -1544,16 +1598,18 @@ function ActivityDashboard({
               </div>
               {exerciseVals.length > 0 && (
                 <p className="sm:col-span-2 text-xs text-muted-foreground">
-                  Exercise minutes average{" "}
-                  {formatValue(average(exerciseVals), 0)} minutes in this range.
+                  {t.portal.health.exerciseMinutesAverage.replace(
+                    "{value}",
+                    formatValue(average(exerciseVals), 0, t.common.notAvailable),
+                  )}
                 </p>
               )}
             </div>
           ) : (
             <MetricState
               Icon={Footprints}
-              title="Step comparison unavailable"
-              body="At least one day with step data is needed for best and lowest periods."
+              title={t.portal.health.stepComparisonUnavailable}
+              body={t.portal.health.stepComparisonUnavailableBody}
             />
           )}
         </ChartPanel>
@@ -1587,7 +1643,7 @@ export function HealthDashboard({
         const payload = (await res.json()) as HealthDataResponse;
         if (!cancelled) setData(payload);
       } catch {
-        if (!cancelled) setError("Health data could not be loaded.");
+        if (!cancelled) setError(t.portal.health.loadError);
       } finally {
         if (!cancelled) setLoading(false);
       }
@@ -1608,8 +1664,8 @@ export function HealthDashboard({
     [data?.portal_data_status],
   );
   const filtered = useMemo(
-    () => filterByPeriod(allPoints, domain, period),
-    [allPoints, domain, period],
+    () => filterByPeriod(allPoints, domain, period, t.portal.health),
+    [allPoints, domain, period, t.portal.health],
   );
 
   if (loading) return <LoadingState />;
@@ -1617,7 +1673,11 @@ export function HealthDashboard({
   if (error) {
     return (
       <div className="flex flex-col gap-6">
-        <MetricState Icon={Info} title="Unable to load health data" body={error} />
+        <MetricState
+          Icon={Info}
+          title={t.portal.health.unableToLoad}
+          body={error}
+        />
       </div>
     );
   }
@@ -1657,7 +1717,11 @@ export function HealthDashboard({
                 {domainCopy.subtitle}
               </p>
               <p className="mt-2 text-xs text-muted-foreground">
-                {filtered.rangeLabel} · {filtered.points.length} stored days
+                {filtered.rangeLabel} ·{" "}
+                {t.portal.health.storedDays.replace(
+                  "{count}",
+                  String(filtered.points.length),
+                )}
               </p>
               {filtered.comparisonLabel && (
                 <p className="mt-1 text-xs text-muted-foreground">

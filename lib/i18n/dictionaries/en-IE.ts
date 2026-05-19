@@ -922,6 +922,16 @@ export const enIE = {
     },
     insightsPage: {
       noInsights: "No insights yet. Upload your health data to start seeing patterns and recommendations.",
+      empty:
+        "Insights will appear as Engage7 finds repeated patterns in your own timeline.",
+      loadError: "Insights could not be loaded right now.",
+      legacyFallback: "Showing earlier-format insights from your own history.",
+      legacyFormatNotice:
+        "Showing insights from an earlier analysis format. As you update your data, Engage7 will use the current semantic insight format.",
+      personalPattern: "Personal pattern",
+      personalPatternDetected: "Personal pattern detected",
+      patternFromTimeline:
+        "This pattern comes from your own timeline, not population averages.",
       lastDataPoints: "Last {n} data points",
       signals: {
         sleep: "Sleep duration",
@@ -1046,18 +1056,88 @@ export const enIE = {
         },
       },
       loading: "Loading health data...",
+      loadError: "Health data could not be loaded.",
+      unableToLoad: "Unable to load health data",
+      latestCompleteDay: "Latest complete day available",
+      latestCompleteDayWithDate: "Latest complete day available: {date}",
+      comparedWithPreviousAvailableDay: "Compared with previous available day",
+      noRange: "No range",
+      storedDays: "{count} stored days",
+      trackedDays: "{count} tracked days",
       outsidePeriod:
         "{domain} data exists outside {period}. Select a wider range to view the stored records.",
+      domainMetricsMissing:
+        "{domain} metrics were not present in the stored Apple Health data for this account.",
+      noDomainDataInView: "No {domain} data in this view",
       sleepDurationUnavailable:
         "Sleep duration is not available in the selected range.",
       sleepDurationMissing: "Sleep duration missing",
       sleepStagesUnavailable: "Sleep stages unavailable",
       consistency: "Consistency",
       efficiency: "Efficiency",
+      notEnough: "Not enough",
+      notEnoughBaselineData: "Not enough baseline data",
+      activityInsight: "Activity insight",
+      activityRangeAverageSteps:
+        "This range averages {value} steps per tracked day.",
+      stepDataUnavailable: "Step data is not available in this range.",
+      backendActivityCoverage:
+        "The latest backend activity summary includes active-energy coverage.",
+      averageSteps: "Average steps",
+      activeEnergy: "Active energy",
+      distance: "Distance",
+      stepsUnit: "steps",
+      stepsTrend: "Steps Trend",
+      dailySteps: "Daily steps",
+      steps: "Steps",
+      stepsMissing: "Steps missing",
+      noStepCountValues:
+        "No step-count values are present in the selected range.",
+      hiddenStepOutliers:
+        "{count} extreme step values are hidden from chart scale.",
+      energyAndDistance: "Energy and Distance",
+      energyCal: "Energy (Cal)",
+      distanceKm: "Distance (km)",
+      energyAndDistanceUnavailable: "Energy and distance unavailable",
+      energyAndDistanceUnavailableBody:
+        "The stored export does not contain active energy or distance values for this range.",
+      exerciseMinutesAverage:
+        "Exercise minutes average {value} minutes in this range.",
+      stepComparisonUnavailable: "Step comparison unavailable",
+      stepComparisonUnavailableBody:
+        "At least one day with step data is needed for best and lowest periods.",
+      recoveryInsight: "Recovery insight",
       averageHrv: "Average HRV",
+      averageHr: "Average HR",
+      readiness: "Readiness",
       hrvVsBaseline: "HRV vs Baseline",
+      readinessForRange: "Readiness for this range is {score} out of 100.",
+      noReadinessScore:
+        "No readiness score is available, so the dashboard is using HRV and heart-rate signals directly.",
+      hrvAverageInRange: "HRV averages {value} ms in this range.",
+      hrvAndHeartRate: "HRV and Heart Rate",
+      recoveryMarkersOverTime: "Recovery markers over time",
+      hrvMs: "HRV (ms)",
+      hrBpm: "HR (bpm)",
+      recoverySignalsMissing: "Recovery signals missing",
+      recoverySignalsMissingBody:
+        "HRV and heart-rate metrics are not present in this selected range.",
+      compositeScoreStored: "Composite score when stored by the backend",
+      scoreUnavailable: "Score unavailable",
+      scoreUnavailableBody:
+        "The stored analysis did not include a recovery or readiness score.",
       baselineComparison: "Baseline Comparison",
       comparisonUnavailable: "Comparison unavailable.",
+      latestComparedWithPrevious:
+        "Latest complete day available compared with the previous available day",
+      selectedRangeVsTimeline:
+        "Selected range compared with your full stored timeline",
+      latestVsPrevious:
+        "Latest complete day available vs previous available day.",
+      selectedVsTimeline: "Selected range vs full stored timeline.",
+      comparisonNeedsData:
+        "A comparison needs enough current and baseline data.",
+      heartRate: "Heart Rate",
       activeEnergyAverage: "Active energy averages {value} calories.",
       energyDistanceSubtitle: "Active energy with distance overlay where available",
       bestVsLowest: "Best vs Lowest",

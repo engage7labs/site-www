@@ -928,6 +928,16 @@ export const ptBR: Dictionary = {
     },
     insightsPage: {
       noInsights: "Nenhum insight ainda. Envie seus dados de saúde para começar a ver padrões e recomendações.",
+      empty:
+        "Os insights aparecerão quando o Engage7 encontrar padrões repetidos na sua própria linha do tempo.",
+      loadError: "Os insights não puderam ser carregados agora.",
+      legacyFallback: "Mostrando insights de um formato de análise anterior.",
+      legacyFormatNotice:
+        "Mostrando insights de um formato de análise anterior. Ao atualizar seus dados, o Engage7 usará o formato semântico atual de insights.",
+      personalPattern: "Padrão pessoal",
+      personalPatternDetected: "Padrão pessoal detectado",
+      patternFromTimeline:
+        "Este padrão vem da sua própria linha do tempo, não de médias populacionais.",
       lastDataPoints: "Últimos {n} pontos de dados",
       signals: {
         sleep: "Duração do sono",
@@ -1052,18 +1062,89 @@ export const ptBR: Dictionary = {
         },
       },
       loading: "Carregando dados de saúde...",
+      loadError: "Os dados de saúde não puderam ser carregados.",
+      unableToLoad: "Não foi possível carregar os dados de saúde",
+      latestCompleteDay: "Último dia completo disponível",
+      latestCompleteDayWithDate: "Último dia completo disponível: {date}",
+      comparedWithPreviousAvailableDay: "Comparado com o dia disponível anterior",
+      noRange: "Sem intervalo",
+      storedDays: "{count} dias armazenados",
+      trackedDays: "{count} dias rastreados",
       outsidePeriod:
         "Há dados de {domain} fora de {period}. Selecione um período mais amplo para ver os registros armazenados.",
+      domainMetricsMissing:
+        "As métricas de {domain} não estavam presentes nos dados armazenados do Apple Health desta conta.",
+      noDomainDataInView: "Sem dados de {domain} nesta visualização",
       sleepDurationUnavailable:
         "A duração do sono não está disponível no período selecionado.",
       sleepDurationMissing: "Duração do sono ausente",
       sleepStagesUnavailable: "Estágios do sono indisponíveis",
       consistency: "Consistência",
       efficiency: "Eficiência",
+      notEnough: "Insuficiente",
+      notEnoughBaselineData: "Dados de linha de base insuficientes",
+      activityInsight: "Insight de atividade",
+      activityRangeAverageSteps:
+        "Este intervalo tem média de {value} passos por dia rastreado.",
+      stepDataUnavailable: "Os dados de passos não estão disponíveis neste intervalo.",
+      backendActivityCoverage:
+        "O resumo de atividade mais recente do backend inclui cobertura de energia ativa.",
+      averageSteps: "Passos médios",
+      activeEnergy: "Energia ativa",
+      distance: "Distância",
+      stepsUnit: "passos",
+      stepsTrend: "Tendência de passos",
+      dailySteps: "Passos diários",
+      steps: "Passos",
+      stepsMissing: "Passos ausentes",
+      noStepCountValues:
+        "Nenhum valor de contagem de passos está presente no intervalo selecionado.",
+      hiddenStepOutliers:
+        "{count} valores extremos de passos estão ocultos da escala do gráfico.",
+      energyAndDistance: "Energia e distância",
+      energyCal: "Energia (Cal)",
+      distanceKm: "Distância (km)",
+      energyAndDistanceUnavailable: "Energia e distância indisponíveis",
+      energyAndDistanceUnavailableBody:
+        "A exportação armazenada não contém valores de energia ativa ou distância para este intervalo.",
+      exerciseMinutesAverage:
+        "Minutos de exercício têm média de {value} minutos neste intervalo.",
+      stepComparisonUnavailable: "Comparação de passos indisponível",
+      stepComparisonUnavailableBody:
+        "É necessário pelo menos um dia com dados de passos para comparar melhor e menor período.",
+      recoveryInsight: "Insight de recuperação",
       averageHrv: "VFC média",
+      averageHr: "FC média",
+      readiness: "Prontidão",
       hrvVsBaseline: "VFC vs linha de base",
+      readinessForRange: "A prontidão neste intervalo é {score} de 100.",
+      noReadinessScore:
+        "Nenhuma pontuação de prontidão está disponível, então o painel usa diretamente VFC e sinais de frequência cardíaca.",
+      hrvAverageInRange: "A VFC média é {value} ms neste intervalo.",
+      hrvAndHeartRate: "VFC e frequência cardíaca",
+      recoveryMarkersOverTime: "Marcadores de recuperação ao longo do tempo",
+      hrvMs: "VFC (ms)",
+      hrBpm: "FC (bpm)",
+      recoverySignalsMissing: "Sinais de recuperação ausentes",
+      recoverySignalsMissingBody:
+        "As métricas de VFC e frequência cardíaca não estão presentes neste intervalo selecionado.",
+      compositeScoreStored: "Pontuação composta quando armazenada pelo backend",
+      scoreUnavailable: "Pontuação indisponível",
+      scoreUnavailableBody:
+        "A análise armazenada não incluiu pontuação de recuperação ou prontidão.",
       baselineComparison: "Comparação com linha de base",
       comparisonUnavailable: "Comparação indisponível.",
+      latestComparedWithPrevious:
+        "Último dia completo disponível comparado com o dia disponível anterior",
+      selectedRangeVsTimeline:
+        "Intervalo selecionado comparado com toda a linha do tempo armazenada",
+      latestVsPrevious:
+        "Último dia completo disponível vs dia disponível anterior.",
+      selectedVsTimeline:
+        "Intervalo selecionado vs toda a linha do tempo armazenada.",
+      comparisonNeedsData:
+        "Uma comparação precisa de dados atuais e de linha de base suficientes.",
+      heartRate: "Frequência cardíaca",
       activeEnergyAverage: "Energia ativa média de {value} calorias.",
       energyDistanceSubtitle: "Energia ativa com sobreposição de distância quando disponível",
       bestVsLowest: "Melhor vs menor",

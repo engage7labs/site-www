@@ -297,16 +297,18 @@ function InsightCard({
     confidence: { high: string; medium: string; low: string };
     confidenceExplanations: { high: string; medium: string; low: string };
     pillar: { sleep: string; recovery: string; activity: string };
+    personalPattern: string;
+    patternFromTimeline: string;
   };
 }) {
   const confidence = priorityToConfidence(insight.priority);
   const trend = trendFromScore(insight.score);
   const color = PILLAR_COLOR[insight.pillar ?? "sleep"] ?? "#3dbe73";
   const icon = PILLAR_ICON[insight.pillar ?? "sleep"];
-  const headline = cleanVisibleText(insight.headline) ?? "Personal pattern";
+  const headline = cleanVisibleText(insight.headline) ?? strings.personalPattern;
   const body =
     cleanVisibleText(insight.body) ??
-    "This pattern comes from your own timeline, not population averages.";
+    strings.patternFromTimeline;
   const action = cleanVisibleText(insight.action);
 
   function getSignalLabel(pillar: string | undefined): string {
@@ -390,7 +392,7 @@ export default function InsightsPage() {
   const [empty, setEmpty] = useState(false);
   const [usingLegacyFallback, setUsingLegacyFallback] = useState(false);
   const [emptyMessage, setEmptyMessage] = useState<string>(
-    "Insights will appear as Engage7 finds repeated patterns in your own timeline."
+    t.portal.insightsPage.empty
   );
   const [portalStatus, setPortalStatus] = useState<PortalDataStatus | null>(null);
 
@@ -413,7 +415,7 @@ export default function InsightsPage() {
         // Insights
         const analyses: Analysis[] = getAnalyses(analysesData);
         if (analyses.length === 0) {
-          setEmptyMessage("Insights will appear as Engage7 finds repeated patterns in your own timeline.");
+          setEmptyMessage(t.portal.insightsPage.empty);
           setEmpty(true);
           setLoading(false);
           return;
@@ -426,8 +428,8 @@ export default function InsightsPage() {
         const payload = getDarthPayload(sections);
         setEmptyMessage(
           !payload || status?.darthStatus === "darth_missing"
-            ? "Insights will appear as Engage7 finds repeated patterns in your own timeline."
-            : "Insights will appear as Engage7 finds repeated patterns in your own timeline."
+            ? t.portal.insightsPage.empty
+            : t.portal.insightsPage.empty
         );
 
         // Extract DARTH state + primary claim for header
@@ -464,7 +466,7 @@ export default function InsightsPage() {
         // INSIGHTS_LEGACY_SECTIONS_FALLBACK
         const fallbackInsights = extractLegacyInsights(sections);
         if (fallbackInsights.length > 0) {
-          setEmptyMessage("Showing earlier-format insights from your own history.");
+          setEmptyMessage(t.portal.insightsPage.legacyFallback);
         }
         setHeroBlock(null);
         setDarthInsights([]);
@@ -474,7 +476,7 @@ export default function InsightsPage() {
         setLoading(false);
       })
       .catch(() => {
-        setEmptyMessage("Insights could not be loaded right now.");
+        setEmptyMessage(t.portal.insightsPage.loadError);
         setEmpty(true);
         setLoading(false);
       });
@@ -503,14 +505,16 @@ export default function InsightsPage() {
     confidence: t.portal.insightsPage.confidence,
     confidenceExplanations: t.portal.insightsPage.confidenceExplanations,
     pillar: t.portal.insightsPage.pillar,
+    personalPattern: t.portal.insightsPage.personalPattern,
+    patternFromTimeline: t.portal.insightsPage.patternFromTimeline,
   };
 
   if (empty || (insights.length === 0 && darthInsights.length === 0 && !heroBlock)) {
     const message =
       !portalStatus?.hasAnalyses || portalStatus.analysisStatus === "no_analysis"
-        ? "Insights will appear as Engage7 finds repeated patterns in your own timeline."
+        ? t.portal.insightsPage.empty
         : portalStatus.darthStatus === "darth_missing"
-          ? "Insights will appear as Engage7 finds repeated patterns in your own timeline."
+          ? t.portal.insightsPage.empty
           : emptyMessage;
 
     return (
@@ -563,10 +567,10 @@ export default function InsightsPage() {
             </span>
           </div>
           <h3 className="text-base font-semibold text-card-foreground leading-snug">
-            {cleanVisibleText(heroBlock.copy.title) ?? "Personal pattern detected"}
+            {cleanVisibleText(heroBlock.copy.title) ?? t.portal.insightsPage.personalPatternDetected}
           </h3>
           <p className="text-sm leading-relaxed text-muted-foreground">
-            {cleanVisibleText(heroBlock.copy.body) ?? "This pattern comes from your own timeline, not population averages."}
+            {cleanVisibleText(heroBlock.copy.body) ?? t.portal.insightsPage.patternFromTimeline}
           </p>
           {cleanVisibleText(heroBlock.copy.action) && (
             <p className="text-xs text-accent/80 italic">→ {cleanVisibleText(heroBlock.copy.action)}</p>
@@ -593,11 +597,11 @@ export default function InsightsPage() {
                 <div className="flex items-center gap-2">
                   <Lightbulb className="h-4 w-4 text-accent" />
                   <h3 className="text-sm font-semibold text-card-foreground">
-                    {cleanVisibleText(copy.title) ?? "Personal pattern"}
+                    {cleanVisibleText(copy.title) ?? t.portal.insightsPage.personalPattern}
                   </h3>
                 </div>
                 <p className="text-sm leading-relaxed text-muted-foreground">
-                  {cleanVisibleText(copy.body) ?? "This pattern comes from your own timeline, not population averages."}
+                  {cleanVisibleText(copy.body) ?? t.portal.insightsPage.patternFromTimeline}
                 </p>
                 {cleanVisibleText(copy.action) && (
                   <p className="text-xs text-accent/80 italic">→ {cleanVisibleText(copy.action)}</p>
@@ -617,8 +621,7 @@ export default function InsightsPage() {
         <div className="flex flex-col gap-4">
           {usingLegacyFallback && (
             <div className="rounded-lg border border-border/70 bg-muted/25 px-4 py-3 text-sm text-muted-foreground">
-              Showing insights from an earlier analysis format. As you update
-              your data, Engage7 will use the current semantic insight format.
+              {t.portal.insightsPage.legacyFormatNotice}
             </div>
           )}
           <div className="grid gap-4 sm:grid-cols-2">
