@@ -243,10 +243,20 @@ function formatDate(value: string): string {
   });
 }
 
-function formatRangeDate(date: Date): string {
-  return date.toLocaleDateString("en-IE", {
-    month: "short",
-    day: "numeric",
+function formatDisplayDate(value: string, locale: string): string {
+  const parsed = parseDate(value);
+  if (!parsed) return value;
+  return parsed.toLocaleDateString(locale === "pt-BR" ? "pt-BR" : "en-IE", {
+    day: "2-digit",
+    month: "2-digit",
+    year: "numeric",
+  });
+}
+
+function formatDisplayDateObject(date: Date, locale: string): string {
+  return date.toLocaleDateString(locale === "pt-BR" ? "pt-BR" : "en-IE", {
+    day: "2-digit",
+    month: "2-digit",
     year: "numeric",
   });
 }
@@ -274,6 +284,7 @@ function filterByPeriod(
   domain: HealthDomain,
   period: Period,
   copy: HealthCopy,
+  locale: string,
 ) {
   const all = sortedPoints(points);
   const domainPoints = all.filter((point) => domainHasData(domain, point));
@@ -293,7 +304,7 @@ function filterByPeriod(
       rangeLabel: latestDomainPoint
         ? copy.latestCompleteDayWithDate.replace(
             "{date}",
-            formatDate(latestDomainPoint.date),
+            formatDisplayDate(latestDomainPoint.date, locale),
           )
         : copy.latestCompleteDay,
       comparisonLabel: previousPoint
@@ -310,7 +321,7 @@ function filterByPeriod(
       hasDomainDataInRange: domainPoints.length > 0,
       rangeLabel:
         domainPoints.length > 0
-          ? `${formatDate(domainPoints[0].date)} - ${formatDate(domainPoints[domainPoints.length - 1].date)}`
+          ? `${formatDisplayDate(domainPoints[0].date, locale)} - ${formatDisplayDate(domainPoints[domainPoints.length - 1].date, locale)}`
           : copy.noRange,
       comparisonLabel: null,
     };
@@ -333,8 +344,8 @@ function filterByPeriod(
     hasDomainDataInRange,
     rangeLabel:
       domainFiltered.length > 0
-        ? `${formatDate(domainFiltered[0].date)} - ${formatDate(domainFiltered[domainFiltered.length - 1].date)}`
-        : `${formatRangeDate(start)} - ${formatRangeDate(anchor)}`,
+        ? `${formatDisplayDate(domainFiltered[0].date, locale)} - ${formatDisplayDate(domainFiltered[domainFiltered.length - 1].date, locale)}`
+        : `${formatDisplayDateObject(start, locale)} - ${formatDisplayDateObject(anchor, locale)}`,
     comparisonLabel: null,
   };
 }
@@ -717,7 +728,7 @@ function PeriodSwitcher({
   period,
   onChange,
 }: Readonly<{ period: Period; onChange: (period: Period) => void }>) {
-  const { t } = useLocale();
+  const { t, locale } = useLocale();
   return (
     <div className="flex flex-wrap gap-1 rounded-lg bg-muted/40 p-0.5">
       {PERIODS.map((item) => (
@@ -739,7 +750,7 @@ function PeriodSwitcher({
 }
 
 function TruthBadge({ status }: Readonly<{ status: string }>) {
-  const { t } = useLocale();
+  const { t, locale } = useLocale();
   const tone =
     status === "valid"
       ? "border-emerald-500/20 bg-emerald-500/10 text-emerald-300"
@@ -943,6 +954,7 @@ function SleepDashboard({
   sections: UnknownRecord | null;
   rangeLabel: string;
 }>) {
+  const { t } = useLocale();
   const sleepPoints = points.filter((point) =>
     hasAnyValue(point, [SLEEP_DURATION_KEYS]),
   );
@@ -996,51 +1008,57 @@ function SleepDashboard({
 
   return (
     <div className="flex flex-col gap-5">
-      <InsightPanel title="Latest sleep summary">
+      <InsightPanel title={t.portal.health.latestSleepSummary}>
         {latest !== null ? (
           <p>
-            Latest recorded sleep is {latest.toFixed(1)} hours.{" "}
+            {t.portal.health.latestRecordedSleep.replace(
+              "{value}",
+              latest.toFixed(1),
+            )}{" "}
             {currentAvg !== null && allTimeAvg !== null
-              ? `This range averages ${currentAvg.toFixed(1)} hours against your all-time ${allTimeAvg.toFixed(1)} hour average.`
-              : "The dashboard is using stored nightly sleep records only."}
+              ? t.portal.health.sleepRangeAverage
+                  .replace("{current}", currentAvg.toFixed(1))
+                  .replace("{allTime}", allTimeAvg.toFixed(1))
+              : t.portal.health.storedNightlySleepOnly}
             {stageTrend
-              ? ` Deep sleep is ${stageTrend} across the latest stage-enabled sample.`
+              ? ` ${t.portal.health.deepSleepTrend
+                  .replace("{trend}", stageTrend)}`
               : ""}
           </p>
         ) : (
-          <p>Sleep duration is not available in the selected range.</p>
+          <p>{t.portal.health.sleepDurationUnavailable}</p>
         )}
       </InsightPanel>
 
       <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
         <SignalCard
           Icon={Moon}
-          label="Average Duration"
-          value={formatValue(currentAvg, 1)}
+          label={t.portal.health.averageDuration}
+          value={formatValue(currentAvg, 1, t.common.notAvailable)}
           unit="h"
           count={sleepVals.length}
           status={statusFor(sleepVals.length)}
         />
         <SignalCard
           Icon={CalendarDays}
-          label="Latest Night"
-          value={formatValue(latest, 1)}
+          label={t.portal.health.latestNight}
+          value={formatValue(latest, 1, t.common.notAvailable)}
           unit="h"
           count={latest === null ? 0 : 1}
           status={statusFor(latest === null ? 0 : 1)}
         />
         <SignalCard
           Icon={BarChart3}
-          label="Consistency"
-          value={sleepStd === null ? "Not enough" : `+/-${sleepStd.toFixed(2)}`}
+          label={t.portal.health.consistency}
+          value={sleepStd === null ? t.portal.health.notEnough : `+/-${sleepStd.toFixed(2)}`}
           unit={sleepStd === null ? "" : "h"}
           count={sleepVals.length}
           status={statusFor(sleepVals.length, sleepStd !== null)}
         />
         <SignalCard
           Icon={Gauge}
-          label="Efficiency"
-          value={formatValue(average(efficiencyVals), 0)}
+          label={t.portal.health.efficiency}
+          value={formatValue(average(efficiencyVals), 0, t.common.notAvailable)}
           unit={efficiencyVals.length ? "%" : ""}
           count={efficiencyVals.length}
           status={statusFor(efficiencyVals.length, efficiencyVals.length > 0)}
@@ -1048,8 +1066,8 @@ function SleepDashboard({
       </div>
 
       <ChartPanel
-        title="Sleep Duration"
-        subtitle={`Nightly sleep hours - ${rangeLabel}`}
+        title={t.portal.health.sleepDuration}
+        subtitle={`${t.portal.health.nightlySleepHours} - ${rangeLabel}`}
       >
         {sleepVals.length > 0 ? (
           <EChart
@@ -1065,16 +1083,16 @@ function SleepDashboard({
         ) : (
           <MetricState
             Icon={Moon}
-            title="Sleep duration missing"
-            body="No sleep duration values are present in this selected range."
+            title={t.portal.health.sleepDurationMissing}
+            body={t.portal.health.noSleepDurationValues}
           />
         )}
       </ChartPanel>
 
       <div className="grid gap-4 xl:grid-cols-2">
         <ChartPanel
-          title="Sleep Stages"
-          subtitle="Core, Deep, REM, and Awake where the export contains stages"
+          title={t.portal.health.sleepStages}
+          subtitle={t.portal.health.sleepStagesSubtitle}
         >
           {stageSeries.length > 0 ? (
             <EChart
@@ -1091,19 +1109,22 @@ function SleepDashboard({
           ) : (
             <MetricState
               Icon={Moon}
-              title="Sleep stages unavailable"
+              title={t.portal.health.sleepStagesUnavailable}
               body={
                 stageDays
-                  ? `Stage summary exists for ${stageDays} days, but daily stage rows are not available to chart.`
-                  : "Core, Deep, REM, and Awake records are not present in this stored export."
+                  ? t.portal.health.stageSummaryNoDailyRows.replace(
+                      "{count}",
+                      String(stageDays),
+                    )
+                  : t.portal.health.sleepStageRecordsMissing
               }
             />
           )}
         </ChartPanel>
 
         <ChartPanel
-          title="Weekly Pattern"
-          subtitle="Average sleep duration by weekday in the selected range"
+          title={t.portal.health.weeklyPattern}
+          subtitle={t.portal.health.weeklyPatternSubtitle}
         >
           {sleepVals.length >= 7 ? (
             <EChart
@@ -1129,8 +1150,8 @@ function SleepDashboard({
           ) : (
             <MetricState
               Icon={CalendarDays}
-              title="Pattern needs more days"
-              body="At least a week of sleep records is needed for a weekday pattern."
+              title={t.portal.health.patternNeedsMoreDays}
+              body={t.portal.health.weekdayPatternNeedsWeek}
             />
           )}
         </ChartPanel>
@@ -1329,7 +1350,11 @@ function RecoveryDashboard({
           subtitle={t.portal.health.compositeScoreStored}
         >
           {readinessScore !== null ? (
-            <RecoveryScoreChart score={readinessScore} height={250} label="" />
+            <RecoveryScoreChart
+              score={readinessScore}
+              height={250}
+              label={t.portal.health.weightedCompositeSignals}
+            />
           ) : (
             <MetricState
               Icon={Gauge}
@@ -1404,7 +1429,7 @@ function ActivityDashboard({
   rangeLabel: string;
   sections: UnknownRecord | null;
 }>) {
-  const { t } = useLocale();
+  const { t, locale } = useLocale();
   const steps = metricSeries(points, ACTIVITY_STEPS_KEYS, plausibleDailySteps);
   const hiddenStepOutliers = points.filter((point) => {
     const value = valueFor(point, ACTIVITY_STEPS_KEYS);
@@ -1582,7 +1607,7 @@ function ActivityDashboard({
                   {formatValue(best.value, 0)}
                 </p>
                 <p className="text-xs text-muted-foreground">
-                  {formatDate(best.point.date)}
+                  {formatDisplayDate(best.point.date, locale)}
                 </p>
               </div>
               <div className="rounded-lg border border-border/70 bg-background/35 p-4">
@@ -1593,7 +1618,7 @@ function ActivityDashboard({
                   {formatValue(lowest.value, 0)}
                 </p>
                 <p className="text-xs text-muted-foreground">
-                  {formatDate(lowest.point.date)}
+                  {formatDisplayDate(lowest.point.date, locale)}
                 </p>
               </div>
               {exerciseVals.length > 0 && (
@@ -1621,7 +1646,7 @@ function ActivityDashboard({
 export function HealthDashboard({
   domain,
 }: Readonly<{ domain: HealthDomain }>) {
-  const { t } = useLocale();
+  const { t, locale } = useLocale();
   const [data, setData] = useState<HealthDataResponse | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -1664,8 +1689,8 @@ export function HealthDashboard({
     [data?.portal_data_status],
   );
   const filtered = useMemo(
-    () => filterByPeriod(allPoints, domain, period, t.portal.health),
-    [allPoints, domain, period, t.portal.health],
+    () => filterByPeriod(allPoints, domain, period, t.portal.health, locale),
+    [allPoints, domain, period, t.portal.health, locale],
   );
 
   if (loading) return <LoadingState />;

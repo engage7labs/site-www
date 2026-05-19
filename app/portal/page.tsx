@@ -412,12 +412,20 @@ function pointsInRange(points: TrendPoint[] | undefined, start: string | null, e
 
 function medianSubtitle(
   range: { start: string; end: string } | null,
-  copy: { medianRange: string; medianLatestAvailable: string }
+  copy: { medianRange: string; medianLatestAvailable: string },
+  locale: string,
 ): string {
   if (!range) return copy.medianLatestAvailable;
   return copy.medianRange
-    .replace("{start}", range.start)
-    .replace("{end}", range.end);
+    .replace("{start}", formatCompactDate(range.start, locale))
+    .replace("{end}", formatCompactDate(range.end, locale));
+}
+
+function formatCompactDate(iso: string, locale: string): string {
+  return new Date(`${iso.slice(0, 10)}T00:00:00Z`).toLocaleDateString(
+    locale === "pt-BR" ? "pt-BR" : "en-IE",
+    { day: "2-digit", month: "2-digit", year: "numeric" },
+  );
 }
 
 function formatHeaderDate(iso: string, locale: string): string {
@@ -943,7 +951,7 @@ export default function PortalOverviewPage() {
           subtitle={
             sleepMedian == null && data?.sleep_score == null
               ? t.portal.metrics.noRecentData
-              : medianSubtitle(sleepRange, t.portal.metrics)
+              : medianSubtitle(sleepRange, t.portal.metrics, locale)
           }
           trend={sleepTrend}
         />
@@ -956,7 +964,7 @@ export default function PortalOverviewPage() {
           subtitle={
             recoveryMedian == null && data?.recovery_trend == null
               ? t.portal.metrics.noRecentData
-              : medianSubtitle(recoveryRange, t.portal.metrics)
+              : medianSubtitle(recoveryRange, t.portal.metrics, locale)
           }
           trend={recoveryWeekTrend}
         />
@@ -969,7 +977,7 @@ export default function PortalOverviewPage() {
           subtitle={
             stepsMedian == null
               ? t.portal.metrics.noRecentData
-              : medianSubtitle(activityRange, t.portal.metrics)
+              : medianSubtitle(activityRange, t.portal.metrics, locale)
           }
           trend={activityTrend}
         />
@@ -983,7 +991,7 @@ export default function PortalOverviewPage() {
           debugLabel="OVERVIEW_PLAN_CARD"
           subtitle={
             planStatus === "trialing" && data?.trial_end_at
-              ? `${t.portal.metrics.until} ${new Date(data.trial_end_at).toLocaleDateString()}`
+              ? `${t.portal.metrics.until} ${formatHeaderDate(data.trial_end_at, locale)}`
               : undefined
           }
         />

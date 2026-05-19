@@ -1071,8 +1071,35 @@ export const enIE = {
       noDomainDataInView: "No {domain} data in this view",
       sleepDurationUnavailable:
         "Sleep duration is not available in the selected range.",
+      latestSleepSummary: "Latest sleep summary",
+      latestRecordedSleep: "Latest recorded sleep is {value} hours.",
+      sleepRangeAverage:
+        "This range averages {current} hours against your all-time {allTime} hour average.",
+      storedNightlySleepOnly:
+        "The dashboard is using stored nightly sleep records only.",
+      deepSleepTrend:
+        "Deep sleep is {trend} across the latest stage-enabled sample.",
+      averageDuration: "Average duration",
+      latestNight: "Latest night",
+      sleepDuration: "Sleep Duration",
+      nightlySleepHours: "Nightly sleep hours",
       sleepDurationMissing: "Sleep duration missing",
+      noSleepDurationValues:
+        "No sleep duration values are present in this selected range.",
+      sleepStages: "Sleep Stages",
+      sleepStagesSubtitle:
+        "Core, Deep, REM, and Awake where the export contains stages",
       sleepStagesUnavailable: "Sleep stages unavailable",
+      stageSummaryNoDailyRows:
+        "Stage summary exists for {count} days, but daily stage rows are not available to chart.",
+      sleepStageRecordsMissing:
+        "Core, Deep, REM, and Awake records are not present in this stored export.",
+      weeklyPattern: "Weekly Pattern",
+      weeklyPatternSubtitle:
+        "Average sleep duration by weekday in the selected range",
+      patternNeedsMoreDays: "Pattern needs more days",
+      weekdayPatternNeedsWeek:
+        "At least a week of sleep records is needed for a weekday pattern.",
       consistency: "Consistency",
       efficiency: "Efficiency",
       notEnough: "Not enough",
@@ -1110,6 +1137,8 @@ export const enIE = {
       averageHrv: "Average HRV",
       averageHr: "Average HR",
       readiness: "Readiness",
+      weightedCompositeSignals:
+        "Weighted composite from available signals",
       hrvVsBaseline: "HRV vs Baseline",
       readinessForRange: "Readiness for this range is {score} out of 100.",
       noReadinessScore:
@@ -1179,6 +1208,24 @@ export const enIE = {
       builtFrom: "Built from",
       yearsHighlight: "7 years",
       realLifeData: "of your real-life data",
+    },
+    visualRoles: {
+      evidence: "Evidence",
+      context: "Context",
+    },
+    visualWindows: {
+      baseline_long: "Baseline long",
+      last_7d: "Last 7 days",
+      last_30d: "Last 30 days",
+    },
+    visualMetrics: {
+      sleep_hours: "Sleep hours",
+      hrv_sdnn: "HRV",
+      hrv_sdnn_mean: "HRV",
+      total_steps: "Daily steps",
+      active_energy_cal: "Active energy",
+      available_data: "Available data",
+      dataset_duration: "Dataset duration",
     },
     insights: {
       // HRV footnote shown when insight uses hrv_sdnn_mean_median metric

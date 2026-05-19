@@ -213,6 +213,16 @@ function formatTeaserEvidenceValue(evidence: DarthTeaser["evidence"][number]): s
   return formatted;
 }
 
+function formatDatasetDate(value: string, locale: string): string {
+  const date = new Date(`${value.slice(0, 10)}T00:00:00Z`);
+  if (Number.isNaN(date.getTime())) return value;
+  return date.toLocaleDateString(locale === "pt-BR" ? "pt-BR" : "en-IE", {
+    day: "2-digit",
+    month: "2-digit",
+    year: "numeric",
+  });
+}
+
 function teaserEvidenceDetails(evidence: DarthTeaser["evidence"][number]): string[] {
   return [formatTeaserEvidenceValue(evidence), evidence.comparison].filter(
     (detail): detail is string => Boolean(detail)
@@ -318,9 +328,12 @@ export function InsightPreview({
     const start = new Date(end);
     start.setDate(start.getDate() - 6);
     const fmt = (d: Date) =>
-      d.toLocaleDateString("en-US", { month: "short", day: "numeric" });
+      d.toLocaleDateString(locale === "pt-BR" ? "pt-BR" : "en-IE", {
+        day: "2-digit",
+        month: "2-digit",
+      });
     return `Last 7 days (${fmt(start)} – ${fmt(end)})`;
-  }, [summary?.dataset_end]);
+  }, [locale, summary?.dataset_end]);
 
   // Adaptive headline — based on sleep consistency (Sprint 24.0.1)
   const adaptiveHeadline = useMemo((): string => {
@@ -619,9 +632,22 @@ export function InsightPreview({
     const teaserCopy = resolveTeaserCopy(teaser, locale);
     const evidence = teaser.evidence?.[0] ?? null;
     const visual = teaser.visual;
-    const metricLabel = visual.metric?.replaceAll("_", " ") ?? null;
-    const windowLabel = visual.window?.replaceAll("_", " ") ?? null;
-    const roleLabel = visual.role === "none" ? null : visual.role;
+    const metricLabel = visual.metric
+      ? t.teaser.visualMetrics[
+          visual.metric as keyof typeof t.teaser.visualMetrics
+        ] ?? visual.metric.replaceAll("_", " ")
+      : null;
+    const windowLabel = visual.window
+      ? t.teaser.visualWindows[
+          visual.window as keyof typeof t.teaser.visualWindows
+        ] ?? visual.window.replaceAll("_", " ")
+      : null;
+    const roleLabel =
+      visual.role === "none"
+        ? null
+        : t.teaser.visualRoles[
+            visual.role as keyof typeof t.teaser.visualRoles
+          ] ?? visual.role;
     const evidenceDetails = evidence ? teaserEvidenceDetails(evidence) : [];
 
     return (
@@ -800,7 +826,8 @@ export function InsightPreview({
             </p>
             {summary?.dataset_start && summary?.dataset_end && (
               <p className="text-[11px] text-muted-foreground/70 font-mono">
-                {String(summary.dataset_start)} - {String(summary.dataset_end)}
+                {formatDatasetDate(String(summary.dataset_start), locale)} -{" "}
+                {formatDatasetDate(String(summary.dataset_end), locale)}
               </p>
             )}
           </motion.div>
@@ -823,8 +850,8 @@ export function InsightPreview({
               </p>
               {summary?.dataset_start && summary?.dataset_end && (
                 <p className="text-xs text-muted-foreground mt-0.5">
-                  {String(summary.dataset_start)} →{" "}
-                  {String(summary.dataset_end)}
+                  {formatDatasetDate(String(summary.dataset_start), locale)} →{" "}
+                  {formatDatasetDate(String(summary.dataset_end), locale)}
                 </p>
               )}
             </div>

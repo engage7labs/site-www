@@ -1,5 +1,6 @@
 "use client";
 
+import { useLocale } from "@/components/providers/locale-provider";
 import { Eye, FileText } from "lucide-react";
 import Link from "next/link";
 import { useEffect, useState } from "react";
@@ -35,12 +36,12 @@ function stringValue(value: unknown): string | null {
   return typeof value === "string" && value.trim() ? value.trim() : null;
 }
 
-function formatPeriodDate(value: string): string | null {
+function formatPeriodDate(value: string, locale: string): string | null {
   const date = new Date(`${value.slice(0, 10)}T00:00:00Z`);
   if (Number.isNaN(date.getTime())) return null;
-  return date.toLocaleDateString("en-IE", {
-    day: "numeric",
-    month: "short",
+  return date.toLocaleDateString(locale === "pt-BR" ? "pt-BR" : "en-IE", {
+    day: "2-digit",
+    month: "2-digit",
     year: "numeric",
   });
 }
@@ -67,6 +68,7 @@ function formatPeriodLabel(
   report: AnalysisReport,
   latestFeatureStore: FeatureStoreSummary | null,
   isLatestReport: boolean,
+  locale: string,
 ): string {
   const summaryPeriod = periodFromSource(report.summary);
   const sectionsPeriod =
@@ -75,8 +77,8 @@ function formatPeriodLabel(
   const start =
     summaryPeriod.start ?? sectionsPeriod.start ?? baselinePeriod.start;
   const end = summaryPeriod.end ?? sectionsPeriod.end ?? baselinePeriod.end;
-  const formattedStart = start ? formatPeriodDate(start) : null;
-  const formattedEnd = end ? formatPeriodDate(end) : null;
+  const formattedStart = start ? formatPeriodDate(start, locale) : null;
+  const formattedEnd = end ? formatPeriodDate(end, locale) : null;
 
   if (formattedStart && formattedEnd) return `${formattedStart} – ${formattedEnd}`;
   if (formattedEnd) return `Timeline through ${formattedEnd}`;
@@ -88,10 +90,10 @@ function formatPeriodLabel(
   if (!canUseLatestTimeline) return "—";
 
   const timelineStart = latestFeatureStore?.date_start
-    ? formatPeriodDate(latestFeatureStore.date_start)
+    ? formatPeriodDate(latestFeatureStore.date_start, locale)
     : null;
   const timelineEnd = latestFeatureStore?.date_end
-    ? formatPeriodDate(latestFeatureStore.date_end)
+    ? formatPeriodDate(latestFeatureStore.date_end, locale)
     : null;
   if (timelineStart && timelineEnd) return `${timelineStart} – ${timelineEnd}`;
   if (timelineEnd) return `Timeline through ${timelineEnd}`;
@@ -110,6 +112,7 @@ function shortJobId(jobId: string): string {
 }
 
 export default function ReportsPage() {
+  const { locale } = useLocale();
   const [reports, setReports] = useState<AnalysisReport[]>([]);
   const [featureStore, setFeatureStore] = useState<FeatureStoreSummary | null>(null);
   const [loading, setLoading] = useState(true);
@@ -175,12 +178,12 @@ export default function ReportsPage() {
               <tbody>
                 {reports.map((report, index) => {
                   const dateStr = report.created_at
-                    ? new Date(report.created_at).toLocaleString("en-IE", {
-                        dateStyle: "medium",
+                    ? new Date(report.created_at).toLocaleString(locale === "pt-BR" ? "pt-BR" : "en-IE", {
+                        dateStyle: "short",
                         timeStyle: "short",
                       })
                     : "—";
-                  const period = formatPeriodLabel(report, featureStore, index === 0);
+                  const period = formatPeriodLabel(report, featureStore, index === 0, locale);
 
                   return (
                     <tr

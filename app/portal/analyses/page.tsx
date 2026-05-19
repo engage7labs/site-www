@@ -1,5 +1,6 @@
 "use client";
 
+import { useLocale } from "@/components/providers/locale-provider";
 import { useEffect, useState } from "react";
 import { FileText, Upload, Clock, CheckCircle, XCircle, Loader2 } from "lucide-react";
 import Link from "next/link";
@@ -40,24 +41,21 @@ function StatusBadge({ status }: { status: string }) {
   );
 }
 
-function formatDate(iso: string | null): string {
+function formatDate(iso: string | null, locale: string): string {
   if (!iso) return "—";
-  return new Date(iso).toLocaleString("en-IE", {
-    day: "numeric",
-    month: "short",
-    year: "numeric",
-    hour: "2-digit",
-    minute: "2-digit",
+  return new Date(iso).toLocaleString(locale === "pt-BR" ? "pt-BR" : "en-IE", {
+    dateStyle: "short",
+    timeStyle: "short",
   });
 }
 
-function formatCoverageDate(value: string | null): string {
+function formatCoverageDate(value: string | null, locale: string): string {
   if (!value) return "—";
   const date = new Date(`${value.slice(0, 10)}T00:00:00Z`);
   if (Number.isNaN(date.getTime())) return "—";
-  return date.toLocaleDateString("en-IE", {
-    day: "numeric",
-    month: "short",
+  return date.toLocaleDateString(locale === "pt-BR" ? "pt-BR" : "en-IE", {
+    day: "2-digit",
+    month: "2-digit",
     year: "numeric",
   });
 }
@@ -113,6 +111,7 @@ function sortNewestFirst(items: Analysis[]): Analysis[] {
 }
 
 export default function AnalysesPage() {
+  const { locale } = useLocale();
   const [analyses, setAnalyses] = useState<Analysis[]>([]);
   const [featureStore, setFeatureStore] = useState<FeatureStoreSummary | null>(null);
   const [loading, setLoading] = useState(true);
@@ -223,10 +222,10 @@ export default function AnalysesPage() {
                       <p className="text-xs text-muted-foreground font-mono">{a.job_id.slice(0, 8)}</p>
                     </td>
                     <td className="px-4 py-3 text-muted-foreground">
-                      {formatDate(a.created_at)}
+                      {formatDate(a.created_at, locale)}
                     </td>
                     <td className="px-4 py-3 text-muted-foreground">
-                      {formatCoverageDate(dataThrough)}
+                      {formatCoverageDate(dataThrough, locale)}
                     </td>
                     <td className="px-4 py-3">
                       <StatusBadge status={a.upload_status} />

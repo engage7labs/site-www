@@ -1077,8 +1077,35 @@ export const ptBR: Dictionary = {
       noDomainDataInView: "Sem dados de {domain} nesta visualização",
       sleepDurationUnavailable:
         "A duração do sono não está disponível no período selecionado.",
+      latestSleepSummary: "Resumo do sono mais recente",
+      latestRecordedSleep: "O sono registrado mais recente é de {value} horas.",
+      sleepRangeAverage:
+        "Este intervalo tem média de {current} horas contra sua média histórica de {allTime} horas.",
+      storedNightlySleepOnly:
+        "O painel está usando apenas registros de sono noturno armazenados.",
+      deepSleepTrend:
+        "O sono profundo está {trend} na amostra mais recente com estágios.",
+      averageDuration: "Duração média",
+      latestNight: "Noite mais recente",
+      sleepDuration: "Duração do sono",
+      nightlySleepHours: "Horas de sono por noite",
       sleepDurationMissing: "Duração do sono ausente",
+      noSleepDurationValues:
+        "Nenhum valor de duração do sono está presente neste intervalo selecionado.",
+      sleepStages: "Estágios do sono",
+      sleepStagesSubtitle:
+        "Core, Deep, REM e Awake quando a exportação contém estágios",
       sleepStagesUnavailable: "Estágios do sono indisponíveis",
+      stageSummaryNoDailyRows:
+        "Existe resumo de estágios para {count} dias, mas as linhas diárias de estágio não estão disponíveis para gráfico.",
+      sleepStageRecordsMissing:
+        "Registros de Core, Deep, REM e Awake não estão presentes nesta exportação armazenada.",
+      weeklyPattern: "Padrão semanal",
+      weeklyPatternSubtitle:
+        "Duração média do sono por dia da semana no intervalo selecionado",
+      patternNeedsMoreDays: "O padrão precisa de mais dias",
+      weekdayPatternNeedsWeek:
+        "É necessária pelo menos uma semana de registros de sono para um padrão por dia da semana.",
       consistency: "Consistência",
       efficiency: "Eficiência",
       notEnough: "Insuficiente",
@@ -1116,6 +1143,8 @@ export const ptBR: Dictionary = {
       averageHrv: "VFC média",
       averageHr: "FC média",
       readiness: "Prontidão",
+      weightedCompositeSignals:
+        "Composição ponderada dos sinais disponíveis",
       hrvVsBaseline: "VFC vs linha de base",
       readinessForRange: "A prontidão neste intervalo é {score} de 100.",
       noReadinessScore:
@@ -1183,6 +1212,24 @@ export const ptBR: Dictionary = {
       builtFrom: "Construído a partir de",
       yearsHighlight: "7 anos",
       realLifeData: "dos seus dados reais",
+    },
+    visualRoles: {
+      evidence: "Evidência",
+      context: "Contexto",
+    },
+    visualWindows: {
+      baseline_long: "Linha de base longa",
+      last_7d: "Últimos 7 dias",
+      last_30d: "Últimos 30 dias",
+    },
+    visualMetrics: {
+      sleep_hours: "Horas de sono",
+      hrv_sdnn: "VFC",
+      hrv_sdnn_mean: "VFC",
+      total_steps: "Passos diários",
+      active_energy_cal: "Energia ativa",
+      available_data: "Dados disponíveis",
+      dataset_duration: "Duração do conjunto de dados",
     },
     insights: {
       hrvExplanation: "VFC: indica como seu corpo está se recuperando. Valores mais altos geralmente significam melhor recuperação.",

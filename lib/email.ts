@@ -200,6 +200,7 @@ const emailCopy: Record<
       button: string;
       footer: string;
       privacy: string;
+      tagline: string;
     };
     welcome: {
       subject: string;
@@ -209,6 +210,7 @@ const emailCopy: Record<
       button: string;
       footer: string;
       privacy: string;
+      tagline: string;
     };
     insight: {
       subject: string;
@@ -239,6 +241,7 @@ const emailCopy: Record<
       footer:
         "If you didn't request this, you can safely ignore this email.<br>This link will expire in 1 hour.",
       privacy: "Privacy Policy",
+      tagline: "Personal health insights",
     },
     welcome: {
       subject: "Your health insights are ready",
@@ -250,6 +253,7 @@ const emailCopy: Record<
       footer:
         "This link is private and opens directly to your data.<br>It stays active for 24 hours.",
       privacy: "Privacy Policy",
+      tagline: "Personal health insights",
     },
     insight: {
       subject: "New insight from your health data — Engage7",
@@ -281,6 +285,7 @@ const emailCopy: Record<
       footer:
         "Se você não solicitou isso, pode ignorar este email com segurança.<br>Este link expira em 1 hora.",
       privacy: "Política de Privacidade",
+      tagline: "Insights pessoais de saúde",
     },
     welcome: {
       subject: "Seus insights de saúde estão prontos",
@@ -293,6 +298,7 @@ const emailCopy: Record<
       footer:
         "Este link é privado e abre diretamente os seus dados.<br>Ele fica ativo por 24 horas.",
       privacy: "Política de Privacidade",
+      tagline: "Insights pessoais de saúde",
     },
     insight: {
       subject: "Novo insight dos seus dados de saúde — Engage7",
@@ -375,7 +381,7 @@ ${authEmailLogoMarkup()}
     <hr style="border:none;border-top:1px solid #1f2937;margin:32px 0;">
 
     <p style="font-size:11px;color:#374151;margin:0;line-height:1.5;">
-      Engage7 · Personal health insights · <a href="${APP_URL}/privacy" style="color:#4b5563;">${copy.privacy}</a>
+      Engage7 · ${copy.tagline} · <a href="${APP_URL}/privacy" style="color:#4b5563;">${copy.privacy}</a>
     </p>
 
   </div>
@@ -435,7 +441,7 @@ ${authEmailLogoMarkup()}
     <hr style="border:none;border-top:1px solid #1f2937;margin:32px 0;">
 
     <p style="font-size:11px;color:#374151;margin:0;line-height:1.5;">
-      Engage7 · Personal health insights · <a href="${APP_URL}/privacy" style="color:#4b5563;">${copy.privacy}</a>
+      Engage7 · ${copy.tagline} · <a href="${APP_URL}/privacy" style="color:#4b5563;">${copy.privacy}</a>
     </p>
 
   </div>
