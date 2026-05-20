@@ -1100,6 +1100,10 @@ export const ptBR: Dictionary = {
         "O sono profundo está {trend} na amostra mais recente com estágios.",
       averageDuration: "Duração média",
       latestNight: "Noite mais recente",
+      timeInBed: "Tempo na cama",
+      transparentSleepMethod: "Método transparente de sono",
+      appleHealthMayDiffer:
+        "O Engage7 usa registros SleepAnalysis exportados do Apple Health: registros dormindo/estágios estimam a duração do sono, Na cama aparece separadamente, Acordado aparece quando exportado, e os totais do app Saúde podem diferir porque a Apple pode usar agregação proprietária.",
       sleepDuration: "Duração do sono",
       nightlySleepHours: "Horas de sono por noite",
       sleepH: "Sono (h)",
@@ -1108,12 +1112,16 @@ export const ptBR: Dictionary = {
         "Nenhum valor de duração do sono está presente neste intervalo selecionado.",
       sleepStages: "Estágios do sono",
       sleepStagesSubtitle:
-        "Core, Deep, REM e Awake quando a exportação contém estágios",
+        "Essencial, profundo, REM e acordado quando a exportação contém estágios",
+      stageCore: "Essencial",
+      stageDeep: "Profundo",
+      stageRem: "REM",
+      stageAwake: "Acordado",
       sleepStagesUnavailable: "Estágios do sono indisponíveis",
       stageSummaryNoDailyRows:
         "Existe resumo de estágios para {count} dias, mas as linhas diárias de estágio não estão disponíveis para gráfico.",
       sleepStageRecordsMissing:
-        "Registros de Core, Deep, REM e Awake não estão presentes nesta exportação armazenada.",
+        "Registros de essencial, profundo, REM e acordado não estão presentes nesta exportação armazenada.",
       weeklyPattern: "Padrão semanal",
       weeklyPatternSubtitle:
         "Duração média do sono por dia da semana no intervalo selecionado",

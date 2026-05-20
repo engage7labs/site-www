@@ -1018,12 +1018,17 @@ function SleepDashboard({
     const minutes = valueFor(point, ["sleep_awake_minutes"]);
     return { date: point.date, value: minutes === null ? null : minutes / 60 };
   });
+  const inBed = metricSeries(
+    points.filter((point) => valueFor(point, ["sleep_inbed_hours"]) !== null),
+    ["sleep_inbed_hours"],
+  );
   const efficiency = sleepPoints.map((point) => ({
     date: point.date,
     value: sleepEfficiency(point),
   }));
 
   const sleepVals = values(sleep);
+  const inBedVals = values(inBed);
   const efficiencyVals = values(efficiency);
   const latest = latestValue(sleep);
   const sleepStd = standardDeviation(sleepVals);
@@ -1031,11 +1036,11 @@ function SleepDashboard({
   const stageDays = toNumber(sleepSection?.n_days_with_stages);
 
   const stageSeries = [
-    { name: "Core", color: COLORS.core, data: core.map((point) => point.value) },
-    { name: "Deep", color: COLORS.deep, data: deep.map((point) => point.value) },
-    { name: "REM", color: COLORS.rem, data: rem.map((point) => point.value) },
+    { name: t.portal.health.stageCore, color: COLORS.core, data: core.map((point) => point.value) },
+    { name: t.portal.health.stageDeep, color: COLORS.deep, data: deep.map((point) => point.value) },
+    { name: t.portal.health.stageRem, color: COLORS.rem, data: rem.map((point) => point.value) },
     {
-      name: "Awake",
+      name: t.portal.health.stageAwake,
       color: COLORS.awake,
       data: awake.map((point) => point.value),
     },
@@ -1046,7 +1051,7 @@ function SleepDashboard({
 
   return (
     <div className="flex flex-col gap-5">
-      <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+      <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-5">
         <SignalCard
           Icon={Moon}
           label={t.portal.health.averageDuration}
@@ -1064,6 +1069,14 @@ function SleepDashboard({
           status={statusFor(latest === null ? 0 : 1)}
         />
         <SignalCard
+          Icon={CalendarDays}
+          label={t.portal.health.timeInBed}
+          value={formatValue(average(inBedVals), 1, t.common.notAvailable)}
+          unit={inBedVals.length ? "h" : ""}
+          count={inBedVals.length}
+          status={statusFor(inBedVals.length)}
+        />
+        <SignalCard
           Icon={BarChart3}
           label={t.portal.health.consistency}
           value={sleepStd === null ? t.portal.health.notEnough : `+/-${sleepStd.toFixed(2)}`}
@@ -1079,6 +1092,20 @@ function SleepDashboard({
           count={efficiencyVals.length}
           status={statusFor(efficiencyVals.length, efficiencyVals.length > 0)}
         />
+      </div>
+
+      <div className="portal-panel rounded-lg border border-border/70 bg-card/85 p-4">
+        <div className="flex items-start gap-3">
+          <Info className="mt-0.5 h-4 w-4 text-muted-foreground" />
+          <div className="space-y-1">
+            <p className="text-sm font-medium text-card-foreground">
+              {t.portal.health.transparentSleepMethod}
+            </p>
+            <p className="text-xs leading-relaxed text-muted-foreground">
+              {t.portal.health.appleHealthMayDiffer}
+            </p>
+          </div>
+        </div>
       </div>
 
       <ChartPanel

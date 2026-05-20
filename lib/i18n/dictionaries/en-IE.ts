@@ -1094,6 +1094,10 @@ export const enIE = {
         "Deep sleep is {trend} across the latest stage-enabled sample.",
       averageDuration: "Average duration",
       latestNight: "Latest night",
+      timeInBed: "Time in bed",
+      transparentSleepMethod: "Transparent sleep method",
+      appleHealthMayDiffer:
+        "Engage7 uses exported Apple Health SleepAnalysis records: asleep/stage records estimate sleep duration, InBed is shown separately, Awake is shown when exported, and Apple Health app totals may differ because Apple can use proprietary aggregation.",
       sleepDuration: "Sleep Duration",
       nightlySleepHours: "Nightly sleep hours",
       sleepH: "Sleep (h)",
@@ -1103,6 +1107,10 @@ export const enIE = {
       sleepStages: "Sleep Stages",
       sleepStagesSubtitle:
         "Core, Deep, REM, and Awake where the export contains stages",
+      stageCore: "Core",
+      stageDeep: "Deep",
+      stageRem: "REM",
+      stageAwake: "Awake",
       sleepStagesUnavailable: "Sleep stages unavailable",
       stageSummaryNoDailyRows:
         "Stage summary exists for {count} days, but daily stage rows are not available to chart.",
