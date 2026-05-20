@@ -22,6 +22,7 @@ import {
   getDarthTeaser,
   resolveDarthPresentationLocale,
   selectDarthCopy,
+  selectDarthStatePresentation,
 } from "@/lib/darth";
 import {
   buildActivityChart,
@@ -168,13 +169,14 @@ function hasDarthClaimContract(darth: DarthPayload | null): darth is DarthPayloa
   );
 }
 
-function formatNumber(value: number): string {
+function formatNumber(value: number, locale = "en-IE"): string {
+  const runtimeLocale = locale === "pt-BR" ? "pt-BR" : "en-IE";
   return Number.isInteger(value)
-    ? value.toLocaleString("en-US")
-    : value.toLocaleString("en-US", { maximumFractionDigits: 1 });
+    ? value.toLocaleString(runtimeLocale)
+    : value.toLocaleString(runtimeLocale, { maximumFractionDigits: 1 });
 }
 
-function formatTeaserEvidenceValue(evidence: DarthTeaser["evidence"][number]): string | null {
+function formatTeaserEvidenceValue(evidence: DarthTeaser["evidence"][number], locale: string): string | null {
   const value = evidence.value;
   if (value == null || value === "") return null;
 
@@ -184,10 +186,10 @@ function formatTeaserEvidenceValue(evidence: DarthTeaser["evidence"][number]): s
 
   if (!Number.isFinite(value)) return null;
 
-  const formatted = formatNumber(value);
+  const formatted = formatNumber(value, locale);
   const metric = evidence.metric;
   if (metric === "dataset_duration" || metric === "available_data") {
-    return `${formatted} days`;
+    return locale === "pt-BR" ? `${formatted} dias` : `${formatted} days`;
   }
   if (metric === "sleep_hours") {
     return `${formatted}h`;
@@ -208,7 +210,7 @@ function formatTeaserEvidenceValue(evidence: DarthTeaser["evidence"][number]): s
     return `${formatted}/100`;
   }
   if (metric === "steps") {
-    return `${formatted} steps`;
+    return locale === "pt-BR" ? `${formatted} passos` : `${formatted} steps`;
   }
   return formatted;
 }
@@ -223,8 +225,24 @@ function formatDatasetDate(value: string, locale: string): string {
   });
 }
 
-function teaserEvidenceDetails(evidence: DarthTeaser["evidence"][number]): string[] {
-  return [formatTeaserEvidenceValue(evidence), evidence.comparison].filter(
+function localizeTeaserComparison(value: string | null, locale: string): string | null {
+  if (!value || locale !== "pt-BR") return value;
+  return value
+    .replace("years of history", "anos de histórico")
+    .replace("year of history", "ano de histórico")
+    .replace("below recovery threshold", "abaixo do limite de recuperação")
+    .replace("above stable rhythm threshold", "acima do limite de ritmo estável")
+    .replace("above personal load threshold", "acima do limite pessoal de carga")
+    .replace("recovery weakened", "recuperação enfraquecida")
+    .replace("below baseline_30d", "abaixo da linha de base de 30 dias")
+    .replace("with resting heart rate above baseline_30d", "com frequência cardíaca de repouso acima da linha de base de 30 dias");
+}
+
+function teaserEvidenceDetails(evidence: DarthTeaser["evidence"][number], locale: string): string[] {
+  return [
+    formatTeaserEvidenceValue(evidence, locale),
+    localizeTeaserComparison(evidence.comparison, locale),
+  ].filter(
     (detail): detail is string => Boolean(detail)
   );
 }
@@ -312,6 +330,10 @@ export function InsightPreview({
     () => darthProofCharts.slice(0, 3),
     [darthProofCharts]
   );
+  const darthStateDisplay = useMemo(
+    () => selectDarthStatePresentation(darthPayload, locale),
+    [darthPayload, locale]
+  );
 
   // ---- Duration ---------------------------------------------------------
   const durationInfo: DurationInfo | null = useMemo(
@@ -350,8 +372,12 @@ export function InsightPreview({
   const stateHeadline = useMemo(
     () =>
       darthTeaser?.headline ??
-      (usesDarth ? darthPayload?.primary_claim ?? adaptiveHeadline : adaptiveHeadline),
-    [adaptiveHeadline, darthPayload, darthTeaser, usesDarth]
+      (usesDarth
+        ? darthStateDisplay?.primary_claim ??
+          darthPayload?.primary_claim ??
+          adaptiveHeadline
+        : adaptiveHeadline),
+    [adaptiveHeadline, darthPayload, darthStateDisplay, darthTeaser, usesDarth]
   );
 
   // ---- Extract insights (deterministic) ----------------------------------
@@ -648,7 +674,7 @@ export function InsightPreview({
         : t.teaser.visualRoles[
             visual.role as keyof typeof t.teaser.visualRoles
           ] ?? visual.role;
-    const evidenceDetails = evidence ? teaserEvidenceDetails(evidence) : [];
+    const evidenceDetails = evidence ? teaserEvidenceDetails(evidence, locale) : [];
 
     return (
       <div className="rounded-xl border border-[#e6b800]/35 bg-background/45 p-4">
@@ -723,7 +749,7 @@ export function InsightPreview({
               {t.result.preview.plans.free.name}
             </span>
             <span className="rounded-full border border-border/70 px-2.5 py-1 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
-              {teaser.archetype}
+              {t.teaser.archetypes[teaser.archetype] ?? teaser.archetype}
             </span>
           </div>
           <h2 className="text-2xl font-semibold leading-tight text-foreground md:text-3xl">
@@ -870,37 +896,38 @@ export function InsightPreview({
               <div className="flex flex-wrap items-center gap-2 mb-3">
                 <span className="inline-block h-2 w-2 rounded-full shrink-0 bg-accent" />
                 <span className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
-                  {darthPayload.state?.replaceAll("_", " ")}
+                  {darthStateDisplay?.state_label ?? darthPayload.state?.replaceAll("_", " ")}
                 </span>
                 <span className="rounded-full border border-[#e6b800]/35 px-2 py-0.5 text-[10px] font-medium uppercase tracking-wider text-[#e6b800]">
-                  {Math.round((darthPayload.confidence ?? 0) * 100)}% {t.teaser.confidence}
+                  {Math.round((darthPayload.confidence ?? 0) * 100)}% {darthStateDisplay?.confidence_label ?? t.teaser.confidence}
                 </span>
               </div>
               <p className="text-xl font-semibold text-foreground leading-snug mb-2">
-                {darthPayload.explanation}
+                {darthStateDisplay?.explanation ?? darthPayload.explanation}
               </p>
               <div className="grid gap-3 sm:grid-cols-[1.25fr_0.75fr]">
                 <div className="rounded-lg border border-border/60 bg-background/40 px-3 py-2">
                   <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground mb-1">
-                    Trajectory
+                    {t.darthChrome.trajectory}
                   </p>
                   <p className="text-[11px] text-muted-foreground/75 font-mono leading-relaxed">
-                    {darthPayload.trajectory?.window} | {darthPayload.trajectory?.direction} |{" "}
-                    {Math.round((darthPayload.trajectory?.confidence ?? 0) * 100)}% confidence
+                    {darthStateDisplay?.trajectory?.window_label ?? darthPayload.trajectory?.window} |{" "}
+                    {darthStateDisplay?.trajectory?.direction_label ?? darthPayload.trajectory?.direction} |{" "}
+                    {Math.round((darthPayload.trajectory?.confidence ?? 0) * 100)}% {darthStateDisplay?.trajectory?.confidence_label ?? t.teaser.confidence}
                   </p>
                 </div>
                 <div className="rounded-lg border border-border/60 bg-background/30 px-3 py-2">
                   <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground mb-1">
-                    Dominant signal
+                    {t.darthChrome.dominantSignal}
                   </p>
                   <p className="text-xs text-muted-foreground leading-relaxed">
-                    {darthPayload.dominant_signal}
+                    {darthStateDisplay?.dominant_signal ?? darthPayload.dominant_signal}
                   </p>
                 </div>
               </div>
               {darthPayload.conflicting_signal && (
                 <p className="mt-3 text-xs leading-relaxed text-muted-foreground">
-                  {darthPayload.conflicting_signal}
+                  {darthStateDisplay?.conflicting_signal ?? darthPayload.conflicting_signal}
                 </p>
               )}
             </div>
@@ -1019,11 +1046,11 @@ export function InsightPreview({
           >
             <div className="mb-3 flex items-center justify-between gap-3">
               <p className="text-[10px] font-semibold uppercase tracking-wider text-[#e6b800]">
-                PROOF
+                {t.darthChrome.proof}
               </p>
               {darthPayload?.evidence && (
                 <p className="text-[10px] font-medium uppercase tracking-wider text-muted-foreground">
-                  {Math.round(darthPayload.evidence.confidence_adjusted * 100)}% adjusted confidence
+                  {Math.round(darthPayload.evidence.confidence_adjusted * 100)}% {t.darthChrome.adjustedConfidence}
                 </p>
               )}
             </div>
@@ -1046,17 +1073,18 @@ export function InsightPreview({
           >
             <div className="mb-2 flex flex-wrap items-center gap-2">
               <span className="rounded-full border border-[#e6b800]/35 px-2 py-0.5 text-[10px] font-medium uppercase tracking-wider text-[#e6b800]">
-                Consequence
+                {t.darthChrome.consequence}
               </span>
               <span className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
-                {darthPayload.consequence.scope.replaceAll("_", " ")} · {darthPayload.consequence.severity}
+                {darthStateDisplay?.consequence?.scope_label ?? darthPayload.consequence.scope.replaceAll("_", " ")} ·{" "}
+                {darthStateDisplay?.consequence?.severity_label ?? darthPayload.consequence.severity}
               </span>
             </div>
             <p className="text-base font-semibold leading-snug text-foreground">
-              {darthPayload.consequence.summary}
+              {darthStateDisplay?.consequence?.summary ?? darthPayload.consequence.summary}
             </p>
             <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
-              {darthPayload.consequence.if_pattern_continues}
+              {darthStateDisplay?.consequence?.if_pattern_continues ?? darthPayload.consequence.if_pattern_continues}
             </p>
           </motion.div>
         )}
@@ -1070,17 +1098,17 @@ export function InsightPreview({
           >
             <div className="mb-2 flex flex-wrap items-center gap-2">
               <span className="rounded-full border border-[#e6b800]/35 px-2 py-0.5 text-[10px] font-medium uppercase tracking-wider text-[#e6b800]">
-                Action
+                {t.darthChrome.action}
               </span>
               <span className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
-                {darthPayload.guidance.risk_type.replaceAll("_", " ")}
+                {darthStateDisplay?.guidance?.risk_type ?? darthPayload.guidance.risk_type.replaceAll("_", " ")}
               </span>
             </div>
             <p className="text-base font-semibold leading-snug text-foreground">
-              {darthPayload.guidance.statement}
+              {darthStateDisplay?.guidance?.statement ?? darthPayload.guidance.statement}
             </p>
             <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
-              {darthPayload.guidance.recommended_adjustment}
+              {darthStateDisplay?.guidance?.recommended_adjustment ?? darthPayload.guidance.recommended_adjustment}
             </p>
           </motion.div>
         )}

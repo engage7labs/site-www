@@ -11,7 +11,16 @@ import {
 } from "@/lib/insights/extract";
 import { CompareImproveBlock } from "@/components/portal/compare-improve-block";
 import { generateCompareImprove } from "@/lib/insights/compare-improve";
-import { getDarthPayload, getDarthPresentation, resolveDarthPresentationLocale, selectDarthCopy, type DarthInsightBlock } from "@/lib/darth";
+import {
+  getDarthPayload,
+  getDarthPresentation,
+  resolveDarthPresentationLocale,
+  selectDarthCopy,
+  selectDarthStatePresentation,
+  type DarthInsightBlock,
+  type DarthPayload,
+  type DarthStatePresentation,
+} from "@/lib/darth";
 import type { PortalDataStatus } from "@/lib/portal-data-status";
 import { parsePortalDataStatus } from "@/lib/portal-data-status";
 import { useLocale } from "@/components/providers/locale-provider";
@@ -391,6 +400,7 @@ export default function InsightsPage() {
   const [heroBlock, setHeroBlock] = useState<DarthDisplayBlock | null>(null);
   const [darthState, setDarthState] = useState<string | null>(null);
   const [darthClaim, setDarthClaim] = useState<string | null>(null);
+  const [darthPayload, setDarthPayload] = useState<DarthPayload | null>(null);
   const [trends, setTrends] = useState<TrendsData["trends"] | null>(null);
   const [trendsData, setTrendsData] = useState<TrendsData | null>(null);
   const [overview, setOverview] = useState<OverviewData | null>(null);
@@ -443,6 +453,7 @@ export default function InsightsPage() {
         setLatestSections(sections);
         const presentation = getDarthPresentation(sections);
         const payload = getDarthPayload(sections);
+        setDarthPayload(payload);
         setEmptyMessage(
           !payload || status?.darthStatus === "darth_missing"
             ? t.portal.insightsPage.empty
@@ -452,7 +463,8 @@ export default function InsightsPage() {
         // Extract DARTH state + primary claim for header
         if (payload?.state) setDarthState(payload.state);
         if (payload?.primary_claim) {
-          setDarthClaim(humanizeTechnicalText(payload.primary_claim));
+          const stateDisplay = selectDarthStatePresentation(payload, locale);
+          setDarthClaim(humanizeTechnicalText(stateDisplay?.primary_claim ?? payload.primary_claim));
         }
 
         // INSIGHTS_DARTH_PRESENTATION
@@ -518,6 +530,10 @@ export default function InsightsPage() {
       ),
     [overview, trendsData, latestSections, t.portal.compareImprove],
   );
+  const darthStateDisplay: DarthStatePresentation | null = useMemo(
+    () => selectDarthStatePresentation(darthPayload, locale),
+    [darthPayload, locale],
+  );
 
   if (loading) {
     return (
@@ -576,12 +592,12 @@ export default function InsightsPage() {
         <div className="rounded-xl border border-accent/20 bg-accent/5 px-5 py-4 flex flex-col gap-2">
           {darthState && (
             <span className="text-xs font-semibold uppercase tracking-wider text-accent">
-              {STATE_LABELS[darthState] ?? t.darthChrome.currentPattern}
+              {darthStateDisplay?.state_label ?? STATE_LABELS[darthState] ?? t.darthChrome.currentPattern}
             </span>
           )}
           {darthClaim && (
             <p className="text-sm font-medium text-card-foreground leading-relaxed">
-              {cleanVisibleText(darthClaim) ?? "Engage7 is reading this pattern from your own history."}
+              {cleanVisibleText(darthClaim) ?? t.portal.insightsPage.patternFromTimeline}
             </p>
           )}
         </div>

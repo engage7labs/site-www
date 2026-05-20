@@ -18,7 +18,9 @@
 import {
   type DarthPayload,
   getDarthPayload,
+  selectDarthStatePresentation,
 } from "@/lib/darth";
+import { useLocale } from "@/components/providers/locale-provider";
 import {
   AlertTriangle,
   ArrowDown,
@@ -80,6 +82,14 @@ const STATE_CONFIG: Record<string, StateConfig> = {
   },
 };
 
+const FALLBACK_STATE_LABELS: Record<string, string> = {
+  RECOVERING: "Recovering",
+  STABLE: "Stable",
+  STRAIN_ACCUMULATING: "Strain Accumulating",
+  OVERREACHED: "Overreached",
+  MISALIGNED_RECOVERY: "Misaligned Recovery",
+};
+
 const DEFAULT_STATE: StateConfig = {
   label: "Processing",
   color: "bg-muted",
@@ -94,10 +104,14 @@ const DEFAULT_STATE: StateConfig = {
 
 function TrajectoryBadge({
   direction,
+  directionLabel,
   confidence,
+  confidenceLabel,
 }: {
   direction: string;
+  directionLabel: string;
   confidence: number;
+  confidenceLabel: string;
 }) {
   const pct = Math.round(confidence * 100);
   const Icon =
@@ -117,8 +131,8 @@ function TrajectoryBadge({
   return (
     <span className="inline-flex items-center gap-1 rounded-full bg-muted/50 px-2 py-0.5 text-xs font-medium">
       <Icon className={`h-3 w-3 ${color}`} />
-      <span className="capitalize text-card-foreground">{direction}</span>
-      <span className="text-muted-foreground">· {pct}%</span>
+      <span className="text-card-foreground">{directionLabel}</span>
+      <span className="text-muted-foreground">· {pct}% {confidenceLabel}</span>
     </span>
   );
 }
@@ -133,6 +147,7 @@ interface DarthStatePanelProps {
 }
 
 export function DarthStatePanel({ sections }: DarthStatePanelProps) {
+  const { locale } = useLocale();
   const payload: DarthPayload | null = getDarthPayload(sections);
 
   if (!payload) return null;
@@ -148,6 +163,7 @@ export function DarthStatePanel({ sections }: DarthStatePanelProps) {
     confidence,
   } = payload;
 
+  const display = selectDarthStatePresentation(payload, locale);
   const cfg = state ? (STATE_CONFIG[state] ?? DEFAULT_STATE) : DEFAULT_STATE;
   const { Icon } = cfg;
 
@@ -161,19 +177,24 @@ export function DarthStatePanel({ sections }: DarthStatePanelProps) {
           className={`inline-flex items-center gap-1.5 rounded-full border ${cfg.border} bg-background/40 px-2.5 py-1 text-xs font-semibold uppercase tracking-wider ${cfg.textColor}`}
         >
           <Icon className={`h-3 w-3 ${cfg.textColor}`} />
-          {cfg.label}
+          {display?.state_label ?? (state ? FALLBACK_STATE_LABELS[state] : cfg.label) ?? cfg.label}
         </span>
 
         {trajectory && (
           <TrajectoryBadge
             direction={trajectory.direction}
+            directionLabel={
+              display?.trajectory?.direction_label ??
+              trajectory.direction.replaceAll("_", " ")
+            }
             confidence={trajectory.confidence}
+            confidenceLabel={display?.trajectory?.confidence_label ?? "confidence"}
           />
         )}
 
         {confidence != null && (
           <span className="text-xs text-muted-foreground ml-auto">
-            {Math.round(confidence * 100)}% confidence
+            {Math.round(confidence * 100)}% {display?.confidence_label ?? "confidence"}
           </span>
         )}
       </div>
@@ -181,7 +202,7 @@ export function DarthStatePanel({ sections }: DarthStatePanelProps) {
       {/* Primary claim */}
       {primary_claim && (
         <p className="text-sm font-medium text-card-foreground leading-relaxed">
-          {primary_claim}
+          {display?.primary_claim ?? primary_claim}
         </p>
       )}
 
@@ -189,11 +210,11 @@ export function DarthStatePanel({ sections }: DarthStatePanelProps) {
       {baseline_context && (
         <div className="flex flex-col gap-0.5">
           <p className="text-xs font-semibold text-card-foreground/70">
-            {baseline_context.headline}
+            {display?.baseline_context?.headline ?? baseline_context.headline}
           </p>
           {baseline_context.explanation && (
             <p className="text-xs text-muted-foreground leading-relaxed">
-              {baseline_context.explanation}
+              {display?.baseline_context?.explanation ?? baseline_context.explanation}
             </p>
           )}
         </div>
@@ -202,7 +223,7 @@ export function DarthStatePanel({ sections }: DarthStatePanelProps) {
       {/* Consequence */}
       {consequence?.summary && (
         <p className="text-xs text-muted-foreground border-l-2 border-muted pl-3 italic">
-          {consequence.summary}
+          {display?.consequence?.summary ?? consequence.summary}
         </p>
       )}
 
@@ -211,7 +232,7 @@ export function DarthStatePanel({ sections }: DarthStatePanelProps) {
         <div className="flex items-start gap-2">
           <ArrowRight className={`h-3.5 w-3.5 mt-0.5 shrink-0 ${cfg.textColor}`} />
           <p className="text-xs text-card-foreground/80">
-            {guidance.recommended_adjustment}
+            {display?.guidance?.recommended_adjustment ?? guidance.recommended_adjustment}
           </p>
         </div>
       )}
@@ -221,7 +242,7 @@ export function DarthStatePanel({ sections }: DarthStatePanelProps) {
         <div className="flex items-start gap-2 rounded-lg border border-amber-500/20 bg-amber-500/5 px-3 py-2 mt-1">
           <AlertTriangle className="h-3.5 w-3.5 mt-0.5 shrink-0 text-amber-400" />
           <p className="text-xs text-amber-200/80 leading-relaxed">
-            {conflict.explanation}
+            {display?.conflict?.explanation ?? conflict.explanation}
           </p>
         </div>
       )}

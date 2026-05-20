@@ -180,6 +180,29 @@ export interface DarthEvidence {
   confidence_adjusted: number;
 }
 
+export interface DarthStatePresentation {
+  state_label?: string;
+  trajectory?: DarthTrajectory & {
+    direction_label?: string;
+    window_label?: string;
+    confidence_label?: string;
+  };
+  confidence_label?: string;
+  primary_claim?: string;
+  baseline_context?: DarthBaselineContext;
+  dominant_signal?: string | null;
+  conflicting_signal?: string | null;
+  conflict?: DarthConflict;
+  guidance?: DarthGuidance & {
+    risk_type?: string;
+  };
+  consequence?: DarthConsequence & {
+    scope_label?: string;
+    severity_label?: string;
+  };
+  explanation?: string;
+}
+
 export interface DarthPayload {
   state?:
     | "RECOVERING"
@@ -208,6 +231,7 @@ export interface DarthPayload {
     supporting_domains: string[];
   };
   presentation?: DarthPresentation;
+  state_presentation?: Record<string, DarthStatePresentation>;
   explainability?: DarthInsightBlock[];
   teaser?: DarthTeaser;
 }
@@ -289,4 +313,13 @@ export function selectDarthCta(
   if (!cta) return null;
   const resolved = resolveDarthLocale(locale);
   return cta.copy[resolved] ?? cta.copy["en-IE"] ?? null;
+}
+
+export function selectDarthStatePresentation(
+  payload: DarthPayload | null | undefined,
+  locale: string
+): DarthStatePresentation | null {
+  if (!payload?.state_presentation) return null;
+  const resolved = resolveDarthLocale(locale);
+  return payload.state_presentation[resolved] ?? payload.state_presentation["en-IE"] ?? null;
 }
