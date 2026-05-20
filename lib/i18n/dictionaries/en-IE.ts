@@ -347,7 +347,7 @@ export const enIE = {
         title: "Unlock your complete analysis",
         description:
           "See trends over time, correlations between your signals, and access your personal portal — free for 90 days.",
-        downloadButton: "Open your Premium Free Portal",
+        downloadButton: "Open my Premium Free Portal",
         runAnother: "Run another analysis",
         emailWarning:
           "We couldn't send your welcome email — your portal is still open.",
@@ -356,7 +356,7 @@ export const enIE = {
         title: "Update your existing Portal",
         description:
           "This export appears to match a protected Engage7 timeline. Sign in to continue.",
-        cta: "Sign in to update your existing Portal",
+        cta: "Sign in to update my Portal",
       },
     },
 
@@ -377,6 +377,15 @@ export const enIE = {
       genericError: "Something went wrong. Please try again.",
       opening: "Opening your Portal...",
       open: "Open your Premium Free Portal",
+    },
+    protectedHandoffModal: {
+      title: "Sign in to update your Portal",
+      body:
+        "This export appears to match a protected Engage7 timeline. Sign in to continue updating your data.",
+      button: "Sign in to update my Portal",
+      blocked:
+        "This export appears to match a protected Engage7 timeline. Sign in with the matching account to continue.",
+      genericError: "We could not continue this protected update yet.",
     },
 
     error: {

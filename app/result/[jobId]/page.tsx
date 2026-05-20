@@ -295,16 +295,36 @@ export default function ResultPage({
   };
 
   const handleOpenModal = useCallback(() => {
-    if (
-      result?.handoff?.status === "protected_timeline_login_required" &&
-      jobId
-    ) {
-      rememberPendingPublicClaim(jobId);
+    setShowCompletionModal(true);
+  }, []);
+
+  const isProtectedHandoff =
+    result?.handoff?.status === "protected_timeline_login_required";
+
+  const handleProtectedHandoff = async (): Promise<void> => {
+    if (!jobId) return;
+    rememberPendingPublicClaim(jobId);
+
+    const sessionResponse = await fetch("/api/auth/session", {
+      cache: "no-store",
+    });
+    if (!sessionResponse.ok) {
       router.push(`/login?next=/portal&claim_job_id=${encodeURIComponent(jobId)}`);
       return;
     }
-    setShowCompletionModal(true);
-  }, [jobId, result?.handoff?.status, router]);
+
+    try {
+      await claimPublicAnalysis(jobId);
+      clearPendingPublicClaim();
+      router.push("/portal");
+    } catch (err) {
+      throw new Error(
+        err instanceof Error
+          ? t.result.protectedHandoffModal.blocked
+          : t.result.protectedHandoffModal.genericError,
+      );
+    }
+  };
 
   const handleModalDownload = () => {
     if (!jobId || !result?.artifacts?.pdf_available) return;
@@ -615,6 +635,8 @@ export default function ResultPage({
         onFeedback={() => undefined}
         onEmailSubmit={handleModalEmail}
         onShare={handleModalShare}
+        mode={isProtectedHandoff ? "protected-handoff" : "premium"}
+        onProtectedHandoff={handleProtectedHandoff}
       />
     </>
   );

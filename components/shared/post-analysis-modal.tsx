@@ -1,7 +1,7 @@
 "use client";
 
 import { useLocale } from "@/components/providers/locale-provider";
-import { Crown, Loader2, Mail, X } from "lucide-react";
+import { Crown, Loader2, LogIn, Mail, X } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
 
@@ -13,6 +13,8 @@ interface PostAnalysisModalProps {
   onEmailSubmit: (email: string, consent: boolean) => Promise<void>;
   onShare: () => Promise<void>;
   pdfAvailable?: boolean;
+  mode?: "premium" | "protected-handoff";
+  onProtectedHandoff?: () => Promise<void>;
 }
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -21,6 +23,8 @@ export function PostAnalysisModal({
   open,
   onClose,
   onEmailSubmit,
+  onProtectedHandoff,
+  mode = "premium",
 }: Readonly<PostAnalysisModalProps>) {
   const { t } = useLocale();
   const [email, setEmail] = useState("");
@@ -43,6 +47,7 @@ export function PostAnalysisModal({
   const canSubmit = isValidEmail && consentChecked && !submitting && !redirecting;
 
   if (!open) return null;
+  const isProtectedHandoff = mode === "protected-handoff";
 
   const handleUnlockPremium = async () => {
     const normalized = email.trim();
@@ -78,6 +83,22 @@ export function PostAnalysisModal({
     }
   };
 
+  const handleProtectedHandoff = async () => {
+    if (!onProtectedHandoff || submitting || redirecting) return;
+    setSubmitError(null);
+    setSubmitting(true);
+    try {
+      await onProtectedHandoff();
+    } catch (err) {
+      setSubmitError(
+        err instanceof Error
+          ? err.message
+          : t.result.protectedHandoffModal.genericError
+      );
+      setSubmitting(false);
+    }
+  };
+
   return (
     <div className="fixed inset-0 z-[70] flex items-center justify-center p-4">
       <div
@@ -99,15 +120,19 @@ export function PostAnalysisModal({
         <div className="p-6 space-y-5">
           <div className="space-y-1">
             <h2 className="text-xl font-semibold text-foreground">
-              {t.result.premiumModal.title}
+              {isProtectedHandoff
+                ? t.result.protectedHandoffModal.title
+                : t.result.premiumModal.title}
             </h2>
             <p className="text-sm text-muted-foreground">
-              {t.result.premiumModal.description}
+              {isProtectedHandoff
+                ? t.result.protectedHandoffModal.body
+                : t.result.premiumModal.description}
             </p>
           </div>
 
           {/* Email input — required */}
-          <div className="space-y-2">
+          {!isProtectedHandoff && <div className="space-y-2">
             <label
               className="text-sm font-medium text-foreground"
               htmlFor="premium-email"
@@ -132,10 +157,10 @@ export function PostAnalysisModal({
             {emailError && (
               <p className="text-xs text-destructive">{emailError}</p>
             )}
-          </div>
+          </div>}
 
           {/* Consent checkbox — required before unlock */}
-          <div className="flex items-start gap-3">
+          {!isProtectedHandoff && <div className="flex items-start gap-3">
             <input
               id="consent-checkbox"
               type="checkbox"
@@ -149,7 +174,7 @@ export function PostAnalysisModal({
             >
               {t.result.premiumModal.consent}
             </label>
-          </div>
+          </div>}
 
           {/* Error from backend */}
           {submitError && (
@@ -160,16 +185,30 @@ export function PostAnalysisModal({
           <div className="flex justify-center border-t border-border pt-4">
             <button
               type="button"
-              onClick={handleUnlockPremium}
-              disabled={!canSubmit}
+              onClick={
+                isProtectedHandoff
+                  ? handleProtectedHandoff
+                  : handleUnlockPremium
+              }
+              disabled={
+                isProtectedHandoff
+                  ? submitting || redirecting
+                  : !canSubmit
+              }
               className="inline-flex w-full items-center justify-center gap-2 rounded-lg bg-[#175cff] px-5 py-3 text-sm font-semibold text-white shadow-lg shadow-[#175cff]/25 ring-1 ring-[#8fb0ff]/50 transition-colors duration-200 hover:bg-[#0f49d8] active:bg-[#0b38a8] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#8fb0ff] focus-visible:ring-offset-2 focus-visible:ring-offset-background disabled:cursor-not-allowed disabled:opacity-50 sm:w-auto"
             >
               {submitting ? (
                 <Loader2 className="h-4 w-4 animate-spin" />
+              ) : isProtectedHandoff ? (
+                <LogIn className="h-4 w-4" />
               ) : (
                 <Crown className="h-4 w-4" />
               )}
-              {redirecting ? t.result.premiumModal.opening : t.result.premiumModal.open}
+              {isProtectedHandoff
+                ? t.result.protectedHandoffModal.button
+                : redirecting
+                ? t.result.premiumModal.opening
+                : t.result.premiumModal.open}
             </button>
           </div>
         </div>

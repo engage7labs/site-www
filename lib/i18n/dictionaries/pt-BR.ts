@@ -351,7 +351,7 @@ export const ptBR: Dictionary = {
         title: "Veja sua evolução completa",
         description:
           "Veja tendências ao longo do tempo, correlações entre seus sinais e acesse seu portal pessoal — grátis por 90 dias.",
-        downloadButton: "Desbloquear análise completa (90 dias grátis)",
+        downloadButton: "Abrir meu Portal Premium Free",
         runAnother: "Executar outra análise",
         emailWarning:
           "Não conseguimos enviar seu email de boas-vindas — seu Portal continua aberto.",
@@ -381,6 +381,15 @@ export const ptBR: Dictionary = {
       genericError: "Algo deu errado. Tente novamente.",
       opening: "Abrindo seu Portal...",
       open: "Abrir meu Portal Premium Free",
+    },
+    protectedHandoffModal: {
+      title: "Entre para atualizar seu Portal",
+      body:
+        "Este arquivo parece corresponder a uma timeline Engage7 já protegida. Entre na sua conta para continuar a atualização dos seus dados.",
+      button: "Entrar para atualizar meu Portal",
+      blocked:
+        "Este arquivo parece corresponder a uma timeline Engage7 já protegida. Entre com a conta correspondente para continuar.",
+      genericError: "Ainda não foi possível continuar esta atualização protegida.",
     },
 
     error: {
