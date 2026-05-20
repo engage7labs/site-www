@@ -3,7 +3,6 @@
 import { useLocale } from "@/components/providers/locale-provider";
 import { EChart } from "@/components/insights/echart";
 import { RecoveryScoreChart } from "@/components/insights/recovery-score-chart";
-import { DarthStatePanel } from "@/components/portal/darth-state-panel";
 import type { PortalDataStatus } from "@/lib/portal-data-status";
 import { parsePortalDataStatus } from "@/lib/portal-data-status";
 import { trackHealthDashboardViewed } from "@/lib/telemetry";
@@ -911,22 +910,6 @@ function MetricState({
   );
 }
 
-function InsightPanel({
-  title,
-  children,
-}: Readonly<{ title: string; children: ReactNode }>) {
-  return (
-    <div className="rounded-lg border border-accent/20 bg-accent/[0.04] px-5 py-4">
-      <p className="text-[10px] font-semibold uppercase tracking-wider text-accent/80">
-        {title}
-      </p>
-      <div className="mt-2 text-sm leading-relaxed text-card-foreground/90">
-        {children}
-      </div>
-    </div>
-  );
-}
-
 function LoadingState() {
   const { t, locale } = useLocale();
   return (
@@ -1008,12 +991,10 @@ function DomainEmptyState({
 
 function SleepDashboard({
   points,
-  allPoints,
   sections,
   rangeLabel,
 }: Readonly<{
   points: HealthPoint[];
-  allPoints: HealthPoint[];
   sections: UnknownRecord | null;
   rangeLabel: string;
 }>) {
@@ -1048,10 +1029,6 @@ function SleepDashboard({
   const sleepStd = standardDeviation(sleepVals);
   const sleepSection = getSection(sections, "sleep_stages");
   const stageDays = toNumber(sleepSection?.n_days_with_stages);
-  const stageTrend =
-    typeof sleepSection?.stage_trend === "string"
-      ? sleepSection.stage_trend
-      : null;
 
   const stageSeries = [
     { name: "Core", color: COLORS.core, data: core.map((point) => point.value) },
@@ -1065,34 +1042,10 @@ function SleepDashboard({
   ].filter((item) => item.data.some((value) => value !== null));
 
   const weekly = weeklyAverage(sleepPoints, SLEEP_DURATION_KEYS);
-  const allSleepValues = values(metricSeries(allPoints, SLEEP_DURATION_KEYS));
-  const allTimeAvg = average(allSleepValues);
   const currentAvg = average(sleepVals);
 
   return (
     <div className="flex flex-col gap-5">
-      <InsightPanel title={t.portal.health.latestSleepSummary}>
-        {latest !== null ? (
-          <p>
-            {t.portal.health.latestRecordedSleep.replace(
-              "{value}",
-              latest.toFixed(1),
-            )}{" "}
-            {currentAvg !== null && allTimeAvg !== null
-              ? t.portal.health.sleepRangeAverage
-                  .replace("{current}", currentAvg.toFixed(1))
-                  .replace("{allTime}", allTimeAvg.toFixed(1))
-              : t.portal.health.storedNightlySleepOnly}
-            {stageTrend
-              ? ` ${t.portal.health.deepSleepTrend
-                  .replace("{trend}", stageTrend)}`
-              : ""}
-          </p>
-        ) : (
-          <p>{t.portal.health.sleepDurationUnavailable}</p>
-        )}
-      </InsightPanel>
-
       <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
         <SignalCard
           Icon={Moon}
@@ -1330,26 +1283,6 @@ function RecoveryDashboard({
 
   return (
     <div className="flex flex-col gap-5">
-      <InsightPanel title={t.portal.health.recoveryInsight}>
-        <p>
-          {readinessScore !== null
-            ? t.portal.health.readinessForRange.replace(
-                "{score}",
-                String(Math.round(readinessScore)),
-              )
-            : t.portal.health.noReadinessScore}
-          {currentHrv !== null
-            ? ` ${t.portal.health.hrvAverageInRange.replace(
-                "{value}",
-                currentHrv.toFixed(1),
-              )}`
-            : ""}
-          {typeof recoverySection?.score_note === "string"
-            ? ` ${recoverySection.score_note}`
-            : ""}
-        </p>
-      </InsightPanel>
-
       <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
         <SignalCard
           Icon={TrendingUp}
@@ -1505,12 +1438,10 @@ function RecoveryDashboard({
 function ActivityDashboard({
   points,
   rangeLabel,
-  sections,
   period,
 }: Readonly<{
   points: HealthPoint[];
   rangeLabel: string;
-  sections: UnknownRecord | null;
   period: Period;
 }>) {
   const { t, locale } = useLocale();
@@ -1536,7 +1467,6 @@ function ActivityDashboard({
   const distanceVals = values(distance);
   const exerciseVals = values(exercise);
   const stepStd = standardDeviation(stepsVals);
-  const activitySection = getSection(sections, "activity_signals");
   const stepPoints = points.map((point) => {
     const value = valueFor(point, ACTIVITY_STEPS_KEYS);
     return {
@@ -1550,26 +1480,6 @@ function ActivityDashboard({
 
   return (
     <div className="flex flex-col gap-5">
-      <InsightPanel title={t.portal.health.activityInsight}>
-        <p>
-          {stepsVals.length > 0
-            ? t.portal.health.activityRangeAverageSteps.replace(
-                "{value}",
-                formatValue(average(stepsVals), 0, t.common.notAvailable),
-              )
-            : t.portal.health.stepDataUnavailable}
-          {energyVals.length > 0
-            ? ` ${t.portal.health.activeEnergyAverage.replace(
-                "{value}",
-                formatValue(average(energyVals), 0, t.common.notAvailable),
-              )}`
-            : ""}
-          {isRecord(activitySection?.active_energy_cal)
-            ? ` ${t.portal.health.backendActivityCoverage}`
-            : ""}
-        </p>
-      </InsightPanel>
-
       <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
         <SignalCard
           Icon={Footprints}
@@ -1857,8 +1767,6 @@ export function HealthDashboard({
         </div>
       </div>
 
-      <DarthStatePanel sections={sections} />
-
       {!filtered.hasDomainDataInRange ? (
         <DomainEmptyState
           domain={domain}
@@ -1870,7 +1778,6 @@ export function HealthDashboard({
           {domain === "sleep" && (
             <SleepDashboard
               points={filtered.points}
-              allPoints={allPoints}
               sections={sections}
               rangeLabel={filtered.rangeLabel}
             />
@@ -1889,7 +1796,6 @@ export function HealthDashboard({
             <ActivityDashboard
               points={filtered.points}
               rangeLabel={filtered.rangeLabel}
-              sections={sections}
               period={period}
             />
           )}

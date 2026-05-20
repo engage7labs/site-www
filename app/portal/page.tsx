@@ -1,10 +1,8 @@
 "use client";
 
-import { CompareImproveBlock } from "@/components/portal/compare-improve-block";
 import { DailyBriefing } from "@/components/portal/daily-briefing";
 import { ChartEmptyState } from "@/components/insights/chart-empty-state";
 import { useLocale } from "@/components/providers/locale-provider";
-import { generateCompareImprove } from "@/lib/insights/compare-improve";
 import type { PortalDataStatus } from "@/lib/portal-data-status";
 import { parsePortalDataStatus } from "@/lib/portal-data-status";
 import type { EChartsOption } from "echarts";
@@ -146,40 +144,6 @@ function coerceHighlights(value: unknown): string[] {
   }
 
   return [];
-}
-
-function parseLatestSections(payload: unknown): Record<string, unknown> | null {
-  if (!payload) return null;
-
-  let list: unknown[] = [];
-  if (Array.isArray(payload)) {
-    list = payload;
-  } else {
-    const maybeItems = (payload as { items?: unknown[] })?.items;
-    if (Array.isArray(maybeItems)) {
-      list = maybeItems;
-    }
-  }
-
-  if (list.length === 0) return null;
-  const latest = list[0] as { sections_json?: unknown };
-  const raw = latest?.sections_json;
-  if (!raw) return null;
-
-  if (typeof raw === "string") {
-    try {
-      const parsed = JSON.parse(raw);
-      return parsed && typeof parsed === "object"
-        ? (parsed as Record<string, unknown>)
-        : null;
-    } catch {
-      return null;
-    }
-  }
-
-  return raw && typeof raw === "object"
-    ? (raw as Record<string, unknown>)
-    : null;
 }
 
 interface MetricCardProps {
@@ -766,19 +730,15 @@ export default function PortalOverviewPage() {
   const [data, setData] = useState<OverviewData | null>(null);
   const [trends, setTrends] = useState<TrendsData | null>(null);
   const [healthData, setHealthData] = useState<HealthData | null>(null);
-  const [sections, setSections] = useState<Record<string, unknown> | null>(
-    null
-  );
   const [portalStatus, setPortalStatus] = useState<PortalDataStatus | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     (async () => {
       try {
-        const [overviewReq, trendsReq, analysesReq, healthReq] = await Promise.allSettled([
+        const [overviewReq, trendsReq, healthReq] = await Promise.allSettled([
           fetch("/api/proxy/users/portal-overview"),
           fetch("/api/proxy/users/portal-trends"),
-          fetch("/api/proxy/users/portal-analyses"),
           fetch("/api/proxy/users/portal-health-data"),
         ]);
 
@@ -800,16 +760,6 @@ export default function PortalOverviewPage() {
           );
         }
 
-        if (analysesReq.status === "fulfilled" && analysesReq.value.ok) {
-          const analysesPayload = await analysesReq.value
-            .json()
-            .catch(() => null);
-          setSections(parseLatestSections(analysesPayload));
-          setPortalStatus((current) =>
-            current ?? parsePortalDataStatus(analysesPayload?.portal_data_status)
-          );
-        }
-
         if (healthReq.status === "fulfilled" && healthReq.value.ok) {
           const healthJson = (await healthReq.value
             .json()
@@ -826,11 +776,6 @@ export default function PortalOverviewPage() {
       }
     })();
   }, []);
-
-  const compareImprove = useMemo(
-    () => generateCompareImprove(data, trends, sections, t.portal.compareImprove),
-    [data, trends, sections, t.portal.compareImprove]
-  );
 
   useEffect(() => {
     if (loading) return;
@@ -1016,10 +961,6 @@ export default function PortalOverviewPage() {
       </OverviewBlock>
 
       <StatusNotice status={portalStatus} copy={t.portal.statusNotice} />
-
-      <OverviewBlock label="OVERVIEW_COMPARE_IMPROVE_COMPONENT">
-        <CompareImproveBlock result={compareImprove} />
-      </OverviewBlock>
 
       {/* ECharts — Sprint 17.4 / Sprint 25.9: always rendered, empty states when no data */}
       <div className="grid gap-4 lg:grid-cols-2">

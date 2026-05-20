@@ -32,7 +32,7 @@ interface NavItem {
 
 const NAV_ITEMS: NavItem[] = [
   { key: "overview", label: "Overview", href: "/portal", icon: LayoutDashboard },
-  { key: "reports", label: "My Reports", href: "/portal/reports", icon: Upload },
+  { key: "insights", label: "Insights", href: "/portal/insights", icon: Lightbulb },
   {
     key: "health",
     label: "Health",
@@ -44,8 +44,8 @@ const NAV_ITEMS: NavItem[] = [
       { key: "activity", label: "Activity", href: "/portal/health/activity", icon: Zap },
     ],
   },
-  { key: "insights", label: "Insights", href: "/portal/insights", icon: Lightbulb },
   { key: "dataLab", label: "Data Lab", href: "/portal/trends", icon: TrendingUp },
+  { key: "reports", label: "My Reports", href: "/portal/reports", icon: Upload },
 ];
 
 const LOWER_NAV_ITEMS: NavItem[] = [
@@ -158,42 +158,46 @@ export function PortalSidebar({
                 }
               }}
             >
-              {/* Parent: Health with toggle */}
-              <button
-                type="button"
-                onClick={() => {
-                  if (collapsed) {
-                    clearHealthFlyoutCloseTimer();
-                    setHealthFlyoutOpen((prev) => !prev);
-                  } else {
-                    setHealthOpen((prev) => !prev);
-                  }
-                }}
-                onFocus={() => collapsed && openHealthFlyout()}
-                aria-haspopup={collapsed ? "menu" : undefined}
-                aria-expanded={collapsed ? healthFlyoutOpen : healthOpen}
-                className={`group flex w-full items-center gap-3 rounded-2xl px-3 py-2.5 text-sm font-medium transition-all ${
+              <div
+                className={`group flex w-full items-center rounded-2xl text-sm font-medium transition-all ${
                   isActivePath(pathname, item.href)
                     ? "bg-accent/10 text-accent shadow-sm"
                     : "text-muted-foreground hover:bg-muted hover:text-foreground"
                 }`}
               >
-                <item.icon className="h-5 w-5 shrink-0" />
-                <span
-                  className={`overflow-hidden whitespace-nowrap transition-all duration-300 flex-1 text-left ${
-                    collapsed ? "w-0 opacity-0" : "w-auto opacity-100"
-                  }`}
+                <Link
+                  href={item.href}
+                  onClick={onCloseMobile}
+                  onFocus={() => collapsed && openHealthFlyout()}
+                  aria-haspopup={collapsed ? "menu" : undefined}
+                  aria-expanded={collapsed ? healthFlyoutOpen : undefined}
+                  className="flex min-w-0 flex-1 items-center gap-3 rounded-2xl px-3 py-2.5"
                 >
-                  {t.portal.shell.sections[item.key].title}
-                </span>
-                {!collapsed && (
-                  <ChevronDown
-                    className={`h-3.5 w-3.5 shrink-0 transition-transform duration-200 ${
-                      healthOpen ? "rotate-180" : ""
+                  <item.icon className="h-5 w-5 shrink-0" />
+                  <span
+                    className={`overflow-hidden whitespace-nowrap transition-all duration-300 flex-1 text-left ${
+                      collapsed ? "w-0 opacity-0" : "w-auto opacity-100"
                     }`}
-                  />
+                  >
+                    {t.portal.shell.sections[item.key].title}
+                  </span>
+                </Link>
+                {!collapsed && (
+                  <button
+                    type="button"
+                    onClick={() => setHealthOpen((prev) => !prev)}
+                    aria-label={healthOpen ? "Collapse Health" : "Expand Health"}
+                    aria-expanded={healthOpen}
+                    className="mr-2 rounded-lg p-1.5 text-current transition-colors hover:bg-background/45"
+                  >
+                    <ChevronDown
+                      className={`h-3.5 w-3.5 shrink-0 transition-transform duration-200 ${
+                        healthOpen ? "rotate-180" : ""
+                      }`}
+                    />
+                  </button>
                 )}
-              </button>
+              </div>
               {collapsed && healthFlyoutOpen && (
                 <>
                   <div

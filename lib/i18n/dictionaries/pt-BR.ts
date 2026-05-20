@@ -1062,6 +1062,15 @@ export const ptBR: Dictionary = {
           subtitle: "Passos, energia, distância e consistência ao longo do tempo",
         },
       },
+      overviewTitle: "Saúde",
+      overviewSubtitle:
+        "Uma visão compacta de sono, recuperação e atividade a partir da sua linha do tempo armazenada.",
+      overviewHelper:
+        "Use as páginas de detalhe para filtros, gráficos e evidências mais profundas.",
+      overviewUpdatedThrough: "Dados mais recentes até {date}",
+      overviewOpenDetail: "Abrir detalhe",
+      overviewNoData: "Ainda sem valores armazenados",
+      overviewLatestValue: "Valor mais recente",
       loading: "Carregando dados de saúde...",
       loadError: "Os dados de saúde não puderam ser carregados.",
       unableToLoad: "Não foi possível carregar os dados de saúde",

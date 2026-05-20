@@ -1056,6 +1056,15 @@ export const enIE = {
           subtitle: "Steps, energy, distance, and consistency across your timeline",
         },
       },
+      overviewTitle: "Health",
+      overviewSubtitle:
+        "A compact view of sleep, recovery, and activity from your stored timeline.",
+      overviewHelper:
+        "Use the detail pages for filters, charts, and deeper evidence.",
+      overviewUpdatedThrough: "Latest data through {date}",
+      overviewOpenDetail: "Open detail",
+      overviewNoData: "No stored values yet",
+      overviewLatestValue: "Latest value",
       loading: "Loading health data...",
       loadError: "Health data could not be loaded.",
       unableToLoad: "Unable to load health data",

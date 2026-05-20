@@ -9,6 +9,8 @@ import {
   extractSleepStageInsights,
   type InsightText,
 } from "@/lib/insights/extract";
+import { CompareImproveBlock } from "@/components/portal/compare-improve-block";
+import { generateCompareImprove } from "@/lib/insights/compare-improve";
 import { getDarthPayload, getDarthPresentation, resolveDarthPresentationLocale, selectDarthCopy, type DarthInsightBlock } from "@/lib/darth";
 import type { PortalDataStatus } from "@/lib/portal-data-status";
 import { parsePortalDataStatus } from "@/lib/portal-data-status";
@@ -92,6 +94,8 @@ function coerceSections(value: unknown): Sections | null {
     ? (value as Sections)
     : null;
 }
+
+type OverviewData = Record<string, unknown>;
 
 interface DarthDisplayBlock {
   block: DarthInsightBlock;
@@ -388,6 +392,9 @@ export default function InsightsPage() {
   const [darthState, setDarthState] = useState<string | null>(null);
   const [darthClaim, setDarthClaim] = useState<string | null>(null);
   const [trends, setTrends] = useState<TrendsData["trends"] | null>(null);
+  const [trendsData, setTrendsData] = useState<TrendsData | null>(null);
+  const [overview, setOverview] = useState<OverviewData | null>(null);
+  const [latestSections, setLatestSections] = useState<Sections | null>(null);
   const [loading, setLoading] = useState(true);
   const [empty, setEmpty] = useState(false);
   const [usingLegacyFallback, setUsingLegacyFallback] = useState(false);
@@ -402,14 +409,23 @@ export default function InsightsPage() {
       fetch("/api/proxy/users/portal-trends")
         .then((r) => (r.ok ? r.json() : null))
         .catch(() => null),
+      fetch("/api/proxy/users/portal-overview")
+        .then((r) => (r.ok ? r.json() : null))
+        .catch(() => null),
     ])
-      .then(([analysesData, trendsData]: [AnalysesPayload, TrendsData | null]) => {
+      .then(([analysesData, trendPayload, overviewData]: [
+        AnalysesPayload,
+        TrendsData | null,
+        OverviewData | null,
+      ]) => {
         const status = parsePortalDataStatus(analysesData?.portal_data_status);
         setPortalStatus(status);
+        setOverview(overviewData);
 
         // INSIGHTS_TRENDS_SPARKLINE_ONLY
-        if (trendsData?.trends) {
-          setTrends(trendsData.trends);
+        if (trendPayload?.trends) {
+          setTrends(trendPayload.trends);
+          setTrendsData(trendPayload);
         }
 
         // Insights
@@ -424,6 +440,7 @@ export default function InsightsPage() {
         const latest =
           analyses.find((analysis) => getAnalysisSections(analysis)) ?? analyses[0];
         const sections = getAnalysisSections(latest);
+        setLatestSections(sections);
         const presentation = getDarthPresentation(sections);
         const payload = getDarthPayload(sections);
         setEmptyMessage(
@@ -491,6 +508,17 @@ export default function InsightsPage() {
     };
   }, [trends]);
 
+  const compareImprove = useMemo(
+    () =>
+      generateCompareImprove(
+        overview,
+        trendsData,
+        latestSections,
+        t.portal.compareImprove,
+      ),
+    [overview, trendsData, latestSections, t.portal.compareImprove],
+  );
+
   if (loading) {
     return (
       <div className="flex items-center justify-center py-24">
@@ -519,6 +547,7 @@ export default function InsightsPage() {
 
     return (
       <div className="flex flex-col gap-6">
+        <CompareImproveBlock result={compareImprove} />
         <div className="flex flex-col items-center justify-center py-16 gap-4 text-center">
           <Lightbulb className="h-10 w-10 text-muted-foreground/50" />
           <p className="text-sm text-muted-foreground max-w-sm">
@@ -540,6 +569,7 @@ export default function InsightsPage() {
 
   return (
     <div className="flex flex-col gap-6">
+      <CompareImproveBlock result={compareImprove} />
 
       {/* ─── DARTH primary claim header — Sprint 32.0 ─── */}
       {(darthState || darthClaim) && (
