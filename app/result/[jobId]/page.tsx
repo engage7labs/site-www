@@ -31,6 +31,7 @@ import type { AnalysisResult } from "@/lib/types/analysis";
 import { motion } from "framer-motion";
 import { AlertCircle, ArrowLeft } from "lucide-react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useRef, useState } from "react";
 
 const POLL_INTERVAL_MS = 3000;
@@ -268,6 +269,7 @@ export default function ResultPage({
   params: Promise<{ jobId: string }>;
 }>) {
   const { locale, t } = useLocale();
+  const router = useRouter();
   const [result, setResult] = useState<AnalysisResult | null>(null);
   const [jobId, setJobId] = useState<string | null>(null);
   const [isNotFound, setIsNotFound] = useState(false);
@@ -293,8 +295,16 @@ export default function ResultPage({
   };
 
   const handleOpenModal = useCallback(() => {
+    if (
+      result?.handoff?.status === "protected_timeline_login_required" &&
+      jobId
+    ) {
+      rememberPendingPublicClaim(jobId);
+      router.push(`/login?next=/portal&claim_job_id=${encodeURIComponent(jobId)}`);
+      return;
+    }
     setShowCompletionModal(true);
-  }, []);
+  }, [jobId, result?.handoff?.status, router]);
 
   const handleModalDownload = () => {
     if (!jobId || !result?.artifacts?.pdf_available) return;

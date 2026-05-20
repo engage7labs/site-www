@@ -2,6 +2,7 @@
 
 import { useLocale } from "@/components/providers/locale-provider";
 import { LOCALE_NAMES, SUPPORTED_LOCALES, type Locale } from "@/lib/i18n";
+import { Copy } from "lucide-react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useState } from "react";
 
@@ -16,6 +17,10 @@ interface PortalOverviewSettingsData {
     row_count?: number | null;
   } | null;
   preferred_locale?: string | null;
+}
+
+interface CurrentUserSettingsData {
+  email?: string | null;
 }
 
 function formatSettingsDate(value: string | null, locale: Locale): string | null {
@@ -34,7 +39,9 @@ export default function SettingsPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const [showDeleteModal, setShowDeleteModal] = useState(false);
-  const [confirmText, setConfirmText] = useState("");
+  const [deleteStep, setDeleteStep] = useState<"email" | "final">("email");
+  const [emailConfirmText, setEmailConfirmText] = useState("");
+  const [emailCopied, setEmailCopied] = useState(false);
   const [deleting, setDeleting] = useState(false);
   const [checkoutLoading, setCheckoutLoading] = useState(false);
   const [checkoutError, setCheckoutError] = useState<string | null>(null);
@@ -52,6 +59,7 @@ export default function SettingsPage() {
   const [preferredLocale, setPreferredLocale] = useState<Locale>(locale);
   const [languageSaving, setLanguageSaving] = useState(false);
   const [languageStatus, setLanguageStatus] = useState<"saved" | "error" | null>(null);
+  const [accountEmail, setAccountEmail] = useState<string | null>(null);
 
   useEffect(() => {
     const ps = searchParams.get("payment");
@@ -72,6 +80,14 @@ export default function SettingsPage() {
         setTimelineRows(d.feature_store?.row_count ?? null);
         if (d.preferred_locale === "pt-BR" || d.preferred_locale === "en") {
           setPreferredLocale(d.preferred_locale);
+        }
+      })
+      .catch(() => {});
+    fetch("/api/proxy/users/me")
+      .then((r) => r.json())
+      .then((d: CurrentUserSettingsData) => {
+        if (typeof d.email === "string" && d.email.trim()) {
+          setAccountEmail(d.email.trim().toLowerCase());
         }
       })
       .catch(() => {});
@@ -106,8 +122,29 @@ export default function SettingsPage() {
   const [deleteError, setDeleteError] = useState<string | null>(null);
   const [deleted, setDeleted] = useState(false);
 
-  const canDelete = confirmText === "DELETE";
+  const normalizedEmailConfirmation = emailConfirmText.trim().toLowerCase();
+  const canContinueDelete =
+    Boolean(accountEmail) && normalizedEmailConfirmation === accountEmail;
   const protectionCopy = t.portal.settings.protection;
+
+  const resetDeleteModal = () => {
+    setShowDeleteModal(false);
+    setDeleteStep("email");
+    setEmailConfirmText("");
+    setEmailCopied(false);
+    setDeleteError(null);
+  };
+
+  const copyAccountEmail = async () => {
+    if (!accountEmail) return;
+    try {
+      await navigator.clipboard.writeText(accountEmail);
+      setEmailCopied(true);
+      window.setTimeout(() => setEmailCopied(false), 1500);
+    } catch {
+      setEmailCopied(false);
+    }
+  };
 
   const handlePreferredLocaleSave = async () => {
     setLanguageSaving(true);
@@ -151,12 +188,16 @@ export default function SettingsPage() {
   };
 
   const handleDeleteAccount = async () => {
-    if (!canDelete) return;
+    if (deleteStep !== "final" || !canContinueDelete) return;
     setDeleting(true);
     setDeleteError(null);
 
     try {
-      const res = await fetch("/api/proxy/users/me", { method: "DELETE" });
+      const res = await fetch("/api/proxy/users/me", {
+        method: "DELETE",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ confirmation_email: normalizedEmailConfirmation }),
+      });
       if (!res.ok) {
         const data = await res.json().catch(() => ({}));
         throw new Error(
@@ -473,7 +514,9 @@ export default function SettingsPage() {
         <button
           type="button"
           onClick={() => {
-            setConfirmText("");
+            setDeleteStep("email");
+            setEmailConfirmText("");
+            setEmailCopied(false);
             setDeleteError(null);
             setShowDeleteModal(true);
           }}
@@ -488,48 +531,95 @@ export default function SettingsPage() {
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
           <div
             className="absolute inset-0 bg-black/40"
-            onClick={() => setShowDeleteModal(false)}
+            onClick={resetDeleteModal}
             aria-hidden="true"
           />
           <div className="relative w-full max-w-md rounded-xl border border-border bg-card shadow-xl p-6 space-y-4">
             <h3 className="text-lg font-semibold text-foreground">
-              {t.portal.settings.deleteConfirmTitle}
+              {deleteStep === "email"
+                ? t.portal.settings.deleteConfirmTitle
+                : t.portal.settings.deleteFinalTitle}
             </h3>
-            <p className="text-sm text-muted-foreground">
-              {t.portal.settings.deleteConfirmBody}{" "}
-              <span className="font-mono font-bold text-foreground">
-                {t.portal.settings.deleteConfirmToken}
-              </span>{" "}
-              below.
-            </p>
-            <input
-              type="text"
-              value={confirmText}
-              onChange={(e) => setConfirmText(e.target.value)}
-              placeholder={t.portal.settings.deletePlaceholder}
-              className="w-full rounded-md border border-border bg-background px-3 py-2 text-sm text-foreground outline-none placeholder:text-muted-foreground focus:border-destructive"
-              autoComplete="off"
-            />
+            {deleteStep === "email" ? (
+              <>
+                <p className="text-sm text-muted-foreground">
+                  {t.portal.settings.deleteConfirmBody}
+                </p>
+                <div className="rounded-lg border border-border bg-background/60 p-3">
+                  <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+                    {t.portal.settings.accountEmailLabel}
+                  </p>
+                  <div className="mt-2 flex items-center justify-between gap-3">
+                    <p className="min-w-0 break-all font-mono text-sm text-foreground">
+                      {accountEmail ?? t.portal.settings.accountEmailLoading}
+                    </p>
+                    <button
+                      type="button"
+                      onClick={copyAccountEmail}
+                      disabled={!accountEmail}
+                      className="inline-flex shrink-0 items-center gap-1.5 rounded-md border border-border px-2.5 py-1.5 text-xs font-medium text-muted-foreground transition-colors hover:text-foreground disabled:cursor-not-allowed disabled:opacity-50"
+                    >
+                      <Copy className="h-3.5 w-3.5" />
+                      {emailCopied
+                        ? t.portal.settings.emailCopied
+                        : t.portal.settings.copyEmail}
+                    </button>
+                  </div>
+                </div>
+                <label className="block space-y-2">
+                  <span className="text-xs font-medium text-muted-foreground">
+                    {t.portal.settings.deleteEmailInstruction}
+                  </span>
+                  <input
+                    type="email"
+                    value={emailConfirmText}
+                    onChange={(e) => setEmailConfirmText(e.target.value)}
+                    placeholder={t.portal.settings.deleteEmailPlaceholder}
+                    className="w-full rounded-md border border-border bg-background px-3 py-2 text-sm text-foreground outline-none placeholder:text-muted-foreground focus:border-destructive"
+                    autoComplete="off"
+                  />
+                </label>
+              </>
+            ) : (
+              <p className="text-sm text-muted-foreground">
+                {t.portal.settings.deleteFinalBody}
+              </p>
+            )}
             {deleteError && (
               <p className="text-xs text-destructive">{deleteError}</p>
             )}
             <div className="flex gap-3 justify-end pt-2">
               <button
                 type="button"
-                onClick={() => setShowDeleteModal(false)}
+                onClick={resetDeleteModal}
                 disabled={deleting}
-                className="rounded-md px-4 py-2 text-sm text-muted-foreground hover:text-foreground disabled:opacity-50"
+                className="rounded-md px-4 py-2 text-sm font-medium text-muted-foreground hover:text-foreground disabled:opacity-50"
               >
-                {t.common.cancel}
+                {deleteStep === "final"
+                  ? t.portal.settings.deleteFinalCancel
+                  : t.common.cancel}
               </button>
-              <button
-                type="button"
-                onClick={handleDeleteAccount}
-                disabled={!canDelete || deleting}
-                className="rounded-md bg-destructive px-4 py-2 text-sm font-medium text-white hover:bg-destructive/90 disabled:cursor-not-allowed disabled:opacity-50"
-              >
-                {deleting ? t.portal.settings.deleting : t.portal.settings.deletePermanently}
-              </button>
+              {deleteStep === "email" ? (
+                <button
+                  type="button"
+                  onClick={() => setDeleteStep("final")}
+                  disabled={!canContinueDelete}
+                  className="rounded-md bg-foreground px-4 py-2 text-sm font-medium text-background hover:bg-foreground/90 disabled:cursor-not-allowed disabled:opacity-50"
+                >
+                  {t.portal.settings.deleteContinue}
+                </button>
+              ) : (
+                <button
+                  type="button"
+                  onClick={handleDeleteAccount}
+                  disabled={!canContinueDelete || deleting}
+                  className="rounded-md bg-destructive px-4 py-2 text-sm font-medium text-white hover:bg-destructive/90 disabled:cursor-not-allowed disabled:opacity-50"
+                >
+                  {deleting
+                    ? t.portal.settings.deleting
+                    : t.portal.settings.deleteFinalConfirm}
+                </button>
+              )}
             </div>
           </div>
         </div>

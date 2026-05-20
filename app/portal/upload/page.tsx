@@ -89,7 +89,7 @@ export default function PortalUploadPage() {
           clearProcessingStart();
           trackUpdateDataCompleted(activeJobId);
           toast.success(t.common.status.complete);
-          setTimeout(() => router.push("/portal/health"), 1500);
+          setTimeout(() => router.push("/portal"), 1500);
         } else if (data.upload_status === "failed") {
           clearInterval(pollRef.current!);
           setStatus("failed");

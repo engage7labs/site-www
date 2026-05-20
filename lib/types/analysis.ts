@@ -37,6 +37,17 @@ export interface AnalysisArtifacts {
   csv_url: string | null;
 }
 
+export interface PublicHandoff {
+  status:
+    | "normal_public_unlock"
+    | "protected_timeline_login_required"
+    | "authenticated_update_import_ready"
+    | "authenticated_update_import_completed"
+    | "authenticated_update_import_blocked"
+    | string;
+  message?: string | null;
+}
+
 /** Full result returned by GET /api/result/{job_id} */
 export interface AnalysisResult {
   job_id: string;
@@ -45,6 +56,7 @@ export interface AnalysisResult {
   highlights: string[];
   sections: Record<string, unknown> | null;
   artifacts: AnalysisArtifacts | null;
+  handoff?: PublicHandoff | null;
   error: string | null;
 }
 

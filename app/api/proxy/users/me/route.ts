@@ -15,7 +15,7 @@ import { SESSION_COOKIE_NAME, verifyJwt } from "@/lib/auth-server";
 import { INTERNAL_API_BASE_URL } from "@/lib/server-config";
 import { deleteSupabaseAuthUserForAccount } from "@/lib/supabase-admin";
 import { cookies } from "next/headers";
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 
 export const runtime = "nodejs";
 
@@ -58,7 +58,7 @@ export async function GET() {
   }
 }
 
-export async function DELETE() {
+export async function DELETE(request: NextRequest) {
   const cookieStore = await cookies();
   const token = cookieStore.get(SESSION_COOKIE_NAME)?.value;
   if (!token) {
@@ -71,6 +71,20 @@ export async function DELETE() {
   }
 
   const email = session.sub;
+  const body = (await request.json().catch(() => ({}))) as {
+    confirmation_email?: unknown;
+  };
+  const confirmationEmail =
+    typeof body.confirmation_email === "string"
+      ? body.confirmation_email.trim().toLowerCase()
+      : "";
+  if (!confirmationEmail || confirmationEmail !== email.toLowerCase()) {
+    return NextResponse.json(
+      { detail: "Confirmation email does not match the current account." },
+      { status: 403 }
+    );
+  }
+
   logAccountDelete("account_delete_requested", {
     mode: session.mode ?? "user",
     target_user_id: session.view_as_user_id ?? null,
@@ -139,7 +153,8 @@ export async function DELETE() {
   try {
     upstreamResponse = await fetch(`${INTERNAL_API_BASE_URL}${path}`, {
       method: "DELETE",
-      headers: { ...sigHeaders },
+      headers: { "Content-Type": "application/json", ...sigHeaders },
+      body: JSON.stringify({ confirmation_email: confirmationEmail }),
     });
   } catch {
     return NextResponse.json(

@@ -356,6 +356,12 @@ export const ptBR: Dictionary = {
         emailWarning:
           "Não conseguimos enviar seu email de boas-vindas — seu Portal continua aberto.",
       },
+      protectedHandoff: {
+        title: "Atualize seu Portal existente",
+        description:
+          "Esta exportação parece corresponder a uma linha do tempo protegida no Engage7. Entre para continuar.",
+        cta: "Entrar para atualizar meu Portal",
+      },
     },
 
     artifacts: {
@@ -1031,9 +1037,19 @@ export const ptBR: Dictionary = {
       deletedBody: "A exclusão da sua conta Engage7 foi concluída. Redirecionando…",
       deleteConfirmTitle: "Confirmar exclusão da conta",
       deleteConfirmBody:
-        "Isto excluirá sua conta Engage7 e os dados do Portal pertencentes ao app. Arquivos brutos temporários continuam seguindo as regras de ciclo de vida do armazenamento. Para confirmar, digite",
-      deleteConfirmToken: "DELETE",
-      deletePlaceholder: "Digite DELETE para confirmar",
+        "Primeiro confirme que esta é sua conta atual. Digite ou cole exatamente o email da conta mostrado abaixo.",
+      accountEmailLabel: "Email da conta atual",
+      accountEmailLoading: "Carregando email da conta...",
+      copyEmail: "Copiar",
+      emailCopied: "Copiado",
+      deleteEmailInstruction: "Confirme o email da conta",
+      deleteEmailPlaceholder: "Digite o email da sua conta",
+      deleteContinue: "Continuar",
+      deleteFinalTitle: "Excluir conta e dados?",
+      deleteFinalBody:
+        "Isto excluirá sua conta Engage7 e os dados do Portal pertencentes ao app. Esta ação não pode ser desfeita.",
+      deleteFinalCancel: "Não, cancelar",
+      deleteFinalConfirm: "Sim, excluir minha conta e dados",
       deleteFailed: "A exclusão falhou. Tente novamente.",
       deleteUnexpected: "Ocorreu um erro inesperado. Tente novamente.",
       deletePermanently: "Excluir permanentemente",

@@ -352,6 +352,12 @@ export const enIE = {
         emailWarning:
           "We couldn't send your welcome email — your portal is still open.",
       },
+      protectedHandoff: {
+        title: "Update your existing Portal",
+        description:
+          "This export appears to match a protected Engage7 timeline. Sign in to continue.",
+        cta: "Sign in to update your existing Portal",
+      },
     },
 
     artifacts: {
@@ -1025,9 +1031,19 @@ export const enIE = {
       deletedBody: "Your Engage7 account deletion has completed. Redirecting…",
       deleteConfirmTitle: "Confirm account deletion",
       deleteConfirmBody:
-        "This will delete your Engage7 account and app-owned Portal data. Raw temporary upload files remain governed by storage lifecycle rules. To confirm, type",
-      deleteConfirmToken: "DELETE",
-      deletePlaceholder: "Type DELETE to confirm",
+        "First confirm this is your current account. Type or paste the exact account email shown below.",
+      accountEmailLabel: "Current account email",
+      accountEmailLoading: "Loading account email...",
+      copyEmail: "Copy",
+      emailCopied: "Copied",
+      deleteEmailInstruction: "Confirm account email",
+      deleteEmailPlaceholder: "Type your account email",
+      deleteContinue: "Continue",
+      deleteFinalTitle: "Delete account and data?",
+      deleteFinalBody:
+        "This will delete your Engage7 account and app-owned Portal data. This cannot be undone.",
+      deleteFinalCancel: "No, cancel",
+      deleteFinalConfirm: "Yes, delete my account and data",
       deleteFailed: "Deletion failed. Please try again.",
       deleteUnexpected: "An unexpected error occurred. Please try again.",
       deletePermanently: "Delete permanently",

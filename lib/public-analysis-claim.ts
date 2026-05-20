@@ -21,6 +21,7 @@ export async function claimPublicAnalysis(jobId: string): Promise<{
   user_analysis_id: string;
   job_id: string;
   feature_timeline_status: string;
+  handoff_status?: string;
   portal_data_status?: unknown;
 }> {
   const res = await fetch("/api/proxy/users/claim-public-analysis", {

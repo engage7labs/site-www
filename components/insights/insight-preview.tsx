@@ -293,6 +293,14 @@ export function InsightPreview({
       darthTeaser.action &&
       darthTeaser.cta
   );
+  const isProtectedPublicHandoff =
+    result.handoff?.status === "protected_timeline_login_required";
+  const publicCtaLabel = isProtectedPublicHandoff
+    ? t.result.preview.protectedHandoff.cta
+    : t.result.preview.fullReport.downloadButton;
+  const publicCtaDescription = isProtectedPublicHandoff
+    ? t.result.preview.protectedHandoff.description
+    : t.result.premiumModal.description;
   const usesDarth = useMemo(() => {
     if (usesDarthTeaser) return false;
     if (!darthPayload) return false;
@@ -734,7 +742,9 @@ export function InsightPreview({
     const headline = teaserCopy?.headline ?? teaser.headline;
     const subtext = teaserCopy?.subtext ?? teaser.subtext;
     const action = teaserCopy?.action ?? teaser.action;
-    const cta = teaserCopy?.cta ?? t.result.preview.fullReport.downloadButton;
+    const cta = isProtectedPublicHandoff
+      ? publicCtaLabel
+      : teaserCopy?.cta ?? t.result.preview.fullReport.downloadButton;
     return (
       <motion.section
         initial={{ opacity: 0, y: 12 }}
@@ -766,7 +776,9 @@ export function InsightPreview({
           <button
             type="button"
             onClick={() => {
-              trackTrialUnlockStarted("darth_teaser");
+              if (!isProtectedPublicHandoff) {
+                trackTrialUnlockStarted("darth_teaser");
+              }
               onOpenModal?.();
             }}
             className={`mt-5 w-full sm:w-fit ${PREMIUM_PORTAL_BUTTON_CLASS}`}
@@ -775,7 +787,7 @@ export function InsightPreview({
             {cta}
           </button>
           <p className="mt-2 text-xs leading-relaxed text-muted-foreground">
-            {t.result.premiumModal.description}
+            {publicCtaDescription}
           </p>
         </div>
         <div className="mt-5 md:mt-0">{renderTeaserVisual(teaser)}</div>
@@ -1451,10 +1463,14 @@ export function InsightPreview({
               className="rounded-xl border border-accent/20 bg-accent/5 p-6 text-center"
             >
               <h2 className="text-lg font-semibold text-foreground mb-2">
-                {t.result.preview.fullReport.title}
+                {isProtectedPublicHandoff
+                  ? t.result.preview.protectedHandoff.title
+                  : t.result.preview.fullReport.title}
               </h2>
               <p className="text-sm text-muted-foreground mb-4 max-w-md mx-auto">
-                {t.result.preview.fullReport.description}
+                {isProtectedPublicHandoff
+                  ? t.result.preview.protectedHandoff.description
+                  : t.result.preview.fullReport.description}
               </p>
             </motion.div>
 
@@ -1469,16 +1485,18 @@ export function InsightPreview({
               <button
                 type="button"
                 onClick={() => {
-                  trackTrialUnlockStarted("bottom");
+                  if (!isProtectedPublicHandoff) {
+                    trackTrialUnlockStarted("bottom");
+                  }
                   onOpenModal?.();
                 }}
                 className={PREMIUM_PORTAL_BUTTON_CLASS}
               >
                 <Crown className="h-4 w-4" />
-                {t.result.preview.fullReport.downloadButton}
+                {publicCtaLabel}
               </button>
               <p className="max-w-sm text-xs leading-relaxed text-muted-foreground">
-                {t.result.premiumModal.description}
+                {publicCtaDescription}
               </p>
             </motion.div>
 
