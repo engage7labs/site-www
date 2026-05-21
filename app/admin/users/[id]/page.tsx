@@ -4,7 +4,7 @@ import { useParams } from "next/navigation";
 import { useEffect, useState } from "react";
 
 interface AdminUserDetail {
-  id: number;
+  id: string;
   email: string;
   role: string;
   plan: string;
@@ -43,6 +43,22 @@ interface AdminUserDetail {
     job_id: string | null;
     created_at: string | null;
   }>;
+  health_footprint: {
+    present: boolean;
+    protection_enabled: boolean;
+    created_at: string | null;
+    updated_at: string | null;
+    confidence: number | null;
+    hash_prefix: string | null;
+    dataset_date_range: { start?: string; end?: string } | null;
+    latest_decision: {
+      event_type: string;
+      decision: string;
+      reason_code: string | null;
+      confidence: number | null;
+      created_at: string | null;
+    } | null;
+  };
 }
 
 function fmt(iso: string | null): string {
@@ -180,6 +196,40 @@ export default function AdminUserDetailPage() {
               </div>
             ))}
           </div>
+        )}
+      </Section>
+
+      <Section title="Health Footprint">
+        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+          {[
+            { label: "Status", value: user.health_footprint.present ? "Present" : "Missing" },
+            { label: "Protection", value: user.health_footprint.protection_enabled ? "Enabled" : "Disabled" },
+            { label: "Hash prefix", value: user.health_footprint.hash_prefix ?? "—" },
+            { label: "Created", value: fmt(user.health_footprint.created_at) },
+            { label: "Updated", value: fmt(user.health_footprint.updated_at) },
+            {
+              label: "Dataset range",
+              value: user.health_footprint.dataset_date_range
+                ? `${user.health_footprint.dataset_date_range.start ?? "?"} to ${user.health_footprint.dataset_date_range.end ?? "?"}`
+                : "—",
+            },
+          ].map((item) => (
+            <div key={item.label} className="rounded-lg border border-border bg-background px-3 py-2">
+              <p className="text-xs text-muted-foreground">{item.label}</p>
+              <p className="mt-0.5 text-sm text-card-foreground">{item.value}</p>
+            </div>
+          ))}
+        </div>
+        {user.health_footprint.latest_decision ? (
+          <p className="mt-3 text-xs text-muted-foreground">
+            Latest decision: {label(user.health_footprint.latest_decision.decision)}
+            {user.health_footprint.latest_decision.reason_code
+              ? ` · ${label(user.health_footprint.latest_decision.reason_code)}`
+              : ""}{" "}
+            on {fmt(user.health_footprint.latest_decision.created_at)}
+          </p>
+        ) : (
+          <p className="mt-3 text-xs text-muted-foreground">No footprint decision events yet.</p>
         )}
       </Section>
 

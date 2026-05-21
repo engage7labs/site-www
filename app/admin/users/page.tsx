@@ -16,6 +16,12 @@ interface AdminUser {
   last_login_at: string | null;
   analyses_count: number;
   events_count: number;
+  health_footprint: {
+    present: boolean;
+    protection_enabled: boolean;
+    updated_at: string | null;
+    hash_prefix: string | null;
+  };
 }
 
 interface AdminUsersResponse {
@@ -38,6 +44,27 @@ function PlanBadge({ label, status }: Readonly<{ label: string; status?: string 
     >
       {label}
     </span>
+  );
+}
+
+function FootprintBadge({ footprint }: Readonly<{ footprint: AdminUser["health_footprint"] }>) {
+  const label = footprint.present
+    ? footprint.protection_enabled ? "Protected" : "Present, off"
+    : "Missing";
+  const classes = footprint.present
+    ? footprint.protection_enabled
+      ? "bg-emerald-500/10 text-emerald-400"
+      : "bg-amber-500/10 text-amber-400"
+    : "bg-muted text-muted-foreground";
+  return (
+    <div className="flex flex-col gap-1">
+      <span className={`inline-flex w-fit items-center rounded-full px-2 py-0.5 text-xs font-medium ${classes}`}>
+        {label}
+      </span>
+      {footprint.hash_prefix && (
+        <span className="font-mono text-[11px] text-muted-foreground">{footprint.hash_prefix}</span>
+      )}
+    </div>
   );
 }
 
@@ -130,6 +157,7 @@ export default function AdminUsersPage() {
                 "Consent",
                 "Created",
                 "Last login",
+                "Footprint",
                 "Analyses",
                 "Actions",
               ].map((h) => (
@@ -162,6 +190,9 @@ export default function AdminUsersPage() {
                 </td>
                 <td className="px-4 py-3 text-xs text-muted-foreground">
                   {fmt(user.last_login_at)}
+                </td>
+                <td className="px-4 py-3">
+                  <FootprintBadge footprint={user.health_footprint} />
                 </td>
                 <td className="px-4 py-3 text-right tabular-nums text-muted-foreground">
                   {user.analyses_count}
