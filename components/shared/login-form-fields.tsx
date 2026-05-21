@@ -4,7 +4,6 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
-  claimPendingPublicAnalysis,
   rememberPendingPublicClaim,
 } from "@/lib/public-analysis-claim";
 import { useRouter } from "next/navigation";
@@ -85,14 +84,6 @@ export function LoginFormFields({
 
       const data = (await res.json().catch(() => ({}))) as { role?: string };
       const role = data.role === "admin" ? "admin" : "user";
-
-      if (role !== "admin") {
-        try {
-          await claimPendingPublicAnalysis();
-        } catch {
-          // Keep the pending claim in session storage; Portal will offer retry.
-        }
-      }
 
       onSuccess?.();
       router.push(role === "admin" ? "/admin" : redirectTo);

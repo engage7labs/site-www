@@ -314,7 +314,7 @@ export default function ResultPage({
     }
 
     try {
-      await claimPublicAnalysis(jobId);
+      await claimPublicAnalysis(jobId, { deferToast: true });
       clearPendingPublicClaim();
       router.push("/portal");
     } catch (err) {
@@ -371,7 +371,7 @@ export default function ResultPage({
     }
 
     try {
-      await claimPublicAnalysis(jobId);
+      await claimPublicAnalysis(jobId, { deferToast: true });
       clearPendingPublicClaim();
     } catch (err) {
       throw new Error(

@@ -1,12 +1,12 @@
 "use client";
 
 import { usePathname } from "next/navigation";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 import { useLocale } from "@/components/providers/locale-provider";
 import {
-  claimPendingPublicAnalysis,
-  readPendingPublicClaim,
+  consumePendingPublicClaimForToast,
+  readPublicClaimToastCandidateJobId,
 } from "@/lib/public-analysis-claim";
 import {
   trackClaimImportCompleted,
@@ -28,6 +28,7 @@ export function PortalShell({
   const [collapsed, setCollapsed] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
   const [overviewSubtitle, setOverviewSubtitle] = useState<string | null>(null);
+  const publicClaimToastAttemptedRef = useRef(false);
   const { t } = useLocale();
   const sectionTitles = {
     "/portal": t.portal.shell.sections.overview,
@@ -52,32 +53,51 @@ export function PortalShell({
   }, []);
 
   useEffect(() => {
-    const pendingJobId = readPendingPublicClaim();
-    if (!pendingJobId) return;
+    const candidateJobId = readPublicClaimToastCandidateJobId();
+    if (!candidateJobId || publicClaimToastAttemptedRef.current) return;
+    publicClaimToastAttemptedRef.current = true;
 
-    trackClaimImportStarted(pendingJobId);
-    void claimPendingPublicAnalysis()
-      .then((result) => {
-        if (!result) return;
-        trackClaimImportCompleted(pendingJobId);
+    const run = async () => {
+      const sessionResponse = await fetch("/api/auth/session", { cache: "no-store" });
+      if (!sessionResponse.ok) return;
+      const session = (await sessionResponse.json().catch(() => null)) as {
+        role?: string;
+        mode?: string;
+        read_only?: boolean;
+      } | null;
+      if (session?.mode === "admin_view" || session?.read_only === true) return;
+      if (session?.role !== "user") return;
+
+      trackClaimImportStarted(candidateJobId);
+      try {
+        const decision = await consumePendingPublicClaimForToast();
+        if (!decision) return;
+        trackClaimImportCompleted(decision.job_id);
+        if (decision.final_status === "blocked" || decision.final_status === "failed") {
+          toast.error(t.portal.shell.importStillFailed);
+          return;
+        }
         toast.success(
-          result.claim_status === "already_imported"
+          decision.final_status === "already_imported"
             ? t.portal.shell.claimAlreadyImported
             : t.portal.shell.claimImported
         );
-      })
-      .catch(() => {
-        trackClaimImportCompleted(pendingJobId, "failed");
+      } catch {
+        trackClaimImportCompleted(candidateJobId, "failed");
         toast.message(t.portal.shell.claimReady, {
           description: t.portal.shell.claimRetryDescription,
           action: {
             label: t.portal.shell.retry,
             onClick: () => {
-              void claimPendingPublicAnalysis()
-                .then((result) => {
-                  if (!result) return;
+              void consumePendingPublicClaimForToast()
+                .then((decision) => {
+                  if (!decision) return;
+                  if (decision.final_status === "blocked" || decision.final_status === "failed") {
+                    toast.error(t.portal.shell.importStillFailed);
+                    return;
+                  }
                   toast.success(
-                    result.claim_status === "already_imported"
+                    decision.final_status === "already_imported"
                       ? t.portal.shell.claimAlreadyImported
                       : t.portal.shell.imported
                   );
@@ -88,7 +108,10 @@ export function PortalShell({
             },
           },
         });
-      });
+      }
+    };
+
+    void run();
   }, [t.portal.shell]);
 
   useEffect(() => {
