@@ -534,27 +534,38 @@ export default function SettingsPage() {
       </div>
 
       {/* Delete account section */}
-      <div className="rounded-xl border border-destructive/40 bg-card p-5">
-        <h2 className="text-sm font-semibold text-destructive">
-          {t.portal.settings.deleteTitle}
-        </h2>
-        <p className="mt-2 text-sm text-muted-foreground">
-          {t.portal.settings.deleteBody}
-        </p>
-        <button
-          type="button"
-          onClick={() => {
-            setDeleteStep("email");
-            setEmailConfirmText("");
-            setEmailCopied(false);
-            setDeleteError(null);
-            setShowDeleteModal(true);
-          }}
-          className="mt-4 inline-flex items-center rounded-md border border-destructive/50 px-4 py-2 text-sm font-medium text-destructive hover:bg-destructive/5 transition-colors"
-        >
-          {t.portal.settings.deleteButton}
-        </button>
-      </div>
+      {!readOnlyAdminView ? (
+        <div className="rounded-xl border border-destructive/40 bg-card p-5">
+          <h2 className="text-sm font-semibold text-destructive">
+            {t.portal.settings.deleteTitle}
+          </h2>
+          <p className="mt-2 text-sm text-muted-foreground">
+            {t.portal.settings.deleteBody}
+          </p>
+          <button
+            type="button"
+            onClick={() => {
+              setDeleteStep("email");
+              setEmailConfirmText("");
+              setEmailCopied(false);
+              setDeleteError(null);
+              setShowDeleteModal(true);
+            }}
+            className="mt-4 inline-flex items-center rounded-md border border-destructive/50 px-4 py-2 text-sm font-medium text-destructive hover:bg-destructive/5 transition-colors"
+          >
+            {t.portal.settings.deleteButton}
+          </button>
+        </div>
+      ) : (
+        <div className="rounded-xl border border-border bg-card p-5">
+          <h2 className="text-sm font-semibold text-card-foreground">
+            {t.portal.settings.deleteTitle}
+          </h2>
+          <p className="mt-2 text-sm text-muted-foreground">
+            Account deletion is unavailable while an admin is viewing this Portal in read-only mode.
+          </p>
+        </div>
+      )}
 
       {/* Delete confirmation modal */}
       {showDeleteModal && (

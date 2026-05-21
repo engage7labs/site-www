@@ -1,6 +1,6 @@
 "use client";
 
-import { useParams } from "next/navigation";
+import { useParams, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 
 interface AdminUserDetail {
@@ -93,14 +93,23 @@ function label(value: string | null | undefined): string {
 
 export default function AdminUserDetailPage() {
   const params = useParams();
+  const router = useRouter();
   const id = params.id as string;
 
   const [user, setUser] = useState<AdminUserDetail | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
+  const [actionError, setActionError] = useState<string | null>(null);
+  const [actionMessage, setActionMessage] = useState<string | null>(null);
+  const [disableConfirmEmail, setDisableConfirmEmail] = useState("");
+  const [disableSaving, setDisableSaving] = useState(false);
+  const [deleteConfirmEmail, setDeleteConfirmEmail] = useState("");
+  const [deleteFinalConfirm, setDeleteFinalConfirm] = useState(false);
+  const [deleteSaving, setDeleteSaving] = useState(false);
 
-  useEffect(() => {
+  const loadUser = () => {
     if (!id) return;
+    setLoading(true);
     fetch(`/api/proxy/admin/users/${id}`)
       .then(async (res) => {
         if (!res.ok) throw new Error(`${res.status}: ${await res.text()}`);
@@ -111,7 +120,60 @@ export default function AdminUserDetailPage() {
         setError(err instanceof Error ? err.message : String(err))
       )
       .finally(() => setLoading(false));
+  };
+
+  useEffect(() => {
+    loadUser();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [id]);
+
+  const handleDisableProtection = async () => {
+    if (!user || disableConfirmEmail.trim().toLowerCase() !== user.email.toLowerCase()) return;
+    setDisableSaving(true);
+    setActionError(null);
+    setActionMessage(null);
+    try {
+      const res = await fetch(`/api/proxy/admin/users/${user.id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ confirmation_email: disableConfirmEmail.trim().toLowerCase() }),
+      });
+      const data = await res.json().catch(() => ({})) as { detail?: string; message?: string };
+      if (!res.ok) throw new Error(data.detail ?? "Failed to disable protection");
+      setActionMessage(data.message ?? "Health Footprint protection disabled.");
+      setDisableConfirmEmail("");
+      loadUser();
+    } catch (err) {
+      setActionError(err instanceof Error ? err.message : "Failed to disable protection");
+    } finally {
+      setDisableSaving(false);
+    }
+  };
+
+  const handleDeleteUser = async () => {
+    if (!user || deleteConfirmEmail.trim().toLowerCase() !== user.email.toLowerCase() || !deleteFinalConfirm) return;
+    setDeleteSaving(true);
+    setActionError(null);
+    setActionMessage(null);
+    try {
+      const res = await fetch(`/api/proxy/admin/users/${user.id}`, {
+        method: "DELETE",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          confirmation_email: deleteConfirmEmail.trim().toLowerCase(),
+          final_confirm: true,
+        }),
+      });
+      const data = await res.json().catch(() => ({})) as { detail?: string; message?: string };
+      if (!res.ok) throw new Error(data.detail ?? "Failed to delete user");
+      setActionMessage(data.message ?? "User deleted.");
+      router.push("/admin/users");
+    } catch (err) {
+      setActionError(err instanceof Error ? err.message : "Failed to delete user");
+    } finally {
+      setDeleteSaving(false);
+    }
+  };
 
   if (loading) {
     return (
@@ -139,6 +201,9 @@ export default function AdminUserDetailPage() {
           <h1 className="text-2xl font-bold text-foreground">{user.email}</h1>
           <p className="mt-1 text-sm text-muted-foreground">
             {user.role_display} · {user.plan_display}
+          </p>
+          <p className="mt-1 font-mono text-xs text-muted-foreground">
+            {user.id}
           </p>
         </div>
         <a href="/admin/users" className="text-xs text-accent hover:underline">
@@ -231,6 +296,97 @@ export default function AdminUserDetailPage() {
         ) : (
           <p className="mt-3 text-xs text-muted-foreground">No footprint decision events yet.</p>
         )}
+      </Section>
+
+      <Section title="Admin Actions">
+        <div className="space-y-5">
+          {actionMessage && (
+            <p className="rounded-lg border border-emerald-500/30 bg-emerald-500/10 px-3 py-2 text-xs text-emerald-300">
+              {actionMessage}
+            </p>
+          )}
+          {actionError && (
+            <p className="rounded-lg border border-destructive/30 bg-destructive/10 px-3 py-2 text-xs text-destructive">
+              {actionError}
+            </p>
+          )}
+
+          <div className="rounded-lg border border-border bg-background p-4">
+            <h3 className="text-sm font-semibold text-card-foreground">
+              Disable Health Footprint protection
+            </h3>
+            <p className="mt-2 text-xs leading-relaxed text-muted-foreground">
+              This keeps the footprint row and diagnostic metadata, but sets protection off for {user.email}.
+              If the footprint is missing, no footprint will be created.
+            </p>
+            <label className="mt-3 block space-y-1.5">
+              <span className="text-xs font-medium text-muted-foreground">
+                Type the selected user email to confirm
+              </span>
+              <input
+                type="email"
+                value={disableConfirmEmail}
+                onChange={(event) => setDisableConfirmEmail(event.target.value)}
+                placeholder={user.email}
+                className="w-full rounded-md border border-border bg-card px-3 py-2 text-sm text-foreground outline-none focus:border-accent"
+              />
+            </label>
+            <button
+              type="button"
+              onClick={handleDisableProtection}
+              disabled={
+                disableSaving ||
+                disableConfirmEmail.trim().toLowerCase() !== user.email.toLowerCase()
+              }
+              className="mt-3 rounded-md border border-amber-500/50 px-3 py-2 text-xs font-medium text-amber-300 transition-colors hover:bg-amber-500/10 disabled:cursor-not-allowed disabled:opacity-50"
+            >
+              {disableSaving ? "Disabling..." : "Disable protection"}
+            </button>
+          </div>
+
+          <div className="rounded-lg border border-destructive/50 bg-background p-4">
+            <h3 className="text-sm font-semibold text-destructive">
+              Delete selected user
+            </h3>
+            <p className="mt-2 text-xs leading-relaxed text-muted-foreground">
+              This runs the same cleanup semantics as the user-facing Delete Account flow for {user.email},
+              then removes the matching Supabase Auth user.
+            </p>
+            <label className="mt-3 block space-y-1.5">
+              <span className="text-xs font-medium text-muted-foreground">
+                Type the exact selected user email
+              </span>
+              <input
+                type="email"
+                value={deleteConfirmEmail}
+                onChange={(event) => setDeleteConfirmEmail(event.target.value)}
+                placeholder={user.email}
+                className="w-full rounded-md border border-border bg-card px-3 py-2 text-sm text-foreground outline-none focus:border-destructive"
+              />
+            </label>
+            <label className="mt-3 flex items-start gap-2 text-xs text-muted-foreground">
+              <input
+                type="checkbox"
+                checked={deleteFinalConfirm}
+                onChange={(event) => setDeleteFinalConfirm(event.target.checked)}
+                className="mt-0.5"
+              />
+              <span>Yes, permanently delete this selected user and app-owned data.</span>
+            </label>
+            <button
+              type="button"
+              onClick={handleDeleteUser}
+              disabled={
+                deleteSaving ||
+                !deleteFinalConfirm ||
+                deleteConfirmEmail.trim().toLowerCase() !== user.email.toLowerCase()
+              }
+              className="mt-3 rounded-md bg-destructive px-3 py-2 text-xs font-medium text-white transition-colors hover:bg-destructive/90 disabled:cursor-not-allowed disabled:opacity-50"
+            >
+              {deleteSaving ? "Deleting..." : "Delete selected user"}
+            </button>
+          </div>
+        </div>
       </Section>
 
       <Section title={`Feedback (${user.feedback.length})`}>

@@ -71,6 +71,13 @@ export async function DELETE(request: NextRequest) {
   }
 
   const email = session.sub;
+  if (session.mode === "admin_view" || session.read_only === true) {
+    return NextResponse.json(
+      { detail: "Cannot delete account while viewing as user (read-only mode)" },
+      { status: 403 }
+    );
+  }
+
   const body = (await request.json().catch(() => ({}))) as {
     confirmation_email?: unknown;
   };
