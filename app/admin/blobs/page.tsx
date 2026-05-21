@@ -28,6 +28,9 @@ interface HandoffDiagnostics {
   job_status: string;
   handoff_status: string;
   matched_existing_protected_footprint: boolean;
+  total_matches: number;
+  enabled_matches_count: number;
+  disabled_matches_count: number;
   feature_csv_available: boolean;
   reason_code: string;
   fallback_to_normal_unlock_due_to_missing_artifact: boolean;
@@ -35,6 +38,7 @@ interface HandoffDiagnostics {
     user_id: string;
     email: string;
     footprint_hash_prefix: string | null;
+    protection_enabled: boolean;
     confidence: number | null;
     reason_codes: string[];
     decision_status: string;
@@ -287,10 +291,13 @@ export default function AdminBlobsPage() {
             <p><span className="text-card-foreground">Status:</span> {diagnostics.handoff_status}</p>
             <p><span className="text-card-foreground">Feature CSV:</span> {diagnostics.feature_csv_available ? "available" : "missing"}</p>
             <p><span className="text-card-foreground">Reason:</span> {diagnostics.reason_code}</p>
-            <p><span className="text-card-foreground">Matched:</span> {diagnostics.matched_existing_protected_footprint ? "yes" : "no"}</p>
+            <p><span className="text-card-foreground">Enabled matches:</span> {diagnostics.enabled_matches_count}</p>
+            <p><span className="text-card-foreground">Disabled matches:</span> {diagnostics.disabled_matches_count}</p>
+            <p><span className="text-card-foreground">Total matches:</span> {diagnostics.total_matches}</p>
+            <p><span className="text-card-foreground">Forces protected CTA:</span> {diagnostics.matched_existing_protected_footprint ? "yes" : "no"}</p>
             <div className="lg:col-span-4">
               {diagnostics.matched_users.length === 0 ? (
-                <p>No protected user match found.</p>
+                <p>No footprint match found.</p>
               ) : (
                 <div className="overflow-x-auto rounded-lg border border-border">
                   <table className="w-full">
@@ -298,6 +305,7 @@ export default function AdminBlobsPage() {
                       <tr>
                         <th className="px-3 py-2 text-left font-medium">Matched user</th>
                         <th className="px-3 py-2 text-left font-medium">User id</th>
+                        <th className="px-3 py-2 text-left font-medium">Protection</th>
                         <th className="px-3 py-2 text-left font-medium">Hash prefix</th>
                         <th className="px-3 py-2 text-left font-medium">Confidence</th>
                         <th className="px-3 py-2 text-left font-medium">Reason codes</th>
@@ -308,6 +316,7 @@ export default function AdminBlobsPage() {
                         <tr key={user.user_id} className="border-t border-border">
                           <td className="px-3 py-2">{user.email}</td>
                           <td className="px-3 py-2 font-mono">{user.user_id}</td>
+                          <td className="px-3 py-2">{user.protection_enabled ? "enabled" : "disabled"}</td>
                           <td className="px-3 py-2 font-mono">{user.footprint_hash_prefix ?? "—"}</td>
                           <td className="px-3 py-2">{user.confidence ?? "—"}</td>
                           <td className="px-3 py-2">{user.reason_codes.join(", ") || "—"}</td>
