@@ -1029,6 +1029,11 @@ export const enIE = {
           "Protection is off. Future updates may be accepted even when the dataset looks different from your previous timeline.",
         error: "Could not save this setting.",
         unavailable: "Protection settings are unavailable right now.",
+        footprintMissing: "Footprint Missing",
+        unavailableUntilTimeline:
+          "Protection becomes available after a processed timeline exists.",
+        readOnly:
+          "Read-only admin view. Protection settings cannot be changed here.",
         timelineProtection: "Timeline protection",
         processedTimeline: "Processed timeline",
         latestDataThrough: "Latest data through",

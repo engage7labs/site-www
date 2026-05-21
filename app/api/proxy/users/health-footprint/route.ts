@@ -13,17 +13,16 @@ import { NextRequest, NextResponse } from "next/server";
 
 export const runtime = "nodejs";
 
-async function sessionEmail() {
+async function readSession() {
   const cookieStore = await cookies();
   const token = cookieStore.get(SESSION_COOKIE_NAME)?.value;
   if (!token) return null;
-  const session = verifyJwt(token);
-  return session?.sub ?? null;
+  return verifyJwt(token);
 }
 
 export async function GET() {
-  const email = await sessionEmail();
-  if (!email) return NextResponse.json({ detail: "Unauthorized" }, { status: 401 });
+  const session = await readSession();
+  if (!session?.sub) return NextResponse.json({ detail: "Unauthorized" }, { status: 401 });
 
   const path = "/api/users/me/health-footprint";
   const sigHeaders = signRequest("GET", path);
@@ -31,7 +30,7 @@ export async function GET() {
   try {
     const res = await fetch(`${INTERNAL_API_BASE_URL}${path}`, {
       method: "GET",
-      headers: { ...sigHeaders, "X-User-Email": email },
+      headers: { ...sigHeaders, "X-User-Email": session.sub },
       cache: "no-store",
     });
     const data = await res.json().catch(() => ({ detail: `Upstream error ${res.status}` }));
@@ -42,8 +41,14 @@ export async function GET() {
 }
 
 export async function PATCH(request: NextRequest) {
-  const email = await sessionEmail();
-  if (!email) return NextResponse.json({ detail: "Unauthorized" }, { status: 401 });
+  const session = await readSession();
+  if (!session?.sub) return NextResponse.json({ detail: "Unauthorized" }, { status: 401 });
+  if (session.mode === "admin_view" || session.read_only === true) {
+    return NextResponse.json(
+      { detail: "Cannot modify Health Footprint protection while viewing as user (read-only mode)" },
+      { status: 403 },
+    );
+  }
 
   const body = await request.json().catch(() => null);
   const path = "/api/users/me/health-footprint";
@@ -54,7 +59,9 @@ export async function PATCH(request: NextRequest) {
       method: "PATCH",
       headers: {
         ...sigHeaders,
-        "X-User-Email": email,
+        "X-User-Email": session.sub,
+        "X-Session-Mode": session.mode ?? "",
+        "X-Read-Only": "false",
         "Content-Type": "application/json",
       },
       body: JSON.stringify(body ?? {}),

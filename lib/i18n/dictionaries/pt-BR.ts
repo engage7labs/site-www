@@ -1035,6 +1035,11 @@ export const ptBR: Dictionary = {
           "A proteção está desativada. Atualizações futuras podem ser aceitas mesmo quando o conjunto de dados parecer diferente da linha do tempo anterior.",
         error: "Não foi possível salvar esta configuração.",
         unavailable: "As configurações de proteção estão indisponíveis agora.",
+        footprintMissing: "Footprint ausente",
+        unavailableUntilTimeline:
+          "A proteção fica disponível depois que uma linha do tempo processada existir.",
+        readOnly:
+          "Visualização administrativa somente leitura. As configurações de proteção não podem ser alteradas aqui.",
         timelineProtection: "Proteção da linha do tempo",
         processedTimeline: "Linha do tempo processada",
         latestDataThrough: "Dados mais recentes até",

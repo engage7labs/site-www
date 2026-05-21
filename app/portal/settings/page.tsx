@@ -23,6 +23,14 @@ interface CurrentUserSettingsData {
   email?: string | null;
 }
 
+interface HealthFootprintSettingsData {
+  protection_enabled?: boolean;
+  has_footprint?: boolean;
+  can_update_protection?: boolean;
+  has_valid_timeline?: boolean;
+  status?: string;
+}
+
 function formatSettingsDate(value: string | null, locale: Locale): string | null {
   if (!value) return null;
   const date = new Date(value);
@@ -53,9 +61,12 @@ export default function SettingsPage() {
   const [timelineDateEnd, setTimelineDateEnd] = useState<string | null>(null);
   const [timelineRows, setTimelineRows] = useState<number | null>(null);
   const [protectionEnabled, setProtectionEnabled] = useState(true);
+  const [hasFootprint, setHasFootprint] = useState(false);
+  const [canUpdateProtection, setCanUpdateProtection] = useState(false);
   const [protectionLoading, setProtectionLoading] = useState(true);
   const [protectionSaving, setProtectionSaving] = useState(false);
   const [protectionError, setProtectionError] = useState<string | null>(null);
+  const [readOnlyAdminView, setReadOnlyAdminView] = useState(false);
   const [preferredLocale, setPreferredLocale] = useState<Locale>(locale);
   const [languageSaving, setLanguageSaving] = useState(false);
   const [languageStatus, setLanguageStatus] = useState<"saved" | "error" | null>(null);
@@ -91,10 +102,18 @@ export default function SettingsPage() {
         }
       })
       .catch(() => {});
+    fetch("/api/auth/session", { cache: "no-store" })
+      .then((r) => r.json())
+      .then((d: { mode?: string; read_only?: boolean }) => {
+        setReadOnlyAdminView(d.mode === "admin_view" || d.read_only === true);
+      })
+      .catch(() => {});
     fetch("/api/proxy/users/health-footprint")
       .then((r) => r.json())
-      .then((d: { protection_enabled?: boolean }) => {
+      .then((d: HealthFootprintSettingsData) => {
         setProtectionEnabled(d.protection_enabled !== false);
+        setHasFootprint(d.has_footprint === true);
+        setCanUpdateProtection(d.can_update_protection === true);
         setProtectionLoading(false);
       })
       .catch(() => {
@@ -126,6 +145,7 @@ export default function SettingsPage() {
   const canContinueDelete =
     Boolean(accountEmail) && normalizedEmailConfirmation === accountEmail;
   const protectionCopy = t.portal.settings.protection;
+  const protectionDisabled = protectionLoading || protectionSaving || readOnlyAdminView || !canUpdateProtection;
 
   const resetDeleteModal = () => {
     setShowDeleteModal(false);
@@ -166,6 +186,7 @@ export default function SettingsPage() {
   };
 
   const handleProtectionToggle = async () => {
+    if (readOnlyAdminView || !canUpdateProtection) return;
     const next = !protectionEnabled;
     setProtectionEnabled(next);
     setProtectionSaving(true);
@@ -176,9 +197,11 @@ export default function SettingsPage() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ protection_enabled: next }),
       });
-      const data = await res.json().catch(() => ({})) as { protection_enabled?: boolean; detail?: string };
+      const data = await res.json().catch(() => ({})) as HealthFootprintSettingsData & { detail?: string };
       if (!res.ok) throw new Error(data.detail ?? protectionCopy.error);
       setProtectionEnabled(data.protection_enabled !== false);
+      setCanUpdateProtection(data.can_update_protection === true);
+      setHasFootprint(data.has_footprint === true);
     } catch (err) {
       setProtectionEnabled(!next);
       setProtectionError(err instanceof Error ? err.message : protectionCopy.error);
@@ -253,6 +276,15 @@ export default function SettingsPage() {
     ? Math.max(0, Math.ceil((trialEndDate.getTime() - Date.now()) / 86400000))
     : null;
   const formattedTimelineDate = formatSettingsDate(timelineDateEnd, locale);
+  const protectionStateCopy = readOnlyAdminView
+    ? protectionCopy.readOnly
+    : !hasFootprint || !canUpdateProtection
+      ? protectionCopy.unavailableUntilTimeline
+      : protectionSaving
+        ? t.common.saving
+        : protectionEnabled
+          ? protectionCopy.active
+          : protectionCopy.inactive;
 
   return (
     <div className="flex flex-col gap-6">
@@ -433,11 +465,7 @@ export default function SettingsPage() {
               {protectionCopy.note}
             </p>
             <p className="mt-3 text-xs text-muted-foreground">
-              {protectionSaving
-                ? t.common.saving
-                : protectionEnabled
-                  ? protectionCopy.active
-                  : protectionCopy.inactive}
+              {protectionStateCopy}
             </p>
             {protectionError && (
               <p className="mt-2 text-xs text-destructive">{protectionError}</p>
@@ -446,11 +474,11 @@ export default function SettingsPage() {
           <button
             type="button"
             role="switch"
-            aria-checked={protectionEnabled}
+            aria-checked={canUpdateProtection && protectionEnabled}
             onClick={handleProtectionToggle}
-            disabled={protectionLoading || protectionSaving}
+            disabled={protectionDisabled}
             className={`relative inline-flex h-8 w-16 shrink-0 items-center rounded-full border transition-colors disabled:cursor-not-allowed disabled:opacity-60 ${
-              protectionEnabled
+              canUpdateProtection && protectionEnabled
                 ? "border-emerald-500/40 bg-emerald-500/30"
                 : "border-border bg-muted"
             }`}
@@ -458,7 +486,7 @@ export default function SettingsPage() {
             <span className="sr-only">{protectionCopy.title}</span>
             <span
               className={`inline-block h-6 w-6 rounded-full bg-background shadow transition-transform ${
-                protectionEnabled ? "translate-x-8" : "translate-x-1"
+                canUpdateProtection && protectionEnabled ? "translate-x-8" : "translate-x-1"
               }`}
             />
           </button>
@@ -467,7 +495,7 @@ export default function SettingsPage() {
           <span className={protectionEnabled ? "font-medium text-foreground" : ""}>
             {protectionCopy.on}
           </span>
-          <span className={!protectionEnabled ? "font-medium text-foreground" : ""}>
+          <span className={!protectionEnabled || !canUpdateProtection ? "font-medium text-foreground" : ""}>
             {protectionCopy.off}
           </span>
         </div>
@@ -479,7 +507,9 @@ export default function SettingsPage() {
             <p className="mt-1 text-xs text-muted-foreground">
               {protectionLoading
                 ? t.common.loading
-                : protectionEnabled
+                : !hasFootprint || !canUpdateProtection
+                  ? protectionCopy.footprintMissing
+                  : protectionEnabled
                   ? protectionCopy.on
                   : protectionCopy.off}
             </p>
