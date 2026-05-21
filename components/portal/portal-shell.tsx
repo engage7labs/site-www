@@ -57,9 +57,14 @@ export function PortalShell({
 
     trackClaimImportStarted(pendingJobId);
     void claimPendingPublicAnalysis()
-      .then(() => {
+      .then((result) => {
+        if (!result) return;
         trackClaimImportCompleted(pendingJobId);
-        toast.success(t.portal.shell.claimImported);
+        toast.success(
+          result.claim_status === "already_imported"
+            ? t.portal.shell.claimAlreadyImported
+            : t.portal.shell.claimImported
+        );
       })
       .catch(() => {
         trackClaimImportCompleted(pendingJobId, "failed");
@@ -69,7 +74,14 @@ export function PortalShell({
             label: t.portal.shell.retry,
             onClick: () => {
               void claimPendingPublicAnalysis()
-                .then(() => toast.success(t.portal.shell.imported))
+                .then((result) => {
+                  if (!result) return;
+                  toast.success(
+                    result.claim_status === "already_imported"
+                      ? t.portal.shell.claimAlreadyImported
+                      : t.portal.shell.imported
+                  );
+                })
                 .catch(() =>
                   toast.error(t.portal.shell.importStillFailed),
                 );

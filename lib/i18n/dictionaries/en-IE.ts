@@ -682,6 +682,7 @@ export const enIE = {
         },
       },
       claimImported: "Your public analysis is now in your Portal.",
+      claimAlreadyImported: "This analysis is already in your Portal.",
       claimReady: "Your analysis is ready to import.",
       claimRetryDescription:
         "We could not import it automatically. You can retry now.",

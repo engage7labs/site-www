@@ -687,6 +687,7 @@ export const ptBR: Dictionary = {
         },
       },
       claimImported: "Sua análise pública agora está no seu Portal.",
+      claimAlreadyImported: "Esta análise já está no seu Portal.",
       claimReady: "Sua análise está pronta para importação.",
       claimRetryDescription:
         "Não conseguimos importá-la automaticamente. Você pode tentar novamente agora.",
