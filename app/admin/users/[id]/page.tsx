@@ -103,6 +103,8 @@ export default function AdminUserDetailPage() {
   const [actionMessage, setActionMessage] = useState<string | null>(null);
   const [disableConfirmEmail, setDisableConfirmEmail] = useState("");
   const [disableSaving, setDisableSaving] = useState(false);
+  const [resetConfirmEmail, setResetConfirmEmail] = useState("");
+  const [resetSaving, setResetSaving] = useState(false);
   const [deleteConfirmEmail, setDeleteConfirmEmail] = useState("");
   const [deleteFinalConfirm, setDeleteFinalConfirm] = useState(false);
   const [deleteSaving, setDeleteSaving] = useState(false);
@@ -147,6 +149,29 @@ export default function AdminUserDetailPage() {
       setActionError(err instanceof Error ? err.message : "Failed to disable protection");
     } finally {
       setDisableSaving(false);
+    }
+  };
+
+  const handleResetFootprint = async () => {
+    if (!user || resetConfirmEmail.trim().toLowerCase() !== user.email.toLowerCase()) return;
+    setResetSaving(true);
+    setActionError(null);
+    setActionMessage(null);
+    try {
+      const res = await fetch(`/api/proxy/admin/users/${user.id}/health-footprint`, {
+        method: "DELETE",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ confirmation_email: resetConfirmEmail.trim().toLowerCase() }),
+      });
+      const data = await res.json().catch(() => ({})) as { detail?: string; message?: string };
+      if (!res.ok) throw new Error(data.detail ?? "Failed to reset footprint");
+      setActionMessage(data.message ?? "Health Footprint reset.");
+      setResetConfirmEmail("");
+      loadUser();
+    } catch (err) {
+      setActionError(err instanceof Error ? err.message : "Failed to reset footprint");
+    } finally {
+      setResetSaving(false);
     }
   };
 
@@ -341,6 +366,39 @@ export default function AdminUserDetailPage() {
               className="mt-3 rounded-md border border-amber-500/50 px-3 py-2 text-xs font-medium text-amber-300 transition-colors hover:bg-amber-500/10 disabled:cursor-not-allowed disabled:opacity-50"
             >
               {disableSaving ? "Disabling..." : "Disable protection"}
+            </button>
+          </div>
+
+          <div className="rounded-lg border border-amber-500/40 bg-background p-4">
+            <h3 className="text-sm font-semibold text-card-foreground">
+              Reset Health Footprint
+            </h3>
+            <p className="mt-2 text-xs leading-relaxed text-muted-foreground">
+              This removes only the footprint metadata for {user.email}. The user account,
+              analyses, feature timeline, and reports are kept. No new footprint is created.
+            </p>
+            <label className="mt-3 block space-y-1.5">
+              <span className="text-xs font-medium text-muted-foreground">
+                Type the selected user email to confirm
+              </span>
+              <input
+                type="email"
+                value={resetConfirmEmail}
+                onChange={(event) => setResetConfirmEmail(event.target.value)}
+                placeholder={user.email}
+                className="w-full rounded-md border border-border bg-card px-3 py-2 text-sm text-foreground outline-none focus:border-amber-500"
+              />
+            </label>
+            <button
+              type="button"
+              onClick={handleResetFootprint}
+              disabled={
+                resetSaving ||
+                resetConfirmEmail.trim().toLowerCase() !== user.email.toLowerCase()
+              }
+              className="mt-3 rounded-md border border-amber-500/50 px-3 py-2 text-xs font-medium text-amber-300 transition-colors hover:bg-amber-500/10 disabled:cursor-not-allowed disabled:opacity-50"
+            >
+              {resetSaving ? "Resetting..." : "Reset footprint"}
             </button>
           </div>
 
