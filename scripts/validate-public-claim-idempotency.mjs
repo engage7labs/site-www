@@ -9,6 +9,7 @@ const assert = (condition, message) => {
 
 const helper = read("lib/public-analysis-claim.ts");
 const shell = read("components/portal/portal-shell.tsx");
+const portalHeader = read("components/portal/portal-header.tsx");
 const loginFields = read("components/shared/login-form-fields.tsx");
 const en = read("lib/i18n/dictionaries/en-IE.ts");
 const pt = read("lib/i18n/dictionaries/pt-BR.ts");
@@ -20,6 +21,16 @@ assert(helper.includes("markPublicClaimConsumed"), "success cleanup helper missi
 assert(helper.includes("hasConsumedPublicClaim"), "stale pending suppression helper missing");
 assert(helper.includes("consumePendingPublicClaimForToast"), "central claim/toast consumer missing");
 assert(helper.includes("consumePublicClaimToast"), "toast terminal-state helper missing");
+assert(helper.includes("PublicClaimBlockedError"), "protected blocked claim error missing");
+assert(helper.includes("wrong_user_protected_timeline"), "wrong-user protected status handling missing");
+assert(helper.includes("isSuccessfulFinalStatus"), "claim terminal success classifier missing");
+assert(helper.includes("clearPublicClaimClientState"), "logout-safe public claim state clearer missing");
+assert(helper.includes("clearPublicClaimStateForJob(error.jobId)"), "blocked protected attempt does not clear job state after decision");
+assert(
+  helper.includes("if (isSuccessfulFinalStatus(existing.final_status)) return existing") &&
+    helper.includes("if (isSuccessfulFinalStatus(finalStatus))"),
+  "blocked claim terminal records may incorrectly consume future correct-account attempts",
+);
 assert(
   helper.includes('result.claim_status === "already_imported"') &&
     helper.includes('result.claim_status === "imported_now"'),
@@ -27,7 +38,8 @@ assert(
 );
 assert(
   shell.includes("consumePendingPublicClaimForToast") &&
-    shell.includes('decision.final_status === "already_imported"'),
+    shell.includes('decision.final_status === "already_imported"') &&
+    shell.includes("protectedClaimBlocked"),
   "PortalShell is not using the central claim/toast decision",
 );
 assert(
@@ -41,12 +53,25 @@ assert(
   "Login form must remember, not consume, pending public claims",
 );
 assert(
+  portalHeader.includes("clearPublicClaimClientState") &&
+    portalHeader.includes('fetch("/api/auth/logout", { method: "POST" })'),
+  "Logout must clear public claim/handoff browser state before account switch",
+);
+assert(
   en.includes('claimAlreadyImported: "This analysis is already in your Portal."'),
   "English already-imported copy missing",
 );
 assert(
   pt.includes('claimAlreadyImported: "Esta análise já está no seu Portal."'),
   "pt-BR already-imported copy missing",
+);
+assert(
+  en.includes("This analysis is linked to another protected timeline. Sign in with the correct account to continue."),
+  "English protected blocked copy missing",
+);
+assert(
+  pt.includes("Esta análise está vinculada a outra linha do tempo protegida. Entre com a conta correta para continuar."),
+  "pt-BR protected blocked copy missing",
 );
 
 console.log("public claim idempotency copy/storage checks passed");

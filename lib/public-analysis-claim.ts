@@ -34,6 +34,26 @@ export interface PublicClaimResult {
   portal_data_status?: unknown;
 }
 
+export class PublicClaimBlockedError extends Error {
+  readonly status: string;
+  readonly jobId: string;
+
+  constructor(message: string, status: string, jobId: string) {
+    super(message);
+    this.name = "PublicClaimBlockedError";
+    this.status = status;
+    this.jobId = jobId;
+  }
+}
+
+function isProtectedClaimBlockedStatus(status: string | undefined): boolean {
+  return (
+    status === "wrong_user_protected_timeline" ||
+    status === "protected_timeline_mismatch" ||
+    status === "blocked_protected_timeline"
+  );
+}
+
 export function rememberPendingPublicClaim(jobId: string): void {
   if (!jobId) return;
   window.sessionStorage.setItem(PENDING_CLAIM_KEY, jobId);
@@ -51,10 +71,44 @@ function terminalClaimKey(jobId: string): string {
   return `${TERMINAL_CLAIM_PREFIX}${jobId}`;
 }
 
+function forgetConsumedPublicClaim(jobId: string): void {
+  const consumed = readConsumedPublicClaims();
+  consumed.delete(jobId);
+  window.localStorage.setItem(CONSUMED_CLAIMS_KEY, JSON.stringify([...consumed].slice(-50)));
+}
+
+export function clearPublicClaimStateForJob(jobId: string): void {
+  if (!jobId) return;
+  if (readPendingPublicClaim() === jobId) {
+    clearPendingPublicClaim();
+  }
+  unqueuePublicClaimToast(jobId);
+  window.localStorage.removeItem(terminalClaimKey(jobId));
+  forgetConsumedPublicClaim(jobId);
+}
+
+export function clearPublicClaimClientState(): void {
+  clearPendingPublicClaim();
+  window.localStorage.removeItem(TOAST_QUEUE_KEY);
+  window.localStorage.removeItem(CONSUMED_CLAIMS_KEY);
+  const keys: string[] = [];
+  for (let index = 0; index < window.localStorage.length; index += 1) {
+    const key = window.localStorage.key(index);
+    if (key?.startsWith(TERMINAL_CLAIM_PREFIX)) {
+      keys.push(key);
+    }
+  }
+  keys.forEach((key) => window.localStorage.removeItem(key));
+}
+
 function normalizeFinalStatus(status: PublicClaimStatus | undefined): PublicClaimFinalStatus | null {
   if (status === "imported_now" || status === "already_imported") return status;
   if (status === "blocked" || status === "failed") return status;
   return null;
+}
+
+function isSuccessfulFinalStatus(status: PublicClaimFinalStatus): boolean {
+  return status === "imported_now" || status === "already_imported";
 }
 
 function readPublicClaimTerminal(jobId: string): PublicClaimTerminalRecord | null {
@@ -131,16 +185,21 @@ export function recordPublicClaimTerminal(
   const finalStatus = normalizeFinalStatus(status);
   if (!jobId || !finalStatus) return null;
   const existing = readPublicClaimTerminal(jobId);
-  if (existing) return existing;
+  if (existing) {
+    if (isSuccessfulFinalStatus(existing.final_status)) return existing;
+    if (!isSuccessfulFinalStatus(finalStatus)) return existing;
+  }
   const record: PublicClaimTerminalRecord = {
     final_status: finalStatus,
     timestamp: Date.now(),
     shown_toast: false,
   };
   writePublicClaimTerminal(jobId, record);
-  const consumed = readConsumedPublicClaims();
-  consumed.add(jobId);
-  window.localStorage.setItem(CONSUMED_CLAIMS_KEY, JSON.stringify([...consumed].slice(-50)));
+  if (isSuccessfulFinalStatus(finalStatus)) {
+    const consumed = readConsumedPublicClaims();
+    consumed.add(jobId);
+    window.localStorage.setItem(CONSUMED_CLAIMS_KEY, JSON.stringify([...consumed].slice(-50)));
+  }
   return record;
 }
 
@@ -157,7 +216,8 @@ export function markPublicClaimConsumed(
 
 export function hasConsumedPublicClaim(jobId: string): boolean {
   if (!jobId) return false;
-  return Boolean(readPublicClaimTerminal(jobId)) || readConsumedPublicClaims().has(jobId);
+  const terminal = readPublicClaimTerminal(jobId);
+  return Boolean(terminal && isSuccessfulFinalStatus(terminal.final_status)) || readConsumedPublicClaims().has(jobId);
 }
 
 export function consumePublicClaimToast(
@@ -196,13 +256,31 @@ export async function claimPublicAnalysis(
 
   if (!res.ok) {
     const data = (await res.json().catch(() => ({}))) as {
-      detail?: string;
+      detail?: string | { status?: string; message?: string };
       error?: string;
+      status?: string;
+      message?: string;
     };
+    const detail = data.detail;
+    const status =
+      data.status ??
+      (typeof detail === "object" && detail ? detail.status : undefined);
+    const message =
+      data.message ??
+      (typeof detail === "object" && detail ? detail.message : undefined) ??
+      (typeof detail === "string" ? detail : undefined) ??
+      data.error ??
+      "We could not import this public analysis yet.";
+    if (isProtectedClaimBlockedStatus(status)) {
+      recordPublicClaimTerminal(jobId, "blocked");
+      if (readPendingPublicClaim() === jobId) {
+        clearPendingPublicClaim();
+      }
+      unqueuePublicClaimToast(jobId);
+      throw new PublicClaimBlockedError(message, status ?? "blocked_protected_timeline", jobId);
+    }
     throw new Error(
-      data.detail ??
-        data.error ??
-        "We could not import this public analysis yet.",
+      message,
     );
   }
 
@@ -238,8 +316,19 @@ export async function consumePendingPublicClaimForToast(): Promise<PublicClaimTo
       }
       return decision;
     }
-    const result = await claimPublicAnalysis(pendingJobId);
-    return consumePublicClaimToast(result.job_id || pendingJobId, result.claim_status);
+    try {
+      const result = await claimPublicAnalysis(pendingJobId);
+      return consumePublicClaimToast(result.job_id || pendingJobId, result.claim_status);
+    } catch (error) {
+      if (error instanceof PublicClaimBlockedError) {
+        const decision =
+          consumePublicClaimToast(error.jobId, "blocked") ??
+          { job_id: error.jobId, final_status: "blocked" as const };
+        clearPublicClaimStateForJob(error.jobId);
+        return decision;
+      }
+      throw error;
+    }
   }
 
   const queuedJobId = readQueuedPublicClaimToast();

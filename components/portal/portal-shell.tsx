@@ -73,7 +73,11 @@ export function PortalShell({
         const decision = await consumePendingPublicClaimForToast();
         if (!decision) return;
         trackClaimImportCompleted(decision.job_id);
-        if (decision.final_status === "blocked" || decision.final_status === "failed") {
+        if (decision.final_status === "blocked") {
+          toast.error(t.portal.shell.protectedClaimBlocked);
+          return;
+        }
+        if (decision.final_status === "failed") {
           toast.error(t.portal.shell.importStillFailed);
           return;
         }
@@ -92,7 +96,11 @@ export function PortalShell({
               void consumePendingPublicClaimForToast()
                 .then((decision) => {
                   if (!decision) return;
-                  if (decision.final_status === "blocked" || decision.final_status === "failed") {
+                  if (decision.final_status === "blocked") {
+                    toast.error(t.portal.shell.protectedClaimBlocked);
+                    return;
+                  }
+                  if (decision.final_status === "failed") {
                     toast.error(t.portal.shell.importStillFailed);
                     return;
                   }

@@ -695,6 +695,8 @@ export const ptBR: Dictionary = {
       imported: "Análise importada.",
       importStillFailed:
         "A importação ainda não foi concluída. Tente novamente mais tarde.",
+      protectedClaimBlocked:
+        "Esta análise está vinculada a outra linha do tempo protegida. Entre com a conta correta para continuar.",
     },
     accessCode: {
       bannerPrefix: "Proteja seu acesso —",

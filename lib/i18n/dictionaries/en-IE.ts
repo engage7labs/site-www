@@ -689,6 +689,8 @@ export const enIE = {
       retry: "Retry",
       imported: "Analysis imported.",
       importStillFailed: "Import still did not complete. Please try again later.",
+      protectedClaimBlocked:
+        "This analysis is linked to another protected timeline. Sign in with the correct account to continue.",
     },
     accessCode: {
       bannerPrefix: "Secure your access —",
