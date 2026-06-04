@@ -2,6 +2,7 @@
 
 import { useLocale } from "@/components/providers/locale-provider";
 import { DarthStatePanel } from "@/components/portal/darth-state-panel";
+import { trackHealthDashboardViewed } from "@/lib/telemetry";
 import { Activity, ArrowRight, HeartPulse, Moon } from "lucide-react";
 import Link from "next/link";
 import type { ElementType } from "react";
@@ -146,6 +147,10 @@ export default function HealthPage() {
   const [data, setData] = useState<HealthDataResponse | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(false);
+
+  useEffect(() => {
+    trackHealthDashboardViewed("overview");
+  }, []);
 
   useEffect(() => {
     let cancelled = false;

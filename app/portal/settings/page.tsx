@@ -270,11 +270,17 @@ export default function SettingsPage() {
 
   const isPremium = planDisplay === "Premium" || plan === "premium";
   const trialEndDate = trialEnd ? new Date(trialEnd) : null;
-  const trialActive = planStatus === "trialing" && trialEndDate && trialEndDate > new Date();
+  const hasPremiumFreePlan =
+    planDisplay === "Premium Free" || plan === "trial" || plan === "trial_start";
+  const trialActive =
+    hasPremiumFreePlan &&
+    planStatus !== "expired" &&
+    (!trialEndDate || trialEndDate > new Date());
   const trialExpired = planStatus === "expired";
   const daysLeft = trialActive && trialEndDate
     ? Math.max(0, Math.ceil((trialEndDate.getTime() - Date.now()) / 86400000))
     : null;
+  const formattedTrialEnd = formatSettingsDate(trialEnd, locale);
   const formattedTimelineDate = formatSettingsDate(timelineDateEnd, locale);
   const protectionStateCopy = readOnlyAdminView
     ? protectionCopy.readOnly
@@ -309,18 +315,20 @@ export default function SettingsPage() {
         <p className="text-xs text-muted-foreground mb-4">
           {isPremium && t.portal.settings.premiumThanks}
           {trialActive &&
-            `${t.portal.settings.freeAccessActive}${
-              daysLeft !== null
-                ? ` — ${t.portal.settings.daysRemaining
-                    .replace("{count}", String(daysLeft))
-                    .replaceAll("{plural}", daysLeft === 1 ? "" : "s")}`
-                : ""
-            }.`}
+            `${t.portal.settings.premiumFreeActive} ${t.portal.settings.premiumFreeAccess}${
+              formattedTrialEnd
+                ? ` ${t.portal.settings.premiumFreeEnds.replace("{date}", formattedTrialEnd)}`
+                : daysLeft !== null
+                  ? ` ${t.portal.settings.daysRemaining
+                      .replace("{count}", String(daysLeft))
+                      .replaceAll("{plural}", daysLeft === 1 ? "" : "s")}.`
+                  : ""
+            }`}
           {trialExpired && t.portal.settings.freeAccessEnded}
           {planDisplay === "No plan" && t.portal.settings.noPlanActive}
           {!planDisplay && t.portal.loading}
         </p>
-        {!isPremium && (
+        {!isPremium && !trialActive && (
           <div className="flex flex-col gap-3">
             <div className="flex items-start gap-3 rounded-lg border border-accent/20 bg-accent/5 p-4">
               <div className="flex-1">

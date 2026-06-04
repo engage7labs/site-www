@@ -142,8 +142,12 @@ export function trackReportViewed(jobId?: string): void {
   trackEvent("report_viewed", { source: "portal", surface: "report", job_id: jobId });
 }
 
-export function trackHealthDashboardViewed(surface: string): void {
-  trackEvent("health_dashboard_viewed", { source: "portal", surface });
+export function trackHealthDashboardViewed(action: string): void {
+  trackEvent("health_dashboard_viewed", {
+    source: "portal",
+    surface: "health",
+    action,
+  });
 }
 
 export function trackUpdateDataStarted(): void {
