@@ -17,6 +17,10 @@ const _geistMono = Geist_Mono({ subsets: ["latin"] });
 
 const titlePrefix = isDevEnvironment ? "[DEV] " : "";
 const baseUrl = config.siteUrl;
+const socialDescription =
+  "Upload your Apple Health export and discover clear, explainable patterns in sleep, recovery, and activity.";
+const socialImageAlt =
+  "Engage7 — Apple Health insights for sleep, recovery, and activity";
 
 export const metadata: Metadata = {
   title: {
@@ -44,23 +48,26 @@ export const metadata: Metadata = {
     url: baseUrl,
     siteName: "Engage7",
     title: "Engage7 — See What Your Body Is Telling You",
-    description:
-      "Turn your wearable data into clear insights about sleep, recovery, and movement. Based on your own patterns, not averages.",
+    description: socialDescription,
     images: [
       {
-        url: "/og",
+        url: "/og/engage7-og.png",
         width: 1200,
         height: 630,
-        alt: "Engage7 — Understanding patterns in your data",
+        alt: socialImageAlt,
       },
     ],
   },
   twitter: {
     card: "summary_large_image",
     title: "Engage7 — See What Your Body Is Telling You",
-    description:
-      "Turn your wearable data into clear insights about sleep, recovery, and movement. Based on your own patterns, not averages.",
-    images: ["/og"],
+    description: socialDescription,
+    images: [
+      {
+        url: "/og/engage7-og.png",
+        alt: socialImageAlt,
+      },
+    ],
   },
   robots: {
     index: true,
