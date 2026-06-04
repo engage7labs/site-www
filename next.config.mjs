@@ -1,12 +1,7 @@
 import { readFileSync } from "fs";
 
 const pkg = JSON.parse(readFileSync("./package.json", "utf-8"));
-let appVersion = pkg.version;
-try {
-  appVersion = readFileSync("../VERSION", "utf-8").trim().replace(/^v/, "");
-} catch {
-  appVersion = pkg.version;
-}
+const appVersion = pkg.version;
 
 /** @type {import('next').NextConfig} */
 const nextConfig = {

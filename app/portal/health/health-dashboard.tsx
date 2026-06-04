@@ -993,12 +993,15 @@ function SleepDashboard({
   points,
   sections,
   rangeLabel,
+  period,
 }: Readonly<{
   points: HealthPoint[];
   sections: UnknownRecord | null;
   rangeLabel: string;
+  period: Period;
 }>) {
   const { t, locale } = useLocale();
+  const isOneDayRange = period === "last_day" || points.length <= 1;
   const sleepPoints = points.filter((point) =>
     hasAnyValue(point, [SLEEP_DURATION_KEYS]),
   );
@@ -1109,8 +1112,16 @@ function SleepDashboard({
       </div>
 
       <ChartPanel
-        title={t.portal.health.sleepDuration}
-        subtitle={`${t.portal.health.nightlySleepHours} - ${rangeLabel}`}
+        title={
+          isOneDayRange
+            ? t.portal.health.sleepOnSelectedDay
+            : t.portal.health.sleepDuration
+        }
+        subtitle={`${
+          isOneDayRange
+            ? t.portal.health.selectedDay
+            : t.portal.health.nightlySleepHours
+        } - ${rangeLabel}`}
       >
         {sleepVals.length > 0 ? (
           <EChart
@@ -1135,7 +1146,11 @@ function SleepDashboard({
       <div className="grid gap-4 xl:grid-cols-2">
         <ChartPanel
           title={t.portal.health.sleepStages}
-          subtitle={t.portal.health.sleepStagesSubtitle}
+          subtitle={
+            isOneDayRange
+              ? t.portal.health.oneDayRangeHint
+              : t.portal.health.sleepStagesSubtitle
+          }
         >
           {stageSeries.length > 0 ? (
             <EChart
@@ -1307,6 +1322,7 @@ function RecoveryDashboard({
       : sectionScore !== null
         ? 1
         : 0);
+  const isOneDayRange = period === "last_day" || points.length <= 1;
 
   return (
     <div className="flex flex-col gap-5">
@@ -1348,7 +1364,11 @@ function RecoveryDashboard({
       <div className="grid gap-4 xl:grid-cols-[minmax(0,1.6fr)_minmax(260px,0.8fr)]">
         <ChartPanel
           title={t.portal.health.hrvAndHeartRate}
-          subtitle={`${t.portal.health.recoveryMarkersOverTime} - ${rangeLabel}`}
+          subtitle={`${
+            isOneDayRange
+              ? t.portal.health.recoveryMarkersSelectedDay
+              : t.portal.health.recoveryMarkersOverTime
+          } - ${rangeLabel}`}
         >
           {hrvVals.length > 0 || hrVals.length > 0 ? (
             <EChart
@@ -1504,6 +1524,8 @@ function ActivityDashboard({
     };
   });
   const { best, lowest } = bestAndLowest(stepPoints, ACTIVITY_STEPS_KEYS);
+  const isOneDayRange = period === "last_day" || points.length <= 1;
+  const hasEnoughStepDaysForComparison = stepsVals.length >= 2;
 
   return (
     <div className="flex flex-col gap-5">
@@ -1547,8 +1569,16 @@ function ActivityDashboard({
       </div>
 
       <ChartPanel
-        title={t.portal.health.stepsTrend}
-        subtitle={`${t.portal.health.dailySteps} - ${rangeLabel}`}
+        title={
+          isOneDayRange
+            ? t.portal.health.stepsOnSelectedDay
+            : t.portal.health.stepsTrend
+        }
+        subtitle={`${
+          isOneDayRange
+            ? t.portal.health.selectedDay
+            : t.portal.health.dailySteps
+        } - ${rangeLabel}`}
       >
         {stepsVals.length > 0 ? (
           <div className="flex flex-col gap-2">
@@ -1589,8 +1619,16 @@ function ActivityDashboard({
 
       <div className="grid gap-4 xl:grid-cols-2">
         <ChartPanel
-          title={t.portal.health.energyAndDistance}
-          subtitle={t.portal.health.energyDistanceSubtitle}
+          title={
+            isOneDayRange
+              ? t.portal.health.energyDistanceSelectedDay
+              : t.portal.health.energyAndDistance
+          }
+          subtitle={
+            isOneDayRange
+              ? t.portal.health.oneDayRangeHint
+              : t.portal.health.energyDistanceSubtitle
+          }
         >
           {energyVals.length > 0 || distanceVals.length > 0 ? (
             <EChart
@@ -1627,10 +1665,18 @@ function ActivityDashboard({
         </ChartPanel>
 
         <ChartPanel
-          title={t.portal.health.bestVsLowest}
-          subtitle={t.portal.health.stepRangeAnchors}
+          title={
+            hasEnoughStepDaysForComparison
+              ? t.portal.health.bestVsLowest
+              : t.portal.health.comparisonNeedsMoreDays
+          }
+          subtitle={
+            hasEnoughStepDaysForComparison
+              ? t.portal.health.stepRangeAnchors
+              : t.portal.health.chooseLongerRangeForActivityComparison
+          }
         >
-          {best && lowest ? (
+          {hasEnoughStepDaysForComparison && best && lowest ? (
             <div className="grid gap-3 sm:grid-cols-2">
               <div className="rounded-lg border border-emerald-500/20 bg-emerald-500/10 p-4">
                 <p className="text-xs font-semibold uppercase tracking-wider text-emerald-300">
@@ -1666,8 +1712,8 @@ function ActivityDashboard({
           ) : (
             <MetricState
               Icon={Footprints}
-              title={t.portal.health.stepComparisonUnavailable}
-              body={t.portal.health.stepComparisonUnavailableBody}
+              title={t.portal.health.comparisonNeedsMoreDays}
+              body={t.portal.health.chooseLongerRangeForActivityComparison}
             />
           )}
         </ChartPanel>
@@ -1807,6 +1853,7 @@ export function HealthDashboard({
               points={filtered.points}
               sections={sections}
               rangeLabel={filtered.rangeLabel}
+              period={period}
             />
           )}
           {domain === "recovery" && (

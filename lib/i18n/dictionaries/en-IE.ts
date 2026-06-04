@@ -1096,11 +1096,16 @@ export const enIE = {
       overviewSubtitle:
         "A compact view of sleep, recovery, and activity from your stored timeline.",
       overviewHelper:
-        "Use the detail pages for filters, charts, and deeper evidence.",
-      overviewUpdatedThrough: "Latest data through {date}",
+        "Each domain uses the latest valid data available for that signal.",
+      overviewUpdatedThrough: "Latest stored data through {date}",
       overviewOpenDetail: "Open detail",
       overviewNoData: "No stored values yet",
       overviewLatestValue: "Latest value",
+      overviewLatestValidDay: {
+        sleep: "Latest valid sleep day",
+        recovery: "Latest valid recovery day",
+        activity: "Latest valid activity day",
+      },
       loading: "Loading health data...",
       loadError: "Health data could not be loaded.",
       unableToLoad: "Unable to load health data",
@@ -1135,6 +1140,7 @@ export const enIE = {
       appleHealthMayDiffer:
         "Engage7 uses exported Apple Health SleepAnalysis records: asleep/stage records estimate sleep duration, InBed is shown separately, Awake is shown when exported, and Apple Health app totals may differ because Apple can use proprietary aggregation.",
       sleepDuration: "Sleep Duration",
+      sleepOnSelectedDay: "Sleep on the selected day",
       nightlySleepHours: "Nightly sleep hours",
       sleepH: "Sleep (h)",
       sleepDurationMissing: "Sleep duration missing",
@@ -1182,7 +1188,11 @@ export const enIE = {
       distance: "Distance",
       stepsUnit: "steps",
       stepsTrend: "Steps Trend",
+      stepsOnSelectedDay: "Steps on the selected day",
       dailySteps: "Daily steps",
+      selectedDay: "Selected day",
+      oneDayRangeHint:
+        "This view shows one complete day. Choose a longer range to see trends.",
       steps: "Steps",
       stepsMissing: "Steps missing",
       noStepCountValues:
@@ -1190,6 +1200,7 @@ export const enIE = {
       hiddenStepOutliers:
         "{count} extreme step values are hidden from chart scale.",
       energyAndDistance: "Energy and Distance",
+      energyDistanceSelectedDay: "Energy and distance on the selected day",
       energyCal: "Energy (Cal)",
       distanceKm: "Distance (km)",
       energyAndDistanceUnavailable: "Energy and distance unavailable",
@@ -1200,6 +1211,9 @@ export const enIE = {
       stepComparisonUnavailable: "Step comparison unavailable",
       stepComparisonUnavailableBody:
         "At least one day with step data is needed for best and lowest periods.",
+      comparisonNeedsMoreDays: "Comparison needs more days",
+      chooseLongerRangeForActivityComparison:
+        "Choose a longer range to compare your highest and lowest activity days.",
       recoveryInsight: "Recovery insight",
       averageHrv: "Average HRV",
       averageHr: "Average HR",
@@ -1213,6 +1227,7 @@ export const enIE = {
       hrvAverageInRange: "HRV averages {value} ms in this range.",
       hrvAndHeartRate: "HRV and Heart Rate",
       recoveryMarkersOverTime: "Recovery markers over time",
+      recoveryMarkersSelectedDay: "Recovery markers on the selected day",
       hrvMs: "HRV (ms)",
       hrBpm: "HR (bpm)",
       recoverySignalsMissing: "Recovery signals missing",

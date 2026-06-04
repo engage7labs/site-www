@@ -262,7 +262,7 @@ export default function HealthPage() {
               <div className="mt-5 flex items-end justify-between gap-4">
                 <div>
                   <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
-                    {t.portal.health.overviewLatestValue}
+                    {t.portal.health.overviewLatestValidDay[domain]}
                   </p>
                   <p className="mt-1 text-2xl font-semibold text-card-foreground">
                     {domainValue(domain, latest, {

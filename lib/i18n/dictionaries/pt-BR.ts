@@ -1102,11 +1102,16 @@ export const ptBR: Dictionary = {
       overviewSubtitle:
         "Uma visão compacta de sono, recuperação e atividade a partir da sua linha do tempo armazenada.",
       overviewHelper:
-        "Use as páginas de detalhe para filtros, gráficos e evidências mais profundas.",
-      overviewUpdatedThrough: "Dados mais recentes até {date}",
+        "Cada domínio usa o dado válido mais recente disponível para aquele sinal.",
+      overviewUpdatedThrough: "Dados armazenados mais recentes até {date}",
       overviewOpenDetail: "Abrir detalhe",
       overviewNoData: "Ainda sem valores armazenados",
       overviewLatestValue: "Valor mais recente",
+      overviewLatestValidDay: {
+        sleep: "Último dia válido de sono",
+        recovery: "Último dia válido de recuperação",
+        activity: "Último dia válido de atividade",
+      },
       loading: "Carregando dados de saúde...",
       loadError: "Os dados de saúde não puderam ser carregados.",
       unableToLoad: "Não foi possível carregar os dados de saúde",
@@ -1141,6 +1146,7 @@ export const ptBR: Dictionary = {
       appleHealthMayDiffer:
         "O Engage7 usa registros SleepAnalysis exportados do Apple Health: registros dormindo/estágios estimam a duração do sono, Na cama aparece separadamente, Acordado aparece quando exportado, e os totais do app Saúde podem diferir porque a Apple pode usar agregação proprietária.",
       sleepDuration: "Duração do sono",
+      sleepOnSelectedDay: "Sono no dia selecionado",
       nightlySleepHours: "Horas de sono por noite",
       sleepH: "Sono (h)",
       sleepDurationMissing: "Duração do sono ausente",
@@ -1188,7 +1194,11 @@ export const ptBR: Dictionary = {
       distance: "Distância",
       stepsUnit: "passos",
       stepsTrend: "Tendência de passos",
+      stepsOnSelectedDay: "Passos no dia selecionado",
       dailySteps: "Passos diários",
+      selectedDay: "Dia selecionado",
+      oneDayRangeHint:
+        "Esta visão mostra um dia completo. Escolha um período maior para ver tendências.",
       steps: "Passos",
       stepsMissing: "Passos ausentes",
       noStepCountValues:
@@ -1196,6 +1206,7 @@ export const ptBR: Dictionary = {
       hiddenStepOutliers:
         "{count} valores extremos de passos estão ocultos da escala do gráfico.",
       energyAndDistance: "Energia e distância",
+      energyDistanceSelectedDay: "Energia e distância no dia selecionado",
       energyCal: "Energia (Cal)",
       distanceKm: "Distância (km)",
       energyAndDistanceUnavailable: "Energia e distância indisponíveis",
@@ -1206,6 +1217,9 @@ export const ptBR: Dictionary = {
       stepComparisonUnavailable: "Comparação de passos indisponível",
       stepComparisonUnavailableBody:
         "É necessário pelo menos um dia com dados de passos para comparar melhor e menor período.",
+      comparisonNeedsMoreDays: "A comparação precisa de mais dias",
+      chooseLongerRangeForActivityComparison:
+        "Escolha um período maior para comparar seus dias de maior e menor atividade.",
       recoveryInsight: "Insight de recuperação",
       averageHrv: "VFC média",
       averageHr: "FC média",
@@ -1219,6 +1233,7 @@ export const ptBR: Dictionary = {
       hrvAverageInRange: "A VFC média é {value} ms neste intervalo.",
       hrvAndHeartRate: "VFC e frequência cardíaca",
       recoveryMarkersOverTime: "Marcadores de recuperação ao longo do tempo",
+      recoveryMarkersSelectedDay: "Marcadores de recuperação no dia selecionado",
       hrvMs: "VFC (ms)",
       hrBpm: "FC (bpm)",
       recoverySignalsMissing: "Sinais de recuperação ausentes",
