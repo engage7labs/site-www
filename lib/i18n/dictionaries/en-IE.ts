@@ -114,6 +114,21 @@ export const enIE = {
       learnMoreCTA: "Learn more about our methodology",
     },
 
+    productPreview: {
+      title: "See the kind of insight you'll receive",
+      subtitle:
+        "Preview how Engage7 turns your Apple Health export into daily guidance, health trends, and personal patterns.",
+      labels: {
+        dailyGuidance: "Daily guidance",
+        healthTrends: "Health trends",
+        personalPatterns: "Personal patterns",
+      },
+      controls: {
+        previous: "Previous preview",
+        next: "Next preview",
+      },
+    },
+
     // FAQ Section
     faq: {
       sectionTitle: "Common questions",

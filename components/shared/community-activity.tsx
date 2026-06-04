@@ -8,6 +8,7 @@
 "use client";
 
 import { getPublicMetrics, type PublicMetrics } from "@/lib/api/analysis";
+import { SUPPORTED_LOCALES } from "@/lib/i18n/config";
 import { motion } from "framer-motion";
 import { BarChart3, Clock, Globe } from "lucide-react";
 import { useEffect, useState } from "react";
@@ -27,6 +28,7 @@ interface CommunityActivityProps {
 export function CommunityActivity({ t, className }: CommunityActivityProps) {
   const [metrics, setMetrics] = useState<PublicMetrics | null>(null);
   const [metricsError, setMetricsError] = useState(false);
+  const publicLanguageCount = SUPPORTED_LOCALES.length;
 
   useEffect(() => {
     getPublicMetrics()
@@ -80,7 +82,7 @@ export function CommunityActivity({ t, className }: CommunityActivityProps) {
                 <Globe className="h-5 w-5 text-accent" />
               </div>
               <p className="text-2xl font-semibold text-foreground">
-                {metrics.unique_locales}
+                {publicLanguageCount}
               </p>
               <p className="text-xs text-muted-foreground">{t.languages}</p>
             </div>

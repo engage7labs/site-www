@@ -117,6 +117,21 @@ export const ptBR: Dictionary = {
       learnMoreCTA: "Saiba mais sobre nossa metodologia",
     },
 
+    productPreview: {
+      title: "Veja o tipo de insight que você vai receber",
+      subtitle:
+        "Veja como o Engage7 transforma seu export do Apple Health em orientação diária, tendências de saúde e padrões pessoais.",
+      labels: {
+        dailyGuidance: "Orientação diária",
+        healthTrends: "Tendências de saúde",
+        personalPatterns: "Padrões pessoais",
+      },
+      controls: {
+        previous: "Prévia anterior",
+        next: "Próxima prévia",
+      },
+    },
+
     // FAQ Section
     faq: {
       sectionTitle: "Perguntas Frequentes",

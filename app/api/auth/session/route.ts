@@ -1,4 +1,5 @@
 import { SESSION_COOKIE_NAME, verifyJwt } from "@/lib/auth-server";
+import { markAuthenticatedSessionObserved } from "@/lib/auth-session-observer";
 import { cookies } from "next/headers";
 import { NextResponse } from "next/server";
 
@@ -15,6 +16,8 @@ export async function GET() {
   if (!session?.sub) {
     return NextResponse.json({ authenticated: false }, { status: 401 });
   }
+
+  await markAuthenticatedSessionObserved(session);
 
   return NextResponse.json({
     authenticated: true,

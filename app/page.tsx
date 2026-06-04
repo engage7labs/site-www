@@ -13,6 +13,8 @@ import {
   Activity,
   ArrowRight,
   BarChart3,
+  ChevronLeft,
+  ChevronRight,
   FileCheck,
   FileText,
   Shield,
@@ -20,6 +22,7 @@ import {
   Upload,
 } from "lucide-react";
 import Link from "next/link";
+import { useRef } from "react";
 
 const fadeInUp = {
   initial: { opacity: 0, y: 20 },
@@ -35,6 +38,111 @@ const staggerContainer = {
     },
   },
 };
+
+function ProductPreviewCarousel({
+  t,
+}: {
+  t: {
+    title: string;
+    subtitle: string;
+    labels: {
+      dailyGuidance: string;
+      healthTrends: string;
+      personalPatterns: string;
+    };
+    controls: {
+      previous: string;
+      next: string;
+    };
+  };
+}) {
+  const scrollerRef = useRef<HTMLDivElement>(null);
+  const previews = [
+    {
+      src: "/samples/sample1.png",
+      alt: t.labels.dailyGuidance,
+      label: t.labels.dailyGuidance,
+    },
+    {
+      src: "/samples/sample2.png",
+      alt: t.labels.healthTrends,
+      label: t.labels.healthTrends,
+    },
+    {
+      src: "/samples/sample3.png",
+      alt: t.labels.personalPatterns,
+      label: t.labels.personalPatterns,
+    },
+  ];
+
+  function scrollByCard(direction: "previous" | "next") {
+    const scroller = scrollerRef.current;
+    if (!scroller) return;
+    const firstCard = scroller.querySelector<HTMLElement>("[data-preview-card]");
+    const distance = firstCard ? firstCard.offsetWidth + 24 : 320;
+    scroller.scrollBy({
+      left: direction === "next" ? distance : -distance,
+      behavior: "smooth",
+    });
+  }
+
+  return (
+    <div className="space-y-8">
+      <div className="text-center space-y-3">
+        <h3 className="text-2xl md:text-3xl font-semibold text-foreground">
+          {t.title}
+        </h3>
+        <p className="text-sm md:text-base text-muted-foreground max-w-2xl mx-auto">
+          {t.subtitle}
+        </p>
+      </div>
+
+      <div className="relative">
+        <div
+          ref={scrollerRef}
+          className="flex gap-6 overflow-x-auto snap-x snap-mandatory scroll-smooth pb-4 px-1 md:px-12"
+        >
+          {previews.map((preview) => (
+            <figure
+              key={preview.src}
+              data-preview-card
+              className="snap-center shrink-0 w-[78vw] max-w-[300px] md:w-[280px] space-y-3"
+            >
+              <div className="rounded-2xl border border-border/70 bg-card/60 p-2 shadow-2xl shadow-black/20">
+                <img
+                  src={preview.src}
+                  alt={preview.alt}
+                  className="aspect-[9/16] w-full rounded-xl object-cover"
+                  loading="lazy"
+                />
+              </div>
+              <figcaption className="text-center text-sm font-medium text-foreground">
+                {preview.label}
+              </figcaption>
+            </figure>
+          ))}
+        </div>
+
+        <button
+          type="button"
+          aria-label={t.controls.previous}
+          onClick={() => scrollByCard("previous")}
+          className="hidden md:flex absolute left-0 top-1/2 -translate-y-1/2 h-10 w-10 items-center justify-center rounded-full border border-border bg-background/90 text-foreground shadow-lg hover:bg-muted"
+        >
+          <ChevronLeft className="h-5 w-5" />
+        </button>
+        <button
+          type="button"
+          aria-label={t.controls.next}
+          onClick={() => scrollByCard("next")}
+          className="hidden md:flex absolute right-0 top-1/2 -translate-y-1/2 h-10 w-10 items-center justify-center rounded-full border border-border bg-background/90 text-foreground shadow-lg hover:bg-muted"
+        >
+          <ChevronRight className="h-5 w-5" />
+        </button>
+      </div>
+    </div>
+  );
+}
 
 export default function Home() {
   const { t } = useLocale();
@@ -443,6 +551,16 @@ export default function Home() {
                 </div>
               </div>
             </div>
+          </motion.div>
+
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.6, delay: 0.3 }}
+            viewport={{ once: true }}
+            className="mt-16"
+          >
+            <ProductPreviewCarousel t={t.home.productPreview} />
           </motion.div>
         </div>
       </section>
