@@ -120,8 +120,11 @@ export const enIE = {
         "Preview how Engage7 turns your Apple Health export into daily guidance, health trends, and personal patterns.",
       labels: {
         dailyGuidance: "Daily guidance",
-        healthTrends: "Health trends",
-        personalPatterns: "Personal patterns",
+        compareImprove: "Compare & Improve",
+        healthOverview: "Health overview",
+        sleepTrends: "Sleep trends",
+        recoveryTrends: "Recovery trends",
+        activityTrends: "Activity trends",
       },
       controls: {
         previous: "Previous preview",

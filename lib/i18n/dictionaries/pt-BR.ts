@@ -123,8 +123,11 @@ export const ptBR: Dictionary = {
         "Veja como o Engage7 transforma seu export do Apple Health em orientação diária, tendências de saúde e padrões pessoais.",
       labels: {
         dailyGuidance: "Orientação diária",
-        healthTrends: "Tendências de saúde",
-        personalPatterns: "Padrões pessoais",
+        compareImprove: "Comparar e melhorar",
+        healthOverview: "Visão de saúde",
+        sleepTrends: "Tendências de sono",
+        recoveryTrends: "Tendências de recuperação",
+        activityTrends: "Tendências de atividade",
       },
       controls: {
         previous: "Prévia anterior",

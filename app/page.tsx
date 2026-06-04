@@ -47,8 +47,11 @@ function ProductPreviewCarousel({
     subtitle: string;
     labels: {
       dailyGuidance: string;
-      healthTrends: string;
-      personalPatterns: string;
+      compareImprove: string;
+      healthOverview: string;
+      sleepTrends: string;
+      recoveryTrends: string;
+      activityTrends: string;
     };
     controls: {
       previous: string;
@@ -65,13 +68,28 @@ function ProductPreviewCarousel({
     },
     {
       src: "/samples/sample2.png",
-      alt: t.labels.healthTrends,
-      label: t.labels.healthTrends,
+      alt: t.labels.compareImprove,
+      label: t.labels.compareImprove,
     },
     {
       src: "/samples/sample3.png",
-      alt: t.labels.personalPatterns,
-      label: t.labels.personalPatterns,
+      alt: t.labels.healthOverview,
+      label: t.labels.healthOverview,
+    },
+    {
+      src: "/samples/sample4.png",
+      alt: t.labels.sleepTrends,
+      label: t.labels.sleepTrends,
+    },
+    {
+      src: "/samples/sample5.png",
+      alt: t.labels.recoveryTrends,
+      label: t.labels.recoveryTrends,
+    },
+    {
+      src: "/samples/sample6.png",
+      alt: t.labels.activityTrends,
+      label: t.labels.activityTrends,
     },
   ];
 
@@ -97,10 +115,10 @@ function ProductPreviewCarousel({
         </p>
       </div>
 
-      <div className="relative">
+      <div className="relative mx-auto max-w-[1048px]">
         <div
           ref={scrollerRef}
-          className="flex gap-6 overflow-x-auto snap-x snap-mandatory scroll-smooth pb-4 px-1 md:px-12"
+          className="mx-auto flex max-w-full gap-6 overflow-x-auto snap-x snap-mandatory scroll-smooth pb-4 px-1 md:px-12 md:justify-start"
         >
           {previews.map((preview) => (
             <figure
