@@ -197,11 +197,11 @@ function ProductPreviewCarousel({
           role="dialog"
           aria-modal="true"
           aria-label={selectedPreview.label}
-          className="fixed inset-0 z-[100] flex items-center justify-center bg-black/80 p-4"
+          className="fixed inset-0 z-[100] flex items-center justify-center bg-black/80 px-2 py-[1vh] sm:px-4"
           onClick={() => setSelectedIndex(null)}
         >
           <div
-            className="relative flex max-h-[92vh] w-full max-w-5xl items-center justify-center"
+            className="relative flex h-[98vh] w-full max-w-6xl items-center justify-center"
             onClick={(event) => event.stopPropagation()}
           >
             <button
@@ -222,15 +222,15 @@ function ProductPreviewCarousel({
               <ChevronLeft className="h-5 w-5" />
             </button>
 
-            <figure className="flex max-h-[92vh] flex-col items-center gap-3 px-12">
+            <figure className="flex h-full min-h-0 w-full flex-col items-center gap-1 px-10 sm:px-12">
+              <figcaption className="shrink-0 text-center text-sm font-semibold text-white sm:text-base">
+                {selectedPreview.label}
+              </figcaption>
               <img
                 src={selectedPreview.src}
                 alt={selectedPreview.alt}
-                className="max-h-[84vh] w-auto max-w-full rounded-2xl border border-white/10 object-contain shadow-2xl"
+                className="min-h-0 max-h-[calc(98vh-2rem)] w-auto max-w-full flex-1 rounded-2xl border border-white/10 object-contain shadow-2xl"
               />
-              <figcaption className="text-center text-sm font-medium text-white">
-                {selectedPreview.label}
-              </figcaption>
             </figure>
 
             <button
