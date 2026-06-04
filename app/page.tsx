@@ -222,14 +222,15 @@ function ProductPreviewCarousel({
               <ChevronLeft className="h-5 w-5" />
             </button>
 
-            <figure className="flex h-full min-h-0 w-full flex-col items-center gap-1 px-10 sm:px-12">
-              <figcaption className="shrink-0 text-center text-sm font-semibold text-white sm:text-base">
+            <figure className="relative flex h-full min-h-0 w-full items-center justify-center px-10 sm:px-12">
+              <figcaption className="absolute left-1/2 top-2 z-10 max-w-[calc(100%-6rem)] -translate-x-1/2 rounded-full border border-white/15 bg-black/55 px-3 py-1 text-center text-xs font-semibold text-white shadow-lg backdrop-blur-sm sm:text-sm">
                 {selectedPreview.label}
               </figcaption>
               <img
                 src={selectedPreview.src}
                 alt={selectedPreview.alt}
-                className="min-h-0 max-h-[calc(98vh-2rem)] w-auto max-w-full flex-1 rounded-2xl border border-white/10 object-contain shadow-2xl"
+                title={selectedPreview.label}
+                className="min-h-0 max-h-full w-auto max-w-full rounded-2xl border border-white/10 object-contain shadow-2xl"
               />
             </figure>
 
