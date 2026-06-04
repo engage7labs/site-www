@@ -20,9 +20,10 @@ import {
   Shield,
   TrendingUp,
   Upload,
+  X,
 } from "lucide-react";
 import Link from "next/link";
-import { useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 
 const fadeInUp = {
   initial: { opacity: 0, y: 20 },
@@ -56,10 +57,13 @@ function ProductPreviewCarousel({
     controls: {
       previous: string;
       next: string;
+      close: string;
+      open: string;
     };
   };
 }) {
   const scrollerRef = useRef<HTMLDivElement>(null);
+  const [selectedIndex, setSelectedIndex] = useState<number | null>(null);
   const previews = [
     {
       src: "/samples/sample1.png",
@@ -104,6 +108,30 @@ function ProductPreviewCarousel({
     });
   }
 
+  function moveLightbox(direction: "previous" | "next") {
+    setSelectedIndex((current) => {
+      if (current === null) return current;
+      const offset = direction === "next" ? 1 : -1;
+      return (current + offset + previews.length) % previews.length;
+    });
+  }
+
+  useEffect(() => {
+    if (selectedIndex === null) return;
+
+    function onKeyDown(event: KeyboardEvent) {
+      if (event.key === "Escape") setSelectedIndex(null);
+      if (event.key === "ArrowLeft") moveLightbox("previous");
+      if (event.key === "ArrowRight") moveLightbox("next");
+    }
+
+    window.addEventListener("keydown", onKeyDown);
+    return () => window.removeEventListener("keydown", onKeyDown);
+  }, [selectedIndex]);
+
+  const selectedPreview =
+    selectedIndex === null ? null : previews[selectedIndex] ?? null;
+
   return (
     <div className="space-y-8">
       <div className="text-center space-y-3">
@@ -120,20 +148,25 @@ function ProductPreviewCarousel({
           ref={scrollerRef}
           className="mx-auto flex max-w-full gap-6 overflow-x-auto snap-x snap-mandatory scroll-smooth pb-4 px-1 md:px-12 md:justify-start"
         >
-          {previews.map((preview) => (
+          {previews.map((preview, index) => (
             <figure
               key={preview.src}
               data-preview-card
               className="snap-center shrink-0 w-[78vw] max-w-[300px] md:w-[280px] space-y-3"
             >
-              <div className="rounded-2xl border border-border/70 bg-card/60 p-2 shadow-2xl shadow-black/20">
+              <button
+                type="button"
+                aria-label={`${t.controls.open}: ${preview.label}`}
+                onClick={() => setSelectedIndex(index)}
+                className="block w-full rounded-2xl border border-border/70 bg-card/60 p-2 shadow-2xl shadow-black/20 transition hover:border-accent/70 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
+              >
                 <img
                   src={preview.src}
                   alt={preview.alt}
                   className="aspect-[9/16] w-full rounded-xl object-cover"
                   loading="lazy"
                 />
-              </div>
+              </button>
               <figcaption className="text-center text-sm font-medium text-foreground">
                 {preview.label}
               </figcaption>
@@ -158,6 +191,59 @@ function ProductPreviewCarousel({
           <ChevronRight className="h-5 w-5" />
         </button>
       </div>
+
+      {selectedPreview && selectedIndex !== null && (
+        <div
+          role="dialog"
+          aria-modal="true"
+          aria-label={selectedPreview.label}
+          className="fixed inset-0 z-[100] flex items-center justify-center bg-black/80 p-4"
+          onClick={() => setSelectedIndex(null)}
+        >
+          <div
+            className="relative flex max-h-[92vh] w-full max-w-5xl items-center justify-center"
+            onClick={(event) => event.stopPropagation()}
+          >
+            <button
+              type="button"
+              aria-label={t.controls.close}
+              onClick={() => setSelectedIndex(null)}
+              className="absolute right-0 top-0 z-10 flex h-10 w-10 items-center justify-center rounded-full border border-white/20 bg-black/60 text-white shadow-lg hover:bg-black/80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white"
+            >
+              <X className="h-5 w-5" />
+            </button>
+
+            <button
+              type="button"
+              aria-label={t.controls.previous}
+              onClick={() => moveLightbox("previous")}
+              className="absolute left-0 top-1/2 z-10 flex h-10 w-10 -translate-y-1/2 items-center justify-center rounded-full border border-white/20 bg-black/60 text-white shadow-lg hover:bg-black/80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white"
+            >
+              <ChevronLeft className="h-5 w-5" />
+            </button>
+
+            <figure className="flex max-h-[92vh] flex-col items-center gap-3 px-12">
+              <img
+                src={selectedPreview.src}
+                alt={selectedPreview.alt}
+                className="max-h-[84vh] w-auto max-w-full rounded-2xl border border-white/10 object-contain shadow-2xl"
+              />
+              <figcaption className="text-center text-sm font-medium text-white">
+                {selectedPreview.label}
+              </figcaption>
+            </figure>
+
+            <button
+              type="button"
+              aria-label={t.controls.next}
+              onClick={() => moveLightbox("next")}
+              className="absolute right-0 top-1/2 z-10 flex h-10 w-10 -translate-y-1/2 items-center justify-center rounded-full border border-white/20 bg-black/60 text-white shadow-lg hover:bg-black/80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white"
+            >
+              <ChevronRight className="h-5 w-5" />
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

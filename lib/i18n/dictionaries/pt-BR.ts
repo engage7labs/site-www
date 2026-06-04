@@ -132,6 +132,8 @@ export const ptBR: Dictionary = {
       controls: {
         previous: "Prévia anterior",
         next: "Próxima prévia",
+        close: "Fechar prévia",
+        open: "Abrir prévia",
       },
     },
 

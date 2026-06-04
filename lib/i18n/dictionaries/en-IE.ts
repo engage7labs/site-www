@@ -129,6 +129,8 @@ export const enIE = {
       controls: {
         previous: "Previous preview",
         next: "Next preview",
+        close: "Close preview",
+        open: "Open preview",
       },
     },
 
