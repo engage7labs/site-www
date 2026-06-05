@@ -11,6 +11,8 @@ import posthog from "posthog-js";
 const POSTHOG_KEY = process.env.NEXT_PUBLIC_POSTHOG_KEY ?? "";
 const POSTHOG_HOST =
   process.env.NEXT_PUBLIC_POSTHOG_HOST ?? "https://eu.i.posthog.com";
+const POSTHOG_UI_HOST =
+  process.env.NEXT_PUBLIC_POSTHOG_UI_HOST ?? "https://eu.posthog.com";
 
 let initialised = false;
 
@@ -24,6 +26,7 @@ export function initPostHog(): void {
 
   posthog.init(POSTHOG_KEY, {
     api_host: POSTHOG_HOST,
+    ui_host: POSTHOG_UI_HOST,
     capture_pageview: false, // we fire our own page events
     capture_pageleave: true,
     persistence: "localStorage+cookie",
@@ -63,4 +66,13 @@ export function identify(
 export function reset(): void {
   if (!initialised) return;
   posthog.reset();
+}
+
+/**
+ * Capture a $pageview event for SPA route changes.
+ * Call on each pathname change after initial mount.
+ */
+export function capturePageview(url?: string): void {
+  if (!initialised) return;
+  posthog.capture("$pageview", url ? { $current_url: url } : undefined);
 }

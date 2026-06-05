@@ -46,6 +46,8 @@ type SafeTelemetryProperties = Partial<{
   job_id: string;
   short_job_id: string;
   error_code: string;
+  user_kind: "admin" | "user" | "anonymous";
+  is_internal_test: true;
 }>;
 
 const SAFE_KEYS = new Set([
@@ -63,10 +65,12 @@ const SAFE_KEYS = new Set([
   "job_id",
   "short_job_id",
   "error_code",
+  "user_kind",
+  "is_internal_test",
 ]);
 
 function safeProperties(
-  properties: SafeTelemetryProperties = {},
+  properties: SafeTelemetryProperties = {}
 ): Record<string, unknown> {
   const safe: Record<string, unknown> = {};
   for (const [key, value] of Object.entries(properties)) {
@@ -79,7 +83,7 @@ function safeProperties(
 
 export function trackEvent(
   event: PostHogEventName,
-  properties?: SafeTelemetryProperties,
+  properties?: SafeTelemetryProperties
 ): void {
   capture(event, { ...getUserContext(), ...safeProperties(properties) });
 }
@@ -105,7 +109,11 @@ export function trackAnalysisCompleted(jobId?: string): void {
 }
 
 export function trackTeaserViewed(jobId?: string): void {
-  trackEvent("teaser_viewed", { source: "public", surface: "teaser", job_id: jobId });
+  trackEvent("teaser_viewed", {
+    source: "public",
+    surface: "teaser",
+    job_id: jobId,
+  });
 }
 
 export function trackTrialUnlockStarted(surface = "teaser"): void {
@@ -133,13 +141,21 @@ export function trackClaimImportStarted(jobId?: string): void {
 
 export function trackClaimImportCompleted(
   jobId?: string,
-  status = "completed",
+  status = "completed"
 ): void {
-  trackEvent("claim_import_completed", { source: "portal", job_id: jobId, status });
+  trackEvent("claim_import_completed", {
+    source: "portal",
+    job_id: jobId,
+    status,
+  });
 }
 
 export function trackReportViewed(jobId?: string): void {
-  trackEvent("report_viewed", { source: "portal", surface: "report", job_id: jobId });
+  trackEvent("report_viewed", {
+    source: "portal",
+    surface: "report",
+    job_id: jobId,
+  });
 }
 
 export function trackHealthDashboardViewed(action: string): void {
@@ -151,7 +167,10 @@ export function trackHealthDashboardViewed(action: string): void {
 }
 
 export function trackUpdateDataStarted(): void {
-  trackEvent("update_data_started", { source: "portal", surface: "data_update" });
+  trackEvent("update_data_started", {
+    source: "portal",
+    surface: "data_update",
+  });
 }
 
 export function trackUpdateDataCompleted(jobId?: string): void {
