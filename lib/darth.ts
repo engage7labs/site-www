@@ -180,6 +180,43 @@ export interface DarthEvidence {
   confidence_adjusted: number;
 }
 
+export interface DarthEvidencePackSignal {
+  ref_id: string;
+  domain: string;
+  metric_key: string;
+  window: string;
+  direction: string;
+  comparison_label: string;
+  confidence: number;
+  display_hint: string;
+}
+
+export interface DarthEvidencePack {
+  contract_version: "darth_evidence_pack.v1";
+  source: "darth";
+  state: NonNullable<DarthPayload["state"]> | string;
+  trajectory: {
+    direction: DarthTrajectory["direction"] | string;
+    window: string;
+    confidence: number;
+  };
+  confidence: number;
+  primary_claim: string;
+  guidance_summary: {
+    risk_type: string;
+    decision_window_hours: number;
+    statement: string;
+    recommended_adjustment: string;
+  };
+  baseline_context: DarthBaselineContext;
+  evidence_refs: string[];
+  signals: DarthEvidencePackSignal[];
+  limitations: string[];
+  user_profile_type: "general" | "amateur_athlete" | "student" | "entrepreneur";
+  allowed_ai_tasks: string[];
+  disallowed_ai_claims: string[];
+}
+
 export interface DarthStatePresentation {
   state_label?: string;
   trajectory?: DarthTrajectory & {
@@ -234,6 +271,7 @@ export interface DarthPayload {
   state_presentation?: Record<string, DarthStatePresentation>;
   explainability?: DarthInsightBlock[];
   teaser?: DarthTeaser;
+  evidence_pack?: DarthEvidencePack;
 }
 
 function isObject(value: unknown): value is Record<string, unknown> {
