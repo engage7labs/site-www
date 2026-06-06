@@ -35,7 +35,7 @@ const appEnv = process.env.NEXT_PUBLIC_APP_ENV ?? "production";
 export const config = {
   appEnv,
   apiBaseUrl: ensureProtocol(
-    process.env.NEXT_PUBLIC_API_BASE_URL ?? "http://localhost:8000"
+    process.env.NEXT_PUBLIC_API_BASE_URL ?? "http://127.0.0.1:8000"
   ),
   defaultLocale: process.env.NEXT_PUBLIC_DEFAULT_LOCALE ?? "en-IE",
   siteUrl: getDefaultSiteUrl(appEnv),
