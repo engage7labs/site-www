@@ -288,8 +288,10 @@ export const ptBR: Dictionary = {
     },
     processingView: {
       uploadingTitle: "Enviando seus dados",
-      uploadingBody: "Mantenha esta aba aberta enquanto transferimos seu arquivo com segurança.",
-      uploadingFootnote: "Exportações grandes do Apple Health podem levar um momento.",
+      uploadingBody:
+        "Mantenha esta aba aberta enquanto transferimos seu arquivo com segurança.",
+      uploadingFootnote:
+        "Exportações grandes do Apple Health podem levar um momento.",
       analyzingTitle: "Analisando seus dados",
       analyzingBody: "Normalmente termina em 30-90 segundos",
       delayedTitle: "Ainda estamos trabalhando na sua análise...",
@@ -391,7 +393,8 @@ export const ptBR: Dictionary = {
     },
     premiumModal: {
       title: "Abra seu Portal Premium Free",
-      description: "Informe seu email para liberar 90 dias de acesso Premium Free.",
+      description:
+        "Informe seu email para liberar 90 dias de acesso Premium Free.",
       emailLabel: "Seu email",
       emailRequired: "O email é necessário para liberar o Premium Free.",
       emailInvalid: "Informe um endereço de email válido.",
@@ -404,12 +407,12 @@ export const ptBR: Dictionary = {
     },
     protectedHandoffModal: {
       title: "Entre para atualizar seu Portal",
-      body:
-        "Este arquivo parece corresponder a uma timeline Engage7 já protegida. Entre na sua conta para continuar a atualização dos seus dados.",
+      body: "Este arquivo parece corresponder a uma timeline Engage7 já protegida. Entre na sua conta para continuar a atualização dos seus dados.",
       button: "Entrar para atualizar meu Portal",
       blocked:
         "Este arquivo parece corresponder a uma timeline Engage7 já protegida. Entre com a conta correspondente para continuar.",
-      genericError: "Ainda não foi possível continuar esta atualização protegida.",
+      genericError:
+        "Ainda não foi possível continuar esta atualização protegida.",
     },
 
     error: {
@@ -699,7 +702,8 @@ export const ptBR: Dictionary = {
         },
         recovery: {
           title: "Recuperação",
-          subtitle: "VFC, frequência cardíaca, prontidão e comparação com linha de base",
+          subtitle:
+            "VFC, frequência cardíaca, prontidão e comparação com linha de base",
         },
         activity: {
           title: "Atividade",
@@ -744,17 +748,24 @@ export const ptBR: Dictionary = {
       details: {
         sleepGood: "Sua duração do sono está dentro de uma faixa saudável.",
         sleepLow: "Seu sono está mais curto que a faixa saudável típica.",
-        sleepHigh: "Seu sono está mais longo que o necessário para a maioria das pessoas.",
-        hrGood: "Sua frequência cardíaca de repouso está em uma faixa confortável.",
-        hrLow: "Sua frequência cardíaca de repouso está abaixo da média — muitas vezes sinal de bom condicionamento.",
+        sleepHigh:
+          "Seu sono está mais longo que o necessário para a maioria das pessoas.",
+        hrGood:
+          "Sua frequência cardíaca de repouso está em uma faixa confortável.",
+        hrLow:
+          "Sua frequência cardíaca de repouso está abaixo da média — muitas vezes sinal de bom condicionamento.",
         hrHigh:
           "Sua frequência cardíaca de repouso está mais alta. Estresse, hidratação e condicionamento podem influenciar isso.",
         hrvGood: "Sua VFC sugere um sistema nervoso bem equilibrado.",
-        hrvLow: "Sua VFC está mais baixa, o que pode refletir estresse acumulado.",
-        hrvHigh: "Sua VFC está bem alta — normalmente sinal de boa capacidade de recuperação.",
+        hrvLow:
+          "Sua VFC está mais baixa, o que pode refletir estresse acumulado.",
+        hrvHigh:
+          "Sua VFC está bem alta — normalmente sinal de boa capacidade de recuperação.",
         stepsGood: "Sua atividade diária está em uma faixa sustentável.",
-        stepsLow: "Sua contagem de passos está abaixo da faixa comumente recomendada.",
-        stepsHigh: "Você está muito ativo — garanta que a recuperação acompanhe o ritmo.",
+        stepsLow:
+          "Sua contagem de passos está abaixo da faixa comumente recomendada.",
+        stepsHigh:
+          "Você está muito ativo — garanta que a recuperação acompanhe o ritmo.",
       },
       interpretations: {
         sleepRecoveryAligned: "Sono e recuperação estão alinhados",
@@ -766,10 +777,12 @@ export const ptBR: Dictionary = {
         sleepGoodRecoveryLag: "Bom sono, mas recuperação atrasada",
         sleepGoodRecoveryLagBody:
           "Você está dormindo o suficiente, mas sua VFC continua baixa. Fatores como estresse ou horários inconsistentes podem estar envolvidos.",
-        activeEfficient: "Estilo de vida ativo com resposta cardiovascular eficiente",
+        activeEfficient:
+          "Estilo de vida ativo com resposta cardiovascular eficiente",
         activeEfficientBody:
           "Seu movimento diário é sólido e sua frequência cardíaca de repouso fica baixa — sinal de bom condicionamento cardiovascular.",
-        lowerActivityHigherHr: "Menos atividade e frequência cardíaca de repouso mais alta",
+        lowerActivityHigherHr:
+          "Menos atividade e frequência cardíaca de repouso mais alta",
         lowerActivityHigherHrBody:
           "Menos movimento diário tende a acompanhar frequência cardíaca de repouso mais alta. Pequenos aumentos de atividade podem ajudar.",
         variablePatterns: "Sono e atividade estão variáveis",
@@ -778,7 +791,8 @@ export const ptBR: Dictionary = {
         consistentPattern: "Padrão de estilo de vida consistente",
         consistentPatternBody:
           "Seu sono e sua atividade estão estáveis no dia a dia. Essa consistência apoia energia e recuperação confiáveis.",
-        sleepAffectsHr: "O sono tem efeito mensurável na sua frequência cardíaca",
+        sleepAffectsHr:
+          "O sono tem efeito mensurável na sua frequência cardíaca",
         sleepAffectsHrLower:
           "Nos seus dados, mais sono tende a reduzir sua frequência cardíaca. Essa conexão é forte o suficiente para acompanhar ao longo do tempo.",
         sleepAffectsHrHigher:
@@ -788,25 +802,29 @@ export const ptBR: Dictionary = {
         earlierBedtime: "Tente dormir 20 minutos mais cedo nesta semana",
         earlierBedtimeReason:
           "Sua mediana de sono é {current}h — até uma pequena mudança para {target}h pode melhorar como você se sente.",
-        consistentBedtime: "Escolha um horário de dormir consistente pelos próximos 5 dias",
+        consistentBedtime:
+          "Escolha um horário de dormir consistente pelos próximos 5 dias",
         consistentBedtimeReason:
           "Seu horário de sono varia bastante. Um horário fixo, mesmo nos fins de semana, ajuda a estabilizar sua energia.",
         lunchWalk: "Adicione uma caminhada de 10 minutos depois do almoço",
         lunchWalkReason:
           "Seus passos diários ficam em torno de {steps}. Uma caminhada curta é a forma mais simples de aumentar isso.",
-        recoveryBalance: "Equilibre muita atividade com tempo deliberado de recuperação",
+        recoveryBalance:
+          "Equilibre muita atividade com tempo deliberado de recuperação",
         recoveryBalanceReason:
           "Você se movimenta bastante, mas sua frequência cardíaca de repouso sugere que seu corpo pode precisar de mais pausa.",
         slowBreathing: "Tente 5 minutos de respiração lenta antes de dormir",
         slowBreathingReason:
           "Sua VFC está mais baixa. Respiração guiada pode ativar o sistema parassimpático e apoiar a recuperação.",
-        maintainRoutine: "Mantenha o que está fazendo — seus sinais de recuperação estão fortes",
+        maintainRoutine:
+          "Mantenha o que está fazendo — seus sinais de recuperação estão fortes",
         maintainRoutineReason:
           "Bom sono e VFC saudável sugerem que sua rotina atual funciona bem.",
         hydrationStress: "Observe hidratação e estresse nesta semana",
         hydrationStressReason:
           "Uma frequência cardíaca de repouso de {hr} bpm está mais alta. Hidratação e manejo do estresse podem ajudar.",
-        keepUploading: "Continue enviando dados regularmente para insights mais ricos",
+        keepUploading:
+          "Continue enviando dados regularmente para insights mais ricos",
         keepUploadingReason:
           "Mais pontos de dados permitem identificar tendências e dar sugestões melhores e mais personalizadas.",
       },
@@ -833,16 +851,19 @@ export const ptBR: Dictionary = {
     },
     shareCard: {
       title: "Compartilhar Engage7",
-      description: "Compartilhe a página do produto com amigos — não seus dados.",
+      description:
+        "Compartilhe a página do produto com amigos — não seus dados.",
       button: "Compartilhar",
     },
     dataLab: {
       title: "Data Lab",
-      subtitle: "Evidências avançadas, tendências e contexto técnico da sua análise.",
+      subtitle:
+        "Evidências avançadas, tendências e contexto técnico da sua análise.",
       advancedReference: "Análise avançada para referência.",
       correlationDisclaimer: "Correlações não implicam causalidade.",
       loading: "Carregando...",
-      loadError: "Os dados avançados de tendência não puderam ser carregados agora.",
+      loadError:
+        "Os dados avançados de tendência não puderam ser carregados agora.",
       empty:
         "O Data Lab aparecerá quando o Engage7 tiver dados suficientes de análises concluídas.",
       unavailable:
@@ -853,23 +874,27 @@ export const ptBR: Dictionary = {
       available: "Disponível",
       unavailableLabel: "Indisponível",
       trendCharts: "Gráficos de tendência",
-      trendChartsAvailable: "Movimento longitudinal dos sinais ao longo do tempo.",
+      trendChartsAvailable:
+        "Movimento longitudinal dos sinais ao longo do tempo.",
       trendChartsUnavailable:
         "Dados avançados de tendência ainda não estão disponíveis para esta análise.",
       baselineRanges: "Faixas de linha de base",
       baselineRangesTitle: "Suas faixas de linha de base",
       baselineRangesDescription:
         "Sua faixa de referência pessoal a partir dos dados históricos disponíveis.",
-      baselineUnavailable: "Dados de linha de base indisponíveis para este conjunto de dados.",
+      baselineUnavailable:
+        "Dados de linha de base indisponíveis para este conjunto de dados.",
       correlations: "Correlações",
       signalCorrelations: "Correlações entre sinais",
       signalCorrelationsReference: "Correlações entre sinais (referência)",
       correlationsAvailable:
         "Sinais que se moveram juntos no seu histórico. Isso não prova causa e efeito.",
-      correlationsUnavailable: "Dados de correlação indisponíveis para este conjunto de dados.",
+      correlationsUnavailable:
+        "Dados de correlação indisponíveis para este conjunto de dados.",
       volatility: "Volatilidade",
       volatilityAvailable: "Quanto um sinal variou no período selecionado.",
-      volatilityUnavailable: "Dados de volatilidade indisponíveis para este conjunto de dados.",
+      volatilityUnavailable:
+        "Dados de volatilidade indisponíveis para este conjunto de dados.",
       dataPoints: "{count} pontos de dados",
       averageSleep: "Sono médio",
       averageHrv: "VFC média",
@@ -948,8 +973,10 @@ export const ptBR: Dictionary = {
     latestAnalysis: {
       title: "Análise Mais Recente",
       noDataTitle: "Análises Recentes",
-      noDataText: "Nenhuma análise ainda. Envie uma exportação do Apple Health para começar.",
-      dataAvailable: "Dados de análise disponíveis. Explore Tendências e Relatórios para detalhes.",
+      noDataText:
+        "Nenhuma análise ainda. Envie uma exportação do Apple Health para começar.",
+      dataAvailable:
+        "Dados de análise disponíveis. Explore Tendências e Relatórios para detalhes.",
       period: "Período",
       days: "Dias",
       records: "Registros",
@@ -961,11 +988,13 @@ export const ptBR: Dictionary = {
       },
       healthBalanceEmpty: {
         title: "Equilíbrio de saúde em formação",
-        message: "Esta visualização aparece quando houver dados de recuperação suficientes",
+        message:
+          "Esta visualização aparece quando houver dados de recuperação suficientes",
       },
     },
     insightsPage: {
-      noInsights: "Nenhum insight ainda. Envie seus dados de saúde para começar a ver padrões e recomendações.",
+      noInsights:
+        "Nenhum insight ainda. Envie seus dados de saúde para começar a ver padrões e recomendações.",
       empty:
         "Os insights aparecerão quando o Engage7 encontrar padrões repetidos na sua própria linha do tempo.",
       loadError: "Os insights não puderam ser carregados agora.",
@@ -1000,8 +1029,10 @@ export const ptBR: Dictionary = {
       },
     },
     settings: {
-      paymentSuccess: "Pagamento confirmado — sua conta foi atualizada para Premium.",
-      paymentCancelled: "O pagamento foi cancelado. Seu plano não foi alterado.",
+      paymentSuccess:
+        "Pagamento confirmado — sua conta foi atualizada para Premium.",
+      paymentCancelled:
+        "O pagamento foi cancelado. Seu plano não foi alterado.",
       planBilling: "Plano e cobrança",
       premiumThanks: "Você está no Premium — obrigado pelo apoio.",
       freeAccessActive: "Acesso gratuito ativo",
@@ -1024,6 +1055,22 @@ export const ptBR: Dictionary = {
       profileTitle: "Perfil",
       profileBody:
         "Detalhes da conta e preferências serão configuráveis aqui em uma atualização futura.",
+      personalizationTitle: "Personalização",
+      personalizationBody:
+        "Escolha um perfil que melhor descreva sua situação. Isso ajuda o Engage7 a adaptar a linguagem e as prioridades exibidas no seu Portal ao longo do tempo.",
+      personalizationDisclaimer:
+        "Isso não é interpretação médica. Seu perfil não altera os limiares fisiológicos, as fórmulas DARTH ou os cálculos de saúde.",
+      personalizationProfiles: {
+        general: "Bem-estar geral",
+        amateur_athlete: "Atleta amador",
+        student: "Estudante",
+        entrepreneur: "Empreendedor",
+      },
+      personalizationSave: "Salvar perfil",
+      personalizationSaved: "Perfil salvo.",
+      personalizationError:
+        "Não foi possível salvar seu perfil. Tente novamente.",
+      personalizationLoading: "Carregando perfil...",
       languageTitle: "Idioma preferido",
       languageBody:
         "Escolha o idioma que o Engage7 deve usar quando você entrar em sessões futuras.",
@@ -1040,18 +1087,29 @@ export const ptBR: Dictionary = {
       dataPrivacyFooter:
         "O Azure Blob Storage mantém artefatos brutos e processados conforme regras de ciclo de vida. O Supabase armazena metadados de conta, controle, relatório e linha do tempo necessários para operar o Portal autenticado.",
       privacyItems: {
-        raw: ["ZIP/XML bruto", "Armazenamento temporário no Azure Blob conforme regras de ciclo de vida."],
-        timeline: ["Linha do tempo processada", "Usada para painéis do Portal e atualização dos dados."],
-        reports: ["Relatórios", "Mantidos para que você possa reabrir análises concluídas."],
-        account: ["Metadados da conta", "Armazenados para login, plano e configurações."],
+        raw: [
+          "ZIP/XML bruto",
+          "Armazenamento temporário no Azure Blob conforme regras de ciclo de vida.",
+        ],
+        timeline: [
+          "Linha do tempo processada",
+          "Usada para painéis do Portal e atualização dos dados.",
+        ],
+        reports: [
+          "Relatórios",
+          "Mantidos para que você possa reabrir análises concluídas.",
+        ],
+        account: [
+          "Metadados da conta",
+          "Armazenados para login, plano e configurações.",
+        ],
         delete: ["Excluir conta", "Remove dados da conta pertencentes ao app."],
       },
       protection: {
         title: "Proteger atualizações de dados",
         description:
           "Ajuda a evitar que exportações do Apple Health de outra pessoa sejam mescladas à sua linha do tempo. O Engage7 compara metadados minimizados antes de atualizar sua linha do tempo processada.",
-        note:
-          "Isto não é verificação de identidade médica. Usa metadados minimizados e não expõe conteúdo bruto do Apple Health, detalhes brutos de dispositivos, data de nascimento ou sexo nas Configurações. Você pode desativar para testes ou casos avançados intencionais.",
+        note: "Isto não é verificação de identidade médica. Usa metadados minimizados e não expõe conteúdo bruto do Apple Health, detalhes brutos de dispositivos, data de nascimento ou sexo nas Configurações. Você pode desativar para testes ou casos avançados intencionais.",
         on: "Ativado",
         off: "Desativado",
         active:
@@ -1074,7 +1132,8 @@ export const ptBR: Dictionary = {
         "Isto exclui sua conta Engage7 e os dados pertencentes ao app. Relatórios, metadados da linha do tempo processada, eventos de atualização de dados e registros de footprint são removidos pela limpeza do app e por cascata do banco de dados. Arquivos brutos temporários seguem as regras de ciclo de vida do Azure Storage. Esta ação não pode ser desfeita.",
       deleteButton: "Excluir conta",
       deletedTitle: "Conta excluída",
-      deletedBody: "A exclusão da sua conta Engage7 foi concluída. Redirecionando…",
+      deletedBody:
+        "A exclusão da sua conta Engage7 foi concluída. Redirecionando…",
       deleteConfirmTitle: "Confirmar exclusão da conta",
       deleteConfirmBody:
         "Primeiro confirme que esta é sua conta atual. Digite ou cole exatamente o email da conta mostrado abaixo.",
@@ -1107,15 +1166,18 @@ export const ptBR: Dictionary = {
       domains: {
         sleep: {
           title: "Sono",
-          subtitle: "Duração, estágios, consistência e sinais de qualidade do sono",
+          subtitle:
+            "Duração, estágios, consistência e sinais de qualidade do sono",
         },
         recovery: {
           title: "Recuperação",
-          subtitle: "VFC, carga cardíaca, prontidão e movimento contra linha de base",
+          subtitle:
+            "VFC, carga cardíaca, prontidão e movimento contra linha de base",
         },
         activity: {
           title: "Atividade",
-          subtitle: "Passos, energia, distância e consistência ao longo do tempo",
+          subtitle:
+            "Passos, energia, distância e consistência ao longo do tempo",
         },
       },
       overviewTitle: "Saúde",
@@ -1140,7 +1202,8 @@ export const ptBR: Dictionary = {
       todayMayBePartial: "Último dia armazenado; pode estar parcial.",
       latestCompleteDay: "Último dia completo disponível",
       latestCompleteDayWithDate: "Último dia completo disponível: {date}",
-      comparedWithPreviousAvailableDay: "Comparado com o dia disponível anterior",
+      comparedWithPreviousAvailableDay:
+        "Comparado com o dia disponível anterior",
       noRange: "Sem intervalo",
       storedDays: "{count} dias armazenados",
       trackedDays: "{count} dias rastreados",
@@ -1206,7 +1269,8 @@ export const ptBR: Dictionary = {
       activityInsight: "Insight de atividade",
       activityRangeAverageSteps:
         "Este intervalo tem média de {value} passos por dia rastreado.",
-      stepDataUnavailable: "Os dados de passos não estão disponíveis neste intervalo.",
+      stepDataUnavailable:
+        "Os dados de passos não estão disponíveis neste intervalo.",
       backendActivityCoverage:
         "O resumo de atividade mais recente do backend inclui cobertura de energia ativa.",
       averageSteps: "Passos médios",
@@ -1244,8 +1308,7 @@ export const ptBR: Dictionary = {
       averageHrv: "VFC média",
       averageHr: "FC média",
       readiness: "Prontidão",
-      weightedCompositeSignals:
-        "Composição ponderada dos sinais disponíveis",
+      weightedCompositeSignals: "Composição ponderada dos sinais disponíveis",
       hrvVsBaseline: "VFC vs linha de base",
       readinessForRange: "A prontidão neste intervalo é {score} de 100.",
       noReadinessScore:
@@ -1253,7 +1316,8 @@ export const ptBR: Dictionary = {
       hrvAverageInRange: "A VFC média é {value} ms neste intervalo.",
       hrvAndHeartRate: "VFC e frequência cardíaca",
       recoveryMarkersOverTime: "Marcadores de recuperação ao longo do tempo",
-      recoveryMarkersSelectedDay: "Marcadores de recuperação no dia selecionado",
+      recoveryMarkersSelectedDay:
+        "Marcadores de recuperação no dia selecionado",
       hrvMs: "VFC (ms)",
       hrBpm: "FC (bpm)",
       recoverySignalsMissing: "Sinais de recuperação ausentes",
@@ -1265,7 +1329,8 @@ export const ptBR: Dictionary = {
         "A análise armazenada não incluiu pontuação de recuperação ou prontidão.",
       baselineComparison: "Comparação com linha de base",
       comparisonUnavailable: "Comparação indisponível.",
-      todayNoComparison: "Hoje pode estar parcial, então a comparação de dia completo não é exibida.",
+      todayNoComparison:
+        "Hoje pode estar parcial, então a comparação de dia completo não é exibida.",
       todayNoFullDayComparison:
         "Hoje pode estar parcial; a comparação de dia completo usa Último dia.",
       latestComparedWithPrevious:
@@ -1280,7 +1345,8 @@ export const ptBR: Dictionary = {
         "Uma comparação precisa de dados atuais e de linha de base suficientes.",
       heartRate: "Frequência cardíaca",
       activeEnergyAverage: "Energia ativa média de {value} calorias.",
-      energyDistanceSubtitle: "Energia ativa com sobreposição de distância quando disponível",
+      energyDistanceSubtitle:
+        "Energia ativa com sobreposição de distância quando disponível",
       bestVsLowest: "Melhor vs menor",
       stepRangeAnchors: "Referências do intervalo de passos",
       bestDay: "Melhor dia",
@@ -1321,9 +1387,12 @@ export const ptBR: Dictionary = {
       support: "Sinal de apoio",
     },
     hero: {
-      adaptiveClear: "Seu corpo está mostrando padrões claros — aqui está o que se destaca",
-      adaptiveSteady: "Seu sono está estável — seu corpo está mantendo um ritmo regular",
-      adaptiveShifting: "Seus padrões estão mudando — seu corpo está se adaptando",
+      adaptiveClear:
+        "Seu corpo está mostrando padrões claros — aqui está o que se destaca",
+      adaptiveSteady:
+        "Seu sono está estável — seu corpo está mantendo um ritmo regular",
+      adaptiveShifting:
+        "Seus padrões estão mudando — seu corpo está se adaptando",
     },
     provenance: {
       builtFrom: "Construído a partir de",
@@ -1349,7 +1418,8 @@ export const ptBR: Dictionary = {
       dataset_duration: "Duração do conjunto de dados",
     },
     insights: {
-      hrvExplanation: "VFC: indica como seu corpo está se recuperando. Valores mais altos geralmente significam melhor recuperação.",
+      hrvExplanation:
+        "VFC: indica como seu corpo está se recuperando. Valores mais altos geralmente significam melhor recuperação.",
       basedOnPatterns: "Baseado nos seus padrões recentes",
     },
     charts: {
@@ -1360,7 +1430,8 @@ export const ptBR: Dictionary = {
     empty: {
       sleep: {
         title: "Padrão de estágios do sono em formação",
-        message: "Rastreamento de sono mais consistente desbloqueará esta visualização",
+        message:
+          "Rastreamento de sono mais consistente desbloqueará esta visualização",
       },
       recovery: {
         title: "Padrão de recuperação ainda sendo construído",
@@ -1368,7 +1439,8 @@ export const ptBR: Dictionary = {
       },
       energy: {
         title: "Padrão de energia em formação",
-        message: "Sua visualização de energia aparece quando houver dados de atividade suficientes",
+        message:
+          "Sua visualização de energia aparece quando houver dados de atividade suficientes",
       },
     },
   },

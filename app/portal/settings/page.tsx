@@ -31,7 +31,10 @@ interface HealthFootprintSettingsData {
   status?: string;
 }
 
-function formatSettingsDate(value: string | null, locale: Locale): string | null {
+function formatSettingsDate(
+  value: string | null,
+  locale: Locale
+): string | null {
   if (!value) return null;
   const date = new Date(value);
   if (Number.isNaN(date.getTime())) return null;
@@ -53,7 +56,9 @@ export default function SettingsPage() {
   const [deleting, setDeleting] = useState(false);
   const [checkoutLoading, setCheckoutLoading] = useState(false);
   const [checkoutError, setCheckoutError] = useState<string | null>(null);
-  const [paymentStatus, setPaymentStatus] = useState<"success" | "cancelled" | null>(null);
+  const [paymentStatus, setPaymentStatus] = useState<
+    "success" | "cancelled" | null
+  >(null);
   const [plan, setPlan] = useState<string | null>(null);
   const [planDisplay, setPlanDisplay] = useState<string | null>(null);
   const [planStatus, setPlanStatus] = useState<string | null>(null);
@@ -69,8 +74,17 @@ export default function SettingsPage() {
   const [readOnlyAdminView, setReadOnlyAdminView] = useState(false);
   const [preferredLocale, setPreferredLocale] = useState<Locale>(locale);
   const [languageSaving, setLanguageSaving] = useState(false);
-  const [languageStatus, setLanguageStatus] = useState<"saved" | "error" | null>(null);
+  const [languageStatus, setLanguageStatus] = useState<
+    "saved" | "error" | null
+  >(null);
   const [accountEmail, setAccountEmail] = useState<string | null>(null);
+  // Sprint 42.0 — User Profile v1
+  const [profileType, setProfileType] = useState<string>("general");
+  const [profileSaving, setProfileSaving] = useState(false);
+  const [profileStatus, setProfileStatus] = useState<"saved" | "error" | null>(
+    null
+  );
+  const [profileLoading, setProfileLoading] = useState(true);
 
   useEffect(() => {
     const ps = searchParams.get("payment");
@@ -120,6 +134,21 @@ export default function SettingsPage() {
         setProtectionError(t.portal.settings.protection.unavailable);
         setProtectionLoading(false);
       });
+    // Sprint 42.0: User Profile v1
+    fetch("/api/proxy/users/profile")
+      .then((r) => r.json())
+      .then((d: { user_profile_type?: string }) => {
+        if (
+          typeof d.user_profile_type === "string" &&
+          d.user_profile_type.trim()
+        ) {
+          setProfileType(d.user_profile_type.trim());
+        }
+        setProfileLoading(false);
+      })
+      .catch(() => {
+        setProfileLoading(false);
+      });
   }, [searchParams, router, t.portal.settings.protection.unavailable]);
 
   const handleUpgrade = async () => {
@@ -129,12 +158,16 @@ export default function SettingsPage() {
       const res = await fetch("/api/stripe/checkout", { method: "POST" });
       if (!res.ok) {
         const data = await res.json().catch(() => ({}));
-        throw new Error((data as { error?: string }).error ?? "Checkout unavailable");
+        throw new Error(
+          (data as { error?: string }).error ?? "Checkout unavailable"
+        );
       }
       const { url } = await res.json();
       if (url) window.location.href = url;
     } catch (err) {
-      setCheckoutError(err instanceof Error ? err.message : "Something went wrong");
+      setCheckoutError(
+        err instanceof Error ? err.message : "Something went wrong"
+      );
       setCheckoutLoading(false);
     }
   };
@@ -145,7 +178,11 @@ export default function SettingsPage() {
   const canContinueDelete =
     Boolean(accountEmail) && normalizedEmailConfirmation === accountEmail;
   const protectionCopy = t.portal.settings.protection;
-  const protectionDisabled = protectionLoading || protectionSaving || readOnlyAdminView || !canUpdateProtection;
+  const protectionDisabled =
+    protectionLoading ||
+    protectionSaving ||
+    readOnlyAdminView ||
+    !canUpdateProtection;
 
   const resetDeleteModal = () => {
     setShowDeleteModal(false);
@@ -163,6 +200,26 @@ export default function SettingsPage() {
       window.setTimeout(() => setEmailCopied(false), 1500);
     } catch {
       setEmailCopied(false);
+    }
+  };
+
+  // Sprint 42.0: User Profile v1 save handler
+  const handleProfileSave = async () => {
+    if (readOnlyAdminView) return;
+    setProfileSaving(true);
+    setProfileStatus(null);
+    try {
+      const res = await fetch("/api/proxy/users/profile", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ user_profile_type: profileType }),
+      });
+      if (!res.ok) throw new Error(t.portal.settings.personalizationError);
+      setProfileStatus("saved");
+    } catch {
+      setProfileStatus("error");
+    } finally {
+      setProfileSaving(false);
     }
   };
 
@@ -197,14 +254,20 @@ export default function SettingsPage() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ protection_enabled: next }),
       });
-      const data = await res.json().catch(() => ({})) as HealthFootprintSettingsData & { detail?: string };
+      const data = (await res
+        .json()
+        .catch(() => ({}))) as HealthFootprintSettingsData & {
+        detail?: string;
+      };
       if (!res.ok) throw new Error(data.detail ?? protectionCopy.error);
       setProtectionEnabled(data.protection_enabled !== false);
       setCanUpdateProtection(data.can_update_protection === true);
       setHasFootprint(data.has_footprint === true);
     } catch (err) {
       setProtectionEnabled(!next);
-      setProtectionError(err instanceof Error ? err.message : protectionCopy.error);
+      setProtectionError(
+        err instanceof Error ? err.message : protectionCopy.error
+      );
     } finally {
       setProtectionSaving(false);
     }
@@ -219,12 +282,14 @@ export default function SettingsPage() {
       const res = await fetch("/api/proxy/users/me", {
         method: "DELETE",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ confirmation_email: normalizedEmailConfirmation }),
+        body: JSON.stringify({
+          confirmation_email: normalizedEmailConfirmation,
+        }),
       });
       if (!res.ok) {
         const data = await res.json().catch(() => ({}));
         throw new Error(
-            (data as { detail?: string; error?: string }).detail ||
+          (data as { detail?: string; error?: string }).detail ||
             (data as { detail?: string; error?: string }).error ||
             t.portal.settings.deleteFailed
         );
@@ -234,9 +299,7 @@ export default function SettingsPage() {
       setTimeout(() => router.push("/"), 2500);
     } catch (err) {
       setDeleteError(
-        err instanceof Error
-          ? err.message
-          : t.portal.settings.deleteUnexpected
+        err instanceof Error ? err.message : t.portal.settings.deleteUnexpected
       );
       setDeleting(false);
     }
@@ -260,7 +323,9 @@ export default function SettingsPage() {
             />
           </svg>
         </div>
-        <p className="text-lg font-medium text-foreground">{t.portal.settings.deletedTitle}</p>
+        <p className="text-lg font-medium text-foreground">
+          {t.portal.settings.deletedTitle}
+        </p>
         <p className="text-sm text-muted-foreground">
           {t.portal.settings.deletedBody}
         </p>
@@ -271,30 +336,32 @@ export default function SettingsPage() {
   const isPremium = planDisplay === "Premium" || plan === "premium";
   const trialEndDate = trialEnd ? new Date(trialEnd) : null;
   const hasPremiumFreePlan =
-    planDisplay === "Premium Free" || plan === "trial" || plan === "trial_start";
+    planDisplay === "Premium Free" ||
+    plan === "trial" ||
+    plan === "trial_start";
   const trialActive =
     hasPremiumFreePlan &&
     planStatus !== "expired" &&
     (!trialEndDate || trialEndDate > new Date());
   const trialExpired = planStatus === "expired";
-  const daysLeft = trialActive && trialEndDate
-    ? Math.max(0, Math.ceil((trialEndDate.getTime() - Date.now()) / 86400000))
-    : null;
+  const daysLeft =
+    trialActive && trialEndDate
+      ? Math.max(0, Math.ceil((trialEndDate.getTime() - Date.now()) / 86400000))
+      : null;
   const formattedTrialEnd = formatSettingsDate(trialEnd, locale);
   const formattedTimelineDate = formatSettingsDate(timelineDateEnd, locale);
   const protectionStateCopy = readOnlyAdminView
     ? protectionCopy.readOnly
     : !hasFootprint || !canUpdateProtection
-      ? protectionCopy.unavailableUntilTimeline
-      : protectionSaving
-        ? t.common.saving
-        : protectionEnabled
-          ? protectionCopy.active
-          : protectionCopy.inactive;
+    ? protectionCopy.unavailableUntilTimeline
+    : protectionSaving
+    ? t.common.saving
+    : protectionEnabled
+    ? protectionCopy.active
+    : protectionCopy.inactive;
 
   return (
     <div className="flex flex-col gap-6">
-
       {/* Payment success / cancelled notification */}
       {paymentStatus === "success" && (
         <div className="rounded-xl border border-emerald-500/30 bg-emerald-500/10 px-4 py-3 text-sm text-emerald-400">
@@ -315,14 +382,19 @@ export default function SettingsPage() {
         <p className="text-xs text-muted-foreground mb-4">
           {isPremium && t.portal.settings.premiumThanks}
           {trialActive &&
-            `${t.portal.settings.premiumFreeActive} ${t.portal.settings.premiumFreeAccess}${
+            `${t.portal.settings.premiumFreeActive} ${
+              t.portal.settings.premiumFreeAccess
+            }${
               formattedTrialEnd
-                ? ` ${t.portal.settings.premiumFreeEnds.replace("{date}", formattedTrialEnd)}`
+                ? ` ${t.portal.settings.premiumFreeEnds.replace(
+                    "{date}",
+                    formattedTrialEnd
+                  )}`
                 : daysLeft !== null
-                  ? ` ${t.portal.settings.daysRemaining
-                      .replace("{count}", String(daysLeft))
-                      .replaceAll("{plural}", daysLeft === 1 ? "" : "s")}.`
-                  : ""
+                ? ` ${t.portal.settings.daysRemaining
+                    .replace("{count}", String(daysLeft))
+                    .replaceAll("{plural}", daysLeft === 1 ? "" : "s")}.`
+                : ""
             }`}
           {trialExpired && t.portal.settings.freeAccessEnded}
           {planDisplay === "No plan" && t.portal.settings.noPlanActive}
@@ -351,7 +423,9 @@ export default function SettingsPage() {
               disabled={checkoutLoading}
               className="self-start rounded-lg bg-accent px-4 py-2 text-sm font-semibold text-accent-foreground hover:bg-accent/90 transition-colors disabled:opacity-60 disabled:cursor-not-allowed"
             >
-              {checkoutLoading ? t.common.redirecting : t.portal.settings.upgradeToPremium}
+              {checkoutLoading
+                ? t.common.redirecting
+                : t.portal.settings.upgradeToPremium}
             </button>
           </div>
         )}
@@ -371,14 +445,79 @@ export default function SettingsPage() {
           </p>
         </div>
 
-        {/* Profile section */}
+        {/* Profile / Personalization section — Sprint 42.0 */}
         <div className="rounded-xl border border-border bg-card p-5">
           <h2 className="text-sm font-semibold text-card-foreground">
-            {t.portal.settings.profileTitle}
+            {t.portal.settings.personalizationTitle}
           </h2>
           <p className="mt-2 text-sm text-muted-foreground">
-            {t.portal.settings.profileBody}
+            {t.portal.settings.personalizationBody}
           </p>
+          <p className="mt-2 text-xs text-muted-foreground italic">
+            {t.portal.settings.personalizationDisclaimer}
+          </p>
+          {profileLoading ? (
+            <p className="mt-4 text-xs text-muted-foreground">
+              {t.portal.settings.personalizationLoading}
+            </p>
+          ) : (
+            <>
+              <div className="mt-4 flex flex-col gap-2">
+                {(
+                  [
+                    "general",
+                    "amateur_athlete",
+                    "student",
+                    "entrepreneur",
+                  ] as const
+                ).map((pt) => (
+                  <label
+                    key={pt}
+                    className={`flex items-center gap-3 rounded-lg border px-3 py-2.5 cursor-pointer transition-colors ${
+                      profileType === pt
+                        ? "border-accent/50 bg-accent/5"
+                        : "border-border/60 bg-transparent hover:border-accent/20"
+                    } ${
+                      readOnlyAdminView ? "cursor-not-allowed opacity-60" : ""
+                    }`}
+                  >
+                    <input
+                      type="radio"
+                      name="profileType"
+                      value={pt}
+                      checked={profileType === pt}
+                      onChange={() => !readOnlyAdminView && setProfileType(pt)}
+                      className="accent-accent"
+                      disabled={readOnlyAdminView}
+                    />
+                    <span className="text-sm text-card-foreground">
+                      {t.portal.settings.personalizationProfiles[pt]}
+                    </span>
+                  </label>
+                ))}
+              </div>
+              <button
+                type="button"
+                onClick={handleProfileSave}
+                disabled={profileSaving || readOnlyAdminView}
+                className="mt-3 rounded-md bg-accent px-3 py-1.5 text-xs font-semibold text-accent-foreground disabled:opacity-60 disabled:cursor-not-allowed"
+              >
+                {profileSaving
+                  ? t.common.saving
+                  : t.portal.settings.personalizationSave}
+              </button>
+              {profileStatus === "saved" && (
+                <p className="mt-2 text-xs text-emerald-400">
+                  {t.portal.settings.personalizationSaved}
+                </p>
+              )}
+              {profileStatus === "error" && (
+                <p className="mt-2 text-xs text-destructive">
+                  {t.portal.settings.personalizationError}
+                </p>
+              )}
+            </>
+          )}
         </div>
 
         <div className="rounded-xl border border-border bg-card p-5">
@@ -390,7 +529,9 @@ export default function SettingsPage() {
           </p>
           <select
             value={preferredLocale}
-            onChange={(event) => setPreferredLocale(event.target.value as Locale)}
+            onChange={(event) =>
+              setPreferredLocale(event.target.value as Locale)
+            }
             className="mt-4 w-full rounded-md border border-border bg-background px-3 py-2 text-sm text-foreground"
           >
             {SUPPORTED_LOCALES.map((loc) => (
@@ -441,19 +582,21 @@ export default function SettingsPage() {
           {t.portal.settings.dataPrivacyBody}
         </p>
         <div className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-5">
-          {Object.values(t.portal.settings.privacyItems).map(([label, description]) => (
-            <div
-              key={label}
-              className="rounded-lg border border-border/70 bg-muted/20 px-3 py-2"
-            >
-              <p className="text-xs font-semibold text-card-foreground">
-                {label}
-              </p>
-              <p className="mt-1 text-xs leading-relaxed text-muted-foreground">
-                {description}
-              </p>
-            </div>
-          ))}
+          {Object.values(t.portal.settings.privacyItems).map(
+            ([label, description]) => (
+              <div
+                key={label}
+                className="rounded-lg border border-border/70 bg-muted/20 px-3 py-2"
+              >
+                <p className="text-xs font-semibold text-card-foreground">
+                  {label}
+                </p>
+                <p className="mt-1 text-xs leading-relaxed text-muted-foreground">
+                  {description}
+                </p>
+              </div>
+            )
+          )}
         </div>
         <p className="mt-4 text-xs leading-relaxed text-muted-foreground">
           {t.portal.settings.dataPrivacyFooter}
@@ -494,16 +637,26 @@ export default function SettingsPage() {
             <span className="sr-only">{protectionCopy.title}</span>
             <span
               className={`inline-block h-6 w-6 rounded-full bg-background shadow transition-transform ${
-                canUpdateProtection && protectionEnabled ? "translate-x-8" : "translate-x-1"
+                canUpdateProtection && protectionEnabled
+                  ? "translate-x-8"
+                  : "translate-x-1"
               }`}
             />
           </button>
         </div>
         <div className="mt-3 flex gap-3 text-xs text-muted-foreground">
-          <span className={protectionEnabled ? "font-medium text-foreground" : ""}>
+          <span
+            className={protectionEnabled ? "font-medium text-foreground" : ""}
+          >
             {protectionCopy.on}
           </span>
-          <span className={!protectionEnabled || !canUpdateProtection ? "font-medium text-foreground" : ""}>
+          <span
+            className={
+              !protectionEnabled || !canUpdateProtection
+                ? "font-medium text-foreground"
+                : ""
+            }
+          >
             {protectionCopy.off}
           </span>
         </div>
@@ -516,10 +669,10 @@ export default function SettingsPage() {
               {protectionLoading
                 ? t.common.loading
                 : !hasFootprint || !canUpdateProtection
-                  ? protectionCopy.footprintMissing
-                  : protectionEnabled
-                  ? protectionCopy.on
-                  : protectionCopy.off}
+                ? protectionCopy.footprintMissing
+                : protectionEnabled
+                ? protectionCopy.on
+                : protectionCopy.off}
             </p>
           </div>
           <div className="rounded-lg border border-border/70 bg-muted/20 px-3 py-2">
@@ -527,7 +680,9 @@ export default function SettingsPage() {
               {protectionCopy.processedTimeline}
             </p>
             <p className="mt-1 text-xs text-muted-foreground">
-              {timelineRows && timelineRows > 0 ? t.common.available : t.common.notAvailable}
+              {timelineRows && timelineRows > 0
+                ? t.common.available
+                : t.common.notAvailable}
             </p>
           </div>
           <div className="rounded-lg border border-border/70 bg-muted/20 px-3 py-2">
@@ -570,7 +725,8 @@ export default function SettingsPage() {
             {t.portal.settings.deleteTitle}
           </h2>
           <p className="mt-2 text-sm text-muted-foreground">
-            Account deletion is unavailable while an admin is viewing this Portal in read-only mode.
+            Account deletion is unavailable while an admin is viewing this
+            Portal in read-only mode.
           </p>
         </div>
       )}

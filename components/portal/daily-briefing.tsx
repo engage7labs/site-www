@@ -10,6 +10,14 @@
 
 "use client";
 
+import { useLocale } from "@/components/providers/locale-provider";
+import { FeaturePreviewBadge } from "@/components/shared/feature-preview-badge";
+import {
+  resolveDarthPresentationLocale,
+  selectDarthCopy,
+  selectDarthCta,
+  type DarthPresentation,
+} from "@/lib/darth";
 import {
   AlertTriangle,
   ArrowRight,
@@ -20,8 +28,6 @@ import {
 } from "lucide-react";
 import { useEffect, useState } from "react";
 import { BriefingFeedback } from "./briefing-feedback";
-import { resolveDarthPresentationLocale, selectDarthCopy, selectDarthCta, type DarthPresentation } from "@/lib/darth";
-import { useLocale } from "@/components/providers/locale-provider";
 
 // ---------------------------------------------------------------------------
 // Types
@@ -168,9 +174,11 @@ export function DailyBriefing() {
               <h2 className="text-lg font-semibold text-card-foreground">
                 {darthHero.title}
               </h2>
+              <FeaturePreviewBadge />
               {data.narrative_state && (
                 <span className="text-[10px] text-muted-foreground/60 font-medium uppercase tracking-wider">
-                  {Math.round(data.narrative_state.confidence * 100)}% {t.darthChrome.confidence.toLowerCase()}
+                  {Math.round(data.narrative_state.confidence * 100)}%{" "}
+                  {t.darthChrome.confidence.toLowerCase()}
                 </span>
               )}
             </div>
@@ -250,9 +258,11 @@ export function DailyBriefing() {
             <h2 className="text-lg font-semibold text-card-foreground">
               Your day looks{" "}
               <span className={cfg.color}>{cfg.label.toLowerCase()}</span>
-            </h2>
+            </h2>{" "}
+            <FeaturePreviewBadge />{" "}
             <span className="text-[10px] text-muted-foreground/60 font-medium uppercase tracking-wider">
-              {Math.round(b.confidence * 100)}% {t.darthChrome.confidence.toLowerCase()}
+              {Math.round(b.confidence * 100)}%{" "}
+              {t.darthChrome.confidence.toLowerCase()}
             </span>
           </div>
           <p className="text-sm text-muted-foreground mt-0.5">

@@ -1,16 +1,8 @@
 "use client";
 
-import {
-  extractActivityInsights,
-  extractActivitySignalInsights,
-  extractRecoveryInsights,
-  extractRecoverySignalInsights,
-  extractSleepInsights,
-  extractSleepStageInsights,
-  type InsightText,
-} from "@/lib/insights/extract";
 import { CompareImproveBlock } from "@/components/portal/compare-improve-block";
-import { generateCompareImprove } from "@/lib/insights/compare-improve";
+import { useLocale } from "@/components/providers/locale-provider";
+import { FeaturePreviewBadge } from "@/components/shared/feature-preview-badge";
 import {
   getDarthPayload,
   getDarthPresentation,
@@ -21,9 +13,18 @@ import {
   type DarthPayload,
   type DarthStatePresentation,
 } from "@/lib/darth";
+import { generateCompareImprove } from "@/lib/insights/compare-improve";
+import {
+  extractActivityInsights,
+  extractActivitySignalInsights,
+  extractRecoveryInsights,
+  extractRecoverySignalInsights,
+  extractSleepInsights,
+  extractSleepStageInsights,
+  type InsightText,
+} from "@/lib/insights/extract";
 import type { PortalDataStatus } from "@/lib/portal-data-status";
 import { parsePortalDataStatus } from "@/lib/portal-data-status";
-import { useLocale } from "@/components/providers/locale-provider";
 import {
   Activity,
   Heart,
@@ -111,8 +112,13 @@ interface DarthDisplayBlock {
   copy: NonNullable<SelectedDarthCopy>;
 }
 
-function getAnalysisSections(analysis: Analysis | null | undefined): Sections | null {
-  return coerceSections(analysis?.sections) ?? coerceSections(analysis?.sections_json);
+function getAnalysisSections(
+  analysis: Analysis | null | undefined
+): Sections | null {
+  return (
+    coerceSections(analysis?.sections) ??
+    coerceSections(analysis?.sections_json)
+  );
 }
 
 function getAnalyses(payload: unknown): Analysis[] {
@@ -124,7 +130,9 @@ function getAnalyses(payload: unknown): Analysis[] {
   return [];
 }
 
-function humanizeTechnicalText(value: string | null | undefined): string | null {
+function humanizeTechnicalText(
+  value: string | null | undefined
+): string | null {
   if (!value) return null;
 
   const replacements: Array<[RegExp, string]> = [
@@ -149,7 +157,10 @@ function humanizeTechnicalText(value: string | null | undefined): string | null 
   ];
 
   const cleaned = replacements
-    .reduce((text, [pattern, replacement]) => text.replace(pattern, replacement), value)
+    .reduce(
+      (text, [pattern, replacement]) => text.replace(pattern, replacement),
+      value
+    )
     .replace(/\s*\|\s*/g, " · ")
     .replace(/_/g, " ")
     .replace(/\s+/g, " ")
@@ -163,9 +174,9 @@ function hasRawTechnicalTrace(value: string | null | undefined): boolean {
     value &&
       (value.includes("|") ||
         /\b(last_7d|last_30d|baseline_30d|sleep[ _-]+variability[ _-]+cv|steps[ _-]+variability[ _-]+cv|sleep_variability_cv|steps_variability_cv|hrv_sdnn|hrv_sdnn_mean|hr_resting|resting_hr|hr_mean|total_steps|active_energy_cal|total_energy_cal|sleep_hours|recovery_composite_score)\b/i.test(
-          value,
+          value
         ) ||
-        /\b[a-z]+_[a-z0-9_]+\b/.test(value)),
+        /\b[a-z]+_[a-z0-9_]+\b/.test(value))
   );
 }
 
@@ -183,9 +194,10 @@ function cleanVisibleText(value: string | null | undefined): string | null {
   return mapped;
 }
 
-function isDarthDisplayBlock(
-  entry: { block: DarthInsightBlock; copy: SelectedDarthCopy },
-): entry is DarthDisplayBlock {
+function isDarthDisplayBlock(entry: {
+  block: DarthInsightBlock;
+  copy: SelectedDarthCopy;
+}): entry is DarthDisplayBlock {
   return Boolean(entry.copy?.title && entry.copy?.body);
 }
 
@@ -305,7 +317,12 @@ function InsightCard({
   insight: InsightText;
   sparkData: number[];
   strings: {
-    signals: { sleep: string; recovery: string; activity: string; default: string };
+    signals: {
+      sleep: string;
+      recovery: string;
+      activity: string;
+      default: string;
+    };
     lastDataPoints: string;
     confidence: { high: string; medium: string; low: string };
     confidenceExplanations: { high: string; medium: string; low: string };
@@ -318,10 +335,9 @@ function InsightCard({
   const trend = trendFromScore(insight.score);
   const color = PILLAR_COLOR[insight.pillar ?? "sleep"] ?? "#3dbe73";
   const icon = PILLAR_ICON[insight.pillar ?? "sleep"];
-  const headline = cleanVisibleText(insight.headline) ?? strings.personalPattern;
-  const body =
-    cleanVisibleText(insight.body) ??
-    strings.patternFromTimeline;
+  const headline =
+    cleanVisibleText(insight.headline) ?? strings.personalPattern;
+  const body = cleanVisibleText(insight.body) ?? strings.patternFromTimeline;
   const action = cleanVisibleText(insight.action);
 
   function getSignalLabel(pillar: string | undefined): string {
@@ -349,12 +365,8 @@ function InsightCard({
         </div>
         <TrendIcon trend={trend} />
       </div>
-      <p className="text-sm leading-relaxed text-muted-foreground">
-        {body}
-      </p>
-      {action && (
-        <p className="text-xs text-accent/80 italic">→ {action}</p>
-      )}
+      <p className="text-sm leading-relaxed text-muted-foreground">{body}</p>
+      {action && <p className="text-xs text-accent/80 italic">→ {action}</p>}
 
       {/* Evidence sparkline */}
       {sparkData.length >= 2 && (
@@ -411,7 +423,9 @@ export default function InsightsPage() {
   const [emptyMessage, setEmptyMessage] = useState<string>(
     t.portal.insightsPage.empty
   );
-  const [portalStatus, setPortalStatus] = useState<PortalDataStatus | null>(null);
+  const [portalStatus, setPortalStatus] = useState<PortalDataStatus | null>(
+    null
+  );
 
   useEffect(() => {
     Promise.all([
@@ -423,87 +437,99 @@ export default function InsightsPage() {
         .then((r) => (r.ok ? r.json() : null))
         .catch(() => null),
     ])
-      .then(([analysesData, trendPayload, overviewData]: [
-        AnalysesPayload,
-        TrendsData | null,
-        OverviewData | null,
-      ]) => {
-        const status = parsePortalDataStatus(analysesData?.portal_data_status);
-        setPortalStatus(status);
-        setOverview(overviewData);
+      .then(
+        ([analysesData, trendPayload, overviewData]: [
+          AnalysesPayload,
+          TrendsData | null,
+          OverviewData | null
+        ]) => {
+          const status = parsePortalDataStatus(
+            analysesData?.portal_data_status
+          );
+          setPortalStatus(status);
+          setOverview(overviewData);
 
-        // INSIGHTS_TRENDS_SPARKLINE_ONLY
-        if (trendPayload?.trends) {
-          setTrends(trendPayload.trends);
-          setTrendsData(trendPayload);
-        }
+          // INSIGHTS_TRENDS_SPARKLINE_ONLY
+          if (trendPayload?.trends) {
+            setTrends(trendPayload.trends);
+            setTrendsData(trendPayload);
+          }
 
-        // Insights
-        const analyses: Analysis[] = getAnalyses(analysesData);
-        if (analyses.length === 0) {
-          setEmptyMessage(t.portal.insightsPage.empty);
-          setEmpty(true);
+          // Insights
+          const analyses: Analysis[] = getAnalyses(analysesData);
+          if (analyses.length === 0) {
+            setEmptyMessage(t.portal.insightsPage.empty);
+            setEmpty(true);
+            setLoading(false);
+            return;
+          }
+
+          const latest =
+            analyses.find((analysis) => getAnalysisSections(analysis)) ??
+            analyses[0];
+          const sections = getAnalysisSections(latest);
+          setLatestSections(sections);
+          const presentation = getDarthPresentation(sections);
+          const payload = getDarthPayload(sections);
+          setDarthPayload(payload);
+          setEmptyMessage(
+            !payload || status?.darthStatus === "darth_missing"
+              ? t.portal.insightsPage.empty
+              : t.portal.insightsPage.empty
+          );
+
+          // Extract DARTH state + primary claim for header
+          if (payload?.state) setDarthState(payload.state);
+          if (payload?.primary_claim) {
+            const stateDisplay = selectDarthStatePresentation(payload, locale);
+            setDarthClaim(
+              humanizeTechnicalText(
+                stateDisplay?.primary_claim ?? payload.primary_claim
+              )
+            );
+          }
+
+          // INSIGHTS_DARTH_PRESENTATION
+          const darthLocale = resolveDarthPresentationLocale(
+            presentation,
+            locale
+          );
+          const hero = presentation?.hero
+            ? {
+                block: presentation.hero,
+                copy: selectDarthCopy(presentation.hero.copy, darthLocale),
+              }
+            : null;
+          const supporting = (presentation?.supporting ?? [])
+            .map((block) => ({
+              block,
+              copy: selectDarthCopy(block.copy, darthLocale),
+            }))
+            .filter(isDarthDisplayBlock);
+
+          if (hero && isDarthDisplayBlock(hero)) {
+            setHeroBlock(hero);
+            setDarthInsights(supporting);
+            setInsights([]);
+            setUsingLegacyFallback(false);
+            setEmpty(false);
+            setLoading(false);
+            return;
+          }
+
+          // INSIGHTS_LEGACY_SECTIONS_FALLBACK
+          const fallbackInsights = extractLegacyInsights(sections);
+          if (fallbackInsights.length > 0) {
+            setEmptyMessage(t.portal.insightsPage.legacyFallback);
+          }
+          setHeroBlock(null);
+          setDarthInsights([]);
+          setInsights(fallbackInsights);
+          setUsingLegacyFallback(fallbackInsights.length > 0);
+          setEmpty(fallbackInsights.length === 0);
           setLoading(false);
-          return;
         }
-
-        const latest =
-          analyses.find((analysis) => getAnalysisSections(analysis)) ?? analyses[0];
-        const sections = getAnalysisSections(latest);
-        setLatestSections(sections);
-        const presentation = getDarthPresentation(sections);
-        const payload = getDarthPayload(sections);
-        setDarthPayload(payload);
-        setEmptyMessage(
-          !payload || status?.darthStatus === "darth_missing"
-            ? t.portal.insightsPage.empty
-            : t.portal.insightsPage.empty
-        );
-
-        // Extract DARTH state + primary claim for header
-        if (payload?.state) setDarthState(payload.state);
-        if (payload?.primary_claim) {
-          const stateDisplay = selectDarthStatePresentation(payload, locale);
-          setDarthClaim(humanizeTechnicalText(stateDisplay?.primary_claim ?? payload.primary_claim));
-        }
-
-        // INSIGHTS_DARTH_PRESENTATION
-        const darthLocale = resolveDarthPresentationLocale(presentation, locale);
-        const hero = presentation?.hero
-          ? {
-              block: presentation.hero,
-              copy: selectDarthCopy(presentation.hero.copy, darthLocale),
-            }
-          : null;
-        const supporting = (presentation?.supporting ?? [])
-          .map((block) => ({
-            block,
-            copy: selectDarthCopy(block.copy, darthLocale),
-          }))
-          .filter(isDarthDisplayBlock);
-
-        if (hero && isDarthDisplayBlock(hero)) {
-          setHeroBlock(hero);
-          setDarthInsights(supporting);
-          setInsights([]);
-          setUsingLegacyFallback(false);
-          setEmpty(false);
-          setLoading(false);
-          return;
-        }
-
-        // INSIGHTS_LEGACY_SECTIONS_FALLBACK
-        const fallbackInsights = extractLegacyInsights(sections);
-        if (fallbackInsights.length > 0) {
-          setEmptyMessage(t.portal.insightsPage.legacyFallback);
-        }
-        setHeroBlock(null);
-        setDarthInsights([]);
-        setInsights(fallbackInsights);
-        setUsingLegacyFallback(fallbackInsights.length > 0);
-        setEmpty(fallbackInsights.length === 0);
-        setLoading(false);
-      })
+      )
       .catch(() => {
         setEmptyMessage(t.portal.insightsPage.loadError);
         setEmpty(true);
@@ -526,13 +552,13 @@ export default function InsightsPage() {
         overview,
         trendsData,
         latestSections,
-        t.portal.compareImprove,
+        t.portal.compareImprove
       ),
-    [overview, trendsData, latestSections, t.portal.compareImprove],
+    [overview, trendsData, latestSections, t.portal.compareImprove]
   );
   const darthStateDisplay: DarthStatePresentation | null = useMemo(
     () => selectDarthStatePresentation(darthPayload, locale),
-    [darthPayload, locale],
+    [darthPayload, locale]
   );
 
   if (loading) {
@@ -553,22 +579,24 @@ export default function InsightsPage() {
     patternFromTimeline: t.portal.insightsPage.patternFromTimeline,
   };
 
-  if (empty || (insights.length === 0 && darthInsights.length === 0 && !heroBlock)) {
+  if (
+    empty ||
+    (insights.length === 0 && darthInsights.length === 0 && !heroBlock)
+  ) {
     const message =
-      !portalStatus?.hasAnalyses || portalStatus.analysisStatus === "no_analysis"
+      !portalStatus?.hasAnalyses ||
+      portalStatus.analysisStatus === "no_analysis"
         ? t.portal.insightsPage.empty
         : portalStatus.darthStatus === "darth_missing"
-          ? t.portal.insightsPage.empty
-          : emptyMessage;
+        ? t.portal.insightsPage.empty
+        : emptyMessage;
 
     return (
       <div className="flex flex-col gap-6">
         <CompareImproveBlock result={compareImprove} />
         <div className="flex flex-col items-center justify-center py-16 gap-4 text-center">
           <Lightbulb className="h-10 w-10 text-muted-foreground/50" />
-          <p className="text-sm text-muted-foreground max-w-sm">
-            {message}
-          </p>
+          <p className="text-sm text-muted-foreground max-w-sm">{message}</p>
         </div>
       </div>
     );
@@ -590,14 +618,20 @@ export default function InsightsPage() {
       {/* ─── DARTH primary claim header — Sprint 32.0 ─── */}
       {(darthState || darthClaim) && (
         <div className="rounded-xl border border-accent/20 bg-accent/5 px-5 py-4 flex flex-col gap-2">
-          {darthState && (
-            <span className="text-xs font-semibold uppercase tracking-wider text-accent">
-              {darthStateDisplay?.state_label ?? STATE_LABELS[darthState] ?? t.darthChrome.currentPattern}
-            </span>
-          )}
+          <div className="flex items-center gap-2 flex-wrap">
+            {darthState && (
+              <span className="text-xs font-semibold uppercase tracking-wider text-accent">
+                {darthStateDisplay?.state_label ??
+                  STATE_LABELS[darthState] ??
+                  t.darthChrome.currentPattern}
+              </span>
+            )}
+            <FeaturePreviewBadge />
+          </div>
           {darthClaim && (
             <p className="text-sm font-medium text-card-foreground leading-relaxed">
-              {cleanVisibleText(darthClaim) ?? t.portal.insightsPage.patternFromTimeline}
+              {cleanVisibleText(darthClaim) ??
+                t.portal.insightsPage.patternFromTimeline}
             </p>
           )}
         </div>
@@ -606,20 +640,25 @@ export default function InsightsPage() {
       {/* ─── DARTH hero insight ─── */}
       {heroBlock?.copy && (
         <div className="flex flex-col gap-3 rounded-xl border border-accent/30 bg-card p-5">
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 flex-wrap">
             <Lightbulb className="h-4 w-4 text-accent" />
             <span className="text-[10px] font-semibold uppercase tracking-wider text-accent">
               {t.darthChrome.keyFinding}
             </span>
+            <FeaturePreviewBadge />
           </div>
           <h3 className="text-base font-semibold text-card-foreground leading-snug">
-            {cleanVisibleText(heroBlock.copy.title) ?? t.portal.insightsPage.personalPatternDetected}
+            {cleanVisibleText(heroBlock.copy.title) ??
+              t.portal.insightsPage.personalPatternDetected}
           </h3>
           <p className="text-sm leading-relaxed text-muted-foreground">
-            {cleanVisibleText(heroBlock.copy.body) ?? t.portal.insightsPage.patternFromTimeline}
+            {cleanVisibleText(heroBlock.copy.body) ??
+              t.portal.insightsPage.patternFromTimeline}
           </p>
           {cleanVisibleText(heroBlock.copy.action) && (
-            <p className="text-xs text-accent/80 italic">→ {cleanVisibleText(heroBlock.copy.action)}</p>
+            <p className="text-xs text-accent/80 italic">
+              → {cleanVisibleText(heroBlock.copy.action)}
+            </p>
           )}
           {safeDarthEvidence(heroBlock.copy.evidence) && (
             <div className="rounded-lg bg-muted/40 px-3 py-2">
@@ -640,17 +679,22 @@ export default function InsightsPage() {
                 key={block.id}
                 className="flex flex-col gap-3 rounded-xl border border-border bg-card p-5"
               >
-                <div className="flex items-center gap-2">
+                <div className="flex items-center gap-2 flex-wrap">
                   <Lightbulb className="h-4 w-4 text-accent" />
                   <h3 className="text-sm font-semibold text-card-foreground">
-                    {cleanVisibleText(copy.title) ?? t.portal.insightsPage.personalPattern}
+                    {cleanVisibleText(copy.title) ??
+                      t.portal.insightsPage.personalPattern}
                   </h3>
+                  <FeaturePreviewBadge />
                 </div>
                 <p className="text-sm leading-relaxed text-muted-foreground">
-                  {cleanVisibleText(copy.body) ?? t.portal.insightsPage.patternFromTimeline}
+                  {cleanVisibleText(copy.body) ??
+                    t.portal.insightsPage.patternFromTimeline}
                 </p>
                 {cleanVisibleText(copy.action) && (
-                  <p className="text-xs text-accent/80 italic">→ {cleanVisibleText(copy.action)}</p>
+                  <p className="text-xs text-accent/80 italic">
+                    → {cleanVisibleText(copy.action)}
+                  </p>
                 )}
                 {safeDarthEvidence(copy.evidence) && (
                   <div className="rounded-lg bg-muted/40 px-3 py-2">

@@ -400,8 +400,7 @@ export const enIE = {
     },
     protectedHandoffModal: {
       title: "Sign in to update your Portal",
-      body:
-        "This export appears to match a protected Engage7 timeline. Sign in to continue updating your data.",
+      body: "This export appears to match a protected Engage7 timeline. Sign in to continue updating your data.",
       button: "Sign in to update my Portal",
       blocked:
         "This export appears to match a protected Engage7 timeline. Sign in with the matching account to continue.",
@@ -708,7 +707,8 @@ export const enIE = {
         "We could not import it automatically. You can retry now.",
       retry: "Retry",
       imported: "Analysis imported.",
-      importStillFailed: "Import still did not complete. Please try again later.",
+      importStillFailed:
+        "Import still did not complete. Please try again later.",
       protectedClaimBlocked:
         "This analysis is linked to another protected timeline. Sign in with the correct account to continue.",
     },
@@ -740,12 +740,15 @@ export const enIE = {
         sleepLow: "Your sleep is shorter than the typical healthy range.",
         sleepHigh: "Your sleep is longer than what most people need.",
         hrGood: "Your resting heart rate sits in a comfortable range.",
-        hrLow: "Your resting heart rate is lower than average — often a sign of good fitness.",
+        hrLow:
+          "Your resting heart rate is lower than average — often a sign of good fitness.",
         hrHigh:
           "Your resting heart rate is on the higher side. Stress, dehydration, or fitness can influence this.",
         hrvGood: "Your HRV suggests a well-balanced nervous system.",
-        hrvLow: "Your HRV is on the lower side, which can reflect accumulated stress.",
-        hrvHigh: "Your HRV is notably high — typically a sign of strong recovery capacity.",
+        hrvLow:
+          "Your HRV is on the lower side, which can reflect accumulated stress.",
+        hrvHigh:
+          "Your HRV is notably high — typically a sign of strong recovery capacity.",
         stepsGood: "Your daily activity sits in a sustainable range.",
         stepsLow: "Your step count is below the commonly recommended range.",
         stepsHigh: "You're very active — make sure recovery keeps pace.",
@@ -760,7 +763,8 @@ export const enIE = {
         sleepGoodRecoveryLag: "Good sleep but recovery lags behind",
         sleepGoodRecoveryLagBody:
           "You're sleeping enough, but your HRV is still low. Other factors like stress or inconsistent timing may be involved.",
-        activeEfficient: "Active lifestyle with efficient cardiovascular response",
+        activeEfficient:
+          "Active lifestyle with efficient cardiovascular response",
         activeEfficientBody:
           "Your daily movement is solid and your resting heart rate stays low — a sign of good cardiovascular fitness.",
         lowerActivityHigherHr: "Lower activity and higher resting heart rate",
@@ -794,7 +798,8 @@ export const enIE = {
         slowBreathing: "Try 5 minutes of slow breathing before bed",
         slowBreathingReason:
           "Your HRV is on the lower side. Breathwork can activate your parasympathetic system and support recovery.",
-        maintainRoutine: "Maintain what you're doing — your recovery signals are strong",
+        maintainRoutine:
+          "Maintain what you're doing — your recovery signals are strong",
         maintainRoutineReason:
           "Good sleep and healthy HRV suggest your current routine works well.",
         hydrationStress: "Check hydration and stress levels this week",
@@ -832,7 +837,8 @@ export const enIE = {
     },
     dataLab: {
       title: "Data Lab",
-      subtitle: "Advanced evidence, trends, and technical context from your analysis.",
+      subtitle:
+        "Advanced evidence, trends, and technical context from your analysis.",
       advancedReference: "Advanced analysis for reference.",
       correlationDisclaimer: "Correlations do not imply causation.",
       loading: "Loading...",
@@ -860,9 +866,11 @@ export const enIE = {
       signalCorrelationsReference: "Signal Correlations (reference)",
       correlationsAvailable:
         "Signals that moved together in your historical data. This does not prove cause and effect.",
-      correlationsUnavailable: "Correlation data is unavailable for this dataset.",
+      correlationsUnavailable:
+        "Correlation data is unavailable for this dataset.",
       volatility: "Volatility",
-      volatilityAvailable: "How much a signal varied across the selected period.",
+      volatilityAvailable:
+        "How much a signal varied across the selected period.",
       volatilityUnavailable: "Volatility data is unavailable for this dataset.",
       dataPoints: "{count} data points",
       averageSleep: "Average sleep",
@@ -942,8 +950,10 @@ export const enIE = {
     latestAnalysis: {
       title: "Latest Analysis",
       noDataTitle: "Recent Analyses",
-      noDataText: "No analyses yet. Upload an Apple Health export to get started.",
-      dataAvailable: "Analysis data available. Explore Trends and Reports for details.",
+      noDataText:
+        "No analyses yet. Upload an Apple Health export to get started.",
+      dataAvailable:
+        "Analysis data available. Explore Trends and Reports for details.",
       period: "Period",
       days: "Days",
       records: "Records",
@@ -959,7 +969,8 @@ export const enIE = {
       },
     },
     insightsPage: {
-      noInsights: "No insights yet. Upload your health data to start seeing patterns and recommendations.",
+      noInsights:
+        "No insights yet. Upload your health data to start seeing patterns and recommendations.",
       empty:
         "Insights will appear as Engage7 finds repeated patterns in your own timeline.",
       loadError: "Insights could not be loaded right now.",
@@ -994,7 +1005,8 @@ export const enIE = {
       },
     },
     settings: {
-      paymentSuccess: "Payment confirmed — your account has been upgraded to Premium.",
+      paymentSuccess:
+        "Payment confirmed — your account has been upgraded to Premium.",
       paymentCancelled: "Payment was cancelled. Your plan is unchanged.",
       planBilling: "Plan & Billing",
       premiumThanks: "You are on Premium — thank you for your support.",
@@ -1018,6 +1030,21 @@ export const enIE = {
       profileTitle: "Profile",
       profileBody:
         "Account details and preferences will be configurable here in a future update.",
+      personalizationTitle: "Personalization",
+      personalizationBody:
+        "Choose a profile that best describes your situation. This helps Engage7 tailor the language and priorities shown in your Portal over time.",
+      personalizationDisclaimer:
+        "This is not medical interpretation. Your profile does not change physiological thresholds, DARTH formulas, or health calculations.",
+      personalizationProfiles: {
+        general: "General wellbeing",
+        amateur_athlete: "Amateur athlete",
+        student: "Student",
+        entrepreneur: "Entrepreneur",
+      },
+      personalizationSave: "Save profile",
+      personalizationSaved: "Profile saved.",
+      personalizationError: "Could not save your profile. Please try again.",
+      personalizationLoading: "Loading profile...",
       languageTitle: "Preferred language",
       languageBody:
         "Choose the language Engage7 should use when you sign in on future sessions.",
@@ -1034,8 +1061,14 @@ export const enIE = {
       dataPrivacyFooter:
         "Azure Blob Storage holds raw and processed artifacts according to lifecycle rules. Supabase stores account, control-plane, report, and timeline metadata needed to run the authenticated Portal.",
       privacyItems: {
-        raw: ["Raw ZIP/XML", "Temporary Azure Blob storage under lifecycle rules."],
-        timeline: ["Processed timeline", "Used for Portal dashboards and freshness."],
+        raw: [
+          "Raw ZIP/XML",
+          "Temporary Azure Blob storage under lifecycle rules.",
+        ],
+        timeline: [
+          "Processed timeline",
+          "Used for Portal dashboards and freshness.",
+        ],
         reports: ["Reports", "Kept so you can reopen completed analyses."],
         account: ["Account metadata", "Stored for login, plan, and settings."],
         delete: ["Delete account", "Removes app-owned account data."],
@@ -1044,8 +1077,7 @@ export const enIE = {
         title: "Protect data updates",
         description:
           "Helps prevent Apple Health exports from another person being merged into your timeline. Engage7 compares privacy-minimized metadata before updating your processed timeline.",
-        note:
-          "This is not medical identity verification. It uses privacy-minimized metadata and does not expose raw Apple Health content, raw device details, date of birth, or sex in Settings. You can turn it off for testing or intentional advanced cases.",
+        note: "This is not medical identity verification. It uses privacy-minimized metadata and does not expose raw Apple Health content, raw device details, date of birth, or sex in Settings. You can turn it off for testing or intentional advanced cases.",
         on: "On",
         off: "Off",
         active:
@@ -1109,7 +1141,8 @@ export const enIE = {
         },
         activity: {
           title: "Activity",
-          subtitle: "Steps, energy, distance, and consistency across your timeline",
+          subtitle:
+            "Steps, energy, distance, and consistency across your timeline",
         },
       },
       overviewTitle: "Health",
@@ -1238,8 +1271,7 @@ export const enIE = {
       averageHrv: "Average HRV",
       averageHr: "Average HR",
       readiness: "Readiness",
-      weightedCompositeSignals:
-        "Weighted composite from available signals",
+      weightedCompositeSignals: "Weighted composite from available signals",
       hrvVsBaseline: "HRV vs Baseline",
       readinessForRange: "Readiness for this range is {score} out of 100.",
       noReadinessScore:
@@ -1259,7 +1291,8 @@ export const enIE = {
         "The stored analysis did not include a recovery or readiness score.",
       baselineComparison: "Baseline Comparison",
       comparisonUnavailable: "Comparison unavailable.",
-      todayNoComparison: "Today may be partial, so full-day comparison is not shown.",
+      todayNoComparison:
+        "Today may be partial, so full-day comparison is not shown.",
       todayNoFullDayComparison:
         "Today may be partial; full-day comparison uses Last day.",
       latestComparedWithPrevious:
@@ -1273,7 +1306,8 @@ export const enIE = {
         "A comparison needs enough current and baseline data.",
       heartRate: "Heart Rate",
       activeEnergyAverage: "Active energy averages {value} calories.",
-      energyDistanceSubtitle: "Active energy with distance overlay where available",
+      energyDistanceSubtitle:
+        "Active energy with distance overlay where available",
       bestVsLowest: "Best vs Lowest",
       stepRangeAnchors: "Step-count range anchors",
       bestDay: "Best day",
@@ -1316,8 +1350,10 @@ export const enIE = {
     },
     hero: {
       // Adaptive headline — driven by sleep consistency CV
-      adaptiveClear: "Your body is showing clear patterns — here's what stands out",
-      adaptiveSteady: "Your sleep is steady — your body is maintaining a stable rhythm",
+      adaptiveClear:
+        "Your body is showing clear patterns — here's what stands out",
+      adaptiveSteady:
+        "Your sleep is steady — your body is maintaining a stable rhythm",
       adaptiveShifting: "Your patterns are shifting — your body is adapting",
     },
     provenance: {
@@ -1346,7 +1382,8 @@ export const enIE = {
     },
     insights: {
       // HRV footnote shown when insight uses hrv_sdnn_mean_median metric
-      hrvExplanation: "HRV: reflects how well your body is recovering. Higher values generally mean better recovery.",
+      hrvExplanation:
+        "HRV: reflects how well your body is recovering. Higher values generally mean better recovery.",
       // Footer line under each engine insight card
       basedOnPatterns: "This is based on your recent patterns",
     },
@@ -1368,7 +1405,8 @@ export const enIE = {
       },
       energy: {
         title: "Energy pattern forming",
-        message: "Your energy view appears once enough activity data is available",
+        message:
+          "Your energy view appears once enough activity data is available",
       },
     },
   },

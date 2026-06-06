@@ -15,12 +15,13 @@
  */
 "use client";
 
+import { useLocale } from "@/components/providers/locale-provider";
+import { FeaturePreviewBadge } from "@/components/shared/feature-preview-badge";
 import {
   type DarthPayload,
   getDarthPayload,
   selectDarthStatePresentation,
 } from "@/lib/darth";
-import { useLocale } from "@/components/providers/locale-provider";
 import {
   AlertTriangle,
   ArrowDown,
@@ -38,9 +39,9 @@ import React from "react";
 
 interface StateConfig {
   label: string;
-  color: string;           // tailwind bg
-  textColor: string;       // tailwind text
-  border: string;          // tailwind border
+  color: string; // tailwind bg
+  textColor: string; // tailwind text
+  border: string; // tailwind border
   Icon: React.ElementType;
 }
 
@@ -132,7 +133,9 @@ function TrajectoryBadge({
     <span className="inline-flex items-center gap-1 rounded-full bg-muted/50 px-2 py-0.5 text-xs font-medium">
       <Icon className={`h-3 w-3 ${color}`} />
       <span className="text-card-foreground">{directionLabel}</span>
-      <span className="text-muted-foreground">· {pct}% {confidenceLabel}</span>
+      <span className="text-muted-foreground">
+        · {pct}% {confidenceLabel}
+      </span>
     </span>
   );
 }
@@ -164,7 +167,7 @@ export function DarthStatePanel({ sections }: DarthStatePanelProps) {
   } = payload;
 
   const display = selectDarthStatePresentation(payload, locale);
-  const cfg = state ? (STATE_CONFIG[state] ?? DEFAULT_STATE) : DEFAULT_STATE;
+  const cfg = state ? STATE_CONFIG[state] ?? DEFAULT_STATE : DEFAULT_STATE;
   const { Icon } = cfg;
 
   return (
@@ -177,8 +180,12 @@ export function DarthStatePanel({ sections }: DarthStatePanelProps) {
           className={`inline-flex items-center gap-1.5 rounded-full border ${cfg.border} bg-background/40 px-2.5 py-1 text-xs font-semibold uppercase tracking-wider ${cfg.textColor}`}
         >
           <Icon className={`h-3 w-3 ${cfg.textColor}`} />
-          {display?.state_label ?? (state ? FALLBACK_STATE_LABELS[state] : cfg.label) ?? cfg.label}
+          {display?.state_label ??
+            (state ? FALLBACK_STATE_LABELS[state] : cfg.label) ??
+            cfg.label}
         </span>
+
+        <FeaturePreviewBadge />
 
         {trajectory && (
           <TrajectoryBadge
@@ -188,13 +195,16 @@ export function DarthStatePanel({ sections }: DarthStatePanelProps) {
               trajectory.direction.replaceAll("_", " ")
             }
             confidence={trajectory.confidence}
-            confidenceLabel={display?.trajectory?.confidence_label ?? "confidence"}
+            confidenceLabel={
+              display?.trajectory?.confidence_label ?? "confidence"
+            }
           />
         )}
 
         {confidence != null && (
           <span className="text-xs text-muted-foreground ml-auto">
-            {Math.round(confidence * 100)}% {display?.confidence_label ?? "confidence"}
+            {Math.round(confidence * 100)}%{" "}
+            {display?.confidence_label ?? "confidence"}
           </span>
         )}
       </div>
@@ -214,7 +224,8 @@ export function DarthStatePanel({ sections }: DarthStatePanelProps) {
           </p>
           {baseline_context.explanation && (
             <p className="text-xs text-muted-foreground leading-relaxed">
-              {display?.baseline_context?.explanation ?? baseline_context.explanation}
+              {display?.baseline_context?.explanation ??
+                baseline_context.explanation}
             </p>
           )}
         </div>
@@ -230,9 +241,12 @@ export function DarthStatePanel({ sections }: DarthStatePanelProps) {
       {/* Guidance action */}
       {guidance?.recommended_adjustment && (
         <div className="flex items-start gap-2">
-          <ArrowRight className={`h-3.5 w-3.5 mt-0.5 shrink-0 ${cfg.textColor}`} />
+          <ArrowRight
+            className={`h-3.5 w-3.5 mt-0.5 shrink-0 ${cfg.textColor}`}
+          />
           <p className="text-xs text-card-foreground/80">
-            {display?.guidance?.recommended_adjustment ?? guidance.recommended_adjustment}
+            {display?.guidance?.recommended_adjustment ??
+              guidance.recommended_adjustment}
           </p>
         </div>
       )}
