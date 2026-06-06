@@ -22,6 +22,7 @@ import {
   getDarthPayload,
   selectDarthStatePresentation,
 } from "@/lib/darth";
+import { usePreviewFeatures } from "@/lib/feature-preview";
 import {
   AlertTriangle,
   ArrowDown,
@@ -29,9 +30,11 @@ import {
   ArrowUp,
   Brain,
   CheckCircle2,
+  Loader2,
+  Sparkles,
   Zap,
 } from "lucide-react";
-import React from "react";
+import React, { useState } from "react";
 
 // ---------------------------------------------------------------------------
 // State metadata
@@ -99,6 +102,29 @@ const DEFAULT_STATE: StateConfig = {
   Icon: Brain,
 };
 
+const AI_FEATURE_KEY = "ai_darth_health_overview_narrative";
+
+interface AiNarrative {
+  headline: string;
+  longitudinal_interpretation: string;
+  why_it_matters: string;
+  suggested_next_step: string;
+  evidence_used: string[];
+  confidence_note: string;
+  safety_note: string;
+}
+
+type AiStatus = "idle" | "loading" | "success" | "error";
+
+function aiErrorCode(detail: unknown): string {
+  if (typeof detail === "string") return detail;
+  if (detail && typeof detail === "object" && "code" in detail) {
+    const code = (detail as { code?: unknown }).code;
+    if (typeof code === "string") return code;
+  }
+  return "provider_failure";
+}
+
 // ---------------------------------------------------------------------------
 // Trajectory badge
 // ---------------------------------------------------------------------------
@@ -150,7 +176,11 @@ interface DarthStatePanelProps {
 }
 
 export function DarthStatePanel({ sections }: DarthStatePanelProps) {
-  const { locale } = useLocale();
+  const { locale, t } = useLocale();
+  const { isEnabled } = usePreviewFeatures();
+  const [aiStatus, setAiStatus] = useState<AiStatus>("idle");
+  const [aiNarrative, setAiNarrative] = useState<AiNarrative | null>(null);
+  const [aiError, setAiError] = useState<string | null>(null);
   const payload: DarthPayload | null = getDarthPayload(sections);
 
   if (!payload) return null;
@@ -169,6 +199,52 @@ export function DarthStatePanel({ sections }: DarthStatePanelProps) {
   const display = selectDarthStatePresentation(payload, locale);
   const cfg = state ? STATE_CONFIG[state] ?? DEFAULT_STATE : DEFAULT_STATE;
   const { Icon } = cfg;
+  const canGenerateAi = isEnabled(AI_FEATURE_KEY);
+  const aiCopy = t.portal.health.ai;
+  const aiErrorMessage = aiError
+    ? aiCopy.errors[aiError as keyof typeof aiCopy.errors] ?? aiCopy.errors.provider_failure
+    : null;
+
+  async function generateAiNarrative() {
+    setAiStatus("loading");
+    setAiError(null);
+    try {
+      const res = await fetch("/api/proxy/ai/health-overview-narrative", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ locale }),
+      });
+      const data = (await res.json().catch(() => null)) as {
+        narrative?: AiNarrative;
+        detail?: unknown;
+      } | null;
+      if (!res.ok) {
+        const code = aiErrorCode(data?.detail);
+        const fallback =
+          data?.detail &&
+          typeof data.detail === "object" &&
+          "narrative" in data.detail
+            ? (data.detail as { narrative?: AiNarrative }).narrative
+            : null;
+        setAiNarrative(fallback ?? null);
+        setAiError(code);
+        setAiStatus("error");
+        return;
+      }
+      if (!data?.narrative) {
+        setAiNarrative(null);
+        setAiError("validation_failed");
+        setAiStatus("error");
+        return;
+      }
+      setAiNarrative(data.narrative);
+      setAiStatus("success");
+    } catch {
+      setAiNarrative(null);
+      setAiError("provider_failure");
+      setAiStatus("error");
+    }
+  }
 
   return (
     <div
@@ -258,6 +334,100 @@ export function DarthStatePanel({ sections }: DarthStatePanelProps) {
           <p className="text-xs text-amber-200/80 leading-relaxed">
             {display?.conflict?.explanation ?? conflict.explanation}
           </p>
+        </div>
+      )}
+
+      {canGenerateAi && (
+        <div className="mt-2 border-t border-border/60 pt-3">
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <div className="inline-flex items-center gap-2">
+              <span className="inline-flex h-7 w-7 items-center justify-center rounded-md border border-accent/25 bg-accent/10 text-accent">
+                <Sparkles className="h-3.5 w-3.5" />
+              </span>
+              <div>
+                <p className="text-xs font-semibold text-card-foreground">
+                  {aiCopy.title}
+                </p>
+                <p className="text-[11px] text-muted-foreground">
+                  {aiCopy.subtitle}
+                </p>
+              </div>
+            </div>
+            <button
+              type="button"
+              onClick={generateAiNarrative}
+              disabled={aiStatus === "loading"}
+              className="inline-flex h-8 items-center gap-2 rounded-md border border-accent/35 bg-accent/10 px-3 text-xs font-medium text-accent transition-colors hover:bg-accent/15 disabled:pointer-events-none disabled:opacity-60"
+            >
+              {aiStatus === "loading" ? (
+                <Loader2 className="h-3.5 w-3.5 animate-spin" />
+              ) : (
+                <Sparkles className="h-3.5 w-3.5" />
+              )}
+              {aiStatus === "loading" ? aiCopy.generating : aiCopy.generate}
+            </button>
+          </div>
+
+          {aiErrorMessage && (
+            <p className="mt-3 rounded-md border border-destructive/20 bg-destructive/10 px-3 py-2 text-xs text-destructive">
+              {aiErrorMessage}
+            </p>
+          )}
+
+          {aiNarrative && (
+            <div className="mt-3 rounded-lg border border-border/70 bg-background/35 p-4">
+              <div className="mb-3 flex flex-wrap items-center gap-2">
+                <span className="rounded-full border border-accent/30 bg-accent/10 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-accent">
+                  {aiCopy.badge}
+                </span>
+                <p className="text-sm font-semibold text-card-foreground">
+                  {aiNarrative.headline}
+                </p>
+              </div>
+              <div className="grid gap-3 md:grid-cols-2">
+                <div>
+                  <p className="text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">
+                    {aiCopy.interpretation}
+                  </p>
+                  <p className="mt-1 text-xs leading-relaxed text-card-foreground/85">
+                    {aiNarrative.longitudinal_interpretation}
+                  </p>
+                </div>
+                <div>
+                  <p className="text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">
+                    {aiCopy.whyItMatters}
+                  </p>
+                  <p className="mt-1 text-xs leading-relaxed text-card-foreground/85">
+                    {aiNarrative.why_it_matters}
+                  </p>
+                </div>
+              </div>
+              <div className="mt-3 flex items-start gap-2">
+                <ArrowRight className={`mt-0.5 h-3.5 w-3.5 shrink-0 ${cfg.textColor}`} />
+                <p className="text-xs text-card-foreground/85">
+                  {aiNarrative.suggested_next_step}
+                </p>
+              </div>
+              {aiNarrative.evidence_used.length > 0 && (
+                <div className="mt-3 flex flex-wrap gap-2">
+                  {aiNarrative.evidence_used.map((item) => (
+                    <span
+                      key={item}
+                      className="rounded-full border border-border px-2 py-0.5 text-[11px] text-muted-foreground"
+                    >
+                      {item}
+                    </span>
+                  ))}
+                </div>
+              )}
+              <p className="mt-3 text-[11px] leading-relaxed text-muted-foreground">
+                {aiNarrative.confidence_note}
+              </p>
+              <p className="mt-1 text-[11px] leading-relaxed text-muted-foreground">
+                {aiNarrative.safety_note}
+              </p>
+            </div>
+          )}
         </div>
       )}
     </div>

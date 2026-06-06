@@ -219,8 +219,8 @@ export default function AdminOverviewPage() {
         {[
           { href: "/admin/users", label: "View all users →" },
           { href: "/admin/events", label: "View events →" },
+          { href: "/admin/features", label: "Feature controls →" },
           { href: "/admin/feedback", label: "View feedback →" },
-          { href: "/admin/blobs", label: "Blob storage →" },
         ].map(({ href, label }) => (
           <a
             key={href}

@@ -52,6 +52,12 @@ export default async function AdminLayout({
               Events
             </a>
             <a
+              href="/admin/features"
+              className="text-muted-foreground hover:text-foreground transition-colors"
+            >
+              Features
+            </a>
+            <a
               href="/admin/feedback"
               className="text-muted-foreground hover:text-foreground transition-colors"
             >
