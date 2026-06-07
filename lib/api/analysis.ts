@@ -214,12 +214,27 @@ export interface APIHealth {
   build_time?: string;
 }
 
+export interface APIVersion {
+  service?: string;
+  version: string;
+  git_sha?: string;
+  environment?: string;
+  build_time?: string;
+}
+
 export async function getPublicMetrics(): Promise<PublicMetrics> {
   return get<PublicMetrics>(API_ENDPOINTS.getMetrics);
 }
 
 export async function getApiHealth(): Promise<APIHealth> {
   return get<APIHealth>(API_ENDPOINTS.getHealth, {
+    timeout: 5000,
+    skipRetry: true,
+  });
+}
+
+export async function getApiVersion(): Promise<APIVersion> {
+  return get<APIVersion>(API_ENDPOINTS.getVersion, {
     timeout: 5000,
     skipRetry: true,
   });

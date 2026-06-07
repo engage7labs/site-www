@@ -33,6 +33,7 @@ export const API_ENDPOINTS = {
 
   // Health
   getHealth: "/health",
+  getVersion: "/api/version",
 } as const;
 
 /**

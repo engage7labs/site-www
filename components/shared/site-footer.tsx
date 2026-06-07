@@ -5,21 +5,76 @@
 "use client";
 
 import { useLocale } from "@/components/providers/locale-provider";
+import { getApiVersion } from "@/lib/api/analysis";
 import { config } from "@/lib/config";
 import { motion } from "framer-motion";
 import Link from "next/link";
+import { useEffect, useState } from "react";
 
-function buildVersionTitle(): string {
-  const version = `v${config.appVersion}`;
-  const metadata = [config.gitSha, config.buildTime].filter(
-    (value) => value && value !== "unknown"
-  );
-  return [version, ...metadata].join(" · ");
+interface FooterApiVersion {
+  version?: string;
+  git_sha?: string;
+  build_time?: string;
+}
+
+function safeToken(value: string | null | undefined): string | null {
+  const trimmed = value?.trim();
+  if (!trimmed || trimmed.toLowerCase() === "unknown") return null;
+  if (/[/\\]|https?:|=|@/.test(trimmed)) return null;
+  if (!/^[A-Za-z0-9._:+-]+$/.test(trimmed)) return null;
+  return trimmed;
+}
+
+function formatVersion(value: string | null | undefined): string | null {
+  const token = safeToken(value);
+  if (!token) return null;
+  return token.startsWith("v") ? token : `v${token}`;
+}
+
+function buildVersionTitle(apiVersion: FooterApiVersion | null): string {
+  const webVersion = formatVersion(config.appVersion) ?? "Web version unavailable";
+  if (!apiVersion?.version) {
+    return `Web ${webVersion} | API unavailable`;
+  }
+
+  const formattedApiVersion = formatVersion(apiVersion.version);
+  if (!formattedApiVersion) {
+    return `Web ${webVersion} | API unavailable`;
+  }
+
+  const gitSha = safeToken(apiVersion.git_sha);
+  if (gitSha) {
+    return `Web ${webVersion} | API ${formattedApiVersion} | API hash ${gitSha}`;
+  }
+
+  const buildTime = safeToken(apiVersion.build_time);
+  if (buildTime) {
+    return `Web ${webVersion} | API ${formattedApiVersion} | API build ${buildTime}`;
+  }
+
+  return `Web ${webVersion} | API ${formattedApiVersion} | API hash unavailable`;
 }
 
 export function SiteFooter() {
   const { t } = useLocale();
-  const versionTitle = buildVersionTitle();
+  const [apiVersion, setApiVersion] = useState<FooterApiVersion | null>(null);
+  const versionTitle = buildVersionTitle(apiVersion);
+
+  useEffect(() => {
+    let cancelled = false;
+
+    getApiVersion()
+      .then((response) => {
+        if (!cancelled) setApiVersion(response);
+      })
+      .catch(() => {
+        if (!cancelled) setApiVersion(null);
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   return (
     <footer className="border-t border-border bg-background">
@@ -68,7 +123,7 @@ export function SiteFooter() {
               className="text-xs text-muted-foreground/60"
               title={versionTitle}
             >
-              v{config.appVersion}
+              {formatVersion(config.appVersion) ?? "vdev"}
             </span>
           </div>
         </motion.div>
