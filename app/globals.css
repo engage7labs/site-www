@@ -189,6 +189,48 @@
   }
 }
 
+@media print {
+  @page {
+    margin: 12mm;
+  }
+
+  body {
+    background: var(--background) !important;
+  }
+
+  body * {
+    visibility: hidden !important;
+  }
+
+  [data-health-export-content],
+  [data-health-export-content] * {
+    visibility: visible !important;
+  }
+
+  [data-health-export-content] {
+    position: absolute !important;
+    inset: 0 auto auto 0 !important;
+    width: 100% !important;
+    background: var(--background) !important;
+    color: var(--foreground) !important;
+    print-color-adjust: exact;
+    -webkit-print-color-adjust: exact;
+  }
+
+  [data-health-export-content] .portal-panel,
+  [data-health-export-content] .health-export-section,
+  [data-health-export-content] section {
+    break-inside: avoid;
+    page-break-inside: avoid;
+  }
+
+  [data-health-export-content] canvas {
+    max-width: 100% !important;
+    print-color-adjust: exact;
+    -webkit-print-color-adjust: exact;
+  }
+}
+
 /* ------------------------------------------------------------------ */
 /* Dark theme variants — override CSS vars via data-theme attribute   */
 /* ------------------------------------------------------------------ */

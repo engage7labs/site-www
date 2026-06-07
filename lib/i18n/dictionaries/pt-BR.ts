@@ -696,6 +696,10 @@ export const ptBR: Dictionary = {
           title: "Saúde",
           subtitle: "Sono, Recuperação e Atividade ao longo do tempo",
         },
+        all: {
+          title: "Todos",
+          subtitle: "Sono, Recuperação e Atividade juntos",
+        },
         sleep: {
           title: "Sono",
           subtitle: "Duração, estágios, consistência e eficiência do sono",
@@ -1164,6 +1168,11 @@ export const ptBR: Dictionary = {
         all: "Todo o período",
       },
       domains: {
+        all: {
+          title: "Todos",
+          subtitle:
+            "Evidências de sono, recuperação e atividade em uma visão de Saúde consolidada",
+        },
         sleep: {
           title: "Sono",
           subtitle:
@@ -1197,6 +1206,9 @@ export const ptBR: Dictionary = {
       loading: "Carregando dados de saúde...",
       loadError: "Os dados de saúde não puderam ser carregados.",
       unableToLoad: "Não foi possível carregar os dados de saúde",
+      exportToPdf: "Exportar para PDF",
+      preparingPdf: "Preparando PDF",
+      pdfExportFailed: "Falha ao exportar PDF",
       ai: {
         title: "AI DARTH Health Overview",
         subtitle: "Prévia administrativa",

@@ -11,6 +11,7 @@ import {
   Activity,
   BarChart3,
   CalendarDays,
+  Download,
   Flame,
   Footprints,
   Gauge,
@@ -24,6 +25,7 @@ import type { ElementType, ReactNode } from "react";
 import { useEffect, useMemo, useState } from "react";
 
 type HealthDomain = "sleep" | "recovery" | "activity";
+type HealthDashboardDomain = HealthDomain | "all";
 type Period = "today" | "last_day" | "week" | "month" | "year" | "all";
 type JsonScalar = string | number | boolean | null;
 type UnknownRecord = Record<string, unknown>;
@@ -82,6 +84,12 @@ const COLORS = {
 };
 
 const DOMAIN_META = {
+  all: {
+    title: "All",
+    subtitle: "Sleep, recovery, and activity evidence in one view",
+    Icon: BarChart3,
+    accent: COLORS.muted,
+  },
   sleep: {
     title: "Sleep",
     subtitle: "Duration, stages, consistency, and sleep quality signals",
@@ -101,7 +109,7 @@ const DOMAIN_META = {
     accent: COLORS.energy,
   },
 } satisfies Record<
-  HealthDomain,
+  HealthDashboardDomain,
   {
     title: string;
     subtitle: string;
@@ -989,6 +997,44 @@ function DomainEmptyState({
   );
 }
 
+function DomainSection({
+  domain,
+  children,
+}: Readonly<{
+  domain: HealthDomain;
+  children: ReactNode;
+}>) {
+  const { t } = useLocale();
+  const meta = DOMAIN_META[domain];
+  const domainCopy = t.portal.health.domains[domain];
+  const { Icon } = meta;
+
+  return (
+    <section className="health-export-section flex flex-col gap-4">
+      <div className="flex items-start gap-3">
+        <span
+          className="mt-0.5 inline-flex h-9 w-9 items-center justify-center rounded-lg"
+          style={{
+            backgroundColor: `${meta.accent}18`,
+            color: meta.accent,
+          }}
+        >
+          <Icon className="h-4 w-4" />
+        </span>
+        <div>
+          <h3 className="text-base font-semibold text-card-foreground">
+            {domainCopy.title}
+          </h3>
+          <p className="mt-1 max-w-2xl text-sm text-muted-foreground">
+            {domainCopy.subtitle}
+          </p>
+        </div>
+      </div>
+      {children}
+    </section>
+  );
+}
+
 function SleepDashboard({
   points,
   sections,
@@ -1724,12 +1770,14 @@ function ActivityDashboard({
 
 export function HealthDashboard({
   domain,
-}: Readonly<{ domain: HealthDomain }>) {
+}: Readonly<{ domain: HealthDashboardDomain }>) {
   const { t, locale } = useLocale();
   const [data, setData] = useState<HealthDataResponse | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [period, setPeriod] = useState<Period>("last_day");
+  const [exporting, setExporting] = useState(false);
+  const [exportError, setExportError] = useState<string | null>(null);
 
   useEffect(() => {
     trackHealthDashboardViewed(domain);
@@ -1767,10 +1815,43 @@ export function HealthDashboard({
     () => parsePortalDataStatus(data?.portal_data_status),
     [data?.portal_data_status],
   );
-  const filtered = useMemo(
-    () => filterByPeriod(allPoints, domain, period, t.portal.health, locale),
-    [allPoints, domain, period, t.portal.health, locale],
+  const activeDomains = useMemo(
+    () =>
+      domain === "all"
+        ? (["sleep", "recovery", "activity"] as const)
+        : ([domain] as const),
+    [domain],
   );
+  const domainFilters = useMemo(
+    () =>
+      Object.fromEntries(
+        activeDomains.map((item) => [
+          item,
+          filterByPeriod(allPoints, item, period, t.portal.health, locale),
+        ]),
+      ) as Record<HealthDomain, ReturnType<typeof filterByPeriod>>,
+    [activeDomains, allPoints, period, t.portal.health, locale],
+  );
+  const filtered = useMemo(
+    () =>
+      domain === "all"
+        ? domainFilters.sleep
+        : domainFilters[domain],
+    [domain, domainFilters],
+  );
+
+  const handleExportPdf = async () => {
+    try {
+      setExportError(null);
+      setExporting(true);
+      await new Promise((resolve) => window.setTimeout(resolve, 250));
+      window.print();
+    } catch {
+      setExportError(t.portal.health.pdfExportFailed);
+    } finally {
+      window.setTimeout(() => setExporting(false), 500);
+    }
+  };
 
   if (loading) return <LoadingState />;
 
@@ -1796,11 +1877,24 @@ export function HealthDashboard({
   }
 
   const meta = DOMAIN_META[domain];
-  const domainCopy = t.portal.health.domains[domain];
+  const domainCopy =
+    domain === "all" ? t.portal.health.domains.all : t.portal.health.domains[domain];
   const { Icon } = meta;
+  const allStoredDays = new Set(
+    activeDomains.flatMap((item) =>
+      domainFilters[item].points.map((point) => point.date),
+    ),
+  ).size;
+  const storedDaysCount =
+    domain === "all" ? allStoredDays : filtered.points.length;
+  const headerRangeLabel =
+    domain === "all" ? t.portal.health.periods[period] : filtered.rangeLabel;
+  const headerComparisonLabel =
+    domain === "all" ? null : filtered.comparisonLabel;
 
   return (
     <div className="flex flex-col gap-6">
+      <div data-health-export-content className="flex flex-col gap-6">
       <div className="portal-panel rounded-lg border border-border/70 bg-card/85 p-5">
         <div className="flex flex-col gap-4">
           <div className="flex items-start gap-3">
@@ -1821,15 +1915,15 @@ export function HealthDashboard({
                 {domainCopy.subtitle}
               </p>
               <p className="mt-2 text-xs text-muted-foreground">
-                {filtered.rangeLabel} ·{" "}
+                {headerRangeLabel} ·{" "}
                 {t.portal.health.storedDays.replace(
                   "{count}",
-                  String(filtered.points.length),
+                  String(storedDaysCount),
                 )}
               </p>
-              {filtered.comparisonLabel && (
+              {headerComparisonLabel && (
                 <p className="mt-1 text-xs text-muted-foreground">
-                  {filtered.comparisonLabel}
+                  {headerComparisonLabel}
                 </p>
               )}
             </div>
@@ -1840,7 +1934,52 @@ export function HealthDashboard({
         </div>
       </div>
 
-      {!filtered.hasDomainDataInRange ? (
+      {domain === "all" ? (
+        <div className="flex flex-col gap-8">
+          {activeDomains.map((item) => {
+            const itemFiltered = domainFilters[item];
+            return (
+              <DomainSection key={item} domain={item}>
+                {!itemFiltered.hasDomainDataInRange ? (
+                  <DomainEmptyState
+                    domain={item}
+                    hasAnyDomainData={itemFiltered.hasAnyDomainData}
+                    period={period}
+                  />
+                ) : (
+                  <>
+                    {item === "sleep" && (
+                      <SleepDashboard
+                        points={itemFiltered.points}
+                        sections={sections}
+                        rangeLabel={itemFiltered.rangeLabel}
+                        period={period}
+                      />
+                    )}
+                    {item === "recovery" && (
+                      <RecoveryDashboard
+                        points={itemFiltered.points}
+                        comparisonPoints={itemFiltered.comparisonPoints}
+                        allPoints={allPoints}
+                        sections={sections}
+                        rangeLabel={itemFiltered.rangeLabel}
+                        period={period}
+                      />
+                    )}
+                    {item === "activity" && (
+                      <ActivityDashboard
+                        points={itemFiltered.points}
+                        rangeLabel={itemFiltered.rangeLabel}
+                        period={period}
+                      />
+                    )}
+                  </>
+                )}
+              </DomainSection>
+            );
+          })}
+        </div>
+      ) : !filtered.hasDomainDataInRange ? (
         <DomainEmptyState
           domain={domain}
           hasAnyDomainData={filtered.hasAnyDomainData}
@@ -1874,6 +2013,29 @@ export function HealthDashboard({
             />
           )}
         </>
+      )}
+      </div>
+
+      {domain === "all" && (
+        <div className="flex flex-col items-end gap-2 print:hidden">
+          <button
+            type="button"
+            onClick={handleExportPdf}
+            disabled={exporting}
+            aria-label={
+              exporting
+                ? t.portal.health.preparingPdf
+                : t.portal.health.exportToPdf
+            }
+            className="inline-flex items-center gap-2 rounded-lg bg-accent px-4 py-2 text-sm font-semibold text-accent-foreground shadow-sm transition-opacity hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-65"
+          >
+            <Download className="h-4 w-4" />
+            {exporting ? t.portal.health.preparingPdf : t.portal.health.exportToPdf}
+          </button>
+          {exportError && (
+            <p className="text-xs text-destructive">{exportError}</p>
+          )}
+        </div>
       )}
     </div>
   );

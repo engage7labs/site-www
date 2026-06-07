@@ -687,6 +687,10 @@ export const enIE = {
           title: "Health",
           subtitle: "Longitudinal Sleep, Recovery & Activity",
         },
+        all: {
+          title: "All",
+          subtitle: "Sleep, Recovery, and Activity together",
+        },
         sleep: {
           title: "Sleep",
           subtitle: "Sleep duration, stages, consistency, and efficiency",
@@ -1131,6 +1135,11 @@ export const enIE = {
         all: "All time",
       },
       domains: {
+        all: {
+          title: "All",
+          subtitle:
+            "Sleep, recovery, and activity evidence in one consolidated Health view",
+        },
         sleep: {
           title: "Sleep",
           subtitle: "Duration, stages, consistency, and sleep quality signals",
@@ -1162,6 +1171,9 @@ export const enIE = {
       loading: "Loading health data...",
       loadError: "Health data could not be loaded.",
       unableToLoad: "Unable to load health data",
+      exportToPdf: "Export to PDF",
+      preparingPdf: "Preparing PDF",
+      pdfExportFailed: "PDF export failed",
       ai: {
         title: "AI DARTH Health Overview",
         subtitle: "Admin preview",

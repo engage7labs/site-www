@@ -4,6 +4,7 @@ import { useLocale } from "@/components/providers/locale-provider";
 import { Logo } from "@/components/shared/logo";
 import {
   Activity,
+  BarChart3,
   ChevronDown,
   ChevronLeft,
   ChevronRight,
@@ -23,7 +24,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { PortalSidebarItem } from "./portal-sidebar-item";
 
 interface NavItem {
-  key: "overview" | "reports" | "health" | "sleep" | "recovery" | "activity" | "insights" | "dataLab" | "settings";
+  key: "overview" | "reports" | "health" | "all" | "sleep" | "recovery" | "activity" | "insights" | "dataLab" | "settings";
   label: string;
   href: string;
   icon: React.ElementType;
@@ -39,6 +40,7 @@ const NAV_ITEMS: NavItem[] = [
     href: "/portal/health",
     icon: Activity,
     children: [
+      { key: "all", label: "All", href: "/portal/health/all", icon: BarChart3 },
       { key: "sleep", label: "Sleep", href: "/portal/health/sleep", icon: Moon },
       { key: "recovery", label: "Recovery", href: "/portal/health/recovery", icon: Heart },
       { key: "activity", label: "Activity", href: "/portal/health/activity", icon: Zap },

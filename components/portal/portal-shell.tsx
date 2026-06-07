@@ -38,6 +38,7 @@ export function PortalShell({
     "/portal/settings": t.portal.shell.sections.settings,
     "/portal/upload": t.portal.shell.sections.upload,
     "/portal/health": t.portal.shell.sections.health,
+    "/portal/health/all": t.portal.shell.sections.all,
     "/portal/health/sleep": t.portal.shell.sections.sleep,
     "/portal/health/recovery": t.portal.shell.sections.recovery,
     "/portal/health/activity": t.portal.shell.sections.activity,
