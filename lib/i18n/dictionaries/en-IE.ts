@@ -95,7 +95,7 @@ export const enIE = {
       sampleBaseline: {
         title: "Baseline Window",
         description:
-          "Your individual physiological normal ranges for heart rate, HRV, and recovery",
+          "Your recent personal pattern across recovery, sleep, and activity signals",
       },
 
       sampleSignals: {
@@ -107,7 +107,7 @@ export const enIE = {
       sampleStatus: {
         title: "Overall Pattern",
         description:
-          "Context-aware assessment of your recent physiological state",
+          "Context-aware assessment of your recent active-life readiness pattern",
       },
 
       viewSampleCTA: "View sample report",
@@ -564,7 +564,7 @@ export const enIE = {
       dataUsage: {
         title: "Data Usage",
         content:
-          "Your dataset is used solely to generate your analysis report. We do not train external AI models on your data. Processing follows deterministic rules based on physiological baselines.",
+          "Your dataset is used solely to generate your analysis report. We do not train external AI models on your data. Processing follows deterministic rules based on your recent personal pattern.",
       },
       dataStorage: {
         title: "Data Storage",
@@ -590,7 +590,7 @@ export const enIE = {
       serviceDescription: {
         title: "Service Description",
         content:
-          "Engage7 provides deterministic analysis of wearable health data. The service generates informational insights based on your physiological baseline.",
+          "Engage7 provides deterministic analysis of wearable data. The service generates informational insights based on your personal recovery, activity, and routine patterns.",
       },
       userResponsibilities: {
         title: "User Responsibilities",
@@ -637,7 +637,7 @@ export const enIE = {
     shareTitle: "Share Engage7",
     shareDescription: "Choose a platform to share Engage7 with your network.",
     shareText:
-      "I just analyzed my wearable data with Engage7 — deterministic insights from my physiological baseline. Try it yourself!",
+      "I just analyzed my wearable data with Engage7 — deterministic insights from my personal performance and recovery patterns. Try it yourself!",
     copyLink: "Copy Link",
     copied: "Copied!",
     backToHome: "Back to Home",
@@ -1038,7 +1038,7 @@ export const enIE = {
       personalizationBody:
         "Choose a profile that best describes your situation. This helps Engage7 tailor the language and priorities shown in your Portal over time.",
       personalizationDisclaimer:
-        "This is not medical interpretation. Your profile does not change physiological thresholds, DARTH formulas, or health calculations.",
+        "This is not medical interpretation. Your profile does not change DARTH thresholds, formulas, or deterministic calculations.",
       personalizationProfiles: {
         general: "General wellbeing",
         amateur_athlete: "Amateur athlete",
@@ -1061,7 +1061,7 @@ export const enIE = {
         "A self-serve export center is not available yet. Your reports remain available in My Reports, and account deletion is available below.",
       dataPrivacyTitle: "Data & Privacy",
       dataPrivacyBody:
-        "Engage7 uses your Apple Health export to build a processed physiological timeline. Raw upload files are temporary. Processed daily features and report artifacts may be kept so your Portal can show Health, Insights, Data Lab, and My Reports.",
+        "Engage7 uses your Apple Health export to build a processed personal signal timeline. Raw upload files are temporary. Processed daily features and report artifacts may be kept so your Portal can show Health, Insights, Data Lab, and My Reports.",
       dataPrivacyFooter:
         "Azure Blob Storage holds raw and processed artifacts according to lifecycle rules. Supabase stores account, control-plane, report, and timeline metadata needed to run the authenticated Portal.",
       privacyItems: {
@@ -1175,9 +1175,9 @@ export const enIE = {
       preparingPdf: "Preparing PDF",
       pdfExportFailed: "PDF export failed",
       ai: {
-        title: "AI DARTH Health Overview",
-        subtitle: "Admin preview",
-        generate: "Generate AI interpretation",
+        title: "AI DARTH Performance Overview",
+        subtitle: "Performance and recovery preview",
+        generate: "Generate AI reflection",
         generating: "Generating...",
         badge: "AI-assisted",
         previewWarning: "Preview warning: this response would not pass Restricted Mode.",
@@ -1191,6 +1191,10 @@ export const enIE = {
           evidence_pack_missing: "Evidence Pack is missing for this analysis.",
           budget_exhausted: "The daily AI budget has been exhausted.",
           provider_timeout: "The AI provider timed out.",
+          provider_http_503: "The AI provider is temporarily unavailable.",
+          provider_empty_output: "The AI provider returned no usable output.",
+          provider_schema_error: "The AI provider response did not match the expected structure.",
+          provider_parse_error: "The AI provider response could not be parsed.",
           provider_failure: "The AI provider could not complete the request.",
           provider_unavailable: "The AI provider is not configured.",
           validation_failed: "The AI response did not pass validation.",
@@ -1401,9 +1405,9 @@ export const enIE = {
       context: "Context",
     },
     visualWindows: {
-      baseline_long: "Baseline long",
-      last_7d: "Last 7 days",
-      last_30d: "Last 30 days",
+      baseline_long: "Recent personal baseline",
+      last_7d: "Recent week",
+      last_30d: "Recent month",
     },
     visualMetrics: {
       sleep_hours: "Sleep hours",

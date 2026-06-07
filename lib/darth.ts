@@ -191,9 +191,37 @@ export interface DarthEvidencePackSignal {
   display_hint: string;
 }
 
+export type DarthDriftStatus =
+  | "unknown"
+  | "baseline_stable"
+  | "baseline_in_transition"
+  | "baseline_low_confidence"
+  | "emerging_new_pattern";
+
 export interface DarthEvidencePack {
   contract_version: "darth_evidence_pack.v1";
   source: "darth";
+  product_frame?: "fitness_performance_recovery_intelligence" | string;
+  baseline_semantics?: {
+    primary_baseline_label: "recent_personal_baseline" | string;
+    comparison_window_label: "recent_week" | string;
+    population_comparison_allowed: boolean;
+  };
+  presentation_policy?: {
+    avoid_raw_health_values: boolean;
+    avoid_clinical_language: boolean;
+    use_fitness_performance_language: boolean;
+  };
+  drift_context?: {
+    status: DarthDriftStatus | string;
+    confidence: "unknown" | "low" | "medium" | "high" | string;
+    display_hint: string;
+  };
+  capacity_context?: {
+    readiness_frame: "active_life_readiness" | string;
+    productivity_frame: "capacity_management" | string;
+    subjective_context_available: boolean;
+  };
   state: NonNullable<DarthPayload["state"]> | string;
   trajectory: {
     direction: DarthTrajectory["direction"] | string;
@@ -300,6 +328,145 @@ export function getDarthExplainability(sections: unknown): DarthInsightBlock[] {
 export function resolveDarthLocale(locale: string): DarthLocale {
   if (locale === "hi-IN") return "hi-IN";
   return locale === "pt-BR" ? "pt-BR" : "en-IE";
+}
+
+const DARTH_WINDOW_LABELS: Record<
+  string,
+  { "en-IE": string; "pt-BR": string }
+> = {
+  latest_day: {
+    "en-IE": "latest available day",
+    "pt-BR": "dia mais recente com dados",
+  },
+  last_7d: {
+    "en-IE": "recent week",
+    "pt-BR": "semana recente",
+  },
+  rolling_7d: {
+    "en-IE": "recent week",
+    "pt-BR": "semana recente",
+  },
+  last_30d: {
+    "en-IE": "recent month",
+    "pt-BR": "mês recente",
+  },
+  baseline_30d: {
+    "en-IE": "recent personal baseline",
+    "pt-BR": "padrão pessoal recente",
+  },
+  baseline_long: {
+    "en-IE": "recent personal baseline",
+    "pt-BR": "padrão pessoal recente",
+  },
+};
+
+const DARTH_TRAJECTORY_LABELS: Record<
+  string,
+  { "en-IE": string; "pt-BR": string }
+> = {
+  improving: {
+    "en-IE": "more favorable",
+    "pt-BR": "mais favorável",
+  },
+  deteriorating: {
+    "en-IE": "less favorable",
+    "pt-BR": "menos favorável",
+  },
+  unstable: {
+    "en-IE": "signals are mixed",
+    "pt-BR": "sinais mistos",
+  },
+};
+
+function darthDisplayLocale(locale: string): "en-IE" | "pt-BR" {
+  return locale === "pt-BR" ? "pt-BR" : "en-IE";
+}
+
+export function displayDarthWindowLabel(
+  window: string | null | undefined,
+  locale: string
+): string | null {
+  if (!window) return null;
+  const resolved = darthDisplayLocale(locale);
+  const labels = DARTH_WINDOW_LABELS[window];
+  return labels?.[resolved] ?? window.replaceAll("_", " ");
+}
+
+export function displayDarthComparisonLabel(
+  window: string | null | undefined,
+  locale: string
+): string | null {
+  if (!window) return null;
+  const resolved = darthDisplayLocale(locale);
+  if (window === "baseline_30d" || window === "baseline_long") {
+    return resolved === "pt-BR"
+      ? "semana recente comparada com padrão pessoal recente"
+      : "recent week compared with recent personal baseline";
+  }
+  return displayDarthWindowLabel(window, locale);
+}
+
+export function displayDarthTrajectoryLabel(
+  direction: string | null | undefined,
+  locale: string
+): string | null {
+  if (!direction) return null;
+  const resolved = darthDisplayLocale(locale);
+  const labels = DARTH_TRAJECTORY_LABELS[direction];
+  return labels?.[resolved] ?? direction.replaceAll("_", " ");
+}
+
+export function humanizeDarthTechnicalText(
+  value: string | null | undefined,
+  locale: string
+): string | null {
+  if (!value) return null;
+  const resolved = darthDisplayLocale(locale);
+  const replacements: Array<[RegExp, string]> = [
+    [/\blast_7d\b/gi, DARTH_WINDOW_LABELS.last_7d[resolved]],
+    [/\brolling_7d\b/gi, DARTH_WINDOW_LABELS.rolling_7d[resolved]],
+    [/\blast_30d\b/gi, DARTH_WINDOW_LABELS.last_30d[resolved]],
+    [/\bbaseline_30d\b/gi, DARTH_WINDOW_LABELS.baseline_30d[resolved]],
+    [/\bbaseline_long\b/gi, DARTH_WINDOW_LABELS.baseline_long[resolved]],
+    [/\blatest_day\b/gi, DARTH_WINDOW_LABELS.latest_day[resolved]],
+    [
+      /\bdeteriorating\b/gi,
+      resolved === "pt-BR" ? "menos favorável" : "less favorable",
+    ],
+    [
+      /\bphysiological state\b/gi,
+      resolved === "pt-BR"
+        ? "padrão de prontidão para vida ativa"
+        : "active-life readiness pattern",
+    ],
+    [
+      /\bphysiological strain\b/gi,
+      resolved === "pt-BR" ? "carga de recuperação" : "recovery load",
+    ],
+    [
+      /\bhealth baseline\b/gi,
+      resolved === "pt-BR" ? "padrão pessoal" : "personal pattern",
+    ],
+    [
+      /\bhealth pattern\b/gi,
+      resolved === "pt-BR" ? "padrão pessoal" : "personal pattern",
+    ],
+    [/\bstrain\b/gi, resolved === "pt-BR" ? "carga" : "load"],
+    [
+      /\busual range\b/gi,
+      resolved === "pt-BR"
+        ? "padrão pessoal recente"
+        : "recent personal baseline",
+    ],
+  ];
+  const cleaned = replacements
+    .reduce((text, [pattern, replacement]) => text.replace(pattern, replacement), value)
+    .replace(/\bvs\b/gi, resolved === "pt-BR" ? "comparado com" : "compared with")
+    .replace(/\s*\|\s*/g, " · ")
+    .replace(/_/g, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+  return cleaned || null;
 }
 
 function hasCopyLocale(

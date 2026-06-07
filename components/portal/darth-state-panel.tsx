@@ -18,6 +18,8 @@
 import { useLocale } from "@/components/providers/locale-provider";
 import { FeaturePreviewBadge } from "@/components/shared/feature-preview-badge";
 import {
+  displayDarthTrajectoryLabel,
+  humanizeDarthTechnicalText,
   type DarthPayload,
   getDarthPayload,
   selectDarthStatePresentation,
@@ -50,35 +52,35 @@ interface StateConfig {
 
 const STATE_CONFIG: Record<string, StateConfig> = {
   RECOVERING: {
-    label: "Recovering",
+    label: "Readiness rebuilding",
     color: "bg-emerald-500/10",
     textColor: "text-emerald-400",
     border: "border-emerald-500/20",
     Icon: CheckCircle2,
   },
   STABLE: {
-    label: "Stable",
+    label: "Stable active-life pattern",
     color: "bg-blue-500/10",
     textColor: "text-blue-400",
     border: "border-blue-500/20",
     Icon: CheckCircle2,
   },
   STRAIN_ACCUMULATING: {
-    label: "Strain Accumulating",
+    label: "Load accumulating",
     color: "bg-amber-500/10",
     textColor: "text-amber-400",
     border: "border-amber-500/20",
     Icon: Zap,
   },
   OVERREACHED: {
-    label: "Overreached",
+    label: "Load above recovery",
     color: "bg-red-500/10",
     textColor: "text-red-400",
     border: "border-red-500/20",
     Icon: AlertTriangle,
   },
   MISALIGNED_RECOVERY: {
-    label: "Misaligned Recovery",
+    label: "Load and recovery not aligned",
     color: "bg-purple-500/10",
     textColor: "text-purple-400",
     border: "border-purple-500/20",
@@ -87,11 +89,11 @@ const STATE_CONFIG: Record<string, StateConfig> = {
 };
 
 const FALLBACK_STATE_LABELS: Record<string, string> = {
-  RECOVERING: "Recovering",
-  STABLE: "Stable",
-  STRAIN_ACCUMULATING: "Strain Accumulating",
-  OVERREACHED: "Overreached",
-  MISALIGNED_RECOVERY: "Misaligned Recovery",
+  RECOVERING: "Readiness rebuilding",
+  STABLE: "Stable active-life pattern",
+  STRAIN_ACCUMULATING: "Load accumulating",
+  OVERREACHED: "Load above recovery",
+  MISALIGNED_RECOVERY: "Load and recovery not aligned",
 };
 
 const DEFAULT_STATE: StateConfig = {
@@ -304,6 +306,7 @@ export function DarthStatePanel({ sections }: DarthStatePanelProps) {
             direction={trajectory.direction}
             directionLabel={
               display?.trajectory?.direction_label ??
+              displayDarthTrajectoryLabel(trajectory.direction, locale) ??
               trajectory.direction.replaceAll("_", " ")
             }
             confidence={trajectory.confidence}
@@ -324,7 +327,9 @@ export function DarthStatePanel({ sections }: DarthStatePanelProps) {
       {/* Primary claim */}
       {primary_claim && (
         <p className="text-sm font-medium text-card-foreground leading-relaxed">
-          {display?.primary_claim ?? primary_claim}
+          {display?.primary_claim ??
+            humanizeDarthTechnicalText(primary_claim, locale) ??
+            primary_claim}
         </p>
       )}
 
@@ -332,11 +337,14 @@ export function DarthStatePanel({ sections }: DarthStatePanelProps) {
       {baseline_context && (
         <div className="flex flex-col gap-0.5">
           <p className="text-xs font-semibold text-card-foreground/70">
-            {display?.baseline_context?.headline ?? baseline_context.headline}
+            {display?.baseline_context?.headline ??
+              humanizeDarthTechnicalText(baseline_context.headline, locale) ??
+              baseline_context.headline}
           </p>
           {baseline_context.explanation && (
             <p className="text-xs text-muted-foreground leading-relaxed">
               {display?.baseline_context?.explanation ??
+                humanizeDarthTechnicalText(baseline_context.explanation, locale) ??
                 baseline_context.explanation}
             </p>
           )}
@@ -346,7 +354,9 @@ export function DarthStatePanel({ sections }: DarthStatePanelProps) {
       {/* Consequence */}
       {consequence?.summary && (
         <p className="text-xs text-muted-foreground border-l-2 border-muted pl-3 italic">
-          {display?.consequence?.summary ?? consequence.summary}
+          {display?.consequence?.summary ??
+            humanizeDarthTechnicalText(consequence.summary, locale) ??
+            consequence.summary}
         </p>
       )}
 
@@ -358,6 +368,7 @@ export function DarthStatePanel({ sections }: DarthStatePanelProps) {
           />
           <p className="text-xs text-card-foreground/80">
             {display?.guidance?.recommended_adjustment ??
+              humanizeDarthTechnicalText(guidance.recommended_adjustment, locale) ??
               guidance.recommended_adjustment}
           </p>
         </div>
@@ -368,7 +379,9 @@ export function DarthStatePanel({ sections }: DarthStatePanelProps) {
         <div className="flex items-start gap-2 rounded-lg border border-amber-500/20 bg-amber-500/5 px-3 py-2 mt-1">
           <AlertTriangle className="h-3.5 w-3.5 mt-0.5 shrink-0 text-amber-400" />
           <p className="text-xs text-amber-200/80 leading-relaxed">
-            {display?.conflict?.explanation ?? conflict.explanation}
+            {display?.conflict?.explanation ??
+              humanizeDarthTechnicalText(conflict.explanation, locale) ??
+              conflict.explanation}
           </p>
         </div>
       )}

@@ -17,7 +17,7 @@ export const ptBR: Dictionary = {
       title: "Entenda seus dados de dispositivos vestíveis.",
       titleHighlight: "Claramente.",
       subtitle:
-        "O Engage7 transforma sinais brutos de saúde em insights determinísticos construídos a partir da sua linha de base fisiológica.",
+        "O Engage7 transforma sinais de dispositivos vestíveis em insights determinísticos sobre desempenho pessoal, recuperação e rotina.",
       ctaPrimary: "Executar Análise",
       ctaSecondary: "Como Funciona",
       trustBadge: "Insights determinísticos dos seus dados",
@@ -64,9 +64,9 @@ export const ptBR: Dictionary = {
       },
 
       step2: {
-        title: "Detectar linha de base fisiológica",
+        title: "Detectar seu padrão pessoal",
         description:
-          "O Engage7 analisa seus padrões individuais para estabelecer suas faixas normais",
+          "O Engage7 analisa seus padrões individuais para criar uma referência pessoal recente",
       },
 
       step3: {
@@ -150,7 +150,7 @@ export const ptBR: Dictionary = {
       q2: {
         question: "Que tipo de insights vou receber?",
         answer:
-          "Você receberá um relatório de análise determinística cobrindo padrões de sono, variabilidade da frequência cardíaca, tendências de atividade e sinais de recuperação. Todos os insights são explicáveis e derivados da sua linha de base fisiológica.",
+          "Você receberá um relatório de análise determinística cobrindo padrões de sono, tendências de atividade e sinais de recuperação. Todos os insights são explicáveis e derivados do seu padrão pessoal recente.",
       },
 
       q3: {
@@ -269,7 +269,7 @@ export const ptBR: Dictionary = {
       point1: "Seu arquivo é usado apenas para análise",
       point2: "Sem treinamento em modelos de IA externos",
       point3: "Processamento segue regras determinísticas",
-      point4: "Resultados gerados a partir da sua linha de base fisiológica",
+      point4: "Resultados gerados a partir do seu padrão pessoal recente",
     },
 
     backToHome: "Voltar para Início",
@@ -354,7 +354,7 @@ export const ptBR: Dictionary = {
           name: "Premium",
           tagline: "Experiência completa de insights",
           longitudinal: "Insights longitudinais em todos os sinais",
-          baseline: "Comparações personalizadas de linha de base",
+          baseline: "Comparações com padrão pessoal recente",
           actionable: "Sugestões acionáveis de melhoria",
           dashboard: "Painel de saúde privado completo",
           export: "Exportação de relatório PDF & CSV",
@@ -598,7 +598,7 @@ export const ptBR: Dictionary = {
       serviceDescription: {
         title: "Descrição do Serviço",
         content:
-          "O Engage7 fornece análise determinística de dados de saúde de dispositivos vestíveis. O serviço gera insights informativos baseados em sua linha de base fisiológica.",
+          "O Engage7 fornece análise determinística de dados de dispositivos vestíveis. O serviço gera insights informativos baseados nos seus padrões pessoais de recuperação, atividade e rotina.",
       },
       userResponsibilities: {
         title: "Responsabilidades do Usuário",
@@ -646,7 +646,7 @@ export const ptBR: Dictionary = {
     shareDescription:
       "Escolha uma plataforma para compartilhar o Engage7 com sua rede.",
     shareText:
-      "Acabei de analisar meus dados de dispositivos vestíveis com o Engage7 — insights determinísticos da minha linha de base fisiológica. Experimente você também!",
+      "Acabei de analisar meus dados de dispositivos vestíveis com o Engage7 — insights determinísticos sobre meus padrões de desempenho e recuperação. Experimente você também!",
     copyLink: "Copiar Link",
     copied: "Copiado!",
     backToHome: "Voltar para Início",
@@ -707,7 +707,7 @@ export const ptBR: Dictionary = {
         recovery: {
           title: "Recuperação",
           subtitle:
-            "VFC, frequência cardíaca, prontidão e comparação com linha de base",
+            "VFC, frequência cardíaca, prontidão e comparação com padrão pessoal recente",
         },
         activity: {
           title: "Atividade",
@@ -882,12 +882,12 @@ export const ptBR: Dictionary = {
         "Movimento longitudinal dos sinais ao longo do tempo.",
       trendChartsUnavailable:
         "Dados avançados de tendência ainda não estão disponíveis para esta análise.",
-      baselineRanges: "Faixas de linha de base",
-      baselineRangesTitle: "Suas faixas de linha de base",
+      baselineRanges: "Padrão pessoal recente",
+      baselineRangesTitle: "Seu padrão pessoal recente",
       baselineRangesDescription:
         "Sua faixa de referência pessoal a partir dos dados históricos disponíveis.",
       baselineUnavailable:
-        "Dados de linha de base indisponíveis para este conjunto de dados.",
+        "Dados de padrão pessoal recente indisponíveis para este conjunto de dados.",
       correlations: "Correlações",
       signalCorrelations: "Correlações entre sinais",
       signalCorrelationsReference: "Correlações entre sinais (referência)",
@@ -1181,7 +1181,7 @@ export const ptBR: Dictionary = {
         recovery: {
           title: "Recuperação",
           subtitle:
-            "VFC, carga cardíaca, prontidão e movimento contra linha de base",
+            "VFC, carga cardíaca, prontidão e movimento contra padrão pessoal recente",
         },
         activity: {
           title: "Atividade",
@@ -1210,9 +1210,9 @@ export const ptBR: Dictionary = {
       preparingPdf: "Preparando PDF",
       pdfExportFailed: "Falha ao exportar PDF",
       ai: {
-        title: "AI DARTH Health Overview",
-        subtitle: "Prévia administrativa",
-        generate: "Gerar interpretação com IA",
+        title: "Visão DARTH de desempenho com IA",
+        subtitle: "Prévia de desempenho e recuperação",
+        generate: "Gerar reflexão com IA",
         generating: "Gerando...",
         badge: "Assistido por IA",
         previewWarning:
@@ -1227,6 +1227,10 @@ export const ptBR: Dictionary = {
           evidence_pack_missing: "O Evidence Pack está ausente nesta análise.",
           budget_exhausted: "O orçamento diário de IA foi esgotado.",
           provider_timeout: "O provedor de IA excedeu o tempo limite.",
+          provider_http_503: "O provedor de IA está temporariamente indisponível.",
+          provider_empty_output: "O provedor de IA não retornou saída utilizável.",
+          provider_schema_error: "A resposta do provedor de IA não seguiu a estrutura esperada.",
+          provider_parse_error: "A resposta do provedor de IA não pôde ser interpretada.",
           provider_failure: "O provedor de IA não concluiu a solicitação.",
           provider_unavailable: "O provedor de IA não está configurado.",
           validation_failed: "A resposta de IA não passou na validação.",
@@ -1300,7 +1304,7 @@ export const ptBR: Dictionary = {
       consistency: "Consistência",
       efficiency: "Eficiência",
       notEnough: "Insuficiente",
-      notEnoughBaselineData: "Dados de linha de base insuficientes",
+      notEnoughBaselineData: "Dados de padrão pessoal recente insuficientes",
       activityInsight: "Insight de atividade",
       activityRangeAverageSteps:
         "Este intervalo tem média de {value} passos por dia rastreado.",
@@ -1344,7 +1348,7 @@ export const ptBR: Dictionary = {
       averageHr: "FC média",
       readiness: "Prontidão",
       weightedCompositeSignals: "Composição ponderada dos sinais disponíveis",
-      hrvVsBaseline: "VFC vs linha de base",
+      hrvVsBaseline: "VFC vs padrão pessoal recente",
       readinessForRange: "A prontidão neste intervalo é {score} de 100.",
       noReadinessScore:
         "Nenhuma pontuação de prontidão está disponível, então o painel usa diretamente VFC e sinais de frequência cardíaca.",
@@ -1362,7 +1366,7 @@ export const ptBR: Dictionary = {
       scoreUnavailable: "Pontuação indisponível",
       scoreUnavailableBody:
         "A análise armazenada não incluiu pontuação de recuperação ou prontidão.",
-      baselineComparison: "Comparação com linha de base",
+      baselineComparison: "Comparação com padrão pessoal recente",
       comparisonUnavailable: "Comparação indisponível.",
       todayNoComparison:
         "Hoje pode estar parcial, então a comparação de dia completo não é exibida.",
@@ -1377,7 +1381,7 @@ export const ptBR: Dictionary = {
       selectedVsTimeline:
         "Intervalo selecionado vs toda a linha do tempo armazenada.",
       comparisonNeedsData:
-        "Uma comparação precisa de dados atuais e de linha de base suficientes.",
+        "Uma comparação precisa de dados atuais e de padrão pessoal recente suficientes.",
       heartRate: "Frequência cardíaca",
       activeEnergyAverage: "Energia ativa média de {value} calorias.",
       energyDistanceSubtitle:
@@ -1439,9 +1443,9 @@ export const ptBR: Dictionary = {
       context: "Contexto",
     },
     visualWindows: {
-      baseline_long: "Linha de base longa",
-      last_7d: "Últimos 7 dias",
-      last_30d: "Últimos 30 dias",
+      baseline_long: "Padrão pessoal recente",
+      last_7d: "Semana recente",
+      last_30d: "Mês recente",
     },
     visualMetrics: {
       sleep_hours: "Horas de sono",

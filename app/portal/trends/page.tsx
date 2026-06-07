@@ -53,7 +53,7 @@ const COLORS = {
 const TECHNICAL_LABELS: Record<string, string> = {
   last_7d: "recent week",
   last_30d: "recent month",
-  baseline_30d: "usual range",
+  baseline_30d: "recent personal baseline",
   yearly_summary: "long-term summary",
   hrv_sdnn: "HRV",
   hrv_sdnn_mean: "HRV",

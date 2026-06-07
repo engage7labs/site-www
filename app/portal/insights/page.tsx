@@ -4,6 +4,7 @@ import { CompareImproveBlock } from "@/components/portal/compare-improve-block";
 import { useLocale } from "@/components/providers/locale-provider";
 import { FeaturePreviewBadge } from "@/components/shared/feature-preview-badge";
 import {
+  humanizeDarthTechnicalText,
   getDarthPayload,
   getDarthPresentation,
   resolveDarthPresentationLocale,
@@ -131,14 +132,13 @@ function getAnalyses(payload: unknown): Analysis[] {
 }
 
 function humanizeTechnicalText(
-  value: string | null | undefined
+  value: string | null | undefined,
+  locale = "en-IE"
 ): string | null {
   if (!value) return null;
+  const darthMapped = humanizeDarthTechnicalText(value, locale) ?? value;
 
   const replacements: Array<[RegExp, string]> = [
-    [/\blast_7d\b/gi, "recent week"],
-    [/\blast_30d\b/gi, "recent month"],
-    [/\bbaseline_30d\b/gi, "usual range"],
     [/\bsleep[ _-]+variability[ _-]+cv\b/gi, "sleep regularity"],
     [/\bsleep_variability_cv\b/gi, "sleep regularity"],
     [/\bsteps[ _-]+variability[ _-]+cv\b/gi, "activity regularity"],
@@ -159,7 +159,7 @@ function humanizeTechnicalText(
   const cleaned = replacements
     .reduce(
       (text, [pattern, replacement]) => text.replace(pattern, replacement),
-      value
+      darthMapped
     )
     .replace(/\s*\|\s*/g, " · ")
     .replace(/_/g, " ")
@@ -173,23 +173,29 @@ function hasRawTechnicalTrace(value: string | null | undefined): boolean {
   return Boolean(
     value &&
       (value.includes("|") ||
-        /\b(last_7d|last_30d|baseline_30d|sleep[ _-]+variability[ _-]+cv|steps[ _-]+variability[ _-]+cv|sleep_variability_cv|steps_variability_cv|hrv_sdnn|hrv_sdnn_mean|hr_resting|resting_hr|hr_mean|total_steps|active_energy_cal|total_energy_cal|sleep_hours|recovery_composite_score)\b/i.test(
+        /\b(last_7d|last_30d|baseline_30d|baseline_long|sleep[ _-]+variability[ _-]+cv|steps[ _-]+variability[ _-]+cv|sleep_variability_cv|steps_variability_cv|hrv_sdnn|hrv_sdnn_mean|hr_resting|resting_hr|hr_mean|total_steps|active_energy_cal|total_energy_cal|sleep_hours|recovery_composite_score|deteriorating)\b/i.test(
           value
         ) ||
         /\b[a-z]+_[a-z0-9_]+\b/.test(value))
   );
 }
 
-function safeDarthEvidence(value: string | null | undefined): string | null {
+function safeDarthEvidence(
+  value: string | null | undefined,
+  locale = "en-IE"
+): string | null {
   if (!value) return null;
   if (value.includes("|")) return null;
-  const mapped = humanizeTechnicalText(value);
+  const mapped = humanizeTechnicalText(value, locale);
   if (!mapped || hasRawTechnicalTrace(mapped)) return null;
   return mapped;
 }
 
-function cleanVisibleText(value: string | null | undefined): string | null {
-  const mapped = humanizeTechnicalText(value);
+function cleanVisibleText(
+  value: string | null | undefined,
+  locale = "en-IE"
+): string | null {
+  const mapped = humanizeTechnicalText(value, locale);
   if (!mapped || hasRawTechnicalTrace(mapped)) return null;
   return mapped;
 }
@@ -311,10 +317,12 @@ function getSparklineData(
 
 function InsightCard({
   insight,
+  locale,
   sparkData,
   strings,
 }: {
   insight: InsightText;
+  locale: string;
   sparkData: number[];
   strings: {
     signals: {
@@ -336,9 +344,9 @@ function InsightCard({
   const color = PILLAR_COLOR[insight.pillar ?? "sleep"] ?? "#3dbe73";
   const icon = PILLAR_ICON[insight.pillar ?? "sleep"];
   const headline =
-    cleanVisibleText(insight.headline) ?? strings.personalPattern;
-  const body = cleanVisibleText(insight.body) ?? strings.patternFromTimeline;
-  const action = cleanVisibleText(insight.action);
+    cleanVisibleText(insight.headline, locale) ?? strings.personalPattern;
+  const body = cleanVisibleText(insight.body, locale) ?? strings.patternFromTimeline;
+  const action = cleanVisibleText(insight.action, locale);
 
   function getSignalLabel(pillar: string | undefined): string {
     if (pillar === "sleep") return strings.signals.sleep;
@@ -484,7 +492,8 @@ export default function InsightsPage() {
             const stateDisplay = selectDarthStatePresentation(payload, locale);
             setDarthClaim(
               humanizeTechnicalText(
-                stateDisplay?.primary_claim ?? payload.primary_claim
+                stateDisplay?.primary_claim ?? payload.primary_claim,
+                locale
               )
             );
           }
@@ -630,7 +639,7 @@ export default function InsightsPage() {
           </div>
           {darthClaim && (
             <p className="text-sm font-medium text-card-foreground leading-relaxed">
-              {cleanVisibleText(darthClaim) ??
+              {cleanVisibleText(darthClaim, locale) ??
                 t.portal.insightsPage.patternFromTimeline}
             </p>
           )}
@@ -648,22 +657,22 @@ export default function InsightsPage() {
             <FeaturePreviewBadge />
           </div>
           <h3 className="text-base font-semibold text-card-foreground leading-snug">
-            {cleanVisibleText(heroBlock.copy.title) ??
+            {cleanVisibleText(heroBlock.copy.title, locale) ??
               t.portal.insightsPage.personalPatternDetected}
           </h3>
           <p className="text-sm leading-relaxed text-muted-foreground">
-            {cleanVisibleText(heroBlock.copy.body) ??
+            {cleanVisibleText(heroBlock.copy.body, locale) ??
               t.portal.insightsPage.patternFromTimeline}
           </p>
-          {cleanVisibleText(heroBlock.copy.action) && (
+          {cleanVisibleText(heroBlock.copy.action, locale) && (
             <p className="text-xs text-accent/80 italic">
-              → {cleanVisibleText(heroBlock.copy.action)}
+              → {cleanVisibleText(heroBlock.copy.action, locale)}
             </p>
           )}
-          {safeDarthEvidence(heroBlock.copy.evidence) && (
+          {safeDarthEvidence(heroBlock.copy.evidence, locale) && (
             <div className="rounded-lg bg-muted/40 px-3 py-2">
               <span className="text-xs text-muted-foreground">
-                {safeDarthEvidence(heroBlock.copy.evidence)}
+                {safeDarthEvidence(heroBlock.copy.evidence, locale)}
               </span>
             </div>
           )}
@@ -682,24 +691,24 @@ export default function InsightsPage() {
                 <div className="flex items-center gap-2 flex-wrap">
                   <Lightbulb className="h-4 w-4 text-accent" />
                   <h3 className="text-sm font-semibold text-card-foreground">
-                    {cleanVisibleText(copy.title) ??
+                    {cleanVisibleText(copy.title, locale) ??
                       t.portal.insightsPage.personalPattern}
                   </h3>
                   <FeaturePreviewBadge />
                 </div>
                 <p className="text-sm leading-relaxed text-muted-foreground">
-                  {cleanVisibleText(copy.body) ??
+                  {cleanVisibleText(copy.body, locale) ??
                     t.portal.insightsPage.patternFromTimeline}
                 </p>
-                {cleanVisibleText(copy.action) && (
+                {cleanVisibleText(copy.action, locale) && (
                   <p className="text-xs text-accent/80 italic">
-                    → {cleanVisibleText(copy.action)}
+                    → {cleanVisibleText(copy.action, locale)}
                   </p>
                 )}
-                {safeDarthEvidence(copy.evidence) && (
+                {safeDarthEvidence(copy.evidence, locale) && (
                   <div className="rounded-lg bg-muted/40 px-3 py-2">
                     <span className="text-xs text-muted-foreground">
-                      {safeDarthEvidence(copy.evidence)}
+                      {safeDarthEvidence(copy.evidence, locale)}
                     </span>
                   </div>
                 )}
@@ -719,6 +728,7 @@ export default function InsightsPage() {
               <InsightCard
                 key={`${insight.pillar}-${i}`}
                 insight={insight}
+                locale={locale}
                 sparkData={
                   sparklines[insight.pillar as keyof typeof sparklines] ?? []
                 }

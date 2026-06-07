@@ -14,12 +14,14 @@
 
 import { useLocale } from "@/components/providers/locale-provider";
 import {
+  displayDarthWindowLabel,
   type DarthPayload,
   type DarthProofChart,
   type DarthTeaser,
   getDarthPayload,
   getDarthPresentation,
   getDarthTeaser,
+  humanizeDarthTechnicalText,
   resolveDarthPresentationLocale,
   selectDarthCopy,
   selectDarthStatePresentation,
@@ -226,16 +228,18 @@ function formatDatasetDate(value: string, locale: string): string {
 }
 
 function localizeTeaserComparison(value: string | null, locale: string): string | null {
-  if (!value || locale !== "pt-BR") return value;
-  return value
+  if (!value) return null;
+  const mapped = humanizeDarthTechnicalText(value, locale) ?? value;
+  if (locale !== "pt-BR") return mapped;
+  return mapped
     .replace("years of history", "anos de histórico")
     .replace("year of history", "ano de histórico")
     .replace("below recovery threshold", "abaixo do limite de recuperação")
     .replace("above stable rhythm threshold", "acima do limite de ritmo estável")
     .replace("above personal load threshold", "acima do limite pessoal de carga")
     .replace("recovery weakened", "recuperação enfraquecida")
-    .replace("below baseline_30d", "abaixo da linha de base de 30 dias")
-    .replace("with resting heart rate above baseline_30d", "com frequência cardíaca de repouso acima da linha de base de 30 dias");
+    .replace("recent personal baseline", "padrão pessoal recente")
+    .replace("resting recovery signal", "sinal de recuperação em repouso");
 }
 
 function teaserEvidenceDetails(evidence: DarthTeaser["evidence"][number], locale: string): string[] {
@@ -379,13 +383,23 @@ export function InsightPreview({
   }, [sections, t]);
   const stateHeadline = useMemo(
     () =>
-      darthTeaser?.headline ??
-      (usesDarth
-        ? darthStateDisplay?.primary_claim ??
-          darthPayload?.primary_claim ??
-          adaptiveHeadline
-        : adaptiveHeadline),
-    [adaptiveHeadline, darthPayload, darthStateDisplay, darthTeaser, usesDarth]
+      humanizeDarthTechnicalText(
+        darthTeaser?.headline ??
+          (usesDarth
+            ? darthStateDisplay?.primary_claim ??
+              darthPayload?.primary_claim ??
+              adaptiveHeadline
+            : adaptiveHeadline),
+        locale
+      ),
+    [
+      adaptiveHeadline,
+      darthPayload,
+      darthStateDisplay,
+      darthTeaser,
+      locale,
+      usesDarth,
+    ]
   );
 
   // ---- Extract insights (deterministic) ----------------------------------
@@ -569,7 +583,7 @@ export function InsightPreview({
           <div className="flex h-full flex-col justify-end rounded-lg border border-emerald-500/25 bg-emerald-500/[0.06] p-3">
             <div className="h-2/3 rounded-md bg-emerald-500/35" />
             <p className="mt-3 text-[10px] font-semibold uppercase tracking-wider text-emerald-600 dark:text-emerald-300">
-              {(signals[0] ?? "support signal").replaceAll("_", " ")}
+              {humanizeDarthTechnicalText(signals[0] ?? "support signal", locale)}
             </p>
           </div>
           <div className="flex h-full flex-col items-center justify-center">
@@ -582,7 +596,7 @@ export function InsightPreview({
           <div className="flex h-full flex-col justify-start rounded-lg border border-rose-500/25 bg-rose-500/[0.06] p-3">
             <div className="h-2/3 rounded-md bg-rose-500/35" />
             <p className="mt-3 text-[10px] font-semibold uppercase tracking-wider text-rose-600 dark:text-rose-300">
-              {(signals[1] ?? "recovery signal").replaceAll("_", " ")}
+              {humanizeDarthTechnicalText(signals[1] ?? "recovery signal", locale)}
             </p>
           </div>
         </div>
@@ -595,6 +609,10 @@ export function InsightPreview({
     const cardClass =
       "rounded-xl border border-[#e6b800]/45 bg-[#e6b800]/[0.035] p-4 shadow-sm";
     const roleLabel = renderChartRole(chart.role);
+    const chartWindow = displayDarthWindowLabel(chart.window, locale) ?? chart.window.replaceAll("_", " ");
+    const baselineReference =
+      displayDarthWindowLabel(chart.baseline_reference, locale) ??
+      chart.baseline_reference.replaceAll("_", " ");
 
     let visual: ReactNode = null;
     if (chart.type === "divergence") {
@@ -646,16 +664,18 @@ export function InsightPreview({
             {roleLabel} · {renderClaimRelation(chart.claim_relation)}
           </span>
           <span className="rounded-full border border-border/70 px-2 py-0.5 text-[10px] font-medium uppercase tracking-wider text-muted-foreground">
-            {chart.window.replaceAll("_", " ")} vs {chart.baseline_reference.replaceAll("_", " ")}
+            {chartWindow} · {baselineReference}
           </span>
         </div>
         {visual}
         <div className="mt-3 border-t border-border/50 pt-3">
           <p className="text-sm font-semibold leading-snug text-foreground">
-            {chart.annotation.insight}
+            {humanizeDarthTechnicalText(chart.annotation.insight, locale) ??
+              chart.annotation.insight}
           </p>
           <p className="mt-1 text-xs leading-relaxed text-muted-foreground">
-            {chart.proof_statement}
+            {humanizeDarthTechnicalText(chart.proof_statement, locale) ??
+              chart.proof_statement}
           </p>
         </div>
       </div>
@@ -739,9 +759,18 @@ export function InsightPreview({
 
   function renderDarthTeaser(teaser: DarthTeaser) {
     const teaserCopy = resolveTeaserCopy(teaser, locale);
-    const headline = teaserCopy?.headline ?? teaser.headline;
-    const subtext = teaserCopy?.subtext ?? teaser.subtext;
-    const action = teaserCopy?.action ?? teaser.action;
+    const headline =
+      humanizeDarthTechnicalText(teaserCopy?.headline ?? teaser.headline, locale) ??
+      teaserCopy?.headline ??
+      teaser.headline;
+    const subtext =
+      humanizeDarthTechnicalText(teaserCopy?.subtext ?? teaser.subtext, locale) ??
+      teaserCopy?.subtext ??
+      teaser.subtext;
+    const action =
+      humanizeDarthTechnicalText(teaserCopy?.action ?? teaser.action, locale) ??
+      teaserCopy?.action ??
+      teaser.action;
     const cta = isProtectedPublicHandoff
       ? publicCtaLabel
       : teaserCopy?.cta ?? t.result.preview.fullReport.downloadButton;
@@ -822,7 +851,7 @@ export function InsightPreview({
       <main className={embedded ? "" : "max-w-6xl mx-auto px-6 pt-8 pb-16"}>
         {!usesDarthTeaser && (
           <h1 className="text-3xl lg:text-4xl font-semibold text-foreground leading-tight mb-6">
-            {stateHeadline}
+            {humanizeDarthTechnicalText(stateHeadline, locale) ?? stateHeadline}
           </h1>
         )}
 
@@ -857,10 +886,16 @@ export function InsightPreview({
             className="rounded-xl border border-[#e6b800] bg-[#e6b800]/5 p-5 mb-6 flex flex-col gap-2"
           >
             <p className="text-sm font-bold text-foreground">
-              {darthPayload.baseline_context.headline}
+              {humanizeDarthTechnicalText(
+                darthPayload.baseline_context.headline,
+                locale
+              ) ?? darthPayload.baseline_context.headline}
             </p>
             <p className="text-xs leading-relaxed text-muted-foreground">
-              {darthPayload.baseline_context.explanation}
+              {humanizeDarthTechnicalText(
+                darthPayload.baseline_context.explanation,
+                locale
+              ) ?? darthPayload.baseline_context.explanation}
             </p>
             {summary?.dataset_start && summary?.dataset_end && (
               <p className="text-[11px] text-muted-foreground/70 font-mono">
@@ -908,14 +943,21 @@ export function InsightPreview({
               <div className="flex flex-wrap items-center gap-2 mb-3">
                 <span className="inline-block h-2 w-2 rounded-full shrink-0 bg-accent" />
                 <span className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
-                  {darthStateDisplay?.state_label ?? darthPayload.state?.replaceAll("_", " ")}
+                  {humanizeDarthTechnicalText(
+                    darthStateDisplay?.state_label ??
+                      darthPayload.state?.replaceAll("_", " "),
+                    locale
+                  )}
                 </span>
                 <span className="rounded-full border border-[#e6b800]/35 px-2 py-0.5 text-[10px] font-medium uppercase tracking-wider text-[#e6b800]">
                   {Math.round((darthPayload.confidence ?? 0) * 100)}% {darthStateDisplay?.confidence_label ?? t.teaser.confidence}
                 </span>
               </div>
               <p className="text-xl font-semibold text-foreground leading-snug mb-2">
-                {darthStateDisplay?.explanation ?? darthPayload.explanation}
+                {humanizeDarthTechnicalText(
+                  darthStateDisplay?.explanation ?? darthPayload.explanation,
+                  locale
+                )}
               </p>
               <div className="grid gap-3 sm:grid-cols-[1.25fr_0.75fr]">
                 <div className="rounded-lg border border-border/60 bg-background/40 px-3 py-2">
@@ -923,8 +965,17 @@ export function InsightPreview({
                     {t.darthChrome.trajectory}
                   </p>
                   <p className="text-[11px] text-muted-foreground/75 font-mono leading-relaxed">
-                    {darthStateDisplay?.trajectory?.window_label ?? darthPayload.trajectory?.window} |{" "}
-                    {darthStateDisplay?.trajectory?.direction_label ?? darthPayload.trajectory?.direction} |{" "}
+                    {darthStateDisplay?.trajectory?.window_label ??
+                      humanizeDarthTechnicalText(
+                        darthPayload.trajectory?.window ?? null,
+                        locale
+                      ) ??
+                      darthPayload.trajectory?.window} |{" "}
+                    {humanizeDarthTechnicalText(
+                      darthStateDisplay?.trajectory?.direction_label ??
+                        darthPayload.trajectory?.direction,
+                      locale
+                    )} |{" "}
                     {Math.round((darthPayload.trajectory?.confidence ?? 0) * 100)}% {darthStateDisplay?.trajectory?.confidence_label ?? t.teaser.confidence}
                   </p>
                 </div>
@@ -933,13 +984,19 @@ export function InsightPreview({
                     {t.darthChrome.dominantSignal}
                   </p>
                   <p className="text-xs text-muted-foreground leading-relaxed">
-                    {darthStateDisplay?.dominant_signal ?? darthPayload.dominant_signal}
+                    {humanizeDarthTechnicalText(
+                      darthStateDisplay?.dominant_signal ?? darthPayload.dominant_signal,
+                      locale
+                    )}
                   </p>
                 </div>
               </div>
               {darthPayload.conflicting_signal && (
                 <p className="mt-3 text-xs leading-relaxed text-muted-foreground">
-                  {darthStateDisplay?.conflicting_signal ?? darthPayload.conflicting_signal}
+                  {humanizeDarthTechnicalText(
+                    darthStateDisplay?.conflicting_signal ?? darthPayload.conflicting_signal,
+                    locale
+                  )}
                 </p>
               )}
             </div>
@@ -1093,10 +1150,18 @@ export function InsightPreview({
               </span>
             </div>
             <p className="text-base font-semibold leading-snug text-foreground">
-              {darthStateDisplay?.consequence?.summary ?? darthPayload.consequence.summary}
+              {humanizeDarthTechnicalText(
+                darthStateDisplay?.consequence?.summary ??
+                  darthPayload.consequence.summary,
+                locale
+              )}
             </p>
             <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
-              {darthStateDisplay?.consequence?.if_pattern_continues ?? darthPayload.consequence.if_pattern_continues}
+              {humanizeDarthTechnicalText(
+                darthStateDisplay?.consequence?.if_pattern_continues ??
+                  darthPayload.consequence.if_pattern_continues,
+                locale
+              )}
             </p>
           </motion.div>
         )}
@@ -1113,14 +1178,26 @@ export function InsightPreview({
                 {t.darthChrome.action}
               </span>
               <span className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
-                {darthStateDisplay?.guidance?.risk_type ?? darthPayload.guidance.risk_type.replaceAll("_", " ")}
+                {humanizeDarthTechnicalText(
+                  darthStateDisplay?.guidance?.risk_type ??
+                    darthPayload.guidance.risk_type.replaceAll("_", " "),
+                  locale
+                )}
               </span>
             </div>
             <p className="text-base font-semibold leading-snug text-foreground">
-              {darthStateDisplay?.guidance?.statement ?? darthPayload.guidance.statement}
+              {humanizeDarthTechnicalText(
+                darthStateDisplay?.guidance?.statement ??
+                  darthPayload.guidance.statement,
+                locale
+              )}
             </p>
             <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
-              {darthStateDisplay?.guidance?.recommended_adjustment ?? darthPayload.guidance.recommended_adjustment}
+              {humanizeDarthTechnicalText(
+                darthStateDisplay?.guidance?.recommended_adjustment ??
+                  darthPayload.guidance.recommended_adjustment,
+                locale
+              )}
             </p>
           </motion.div>
         )}
@@ -1147,13 +1224,13 @@ export function InsightPreview({
                     </span>
                   </div>
                   <p className="text-sm font-semibold text-foreground leading-snug mb-1">
-                    {copy.action}
+                    {humanizeDarthTechnicalText(copy.action, locale) ?? copy.action}
                   </p>
                   <p className="text-xs text-muted-foreground leading-relaxed mb-2">
-                    {copy.body}
+                    {humanizeDarthTechnicalText(copy.body, locale) ?? copy.body}
                   </p>
                   <p className="text-[10px] text-muted-foreground/60 font-mono leading-relaxed">
-                    {copy.evidence}
+                    {humanizeDarthTechnicalText(copy.evidence, locale) ?? copy.evidence}
                   </p>
                 </div>
               ) : null
