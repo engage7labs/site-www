@@ -1168,6 +1168,8 @@ export const enIE = {
         generate: "Generate AI interpretation",
         generating: "Generating...",
         badge: "AI-assisted",
+        previewWarning: "Preview warning: this response would not pass Restricted Mode.",
+        warningCodes: "Warning codes",
         interpretation: "Interpretation",
         whyItMatters: "Why it matters",
         errors: {

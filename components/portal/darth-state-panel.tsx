@@ -115,6 +115,7 @@ interface AiNarrative {
 }
 
 type AiStatus = "idle" | "loading" | "success" | "error";
+type AiValidationStatus = "passed" | "warning" | "blocked";
 
 function aiErrorCode(detail: unknown): string {
   if (typeof detail === "string") return detail;
@@ -181,6 +182,9 @@ export function DarthStatePanel({ sections }: DarthStatePanelProps) {
   const [aiStatus, setAiStatus] = useState<AiStatus>("idle");
   const [aiNarrative, setAiNarrative] = useState<AiNarrative | null>(null);
   const [aiError, setAiError] = useState<string | null>(null);
+  const [aiValidationStatus, setAiValidationStatus] =
+    useState<AiValidationStatus | null>(null);
+  const [aiWarningCodes, setAiWarningCodes] = useState<string[]>([]);
   const payload: DarthPayload | null = getDarthPayload(sections);
 
   if (!payload) return null;
@@ -208,6 +212,8 @@ export function DarthStatePanel({ sections }: DarthStatePanelProps) {
   async function generateAiNarrative() {
     setAiStatus("loading");
     setAiError(null);
+    setAiValidationStatus(null);
+    setAiWarningCodes([]);
     try {
       const res = await fetch("/api/proxy/ai/health-overview-narrative", {
         method: "POST",
@@ -215,7 +221,16 @@ export function DarthStatePanel({ sections }: DarthStatePanelProps) {
         body: JSON.stringify({ locale }),
       });
       const data = (await res.json().catch(() => null)) as {
-        narrative?: AiNarrative;
+        narrative?: AiNarrative | null;
+        fallback_narrative?: AiNarrative;
+        validation_status?: AiValidationStatus;
+        validation_errors?: string[];
+        validation_warnings?: string[];
+        metadata?: {
+          validation_status?: AiValidationStatus;
+          validation_errors?: string[];
+          validation_warnings?: string[];
+        };
         detail?: unknown;
       } | null;
       if (!res.ok) {
@@ -228,20 +243,41 @@ export function DarthStatePanel({ sections }: DarthStatePanelProps) {
             : null;
         setAiNarrative(fallback ?? null);
         setAiError(code);
+        setAiValidationStatus("blocked");
+        setAiStatus("error");
+        return;
+      }
+      const validationStatus =
+        data?.validation_status ??
+        data?.metadata?.validation_status ??
+        "passed";
+      const validationErrors =
+        data?.validation_errors ?? data?.metadata?.validation_errors ?? [];
+      const validationWarnings =
+        data?.validation_warnings ?? data?.metadata?.validation_warnings ?? [];
+      if (validationStatus === "blocked") {
+        setAiNarrative(data?.fallback_narrative ?? null);
+        setAiError(validationErrors[0] ?? "validation_failed");
+        setAiValidationStatus("blocked");
+        setAiWarningCodes(validationWarnings);
         setAiStatus("error");
         return;
       }
       if (!data?.narrative) {
         setAiNarrative(null);
         setAiError("validation_failed");
+        setAiValidationStatus("blocked");
         setAiStatus("error");
         return;
       }
       setAiNarrative(data.narrative);
+      setAiValidationStatus(validationStatus);
+      setAiWarningCodes(validationWarnings);
       setAiStatus("success");
     } catch {
       setAiNarrative(null);
       setAiError("provider_failure");
+      setAiValidationStatus("blocked");
       setAiStatus("error");
     }
   }
@@ -384,6 +420,23 @@ export function DarthStatePanel({ sections }: DarthStatePanelProps) {
                   {aiNarrative.headline}
                 </p>
               </div>
+              {aiValidationStatus === "warning" && (
+                <div className="mb-3 rounded-md border border-amber-500/25 bg-amber-500/10 px-3 py-2">
+                  <div className="flex items-start gap-2">
+                    <AlertTriangle className="mt-0.5 h-3.5 w-3.5 shrink-0 text-amber-400" />
+                    <div>
+                      <p className="text-xs font-medium text-amber-200">
+                        {aiCopy.previewWarning}
+                      </p>
+                      {aiWarningCodes.length > 0 && (
+                        <p className="mt-1 text-[11px] text-amber-100/70">
+                          {aiCopy.warningCodes}: {aiWarningCodes.join(", ")}
+                        </p>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              )}
               <div className="grid gap-3 md:grid-cols-2">
                 <div>
                   <p className="text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">

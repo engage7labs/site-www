@@ -1203,6 +1203,9 @@ export const ptBR: Dictionary = {
         generate: "Gerar interpretação com IA",
         generating: "Gerando...",
         badge: "Assistido por IA",
+        previewWarning:
+          "Aviso de Preview: esta resposta não passaria no modo restrito.",
+        warningCodes: "Códigos de aviso",
         interpretation: "Interpretação",
         whyItMatters: "Por que importa",
         errors: {
