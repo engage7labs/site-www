@@ -58,6 +58,12 @@ export default async function AdminLayout({
               Features
             </a>
             <a
+              href="/admin/ai-artifacts"
+              className="text-muted-foreground hover:text-foreground transition-colors"
+            >
+              AI Artifacts
+            </a>
+            <a
               href="/admin/feedback"
               className="text-muted-foreground hover:text-foreground transition-colors"
             >

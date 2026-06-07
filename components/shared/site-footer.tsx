@@ -9,8 +9,17 @@ import { config } from "@/lib/config";
 import { motion } from "framer-motion";
 import Link from "next/link";
 
+function buildVersionTitle(): string {
+  const version = `v${config.appVersion}`;
+  const metadata = [config.gitSha, config.buildTime].filter(
+    (value) => value && value !== "unknown"
+  );
+  return [version, ...metadata].join(" · ");
+}
+
 export function SiteFooter() {
   const { t } = useLocale();
+  const versionTitle = buildVersionTitle();
 
   return (
     <footer className="border-t border-border bg-background">
@@ -24,7 +33,7 @@ export function SiteFooter() {
         >
           <p
             className="text-muted-foreground text-sm"
-            title={`v${config.appVersion} · ${config.gitSha} · ${config.buildTime}`}
+            title={versionTitle}
           >
             {t.home.footer.copyright}
           </p>
@@ -57,7 +66,7 @@ export function SiteFooter() {
             </a>
             <span
               className="text-xs text-muted-foreground/60"
-              title={`${config.gitSha} · ${config.buildTime}`}
+              title={versionTitle}
             >
               v{config.appVersion}
             </span>

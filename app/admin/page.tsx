@@ -215,11 +215,12 @@ export default function AdminOverviewPage() {
         </div>
       </div>
 
-      <div className="grid gap-3 sm:grid-cols-4">
+      <div className="grid gap-3 sm:grid-cols-5">
         {[
           { href: "/admin/users", label: "View all users →" },
           { href: "/admin/events", label: "View events →" },
           { href: "/admin/features", label: "Feature controls →" },
+          { href: "/admin/ai-artifacts", label: "View AI artifacts →" },
           { href: "/admin/feedback", label: "View feedback →" },
         ].map(({ href, label }) => (
           <a
