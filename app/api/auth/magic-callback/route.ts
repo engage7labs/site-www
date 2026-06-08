@@ -9,6 +9,10 @@
 
 import { supabaseAdmin } from "@/lib/supabase-admin";
 import { SESSION_COOKIE_NAME, signJwt } from "@/lib/auth-server";
+import { safeAuthRedirectPath } from "@/lib/auth-redirects";
+import { signRequest } from "@/lib/api/signing";
+import { INTERNAL_API_BASE_URL } from "@/lib/server-config";
+import { normalizeLocale } from "@/lib/i18n";
 import { NextRequest, NextResponse } from "next/server";
 
 export const runtime = "nodejs";
@@ -21,17 +25,57 @@ function logMagicCallback(event: string, fields: Record<string, unknown> = {}): 
   console.log(JSON.stringify({ event, ...fields }));
 }
 
-function safeRedirectTo(value: unknown): string {
-  if (typeof value !== "string" || !value.startsWith("/")) return DEFAULT_REDIRECT_TO;
-  if (value.startsWith("//")) return DEFAULT_REDIRECT_TO;
-  return value;
+function emailDomain(email: string): string {
+  return email.split("@")[1] ?? "unknown";
+}
+
+function isGoogleAuthUser(user: {
+  app_metadata?: { provider?: unknown; providers?: unknown };
+  identities?: Array<{ provider?: string }> | null;
+}): boolean {
+  const provider = user.app_metadata?.provider;
+  const providers = user.app_metadata?.providers;
+  return (
+    provider === "google" ||
+    (Array.isArray(providers) && providers.includes("google")) ||
+    Boolean(user.identities?.some((identity) => identity.provider === "google"))
+  );
+}
+
+async function syncGoogleUser(params: {
+  email: string;
+  userId: string | undefined;
+  preferredLocale: string;
+}): Promise<"user" | "admin" | null> {
+  const path = "/api/users/sync-authenticated";
+  const sigHeaders = signRequest("POST", path);
+  const upstream = await fetch(`${INTERNAL_API_BASE_URL}${path}`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      ...sigHeaders,
+    },
+    body: JSON.stringify({
+      email: params.email,
+      user_id: params.userId,
+      preferred_locale: params.preferredLocale,
+      auth_provider: "google",
+    }),
+  });
+
+  if (!upstream.ok) return null;
+  const data = (await upstream.json().catch(() => ({}))) as { role?: string };
+  return data.role === "admin" ? "admin" : "user";
 }
 
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
     const accessToken = body?.access_token;
-    const redirectTo = safeRedirectTo(body?.redirect_to);
+    const redirectTo = safeAuthRedirectPath(body?.redirect_to ?? DEFAULT_REDIRECT_TO);
+    const preferredLocale = normalizeLocale(
+      typeof body?.preferred_locale === "string" ? body.preferred_locale : undefined
+    );
 
     logMagicCallback("magic_callback_started", {
       has_access_token: typeof accessToken === "string" && accessToken.length > 0,
@@ -50,7 +94,7 @@ export async function POST(request: NextRequest) {
 
     if (error || !data?.user?.email) {
       logMagicCallback("magic_callback_failed", {
-        reason: error?.message ?? "supabase_user_missing_email",
+        reason: error ? "supabase_user_lookup_failed" : "supabase_user_missing_email",
       });
       return NextResponse.json(
         { error: "Invalid or expired link. Please request a new one." },
@@ -59,11 +103,38 @@ export async function POST(request: NextRequest) {
     }
 
     const email = data.user.email;
+    let role: "user" | "admin" = "user";
+
+    if (isGoogleAuthUser(data.user)) {
+      logMagicCallback("google_callback_sync_started", {
+        email_domain: emailDomain(email),
+        redirect_to: redirectTo,
+      });
+      const syncedRole = await syncGoogleUser({
+        email,
+        userId: data.user.id,
+        preferredLocale,
+      }).catch(() => null);
+
+      if (!syncedRole) {
+        logMagicCallback("google_callback_sync_failed", {
+          email_domain: emailDomain(email),
+        });
+        return NextResponse.json(
+          {
+            error:
+              "Could not continue with Google. Please try again or use email.",
+          },
+          { status: 502 }
+        );
+      }
+      role = syncedRole;
+    }
 
     // Issue our custom JWT session cookie
     const token = signJwt({
       sub: email,
-      role: "user",
+      role,
       exp: Math.floor(Date.now() / 1000) + SESSION_30_DAYS,
     });
 
@@ -76,7 +147,10 @@ export async function POST(request: NextRequest) {
       maxAge: SESSION_30_DAYS,
     });
 
-    logMagicCallback("magic_callback_session_created", { email });
+    logMagicCallback("magic_callback_session_created", {
+      email_domain: emailDomain(email),
+      role,
+    });
     logMagicCallback("magic_callback_redirect", { redirect_to: redirectTo });
 
     return res;

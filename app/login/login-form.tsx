@@ -9,12 +9,13 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
+import { safeAuthRedirectPath } from "@/lib/auth-redirects";
 import { useSearchParams } from "next/navigation";
 import { useState } from "react";
 
 export function LoginForm() {
   const searchParams = useSearchParams();
-  const next = searchParams.get("next") ?? "/portal";
+  const next = safeAuthRedirectPath(searchParams.get("next") ?? "/portal");
   const claimJobId = searchParams.get("claim_job_id");
   const unauth = searchParams.get("unauth") === "1";
   const isAdmin = searchParams.get("admin") === "1";
@@ -49,6 +50,7 @@ export function LoginForm() {
         <LoginFormFields
           redirectTo={isAdmin ? "/admin" : next}
           claimJobId={claimJobId}
+          enableSocialLogin={!isAdmin}
         />
       </CardContent>
     </Card>

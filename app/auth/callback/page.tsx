@@ -1,68 +1,106 @@
 "use client";
 
 /**
- * /auth/callback — Magic link callback handler.
+ * /auth/callback — Supabase Auth callback handler.
  *
- * Sprint 30.1: Supabase redirects here after magic link verification.
- * The URL contains hash params: #access_token=...&refresh_token=...&type=magiclink
- *
- * Flow:
- * 1. Extract access_token from URL hash
- * 2. POST to /api/auth/magic-callback to exchange for our session cookie
- * 3. Redirect to /portal
+ * Handles existing magic-link hash tokens and Google OAuth PKCE code returns,
+ * then exchanges the Supabase session for Engage7's app session cookie.
  *
  * Shows a minimal loading state — user should not see this for more than 1-2s.
  */
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
+import { safeAuthRedirectPath } from "@/lib/auth-redirects";
+import { detectLocale } from "@/lib/i18n";
+import { rememberPendingPublicClaim } from "@/lib/public-analysis-claim";
+import { createSupabaseBrowserClient } from "@/lib/supabase-browser";
+
+const CALLBACK_COPY = {
+  en: {
+    loading: "Signing you in with Google...",
+    invalid: "Invalid or expired link. Please request a new one.",
+    generic: "Could not continue with Google. Please try again or use email.",
+    connection: "Connection error. Please try again.",
+    back: "Back to login",
+  },
+  "pt-BR": {
+    loading: "Entrando com Google...",
+    invalid: "Link inválido ou expirado. Solicite um novo link.",
+    generic: "Não foi possível continuar com Google. Tente novamente ou use e-mail.",
+    connection: "Erro de conexão. Tente novamente.",
+    back: "Voltar para o login",
+  },
+} as const;
+
+type CallbackCopy = (typeof CALLBACK_COPY)[keyof typeof CALLBACK_COPY];
 
 export default function AuthCallbackPage() {
   const router = useRouter();
   const [error, setError] = useState<string | null>(null);
+  const [copy, setCopy] = useState<CallbackCopy>(CALLBACK_COPY.en);
 
   useEffect(() => {
-    const hash = window.location.hash;
-    if (!hash) {
-      // No hash — redirect to login
-      router.replace("/login");
-      return;
-    }
+    const run = async () => {
+      const search = new URLSearchParams(window.location.search);
+      const locale = search.get("locale") ?? detectLocale();
+      const localizedCopy = locale === "pt-BR" ? CALLBACK_COPY["pt-BR"] : CALLBACK_COPY.en;
+      setCopy(localizedCopy);
 
-    const params = new URLSearchParams(hash.slice(1));
-    const accessToken = params.get("access_token");
-    const tokenType = params.get("type");
-    const redirectTo = new URLSearchParams(window.location.search).get("next") ?? "/portal";
+      const claimJobId = search.get("claim_job_id");
+      if (claimJobId) rememberPendingPublicClaim(claimJobId);
 
-    if (!accessToken) {
-      setError("Invalid or expired link. Please request a new one.");
-      return;
-    }
+      const redirectTo = safeAuthRedirectPath(search.get("next") ?? "/portal");
+      const hash = window.location.hash;
+      const hashParams = hash ? new URLSearchParams(hash.slice(1)) : null;
+      let accessToken = hashParams?.get("access_token") ?? null;
+      const tokenType = hashParams?.get("type") ?? null;
+      const code = search.get("code");
 
-    // Exchange Supabase access_token for our session cookie
-    fetch("/api/auth/magic-callback", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        access_token: accessToken,
-        type: tokenType,
-        redirect_to: redirectTo,
-      }),
-    })
-      .then(async (res) => {
+      if (!accessToken && code) {
+        try {
+          const supabase = createSupabaseBrowserClient();
+          const { data, error: exchangeError } =
+            await supabase.auth.exchangeCodeForSession(code);
+          if (exchangeError) throw exchangeError;
+          accessToken = data.session?.access_token ?? null;
+        } catch {
+          setError(localizedCopy.generic);
+          return;
+        }
+      }
+
+      if (!accessToken) {
+        setError(localizedCopy.invalid);
+        return;
+      }
+
+      try {
+        const res = await fetch("/api/auth/magic-callback", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            access_token: accessToken,
+            type: tokenType,
+            redirect_to: redirectTo,
+            preferred_locale: locale,
+          }),
+        });
         if (res.ok) {
           const data = (await res.json().catch(() => ({}))) as {
             redirect_to?: string;
           };
-          router.replace(data.redirect_to ?? "/portal");
+          router.replace(safeAuthRedirectPath(data.redirect_to ?? "/portal"));
         } else {
           const data = await res.json().catch(() => ({}));
-          setError(data.error ?? "Something went wrong. Please try again.");
+          setError(data.error ?? localizedCopy.generic);
         }
-      })
-      .catch(() => {
-        setError("Connection error. Please try again.");
-      });
+      } catch {
+        setError(localizedCopy.connection);
+      }
+    };
+
+    void run();
   }, [router]);
 
   if (error) {
@@ -86,7 +124,7 @@ export default function AuthCallbackPage() {
           href="/login"
           style={{ color: "#e6b800", fontSize: "14px", textDecoration: "none" }}
         >
-          Back to login
+          {copy.back}
         </a>
       </div>
     );
@@ -105,7 +143,7 @@ export default function AuthCallbackPage() {
         fontSize: "14px",
       }}
     >
-      Opening your dashboard…
+      {copy.loading}
     </div>
   );
 }
