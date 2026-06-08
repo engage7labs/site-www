@@ -5,9 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { buildAuthCallbackUrl, safeAuthRedirectPath } from "@/lib/auth-redirects";
 import { detectLocale, getDictionary, type Locale } from "@/lib/i18n";
-import {
-  rememberPendingPublicClaim,
-} from "@/lib/public-analysis-claim";
+import { rememberPendingPublicClaim } from "@/lib/public-analysis-claim";
 import { createSupabaseBrowserClient } from "@/lib/supabase-browser";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
@@ -65,21 +63,16 @@ export function LoginFormFields({
   const [loading, setLoading] = useState(false);
   const [googleLoading, setGoogleLoading] = useState(false);
   const [locale, setLocale] = useState<Locale>("en");
-  const [showEmailForm, setShowEmailForm] = useState(!enableSocialLogin);
 
   const isRegister = mode === "register";
+  const shouldRevealPassword = !enableSocialLogin || email.trim().length > 0;
   const copy = getDictionary(locale).auth.login;
 
   useEffect(() => {
     setLocale(detectLocale());
   }, []);
 
-  useEffect(() => {
-    if (!enableSocialLogin) setShowEmailForm(true);
-  }, [enableSocialLogin]);
-
   const switchMode = (next: "login" | "register") => {
-    setShowEmailForm(true);
     setMode(next);
     setError("");
     setSuccessMessage("");
@@ -188,24 +181,21 @@ export function LoginFormFields({
           <Button
             type="button"
             variant="outline"
-            className="h-11 w-full border-lime-400/50 bg-lime-400 text-sm font-semibold text-black shadow-sm hover:bg-lime-300 focus-visible:ring-lime-400/60 disabled:opacity-70"
+            className="h-11 w-full border-border bg-white text-sm font-semibold text-slate-950 shadow-sm hover:bg-slate-50 focus-visible:ring-lime-400/60 disabled:bg-white disabled:text-slate-500 disabled:opacity-70 dark:border-slate-200 dark:bg-white dark:text-slate-950 dark:hover:bg-slate-50"
             disabled={loading || googleLoading}
             onClick={handleGoogleSignIn}
           >
             {!googleLoading && <GoogleMark />}
             {googleLoading ? copy.googleLoading : copy.google}
           </Button>
-          <button
-            type="button"
-            className="flex w-full items-center gap-3 text-xs text-muted-foreground transition-colors hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-lime-400/50"
-            aria-expanded={showEmailForm}
+          <div
+            className="flex w-full items-center gap-3 text-xs text-muted-foreground"
             aria-controls="email-login-panel"
-            onClick={() => setShowEmailForm((current) => !current)}
           >
             <span className="h-px flex-1 bg-border" />
             <span>{copy.divider}</span>
             <span className="h-px flex-1 bg-border" />
-          </button>
+          </div>
         </>
       )}
       {error && (
@@ -220,12 +210,31 @@ export function LoginFormFields({
         </p>
       )}
 
-      {!showEmailForm && (
+      <form
+        id="email-login-panel"
+        onSubmit={handleSubmit}
+        className="flex flex-col gap-4"
+      >
         <div className="flex items-center justify-center gap-4 text-xs">
           <button
             type="button"
-            className="text-muted-foreground underline-offset-4 transition-colors hover:text-foreground hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-lime-400/50"
+            onClick={() => switchMode("login")}
+            className={`underline-offset-4 transition-colors hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-lime-400/50 ${
+              !isRegister
+                ? "text-foreground"
+                : "text-muted-foreground hover:text-foreground"
+            }`}
+          >
+            {copy.signIn}
+          </button>
+          <button
+            type="button"
             onClick={() => switchMode("register")}
+            className={`underline-offset-4 transition-colors hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-lime-400/50 ${
+              isRegister
+                ? "text-foreground"
+                : "text-muted-foreground hover:text-foreground"
+            }`}
           >
             {copy.createAccount}
           </button>
@@ -236,51 +245,21 @@ export function LoginFormFields({
             {copy.recoverAccess}
           </a>
         </div>
-      )}
 
-      {showEmailForm && (
-        <form
-          id="email-login-panel"
-          onSubmit={handleSubmit}
-          className="flex flex-col gap-4"
-        >
-          <div className="flex items-center justify-center gap-4 text-xs">
-            <button
-              type="button"
-              onClick={() => switchMode("login")}
-              className={`underline-offset-4 transition-colors hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-lime-400/50 ${
-                !isRegister
-                  ? "text-foreground"
-                  : "text-muted-foreground hover:text-foreground"
-              }`}
-            >
-              {copy.signIn}
-            </button>
-            <button
-              type="button"
-              onClick={() => switchMode("register")}
-              className={`underline-offset-4 transition-colors hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-lime-400/50 ${
-                isRegister
-                  ? "text-foreground"
-                  : "text-muted-foreground hover:text-foreground"
-              }`}
-            >
-              {copy.createAccount}
-            </button>
-          </div>
+        <div className="flex flex-col gap-2">
+          <Label htmlFor="auth-email">{copy.email}</Label>
+          <Input
+            id="auth-email"
+            type="email"
+            placeholder="you@example.com"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            required
+            autoComplete="email"
+          />
+        </div>
 
-          <div className="flex flex-col gap-2">
-            <Label htmlFor="auth-email">{copy.email}</Label>
-            <Input
-              id="auth-email"
-              type="email"
-              placeholder="you@example.com"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              required
-              autoComplete="email"
-            />
-          </div>
+        {shouldRevealPassword && (
           <div className="flex flex-col gap-2">
             <Label htmlFor="auth-password">{copy.password}</Label>
             <Input
@@ -301,24 +280,26 @@ export function LoginFormFields({
               </a>
             )}
           </div>
+        )}
 
-          {isRegister && (
-            <div className="flex flex-col gap-2">
-              <Label htmlFor="auth-confirm-password">
-                {copy.confirmPassword}
-              </Label>
-              <Input
-                id="auth-confirm-password"
-                type="password"
-                placeholder="********"
-                value={confirmPassword}
-                onChange={(e) => setConfirmPassword(e.target.value)}
-                required
-                autoComplete="new-password"
-              />
-            </div>
-          )}
+        {isRegister && shouldRevealPassword && (
+          <div className="flex flex-col gap-2">
+            <Label htmlFor="auth-confirm-password">
+              {copy.confirmPassword}
+            </Label>
+            <Input
+              id="auth-confirm-password"
+              type="password"
+              placeholder="********"
+              value={confirmPassword}
+              onChange={(e) => setConfirmPassword(e.target.value)}
+              required
+              autoComplete="new-password"
+            />
+          </div>
+        )}
 
+        {shouldRevealPassword && (
           <Button type="submit" className="w-full" disabled={loading}>
             {loading
               ? isRegister
@@ -328,8 +309,8 @@ export function LoginFormFields({
                 ? copy.createAccount
                 : copy.signIn}
           </Button>
-        </form>
-      )}
+        )}
+      </form>
     </div>
   );
 }
