@@ -76,13 +76,13 @@ export function SiteHeader() {
                   <Logo size={48} compact href="/" />
                 </div>
                 <DialogTitle className="text-2xl">
-                  Sign in to Engage7
+                  {t.auth.login.title}
                 </DialogTitle>
                 <p className="text-xs font-medium text-muted-foreground/70 mt-0.5">
-                  User Portal
+                  {t.auth.login.portalLabel}
                 </p>
                 <DialogDescription>
-                  Personal insight system — your data stays yours
+                  {t.auth.login.subtitle}
                 </DialogDescription>
               </DialogHeader>
               <LoginFormFields onSuccess={() => setLoginOpen(false)} />

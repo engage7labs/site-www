@@ -1,5 +1,6 @@
 "use client";
 
+import { useLocale } from "@/components/providers/locale-provider";
 import { LoginFormFields } from "@/components/shared/login-form-fields";
 import { Logo } from "@/components/shared/logo";
 import {
@@ -14,6 +15,7 @@ import { useSearchParams } from "next/navigation";
 import { useState } from "react";
 
 export function LoginForm() {
+  const { t } = useLocale();
   const searchParams = useSearchParams();
   const next = safeAuthRedirectPath(searchParams.get("next") ?? "/portal");
   const claimJobId = searchParams.get("claim_job_id");
@@ -30,15 +32,15 @@ export function LoginForm() {
           <Logo size={48} compact href="/" />
         </div>
         <CardTitle className="text-2xl">
-          {isAdmin ? "Admin Portal" : "Sign in to Engage7"}
+          {isAdmin ? "Admin Portal" : t.auth.login.title}
         </CardTitle>
         <p className="text-xs font-medium text-muted-foreground/70 mt-0.5">
-          {isAdmin ? "Administrative Access" : "User Portal"}
+          {isAdmin ? "Administrative Access" : t.auth.login.portalLabel}
         </p>
         <CardDescription>
           {isAdmin
             ? "Administrative access — restricted to authorised accounts"
-            : "Personal insight system — your data stays yours"}
+            : t.auth.login.subtitle}
         </CardDescription>
       </CardHeader>
       <CardContent>

@@ -503,6 +503,28 @@ export const enIE = {
   },
 
   auth: {
+    login: {
+      title: "Sign in to Engage7",
+      portalLabel: "User Portal",
+      subtitle: "Personal insight system — your data stays yours",
+      google: "Continue with Google",
+      googleLoading: "Signing you in with Google...",
+      googleError: "Could not continue with Google. Please try again or use email.",
+      divider: "Or continue with email",
+      signIn: "Sign in",
+      signingIn: "Signing in...",
+      createAccount: "Create account",
+      creatingAccount: "Creating account...",
+      accountCreated: "Account created — you can now sign in.",
+      recoverAccess: "Recover access",
+      forgotPassword: "Forgot password?",
+      email: "Email",
+      password: "Password",
+      confirmPassword: "Confirm password",
+      passwordMismatch: "Passwords do not match",
+      genericError: "Something went wrong",
+      tryAgain: "Something went wrong. Please try again.",
+    },
     forgot: {
       checkEmailTitle: "Check your email",
       checkEmailBody:

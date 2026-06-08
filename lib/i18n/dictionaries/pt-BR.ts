@@ -511,6 +511,29 @@ export const ptBR: Dictionary = {
   },
 
   auth: {
+    login: {
+      title: "Entrar no Engage7",
+      portalLabel: "Portal do Usuário",
+      subtitle: "Sistema de insights pessoais - seus dados permanecem seus",
+      google: "Continuar com Google",
+      googleLoading: "Entrando com Google...",
+      googleError:
+        "Não foi possível continuar com Google. Tente novamente ou use e-mail.",
+      divider: "Ou continue com e-mail",
+      signIn: "Entrar",
+      signingIn: "Entrando...",
+      createAccount: "Criar conta",
+      creatingAccount: "Criando conta...",
+      accountCreated: "Conta criada - você já pode entrar.",
+      recoverAccess: "Recuperar acesso",
+      forgotPassword: "Esqueceu a senha?",
+      email: "E-mail",
+      password: "Senha",
+      confirmPassword: "Confirmar senha",
+      passwordMismatch: "As senhas não coincidem",
+      genericError: "Algo deu errado",
+      tryAgain: "Algo deu errado. Tente novamente.",
+    },
     forgot: {
       checkEmailTitle: "Verifique seu email",
       checkEmailBody:
