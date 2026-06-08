@@ -78,9 +78,6 @@ export function SiteHeader() {
                 <DialogTitle className="text-2xl">
                   {t.auth.login.title}
                 </DialogTitle>
-                <p className="text-xs font-medium text-muted-foreground/70 mt-0.5">
-                  {t.auth.login.portalLabel}
-                </p>
                 <DialogDescription>
                   {t.auth.login.subtitle}
                 </DialogDescription>

@@ -175,7 +175,7 @@ export function LoginFormFields({
   };
 
   return (
-    <div className="flex flex-col gap-4">
+    <div className="flex flex-col gap-4 pt-3">
       {enableSocialLogin && (
         <>
           <Button
@@ -215,37 +215,6 @@ export function LoginFormFields({
         onSubmit={handleSubmit}
         className="flex flex-col gap-4"
       >
-        <div className="flex items-center justify-center gap-4 text-xs">
-          <button
-            type="button"
-            onClick={() => switchMode("login")}
-            className={`underline-offset-4 transition-colors hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-lime-400/50 ${
-              !isRegister
-                ? "text-foreground"
-                : "text-muted-foreground hover:text-foreground"
-            }`}
-          >
-            {copy.signIn}
-          </button>
-          <button
-            type="button"
-            onClick={() => switchMode("register")}
-            className={`underline-offset-4 transition-colors hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-lime-400/50 ${
-              isRegister
-                ? "text-foreground"
-                : "text-muted-foreground hover:text-foreground"
-            }`}
-          >
-            {copy.createAccount}
-          </button>
-          <a
-            href="/auth/forgot-password"
-            className="text-muted-foreground underline-offset-4 transition-colors hover:text-foreground hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-lime-400/50"
-          >
-            {copy.recoverAccess}
-          </a>
-        </div>
-
         <div className="flex flex-col gap-2">
           <Label htmlFor="auth-email">{copy.email}</Label>
           <Input
@@ -310,6 +279,37 @@ export function LoginFormFields({
                 : copy.signIn}
           </Button>
         )}
+
+        <div className="flex items-center justify-center gap-4 text-xs">
+          <button
+            type="button"
+            onClick={() => switchMode("login")}
+            className={`underline-offset-4 transition-colors hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-lime-400/50 ${
+              !isRegister
+                ? "text-foreground"
+                : "text-muted-foreground hover:text-foreground"
+            }`}
+          >
+            {copy.signIn}
+          </button>
+          <button
+            type="button"
+            onClick={() => switchMode("register")}
+            className={`underline-offset-4 transition-colors hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-lime-400/50 ${
+              isRegister
+                ? "text-foreground"
+                : "text-muted-foreground hover:text-foreground"
+            }`}
+          >
+            {copy.createAccount}
+          </button>
+          <a
+            href="/auth/forgot-password"
+            className="text-muted-foreground underline-offset-4 transition-colors hover:text-foreground hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-lime-400/50"
+          >
+            {copy.recoverAccess}
+          </a>
+        </div>
       </form>
     </div>
   );

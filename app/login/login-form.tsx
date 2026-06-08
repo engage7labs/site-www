@@ -34,9 +34,11 @@ export function LoginForm() {
         <CardTitle className="text-2xl">
           {isAdmin ? "Admin Portal" : t.auth.login.title}
         </CardTitle>
-        <p className="text-xs font-medium text-muted-foreground/70 mt-0.5">
-          {isAdmin ? "Administrative Access" : t.auth.login.portalLabel}
-        </p>
+        {isAdmin && (
+          <p className="text-xs font-medium text-muted-foreground/70 mt-0.5">
+            Administrative Access
+          </p>
+        )}
         <CardDescription>
           {isAdmin
             ? "Administrative access — restricted to authorised accounts"
