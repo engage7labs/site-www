@@ -24,6 +24,11 @@ import {
   getDarthPayload,
   selectDarthStatePresentation,
 } from "@/lib/darth";
+import {
+  extractAiNarrativeViewModel,
+  type AiNarrative,
+  type AiValidationStatus,
+} from "@/lib/ai-reflections";
 import { usePreviewFeatures } from "@/lib/feature-preview";
 import {
   AlertTriangle,
@@ -106,18 +111,7 @@ const DEFAULT_STATE: StateConfig = {
 
 const AI_FEATURE_KEY = "ai_darth_health_overview_narrative";
 
-interface AiNarrative {
-  headline: string;
-  longitudinal_interpretation: string;
-  why_it_matters: string;
-  suggested_next_step: string;
-  evidence_used: string[];
-  confidence_note: string;
-  safety_note: string;
-}
-
 type AiStatus = "idle" | "loading" | "success" | "error";
-type AiValidationStatus = "passed" | "warning" | "blocked";
 
 interface AiMetadata {
   feature_key?: string;
@@ -184,9 +178,10 @@ function TrajectoryBadge({
 interface DarthStatePanelProps {
   /** Latest analysis sections JSON — pass null when loading */
   sections: unknown;
+  currentAnalysisId?: string | null;
 }
 
-export function DarthStatePanel({ sections }: DarthStatePanelProps) {
+export function DarthStatePanel({ sections, currentAnalysisId = null }: DarthStatePanelProps) {
   const { locale, t } = useLocale();
   const { isEnabled, loading: featureLoading } = usePreviewFeatures();
   const [aiStatus, setAiStatus] = useState<AiStatus>("idle");
@@ -198,6 +193,7 @@ export function DarthStatePanel({ sections }: DarthStatePanelProps) {
   const [aiMetadata, setAiMetadata] = useState<AiMetadata | null>(null);
   const payload: DarthPayload | null = getDarthPayload(sections);
   const evidencePackHash = payload?.evidence_pack?.evidence_pack_hash ?? null;
+  const canGenerateAi = isEnabled(AI_FEATURE_KEY);
 
   useEffect(() => {
     setAiStatus("idle");
@@ -206,7 +202,70 @@ export function DarthStatePanel({ sections }: DarthStatePanelProps) {
     setAiValidationStatus(null);
     setAiWarningCodes([]);
     setAiMetadata(null);
-  }, [locale, evidencePackHash]);
+  }, [locale, evidencePackHash, currentAnalysisId]);
+
+  useEffect(() => {
+    if (
+      featureLoading ||
+      !canGenerateAi ||
+      !currentAnalysisId ||
+      !evidencePackHash
+    ) {
+      return;
+    }
+
+    let cancelled = false;
+    const params = new URLSearchParams({
+      analysis_id: currentAnalysisId,
+      input_evidence_pack_hash: evidencePackHash,
+      locale,
+    });
+
+    (async () => {
+      try {
+        const res = await fetch(
+          `/api/proxy/ai/health-overview-narrative/current?${params.toString()}`,
+        );
+        const data = (await res.json().catch(() => null)) as {
+          artifact?: {
+            artifact_id?: number;
+            feature_key?: string;
+            analysis_id?: string | null;
+            input_evidence_pack_hash?: string | null;
+            locale?: string;
+            validation_status?: AiValidationStatus;
+            validation_warnings?: string[];
+            narrative?: unknown;
+          } | null;
+        } | null;
+        if (cancelled) return;
+        const artifact = data?.artifact;
+        const narrative = extractAiNarrativeViewModel(artifact ?? null);
+        if (!res.ok || !artifact || !narrative) {
+          return;
+        }
+        setAiNarrative(narrative);
+        setAiValidationStatus(artifact.validation_status ?? "passed");
+        setAiWarningCodes(artifact.validation_warnings ?? []);
+        setAiMetadata({
+          feature_key: artifact.feature_key,
+          analysis_id: artifact.analysis_id,
+          input_evidence_pack_hash: artifact.input_evidence_pack_hash,
+          locale: artifact.locale,
+          validation_status: artifact.validation_status,
+        });
+        setAiStatus("success");
+      } catch {
+        if (!cancelled) {
+          setAiStatus("idle");
+        }
+      }
+    })();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [canGenerateAi, currentAnalysisId, evidencePackHash, featureLoading, locale]);
 
   if (!payload) return null;
   const {
@@ -223,7 +282,6 @@ export function DarthStatePanel({ sections }: DarthStatePanelProps) {
   const display = selectDarthStatePresentation(payload, locale);
   const cfg = state ? STATE_CONFIG[state] ?? DEFAULT_STATE : DEFAULT_STATE;
   const { Icon } = cfg;
-  const canGenerateAi = isEnabled(AI_FEATURE_KEY);
   const aiCopy = t.portal.health.ai;
   const aiErrorMessage = aiError
     ? aiCopy.errors[aiError as keyof typeof aiCopy.errors] ?? aiCopy.errors.provider_failure
@@ -231,6 +289,7 @@ export function DarthStatePanel({ sections }: DarthStatePanelProps) {
   const canRenderAiNarrative = Boolean(
     aiNarrative &&
       aiMetadata?.feature_key === AI_FEATURE_KEY &&
+      (!currentAnalysisId || aiMetadata.analysis_id === currentAnalysisId) &&
       aiMetadata.locale === locale &&
       (!evidencePackHash ||
         aiMetadata.input_evidence_pack_hash === evidencePackHash) &&
@@ -239,6 +298,7 @@ export function DarthStatePanel({ sections }: DarthStatePanelProps) {
   const canRenderAiFallback = Boolean(
     aiNarrative &&
       aiMetadata?.feature_key === AI_FEATURE_KEY &&
+      (!currentAnalysisId || aiMetadata.analysis_id === currentAnalysisId) &&
       aiMetadata.locale === locale &&
       (!evidencePackHash ||
         aiMetadata.input_evidence_pack_hash === evidencePackHash) &&
@@ -263,7 +323,10 @@ export function DarthStatePanel({ sections }: DarthStatePanelProps) {
       const res = await fetch("/api/proxy/ai/health-overview-narrative", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ locale }),
+        body: JSON.stringify({
+          locale,
+          ...(currentAnalysisId ? { analysis_id: currentAnalysisId } : {}),
+        }),
       });
       const data = (await res.json().catch(() => null)) as {
         narrative?: AiNarrative | null;
@@ -314,17 +377,18 @@ export function DarthStatePanel({ sections }: DarthStatePanelProps) {
         setAiStatus("error");
         return;
       }
-      if (!data?.narrative) {
+      const narrative = extractAiNarrativeViewModel(data);
+      if (!narrative) {
         setAiNarrative(null);
         setAiError("validation_failed");
         setAiValidationStatus("blocked");
         setAiStatus("error");
         return;
       }
-      setAiNarrative(data.narrative);
+      setAiNarrative(narrative);
       setAiValidationStatus(validationStatus);
       setAiWarningCodes(validationWarnings);
-      setAiMetadata(data.metadata ?? null);
+      setAiMetadata(data?.metadata ?? null);
       setAiStatus("success");
     } catch {
       setAiNarrative(null);

@@ -1,6 +1,6 @@
 "use client";
 
-import { ArrowLeft, RefreshCw } from "lucide-react";
+import { ArrowLeft, RefreshCw, Trash2 } from "lucide-react";
 import Link from "next/link";
 import { use, useEffect, useState } from "react";
 
@@ -29,6 +29,9 @@ interface AiArtifactDetail {
   transformation_trace_json: unknown;
   validation_warnings_json: unknown;
   validation_errors_json: unknown;
+  orphan_status: string;
+  orphan_reason: string;
+  is_orphan_candidate: boolean;
 }
 
 function detailFromPayload(payload: unknown): string | null {
@@ -68,6 +71,9 @@ export default function AdminAiArtifactDetailPage({
   const [artifact, setArtifact] = useState<AiArtifactDetail | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [confirmation, setConfirmation] = useState("");
+  const [deleteError, setDeleteError] = useState<string | null>(null);
+  const [deleting, setDeleting] = useState(false);
 
   async function load(id: string) {
     setLoading(true);
@@ -91,6 +97,31 @@ export default function AdminAiArtifactDetailPage({
   useEffect(() => {
     void load(artifactId);
   }, [artifactId]);
+
+  async function deleteOrphan() {
+    if (!artifact) return;
+    setDeleting(true);
+    setDeleteError(null);
+    try {
+      const res = await fetch(`/api/proxy/admin/ai-artifacts/${artifact.id}`, {
+        method: "DELETE",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          confirmation,
+          final_confirm: true,
+        }),
+      });
+      const payload = await res.json().catch(() => null);
+      if (!res.ok) {
+        throw new Error(detailFromPayload(payload) ?? `Delete failed: ${res.status}`);
+      }
+      window.location.href = "/admin/ai-artifacts";
+    } catch (err) {
+      setDeleteError(err instanceof Error ? err.message : "Delete failed");
+    } finally {
+      setDeleting(false);
+    }
+  }
 
   if (loading) {
     return (
@@ -127,6 +158,8 @@ export default function AdminAiArtifactDetailPage({
     ["Analysis ID", artifact.analysis_id?.toString() ?? "-"],
     ["Contract", artifact.input_contract_version ?? "-"],
     ["Evidence Pack hash", artifact.input_evidence_pack_hash ?? "-"],
+    ["Lifecycle", artifact.orphan_status],
+    ["Lifecycle reason", artifact.orphan_reason],
     [
       "Tokens",
       `${artifact.approx_input_tokens ?? 0} input / ${artifact.approx_output_tokens ?? 0} output`,
@@ -182,6 +215,34 @@ export default function AdminAiArtifactDetailPage({
       <JsonSection title="Transformation trace" value={artifact.transformation_trace_json} />
       <JsonSection title="Validation warnings" value={artifact.validation_warnings_json} />
       <JsonSection title="Validation errors" value={artifact.validation_errors_json} />
+
+      {artifact.is_orphan_candidate && (
+        <section className="rounded-lg border border-red-500/30 bg-red-500/10 p-5">
+          <h2 className="text-sm font-semibold text-red-200">Delete orphan artifact</h2>
+          <p className="mt-2 text-sm text-red-100/80">
+            This action is only allowed for true orphan AI artifacts. Type{" "}
+            <span className="font-mono">delete-ai-artifact-{artifact.id}</span> to confirm.
+          </p>
+          <div className="mt-4 flex flex-col gap-3 sm:flex-row">
+            <input
+              value={confirmation}
+              onChange={(event) => setConfirmation(event.target.value)}
+              className="h-9 flex-1 rounded-md border border-red-500/30 bg-background px-3 text-sm text-card-foreground"
+              placeholder={`delete-ai-artifact-${artifact.id}`}
+            />
+            <button
+              type="button"
+              onClick={() => void deleteOrphan()}
+              disabled={deleting || confirmation !== `delete-ai-artifact-${artifact.id}`}
+              className="inline-flex h-9 items-center gap-2 rounded-md border border-red-500/40 px-3 text-sm font-medium text-red-200 disabled:cursor-not-allowed disabled:opacity-50"
+            >
+              <Trash2 className="h-4 w-4" />
+              {deleting ? "Deleting..." : "Delete orphan"}
+            </button>
+          </div>
+          {deleteError && <p className="mt-3 text-sm text-red-200">{deleteError}</p>}
+        </section>
+      )}
     </div>
   );
 }

@@ -21,6 +21,9 @@ interface HealthDataResponse {
   analysis_count: number;
   latest_sections: unknown;
   data_points: HealthPoint[];
+  portal_data_status?: {
+    latest_job_id?: string | null;
+  } | null;
 }
 
 const DOMAIN_KEYS: Record<HealthDomain, string[]> = {
@@ -224,7 +227,10 @@ export default function HealthPage() {
         </div>
       </section>
 
-      <DarthStatePanel sections={sections} />
+      <DarthStatePanel
+        sections={sections}
+        currentAnalysisId={data.portal_data_status?.latest_job_id ?? null}
+      />
 
       <div className="grid gap-4 lg:grid-cols-3">
         {(["sleep", "recovery", "activity"] as const).map((domain) => {

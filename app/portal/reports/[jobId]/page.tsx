@@ -1,6 +1,7 @@
 "use client";
 
 import { InsightPreview } from "@/components/insights";
+import { AiReflectionsPanel } from "@/components/portal/ai-reflections-panel";
 import { useLocale } from "@/components/providers/locale-provider";
 import { getPortalAnalysisResult } from "@/lib/api/analysis";
 import { trackReportViewed } from "@/lib/telemetry";
@@ -172,6 +173,7 @@ export default function PortalReportPage({
     <div className="flex flex-col gap-6">
       {backLink}
       <InsightPreview result={result} jobId={jobId} embedded />
+      <AiReflectionsPanel analysisId={jobId} />
     </div>
   );
 }

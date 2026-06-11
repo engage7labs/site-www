@@ -23,6 +23,9 @@ interface AiArtifactSummary {
   input_contract_version: string | null;
   input_evidence_pack_hash: string | null;
   analysis_id: number | null;
+  orphan_status: string;
+  orphan_reason: string;
+  is_orphan_candidate: boolean;
 }
 
 interface AiArtifactsResponse {
@@ -59,6 +62,10 @@ function statusClass(status: string): string {
   if (status === "passed") return "border-emerald-500/30 text-emerald-400";
   if (status === "warning") return "border-amber-500/30 text-amber-300";
   return "border-red-500/30 text-red-400";
+}
+
+function orphanClass(candidate: boolean): string {
+  return candidate ? "border-red-500/30 text-red-400" : "border-emerald-500/30 text-emerald-400";
 }
 
 export default function AdminAiArtifactsPage() {
@@ -191,13 +198,14 @@ export default function AdminAiArtifactsPage() {
               <th className="px-4 py-3 font-medium">Profile/plan</th>
               <th className="px-4 py-3 font-medium">Codes</th>
               <th className="px-4 py-3 font-medium">Tokens</th>
+              <th className="px-4 py-3 font-medium">Lifecycle</th>
               <th className="px-4 py-3 font-medium">Detail</th>
             </tr>
           </thead>
           <tbody>
             {loading && (
               <tr>
-                <td colSpan={11} className="px-4 py-10 text-center text-muted-foreground">
+                <td colSpan={12} className="px-4 py-10 text-center text-muted-foreground">
                   Loading artifacts...
                 </td>
               </tr>
@@ -232,6 +240,14 @@ export default function AdminAiArtifactsPage() {
                     {(artifact.approx_input_tokens ?? 0).toLocaleString()} / {(artifact.approx_output_tokens ?? 0).toLocaleString()}
                   </td>
                   <td className="px-4 py-3">
+                    <span
+                      className={`rounded-full border px-2 py-0.5 text-xs ${orphanClass(artifact.is_orphan_candidate)}`}
+                      title={artifact.orphan_reason}
+                    >
+                      {artifact.is_orphan_candidate ? "orphan candidate" : "valid historical/current"}
+                    </span>
+                  </td>
+                  <td className="px-4 py-3">
                     <Link
                       href={`/admin/ai-artifacts/${artifact.id}`}
                       className="inline-flex h-8 items-center gap-2 rounded-md border border-border px-2 text-xs text-accent hover:bg-muted"
@@ -244,7 +260,7 @@ export default function AdminAiArtifactsPage() {
               ))}
             {!loading && data?.artifacts.length === 0 && (
               <tr>
-                <td colSpan={11} className="px-4 py-10 text-center text-muted-foreground">
+                <td colSpan={12} className="px-4 py-10 text-center text-muted-foreground">
                   No artifacts found.
                 </td>
               </tr>
