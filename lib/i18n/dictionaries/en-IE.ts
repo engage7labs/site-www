@@ -737,6 +737,8 @@ export const enIE = {
         "Import still did not complete. Please try again later.",
       protectedClaimBlocked:
         "This analysis is linked to another protected timeline. Sign in with the correct account to continue.",
+      claimEmailMismatch:
+        "This analysis was unlocked with a different email. Please sign in with the same email you used to open Premium Free, or start a new analysis for this account.",
     },
     accessCode: {
       bannerPrefix: "Secure your access —",

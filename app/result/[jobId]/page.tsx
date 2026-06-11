@@ -25,6 +25,7 @@ import {
 import {
   claimPublicAnalysis,
   clearPendingPublicClaim,
+  PublicClaimBlockedError,
   rememberPendingPublicClaim,
 } from "@/lib/public-analysis-claim";
 import type { AnalysisResult } from "@/lib/types/analysis";
@@ -340,7 +341,7 @@ export default function ResultPage({
     consent: boolean
   ): Promise<void> => {
     if (!jobId) return;
-    rememberPendingPublicClaim(jobId);
+    rememberPendingPublicClaim(jobId, email);
     const analysisData = result
       ? {
           report_label: "Health Analysis",
@@ -374,6 +375,9 @@ export default function ResultPage({
       await claimPublicAnalysis(jobId, { deferToast: true });
       clearPendingPublicClaim();
     } catch (err) {
+      if (err instanceof PublicClaimBlockedError && err.status === "claim_email_mismatch") {
+        throw new Error(t.portal.shell.claimEmailMismatch);
+      }
       throw new Error(
         err instanceof Error
           ? `Your account is ready, but we could not import this analysis yet: ${err.message}`

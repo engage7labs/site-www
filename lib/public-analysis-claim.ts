@@ -1,6 +1,7 @@
 "use client";
 
 const PENDING_CLAIM_KEY = "engage7_pending_public_claim_job_id";
+const PENDING_CLAIM_EMAIL_PREFIX = "engage7.pendingPublicClaim.email.";
 const CONSUMED_CLAIMS_KEY = "engage7_consumed_public_claim_job_ids";
 const TERMINAL_CLAIM_PREFIX = "engage7.publicClaim.consumed.";
 const TOAST_QUEUE_KEY = "engage7.publicClaim.toastQueue";
@@ -9,6 +10,7 @@ export type PublicClaimStatus = "imported_now" | "already_imported" | string;
 export type PublicClaimFinalStatus =
   | "imported_now"
   | "already_imported"
+  | "email_mismatch"
   | "blocked"
   | "failed";
 
@@ -54,9 +56,26 @@ function isProtectedClaimBlockedStatus(status: string | undefined): boolean {
   );
 }
 
-export function rememberPendingPublicClaim(jobId: string): void {
+function isClaimEmailMismatchStatus(status: string | undefined): boolean {
+  return status === "claim_email_mismatch";
+}
+
+function normalizeEmail(value: string | null | undefined): string | null {
+  const normalized = (value ?? "").trim().toLowerCase();
+  return normalized && normalized.includes("@") ? normalized : null;
+}
+
+function pendingClaimEmailKey(jobId: string): string {
+  return `${PENDING_CLAIM_EMAIL_PREFIX}${jobId}`;
+}
+
+export function rememberPendingPublicClaim(jobId: string, email?: string | null): void {
   if (!jobId) return;
   window.sessionStorage.setItem(PENDING_CLAIM_KEY, jobId);
+  const normalizedEmail = normalizeEmail(email);
+  if (normalizedEmail) {
+    window.sessionStorage.setItem(pendingClaimEmailKey(jobId), normalizedEmail);
+  }
 }
 
 export function readPendingPublicClaim(): string | null {
@@ -64,7 +83,11 @@ export function readPendingPublicClaim(): string | null {
 }
 
 export function clearPendingPublicClaim(): void {
+  const jobId = readPendingPublicClaim();
   window.sessionStorage.removeItem(PENDING_CLAIM_KEY);
+  if (jobId) {
+    window.sessionStorage.removeItem(pendingClaimEmailKey(jobId));
+  }
 }
 
 function terminalClaimKey(jobId: string): string {
@@ -82,6 +105,7 @@ export function clearPublicClaimStateForJob(jobId: string): void {
   if (readPendingPublicClaim() === jobId) {
     clearPendingPublicClaim();
   }
+  window.sessionStorage.removeItem(pendingClaimEmailKey(jobId));
   unqueuePublicClaimToast(jobId);
   window.localStorage.removeItem(terminalClaimKey(jobId));
   forgetConsumedPublicClaim(jobId);
@@ -99,16 +123,52 @@ export function clearPublicClaimClientState(): void {
     }
   }
   keys.forEach((key) => window.localStorage.removeItem(key));
+  const sessionKeys: string[] = [];
+  for (let index = 0; index < window.sessionStorage.length; index += 1) {
+    const key = window.sessionStorage.key(index);
+    if (key?.startsWith(PENDING_CLAIM_EMAIL_PREFIX)) {
+      sessionKeys.push(key);
+    }
+  }
+  sessionKeys.forEach((key) => window.sessionStorage.removeItem(key));
 }
 
 function normalizeFinalStatus(status: PublicClaimStatus | undefined): PublicClaimFinalStatus | null {
   if (status === "imported_now" || status === "already_imported") return status;
+  if (status === "email_mismatch") return status;
   if (status === "blocked" || status === "failed") return status;
   return null;
 }
 
 function isSuccessfulFinalStatus(status: PublicClaimFinalStatus): boolean {
   return status === "imported_now" || status === "already_imported";
+}
+
+function readPendingClaimUnlockEmail(jobId: string): string | null {
+  return normalizeEmail(window.sessionStorage.getItem(pendingClaimEmailKey(jobId)));
+}
+
+async function assertPendingClaimMatchesSession(jobId: string): Promise<void> {
+  const unlockEmail = readPendingClaimUnlockEmail(jobId);
+  if (!unlockEmail) return;
+  const sessionResponse = await fetch("/api/auth/session", { cache: "no-store" });
+  if (!sessionResponse.ok) return;
+  const session = (await sessionResponse.json().catch(() => null)) as {
+    email?: string;
+    sub?: string;
+  } | null;
+  const sessionEmail = normalizeEmail(session?.email ?? session?.sub);
+  if (!sessionEmail || sessionEmail === unlockEmail) return;
+  recordPublicClaimTerminal(jobId, "email_mismatch");
+  if (readPendingPublicClaim() === jobId) {
+    clearPendingPublicClaim();
+  }
+  unqueuePublicClaimToast(jobId);
+  throw new PublicClaimBlockedError(
+    "This analysis was unlocked with a different email. Please sign in with the same email you used to open Premium Free, or start a new analysis for this account.",
+    "claim_email_mismatch",
+    jobId,
+  );
 }
 
 function readPublicClaimTerminal(jobId: string): PublicClaimTerminalRecord | null {
@@ -248,6 +308,7 @@ export async function claimPublicAnalysis(
   jobId: string,
   options: { deferToast?: boolean } = {},
 ): Promise<PublicClaimResult> {
+  await assertPendingClaimMatchesSession(jobId);
   const res = await fetch("/api/proxy/users/claim-public-analysis", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
@@ -271,8 +332,11 @@ export async function claimPublicAnalysis(
       (typeof detail === "string" ? detail : undefined) ??
       data.error ??
       "We could not import this public analysis yet.";
-    if (isProtectedClaimBlockedStatus(status)) {
-      recordPublicClaimTerminal(jobId, "blocked");
+    if (isProtectedClaimBlockedStatus(status) || isClaimEmailMismatchStatus(status)) {
+      recordPublicClaimTerminal(
+        jobId,
+        isClaimEmailMismatchStatus(status) ? "email_mismatch" : "blocked",
+      );
       if (readPendingPublicClaim() === jobId) {
         clearPendingPublicClaim();
       }
@@ -321,9 +385,15 @@ export async function consumePendingPublicClaimForToast(): Promise<PublicClaimTo
       return consumePublicClaimToast(result.job_id || pendingJobId, result.claim_status);
     } catch (error) {
       if (error instanceof PublicClaimBlockedError) {
+        const finalStatus: PublicClaimFinalStatus = isClaimEmailMismatchStatus(error.status)
+          ? "email_mismatch"
+          : "blocked";
         const decision =
-          consumePublicClaimToast(error.jobId, "blocked") ??
-          { job_id: error.jobId, final_status: "blocked" as const };
+          consumePublicClaimToast(error.jobId, finalStatus) ??
+          {
+            job_id: error.jobId,
+            final_status: finalStatus,
+          };
         clearPublicClaimStateForJob(error.jobId);
         return decision;
       }

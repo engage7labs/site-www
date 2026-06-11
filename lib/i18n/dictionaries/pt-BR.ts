@@ -748,6 +748,8 @@ export const ptBR: Dictionary = {
         "A importação ainda não foi concluída. Tente novamente mais tarde.",
       protectedClaimBlocked:
         "Esta análise está vinculada a outra linha do tempo protegida. Entre com a conta correta para continuar.",
+      claimEmailMismatch:
+        "Esta análise foi liberada com outro e-mail. Entre com o mesmo e-mail usado para abrir o Premium Free ou inicie uma nova análise para esta conta.",
     },
     accessCode: {
       bannerPrefix: "Proteja seu acesso —",

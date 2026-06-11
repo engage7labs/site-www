@@ -74,6 +74,10 @@ export function PortalShell({
         const decision = await consumePendingPublicClaimForToast();
         if (!decision) return;
         trackClaimImportCompleted(decision.job_id);
+        if (decision.final_status === "email_mismatch") {
+          toast.error(t.portal.shell.claimEmailMismatch);
+          return;
+        }
         if (decision.final_status === "blocked") {
           toast.error(t.portal.shell.protectedClaimBlocked);
           return;
@@ -97,6 +101,10 @@ export function PortalShell({
               void consumePendingPublicClaimForToast()
                 .then((decision) => {
                   if (!decision) return;
+                  if (decision.final_status === "email_mismatch") {
+                    toast.error(t.portal.shell.claimEmailMismatch);
+                    return;
+                  }
                   if (decision.final_status === "blocked") {
                     toast.error(t.portal.shell.protectedClaimBlocked);
                     return;

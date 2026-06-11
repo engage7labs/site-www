@@ -201,6 +201,7 @@ export type DarthDriftStatus =
 export interface DarthEvidencePack {
   contract_version: "darth_evidence_pack.v1";
   source: "darth";
+  evidence_pack_hash?: string;
   product_frame?: "fitness_performance_recovery_intelligence" | string;
   baseline_semantics?: {
     primary_baseline_label: "recent_personal_baseline" | string;
