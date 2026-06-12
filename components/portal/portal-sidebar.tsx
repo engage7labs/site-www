@@ -40,10 +40,10 @@ const NAV_ITEMS: NavItem[] = [
     href: "/portal/health",
     icon: Activity,
     children: [
-      { key: "all", label: "All", href: "/portal/health/all", icon: BarChart3 },
       { key: "sleep", label: "Sleep", href: "/portal/health/sleep", icon: Moon },
       { key: "recovery", label: "Recovery", href: "/portal/health/recovery", icon: Heart },
       { key: "activity", label: "Activity", href: "/portal/health/activity", icon: Zap },
+      { key: "all", label: "All", href: "/portal/health/all", icon: BarChart3 },
     ],
   },
   { key: "dataLab", label: "Data Lab", href: "/portal/trends", icon: TrendingUp },
@@ -240,7 +240,7 @@ export function PortalSidebar({
                   </div>
                 </>
               )}
-              {/* Children: Sleep, Recovery, Activity */}
+              {/* Children: Sleep, Recovery, Activity, All */}
               {!collapsed && healthOpen && (
                 <div className="ml-4 mt-0.5 flex flex-col gap-0.5 border-l border-border/50 pl-2">
                   {item.children.map((child) => {
