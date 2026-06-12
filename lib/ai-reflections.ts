@@ -1,4 +1,4 @@
-export type AiValidationStatus = "passed" | "warning" | "blocked";
+export type AiValidationStatus = "passed" | "warning" | "blocked" | "failed";
 
 export interface AiNarrative {
   headline: string;
@@ -35,8 +35,63 @@ export interface AiReflectionArtifact {
   };
 }
 
+export interface AiReflectionMetadata {
+  feature_key?: string;
+  analysis_id?: string | null;
+  input_evidence_pack_hash?: string | null;
+  locale?: string;
+  gate_mode?: string | null;
+  validation_status?: AiValidationStatus | null;
+  validation_warnings: string[];
+  validation_errors: string[];
+  would_pass_restricted?: boolean | null;
+  artifact_id?: number | string | null;
+  created_at?: string | null;
+}
+
+export interface AiReflectionContext {
+  featureKey: string;
+  analysisId?: string | number | null;
+  evidencePackHash?: string | null;
+  locale: string;
+}
+
 function isRecord(value: unknown): value is Record<string, unknown> {
   return Boolean(value) && typeof value === "object" && !Array.isArray(value);
+}
+
+function stringish(value: unknown): string | null {
+  if (typeof value === "string") {
+    const trimmed = value.trim();
+    return trimmed || null;
+  }
+  if (typeof value === "number" && Number.isFinite(value)) {
+    return String(value);
+  }
+  return null;
+}
+
+function boolish(value: unknown): boolean | null {
+  if (typeof value === "boolean") return value;
+  if (typeof value === "string") {
+    const normalized = value.trim().toLowerCase();
+    if (["yes", "true", "1"].includes(normalized)) return true;
+    if (["no", "false", "0"].includes(normalized)) return false;
+  }
+  return null;
+}
+
+function stringList(value: unknown): string[] {
+  if (!Array.isArray(value)) return [];
+  return value
+    .filter((item): item is string => typeof item === "string" && Boolean(item.trim()))
+    .map((item) => item.trim());
+}
+
+export function normalizeAiValidationStatus(value: unknown): AiValidationStatus | null {
+  return value === "passed" || value === "warning" || value === "blocked" || value === "failed"
+    ? value
+    : null;
 }
 
 function stringField(source: Record<string, unknown>, key: keyof AiNarrative): string | null {
@@ -106,4 +161,51 @@ export function extractAiNarrativeViewModel(source: unknown): AiNarrative | null
     if (normalized) return normalized;
   }
   return null;
+}
+
+export function extractAiReflectionMetadata(source: unknown): AiReflectionMetadata | null {
+  if (!isRecord(source)) return null;
+  const metadata = isRecord(source.metadata) ? source.metadata : null;
+  const artifact = isRecord(source.artifact) ? source.artifact : null;
+  const candidate = metadata ?? artifact ?? source;
+  const status = normalizeAiValidationStatus(candidate.validation_status);
+
+  return {
+    feature_key: stringish(candidate.feature_key) ?? undefined,
+    analysis_id: stringish(candidate.analysis_id),
+    input_evidence_pack_hash: stringish(candidate.input_evidence_pack_hash),
+    locale: stringish(candidate.locale) ?? undefined,
+    gate_mode: stringish(candidate.gate_mode),
+    validation_status: status,
+    validation_warnings: stringList(candidate.validation_warnings),
+    validation_errors: stringList(candidate.validation_errors),
+    would_pass_restricted: boolish(candidate.would_pass_restricted),
+    artifact_id: stringish(candidate.artifact_id),
+    created_at: stringish(candidate.created_at),
+  };
+}
+
+export function isRenderableAiReflection(metadata: AiReflectionMetadata | null): boolean {
+  if (!metadata?.validation_status) return false;
+  if (metadata.validation_status === "passed") return true;
+  return (
+    metadata.validation_status === "warning" &&
+    metadata.gate_mode === "monitor" &&
+    metadata.validation_errors.length === 0
+  );
+}
+
+export function isCurrentAiReflection(
+  metadata: AiReflectionMetadata | null,
+  context: AiReflectionContext,
+): boolean {
+  if (!metadata) return false;
+  const analysisId = stringish(context.analysisId);
+  return Boolean(
+    metadata.feature_key === context.featureKey &&
+      metadata.locale === context.locale &&
+      (!analysisId || metadata.analysis_id === analysisId) &&
+      (!context.evidencePackHash ||
+        metadata.input_evidence_pack_hash === context.evidencePackHash),
+  );
 }

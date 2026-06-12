@@ -26,8 +26,12 @@ import {
 } from "@/lib/darth";
 import {
   extractAiNarrativeViewModel,
+  extractAiReflectionMetadata,
   type AiNarrative,
+  type AiReflectionMetadata,
   type AiValidationStatus,
+  isCurrentAiReflection,
+  isRenderableAiReflection,
 } from "@/lib/ai-reflections";
 import { usePreviewFeatures } from "@/lib/feature-preview";
 import {
@@ -113,14 +117,6 @@ const AI_FEATURE_KEY = "ai_darth_health_overview_narrative";
 
 type AiStatus = "idle" | "loading" | "success" | "error";
 
-interface AiMetadata {
-  feature_key?: string;
-  analysis_id?: string | null;
-  input_evidence_pack_hash?: string | null;
-  locale?: string;
-  validation_status?: AiValidationStatus;
-}
-
 function aiErrorCode(detail: unknown): string {
   if (typeof detail === "string") return detail;
   if (detail && typeof detail === "object" && "code" in detail) {
@@ -190,7 +186,7 @@ export function DarthStatePanel({ sections, currentAnalysisId = null }: DarthSta
   const [aiValidationStatus, setAiValidationStatus] =
     useState<AiValidationStatus | null>(null);
   const [aiWarningCodes, setAiWarningCodes] = useState<string[]>([]);
-  const [aiMetadata, setAiMetadata] = useState<AiMetadata | null>(null);
+  const [aiMetadata, setAiMetadata] = useState<AiReflectionMetadata | null>(null);
   const payload: DarthPayload | null = getDarthPayload(sections);
   const evidencePackHash = payload?.evidence_pack?.evidence_pack_hash ?? null;
   const canGenerateAi = isEnabled(AI_FEATURE_KEY);
@@ -235,6 +231,7 @@ export function DarthStatePanel({ sections, currentAnalysisId = null }: DarthSta
             locale?: string;
             validation_status?: AiValidationStatus;
             validation_warnings?: string[];
+            validation_errors?: string[];
             narrative?: unknown;
           } | null;
         } | null;
@@ -244,16 +241,11 @@ export function DarthStatePanel({ sections, currentAnalysisId = null }: DarthSta
         if (!res.ok || !artifact || !narrative) {
           return;
         }
+        const metadata = extractAiReflectionMetadata(artifact);
         setAiNarrative(narrative);
-        setAiValidationStatus(artifact.validation_status ?? "passed");
-        setAiWarningCodes(artifact.validation_warnings ?? []);
-        setAiMetadata({
-          feature_key: artifact.feature_key,
-          analysis_id: artifact.analysis_id,
-          input_evidence_pack_hash: artifact.input_evidence_pack_hash,
-          locale: artifact.locale,
-          validation_status: artifact.validation_status,
-        });
+        setAiValidationStatus(metadata?.validation_status ?? "passed");
+        setAiWarningCodes(metadata?.validation_warnings ?? []);
+        setAiMetadata(metadata);
         setAiStatus("success");
       } catch {
         if (!cancelled) {
@@ -286,22 +278,20 @@ export function DarthStatePanel({ sections, currentAnalysisId = null }: DarthSta
   const aiErrorMessage = aiError
     ? aiCopy.errors[aiError as keyof typeof aiCopy.errors] ?? aiCopy.errors.provider_failure
     : null;
+  const aiContext = {
+    featureKey: AI_FEATURE_KEY,
+    analysisId: currentAnalysisId,
+    evidencePackHash,
+    locale,
+  };
   const canRenderAiNarrative = Boolean(
     aiNarrative &&
-      aiMetadata?.feature_key === AI_FEATURE_KEY &&
-      (!currentAnalysisId || aiMetadata.analysis_id === currentAnalysisId) &&
-      aiMetadata.locale === locale &&
-      (!evidencePackHash ||
-        aiMetadata.input_evidence_pack_hash === evidencePackHash) &&
-      (aiValidationStatus === "passed" || aiValidationStatus === "warning"),
+      isCurrentAiReflection(aiMetadata, aiContext) &&
+      isRenderableAiReflection(aiMetadata),
   );
   const canRenderAiFallback = Boolean(
     aiNarrative &&
-      aiMetadata?.feature_key === AI_FEATURE_KEY &&
-      (!currentAnalysisId || aiMetadata.analysis_id === currentAnalysisId) &&
-      aiMetadata.locale === locale &&
-      (!evidencePackHash ||
-        aiMetadata.input_evidence_pack_hash === evidencePackHash) &&
+      isCurrentAiReflection(aiMetadata, aiContext) &&
       aiValidationStatus === "blocked",
   );
 
@@ -356,7 +346,7 @@ export function DarthStatePanel({ sections, currentAnalysisId = null }: DarthSta
         setAiNarrative(fallback ?? null);
         setAiError(code);
         setAiValidationStatus("blocked");
-        setAiMetadata(data?.metadata ?? null);
+        setAiMetadata(extractAiReflectionMetadata(data));
         setAiStatus("error");
         return;
       }
@@ -373,7 +363,7 @@ export function DarthStatePanel({ sections, currentAnalysisId = null }: DarthSta
         setAiError(validationErrors[0] ?? "validation_failed");
         setAiValidationStatus("blocked");
         setAiWarningCodes(validationWarnings);
-        setAiMetadata(data?.metadata ?? null);
+        setAiMetadata(extractAiReflectionMetadata(data));
         setAiStatus("error");
         return;
       }
@@ -385,10 +375,11 @@ export function DarthStatePanel({ sections, currentAnalysisId = null }: DarthSta
         setAiStatus("error");
         return;
       }
+      const metadata = extractAiReflectionMetadata(data);
       setAiNarrative(narrative);
       setAiValidationStatus(validationStatus);
       setAiWarningCodes(validationWarnings);
-      setAiMetadata(data?.metadata ?? null);
+      setAiMetadata(metadata);
       setAiStatus("success");
     } catch {
       setAiNarrative(null);
