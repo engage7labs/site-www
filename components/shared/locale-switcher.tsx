@@ -23,6 +23,8 @@ const HOVER_CLOSE_DELAY_MS = 150;
 export function LocaleSwitcher() {
   const { locale, setLocale } = useLocale();
   const [open, setOpen] = useState(false);
+  const triggerRef = useRef<HTMLButtonElement | null>(null);
+  const contentRef = useRef<HTMLDivElement | null>(null);
   const closeTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const clearCloseTimer = useCallback(() => {
@@ -49,10 +51,35 @@ export function LocaleSwitcher() {
     return () => clearCloseTimer();
   }, [clearCloseTimer]);
 
+  useEffect(() => {
+    if (!open) return;
+
+    const handlePointerMove = (event: PointerEvent) => {
+      if (event.pointerType && event.pointerType !== "mouse") return;
+
+      const target = event.target;
+      if (!(target instanceof Node)) return;
+
+      if (
+        triggerRef.current?.contains(target) ||
+        contentRef.current?.contains(target)
+      ) {
+        clearCloseTimer();
+        return;
+      }
+
+      scheduleClose();
+    };
+
+    document.addEventListener("pointermove", handlePointerMove);
+    return () => document.removeEventListener("pointermove", handlePointerMove);
+  }, [clearCloseTimer, open, scheduleClose]);
+
   return (
     <DropdownMenu open={open} onOpenChange={setOpen}>
       <DropdownMenuTrigger asChild>
         <Button
+          ref={triggerRef}
           variant="ghost"
           size="icon"
           className="h-9 w-9"
@@ -65,6 +92,7 @@ export function LocaleSwitcher() {
         </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent
+        ref={contentRef}
         align="end"
         onMouseEnter={openMenu}
         onMouseLeave={scheduleClose}
