@@ -25,6 +25,7 @@ import {
   selectDarthStatePresentation,
 } from "@/lib/darth";
 import {
+  canonicalAiReflectionLocale,
   extractAiNarrativeViewModel,
   extractAiReflectionMetadata,
   type AiNarrative,
@@ -190,6 +191,7 @@ export function DarthStatePanel({ sections, currentAnalysisId = null }: DarthSta
   const payload: DarthPayload | null = getDarthPayload(sections);
   const evidencePackHash = payload?.evidence_pack?.evidence_pack_hash ?? null;
   const canGenerateAi = isEnabled(AI_FEATURE_KEY);
+  const aiReflectionLocale = canonicalAiReflectionLocale(locale);
 
   useEffect(() => {
     setAiStatus("idle");
@@ -198,7 +200,7 @@ export function DarthStatePanel({ sections, currentAnalysisId = null }: DarthSta
     setAiValidationStatus(null);
     setAiWarningCodes([]);
     setAiMetadata(null);
-  }, [locale, evidencePackHash, currentAnalysisId]);
+  }, [aiReflectionLocale, evidencePackHash, currentAnalysisId]);
 
   useEffect(() => {
     if (
@@ -214,7 +216,7 @@ export function DarthStatePanel({ sections, currentAnalysisId = null }: DarthSta
     const params = new URLSearchParams({
       analysis_id: currentAnalysisId,
       input_evidence_pack_hash: evidencePackHash,
-      locale,
+      locale: aiReflectionLocale,
     });
 
     (async () => {
@@ -257,7 +259,7 @@ export function DarthStatePanel({ sections, currentAnalysisId = null }: DarthSta
     return () => {
       cancelled = true;
     };
-  }, [canGenerateAi, currentAnalysisId, evidencePackHash, featureLoading, locale]);
+  }, [aiReflectionLocale, canGenerateAi, currentAnalysisId, evidencePackHash, featureLoading]);
 
   if (!payload) return null;
   const {
@@ -282,7 +284,7 @@ export function DarthStatePanel({ sections, currentAnalysisId = null }: DarthSta
     featureKey: AI_FEATURE_KEY,
     analysisId: currentAnalysisId,
     evidencePackHash,
-    locale,
+    locale: aiReflectionLocale,
   };
   const canRenderAiNarrative = Boolean(
     aiNarrative &&
@@ -314,7 +316,7 @@ export function DarthStatePanel({ sections, currentAnalysisId = null }: DarthSta
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          locale,
+          locale: aiReflectionLocale,
           ...(currentAnalysisId ? { analysis_id: currentAnalysisId } : {}),
         }),
       });

@@ -1,5 +1,6 @@
 import assert from "node:assert/strict";
 import {
+  canonicalAiReflectionLocale,
   extractAiNarrativeViewModel,
   extractAiReflectionMetadata,
   isCurrentAiReflection,
@@ -20,7 +21,7 @@ const context = {
   featureKey: "ai_darth_health_overview_narrative",
   analysisId: "137",
   evidencePackHash: "sha256:current",
-  locale: "en-IE",
+  locale: "en",
 };
 
 const passedRenderedArtifact = {
@@ -41,6 +42,10 @@ assert.deepEqual(extractAiNarrativeViewModel(passedRenderedArtifact), narrative)
 const passedMetadata = extractAiReflectionMetadata(passedRenderedArtifact);
 assert.equal(isRenderableAiReflection(passedMetadata), true);
 assert.equal(isCurrentAiReflection(passedMetadata, context), true);
+assert.equal(canonicalAiReflectionLocale("en"), "en-IE");
+assert.equal(canonicalAiReflectionLocale("en-IE"), "en-IE");
+assert.equal(canonicalAiReflectionLocale("pt"), "pt-BR");
+assert.equal(canonicalAiReflectionLocale("pt-BR"), "pt-BR");
 
 const flatNormalizedArtifact = {
   ...passedRenderedArtifact,
@@ -58,6 +63,23 @@ const warningArtifact = {
 };
 
 assert.equal(isRenderableAiReflection(extractAiReflectionMetadata(warningArtifact)), true);
+
+const ptBrArtifact = {
+  ...passedRenderedArtifact,
+  locale: "pt-BR",
+};
+
+assert.equal(
+  isCurrentAiReflection(extractAiReflectionMetadata(ptBrArtifact), {
+    ...context,
+    locale: "pt-BR",
+  }),
+  true,
+);
+assert.equal(
+  isCurrentAiReflection(extractAiReflectionMetadata(ptBrArtifact), context),
+  false,
+);
 
 const blockedArtifact = {
   ...passedRenderedArtifact,
@@ -79,6 +101,13 @@ const wrongEvidenceArtifact = {
 };
 
 assert.equal(isCurrentAiReflection(extractAiReflectionMetadata(wrongEvidenceArtifact), context), false);
+
+const wrongAnalysisArtifact = {
+  ...passedRenderedArtifact,
+  analysis_id: "138",
+};
+
+assert.equal(isCurrentAiReflection(extractAiReflectionMetadata(wrongAnalysisArtifact), context), false);
 
 const warningWithErrors = {
   ...passedRenderedArtifact,

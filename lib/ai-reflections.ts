@@ -56,6 +56,8 @@ export interface AiReflectionContext {
   locale: string;
 }
 
+export type AiReflectionLocale = "en-IE" | "pt-BR";
+
 function isRecord(value: unknown): value is Record<string, unknown> {
   return Boolean(value) && typeof value === "object" && !Array.isArray(value);
 }
@@ -92,6 +94,15 @@ export function normalizeAiValidationStatus(value: unknown): AiValidationStatus 
   return value === "passed" || value === "warning" || value === "blocked" || value === "failed"
     ? value
     : null;
+}
+
+export function canonicalAiReflectionLocale(value: unknown): AiReflectionLocale {
+  if (typeof value !== "string") return "en-IE";
+  const normalized = value.trim().toLowerCase();
+  if (normalized === "pt" || normalized === "pt-br" || normalized.startsWith("pt-")) {
+    return "pt-BR";
+  }
+  return "en-IE";
 }
 
 function stringField(source: Record<string, unknown>, key: keyof AiNarrative): string | null {
@@ -174,7 +185,7 @@ export function extractAiReflectionMetadata(source: unknown): AiReflectionMetada
     feature_key: stringish(candidate.feature_key) ?? undefined,
     analysis_id: stringish(candidate.analysis_id),
     input_evidence_pack_hash: stringish(candidate.input_evidence_pack_hash),
-    locale: stringish(candidate.locale) ?? undefined,
+    locale: canonicalAiReflectionLocale(candidate.locale),
     gate_mode: stringish(candidate.gate_mode),
     validation_status: status,
     validation_warnings: stringList(candidate.validation_warnings),
@@ -201,9 +212,10 @@ export function isCurrentAiReflection(
 ): boolean {
   if (!metadata) return false;
   const analysisId = stringish(context.analysisId);
+  const locale = canonicalAiReflectionLocale(context.locale);
   return Boolean(
     metadata.feature_key === context.featureKey &&
-      metadata.locale === context.locale &&
+      metadata.locale === locale &&
       (!analysisId || metadata.analysis_id === analysisId) &&
       (!context.evidencePackHash ||
         metadata.input_evidence_pack_hash === context.evidencePackHash),

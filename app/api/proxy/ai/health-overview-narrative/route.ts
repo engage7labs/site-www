@@ -7,14 +7,13 @@
  */
 
 import { signRequest } from "@/lib/api/signing";
+import { canonicalAiReflectionLocale } from "@/lib/ai-reflections";
 import { SESSION_COOKIE_NAME, verifyJwt } from "@/lib/auth-server";
 import { INTERNAL_API_BASE_URL } from "@/lib/server-config";
 import { cookies } from "next/headers";
 import { NextRequest, NextResponse } from "next/server";
 
 export const runtime = "nodejs";
-
-const SUPPORTED_LOCALES = new Set(["en-IE", "pt-BR", "hi-IN"]);
 
 export async function POST(request: NextRequest) {
   const cookieStore = await cookies();
@@ -33,10 +32,7 @@ export async function POST(request: NextRequest) {
     locale?: unknown;
   } | null;
 
-  const locale =
-    typeof body?.locale === "string" && SUPPORTED_LOCALES.has(body.locale)
-      ? body.locale
-      : "en-IE";
+  const locale = canonicalAiReflectionLocale(body?.locale);
   const analysisId =
     typeof body?.analysis_id === "string" && body.analysis_id.trim().length <= 80
       ? body.analysis_id.trim()
