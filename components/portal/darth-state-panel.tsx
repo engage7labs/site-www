@@ -514,19 +514,21 @@ export function DarthStatePanel({ sections, currentAnalysisId = null }: DarthSta
                 </p>
               </div>
             </div>
-            <button
-              type="button"
-              onClick={generateAiNarrative}
-              disabled={aiStatus === "loading"}
-              className="inline-flex h-8 items-center gap-2 rounded-md border border-accent/35 bg-accent/10 px-3 text-xs font-medium text-accent transition-colors hover:bg-accent/15 disabled:pointer-events-none disabled:opacity-60"
-            >
-              {aiStatus === "loading" ? (
-                <Loader2 className="h-3.5 w-3.5 animate-spin" />
-              ) : (
-                <Sparkles className="h-3.5 w-3.5" />
-              )}
-              {aiStatus === "loading" ? aiCopy.generating : aiCopy.generate}
-            </button>
+            {!canRenderAiNarrative && !canRenderAiFallback && (
+              <button
+                type="button"
+                onClick={generateAiNarrative}
+                disabled={aiStatus === "loading"}
+                className="inline-flex h-8 items-center gap-2 rounded-md border border-accent/35 bg-accent/10 px-3 text-xs font-medium text-accent transition-colors hover:bg-accent/15 disabled:pointer-events-none disabled:opacity-60"
+              >
+                {aiStatus === "loading" ? (
+                  <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                ) : (
+                  <Sparkles className="h-3.5 w-3.5" />
+                )}
+                {aiStatus === "loading" ? aiCopy.generating : aiCopy.generate}
+              </button>
+            )}
           </div>
 
           {aiErrorMessage && (

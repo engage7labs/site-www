@@ -227,11 +227,6 @@ export default function HealthPage() {
         </div>
       </section>
 
-      <DarthStatePanel
-        sections={sections}
-        currentAnalysisId={data.portal_data_status?.latest_job_id ?? null}
-      />
-
       <div className="grid gap-4 lg:grid-cols-3">
         {(["sleep", "recovery", "activity"] as const).map((domain) => {
           const meta = DOMAIN_META[domain];
@@ -295,6 +290,11 @@ export default function HealthPage() {
       <p className="text-sm text-muted-foreground">
         {t.portal.health.overviewHelper}
       </p>
+
+      <DarthStatePanel
+        sections={sections}
+        currentAnalysisId={data.portal_data_status?.latest_job_id ?? null}
+      />
     </div>
   );
 }
