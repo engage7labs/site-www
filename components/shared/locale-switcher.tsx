@@ -20,6 +20,10 @@ import { useCallback, useEffect, useRef, useState } from "react";
 
 const HOVER_CLOSE_DELAY_MS = 150;
 
+function isMousePointer(pointerType: string): boolean {
+  return pointerType === "" || pointerType === "mouse";
+}
+
 export function LocaleSwitcher() {
   const { locale, setLocale } = useLocale();
   const [open, setOpen] = useState(false);
@@ -40,12 +44,13 @@ export function LocaleSwitcher() {
   }, [clearCloseTimer]);
 
   const scheduleClose = useCallback(() => {
-    clearCloseTimer();
+    if (closeTimerRef.current) return;
+
     closeTimerRef.current = setTimeout(() => {
       setOpen(false);
       closeTimerRef.current = null;
     }, HOVER_CLOSE_DELAY_MS);
-  }, [clearCloseTimer]);
+  }, []);
 
   useEffect(() => {
     return () => clearCloseTimer();
@@ -83,9 +88,12 @@ export function LocaleSwitcher() {
           variant="ghost"
           size="icon"
           className="h-9 w-9"
-          onFocus={openMenu}
-          onMouseEnter={openMenu}
-          onMouseLeave={scheduleClose}
+          onPointerEnter={(event) => {
+            if (isMousePointer(event.pointerType)) openMenu();
+          }}
+          onPointerLeave={(event) => {
+            if (isMousePointer(event.pointerType)) scheduleClose();
+          }}
         >
           <Languages className="h-4 w-4" />
           <span className="sr-only">Switch language</span>
@@ -94,13 +102,22 @@ export function LocaleSwitcher() {
       <DropdownMenuContent
         ref={contentRef}
         align="end"
-        onMouseEnter={openMenu}
-        onMouseLeave={scheduleClose}
+        onPointerEnter={(event) => {
+          if (isMousePointer(event.pointerType)) openMenu();
+        }}
+        onPointerLeave={(event) => {
+          if (isMousePointer(event.pointerType)) scheduleClose();
+        }}
+        onPointerDownOutside={() => {
+          clearCloseTimer();
+          setOpen(false);
+        }}
       >
         {SUPPORTED_LOCALES.map((loc) => (
           <DropdownMenuItem
             key={loc}
-            onClick={() => {
+            onSelect={() => {
+              clearCloseTimer();
               setLocale(loc);
               setOpen(false);
             }}
