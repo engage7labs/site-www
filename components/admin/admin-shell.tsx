@@ -34,6 +34,7 @@ const ADMIN_NAV_ITEMS = [
   { href: "/admin/features", label: "Features", icon: SlidersHorizontal },
   { href: "/admin/ai-artifacts", label: "AI Artifacts", icon: Sparkles },
   { href: "/admin/blobs", label: "Blob Storage", icon: Database },
+  { href: "/admin/acr", label: "ACR", icon: Boxes },
   { href: "/admin/feedback", label: "Feedback", icon: MessageSquare },
 ] as const;
 
@@ -152,7 +153,7 @@ function AdminSidebar({
             collapsed ? "text-center" : "px-3"
           }`}
         >
-          v{process.env.NEXT_PUBLIC_APP_VERSION ?? "1.45.0.1"}
+          v{process.env.NEXT_PUBLIC_APP_VERSION ?? "1.45.1.0"}
         </span>
       </nav>
     </div>

@@ -1,0 +1,538 @@
+/**
+ * Server-side admin ACR operations.
+ *
+ * GET lists repositories, manifests, and tags.
+ * DELETE removes one explicit tag or manifest after server-side safety checks.
+ */
+
+import {
+  ContainerRegistryClient,
+  KnownContainerRegistryAudience,
+  type ArtifactManifestProperties,
+  type ArtifactTagProperties,
+} from "@azure/container-registry";
+import { DefaultAzureCredential } from "@azure/identity";
+import { SESSION_COOKIE_NAME, verifyJwt } from "@/lib/auth-server";
+import { cookies } from "next/headers";
+import { NextRequest, NextResponse } from "next/server";
+
+export const runtime = "nodejs";
+export const dynamic = "force-dynamic";
+
+type DeleteTargetType = "tag" | "manifest";
+
+interface AcrConfig {
+  loginServer: string;
+  endpoint: string;
+  registryName: string;
+  protectedRefs: Set<string>;
+  protectedRefsConfigured: boolean;
+  recentProtectionDays: number;
+  maxRepositories: number;
+  maxManifestsPerRepository: number;
+  maxTagsPerManifest: number;
+}
+
+interface DeleteRequestBody {
+  repository?: unknown;
+  target_type?: unknown;
+  tag?: unknown;
+  digest?: unknown;
+  confirmation?: unknown;
+  final_confirm?: unknown;
+  acknowledge_deployed_unknown?: unknown;
+  override_recent?: unknown;
+}
+
+const REPOSITORY_PATTERN = /^[a-z0-9][a-z0-9._/-]{0,254}$/;
+const TAG_PATTERN = /^[A-Za-z0-9_][A-Za-z0-9_.-]{0,127}$/;
+const DIGEST_PATTERN = /^sha256:[a-f0-9]{64}$/;
+const DEFAULT_RECENT_PROTECTION_DAYS = 14;
+
+async function requireAdmin() {
+  const cookieStore = await cookies();
+  const token = cookieStore.get(SESSION_COOKIE_NAME)?.value;
+  if (!token) return null;
+  const session = verifyJwt(token);
+  if (!session?.sub || session.role !== "admin") return null;
+  return session;
+}
+
+function firstEnv(...names: string[]): string | null {
+  for (const name of names) {
+    const value = process.env[name]?.trim();
+    if (value) return value;
+  }
+  return null;
+}
+
+function normalizeLoginServer(value: string): string {
+  return value
+    .trim()
+    .replace(/^https?:\/\//i, "")
+    .replace(/\/+$/g, "")
+    .toLowerCase();
+}
+
+function splitRefs(value: string | null): string[] {
+  if (!value) return [];
+  return value
+    .split(/[\s,]+/)
+    .map((item) => item.trim())
+    .filter(Boolean);
+}
+
+function normalizeProtectedRef(value: string, loginServer: string): string | null {
+  const withoutProtocol = value.trim().replace(/^https?:\/\//i, "").replace(/\/+$/g, "");
+  if (!withoutProtocol) return null;
+  const withoutRegistry = withoutProtocol.startsWith(`${loginServer}/`)
+    ? withoutProtocol.slice(loginServer.length + 1)
+    : withoutProtocol;
+  if (!withoutRegistry.includes(":") && !withoutRegistry.includes("@")) return null;
+  return withoutRegistry.toLowerCase();
+}
+
+function intFromEnv(name: string, fallback: number): number {
+  const raw = process.env[name]?.trim();
+  if (!raw) return fallback;
+  const parsed = Number.parseInt(raw, 10);
+  return Number.isFinite(parsed) && parsed > 0 ? parsed : fallback;
+}
+
+function getConfig(): AcrConfig | null {
+  const configuredLoginServer = firstEnv(
+    "ENGAGE7_ACR_LOGIN_SERVER",
+    "AZURE_CONTAINER_REGISTRY_LOGIN_SERVER",
+    "ACR_LOGIN_SERVER"
+  );
+  const configuredRegistryName = firstEnv(
+    "ENGAGE7_ACR_NAME",
+    "AZURE_CONTAINER_REGISTRY_NAME",
+    "ACR_NAME"
+  );
+
+  const loginServer = configuredLoginServer
+    ? normalizeLoginServer(configuredLoginServer)
+    : configuredRegistryName
+      ? normalizeLoginServer(`${configuredRegistryName}.azurecr.io`)
+      : null;
+
+  if (!loginServer || !/^[a-z0-9]{5,50}\.azurecr\.io$/.test(loginServer)) {
+    return null;
+  }
+
+  const protectedValues = [
+    ...splitRefs(process.env.ENGAGE7_ACR_PROTECTED_IMAGES ?? null),
+    ...splitRefs(process.env.ENGAGE7_DEPLOYED_IMAGE_REFS ?? null),
+    ...splitRefs(process.env.API_IMAGE_REF ?? null),
+    ...splitRefs(process.env.INGEST_IMAGE_REF ?? null),
+    ...splitRefs(process.env.ANALYSE_IMAGE_REF ?? null),
+    ...splitRefs(process.env.ENGAGE7_API_IMAGE_REF ?? null),
+    ...splitRefs(process.env.ENGAGE7_INGEST_IMAGE_REF ?? null),
+    ...splitRefs(process.env.ENGAGE7_ANALYSE_IMAGE_REF ?? null),
+  ];
+
+  const protectedRefs = new Set(
+    protectedValues
+      .map((item) => normalizeProtectedRef(item, loginServer))
+      .filter((item): item is string => Boolean(item))
+  );
+
+  return {
+    loginServer,
+    endpoint: `https://${loginServer}`,
+    registryName: loginServer.replace(/\.azurecr\.io$/, ""),
+    protectedRefs,
+    protectedRefsConfigured: protectedRefs.size > 0,
+    recentProtectionDays: intFromEnv(
+      "ENGAGE7_ACR_RECENT_PROTECTION_DAYS",
+      DEFAULT_RECENT_PROTECTION_DAYS
+    ),
+    maxRepositories: intFromEnv("ENGAGE7_ACR_MAX_REPOSITORIES", 50),
+    maxManifestsPerRepository: intFromEnv("ENGAGE7_ACR_MAX_MANIFESTS_PER_REPOSITORY", 50),
+    maxTagsPerManifest: intFromEnv("ENGAGE7_ACR_MAX_TAGS_PER_MANIFEST", 50),
+  };
+}
+
+function createClient(config: AcrConfig): ContainerRegistryClient {
+  return new ContainerRegistryClient(config.endpoint, new DefaultAzureCredential(), {
+    audience: KnownContainerRegistryAudience.AzureResourceManagerPublicCloud,
+  });
+}
+
+function toIso(value: Date | string | null | undefined): string | null {
+  if (!value) return null;
+  const date = value instanceof Date ? value : new Date(value);
+  return Number.isNaN(date.getTime()) ? null : date.toISOString();
+}
+
+function sizeFromManifest(manifest: ArtifactManifestProperties): number | null {
+  const record = manifest as ArtifactManifestProperties & {
+    size?: number;
+    sizeInBytes?: number;
+  };
+  return typeof record.sizeInBytes === "number"
+    ? record.sizeInBytes
+    : typeof record.size === "number"
+      ? record.size
+      : null;
+}
+
+function isRecent(value: Date | string | null | undefined, days: number): boolean {
+  if (days <= 0 || !value) return false;
+  const date = value instanceof Date ? value : new Date(value);
+  if (Number.isNaN(date.getTime())) return false;
+  return Date.now() - date.getTime() < days * 24 * 60 * 60 * 1000;
+}
+
+function referenceKeys(repository: string, tag?: string | null, digest?: string | null): string[] {
+  const keys: string[] = [];
+  if (tag) keys.push(`${repository}:${tag}`);
+  if (digest) keys.push(`${repository}@${digest}`);
+  return keys.map((key) => key.toLowerCase());
+}
+
+function isProtectedRef(
+  config: AcrConfig,
+  repository: string,
+  tag?: string | null,
+  digest?: string | null
+): boolean {
+  return referenceKeys(repository, tag, digest).some((key) => config.protectedRefs.has(key));
+}
+
+function statusForTarget(params: {
+  protected: boolean;
+  recent: boolean;
+  registryCanDelete: boolean;
+  detectionConfigured: boolean;
+}): "protected" | "registry locked" | "recent" | "review required" {
+  if (params.protected) return "protected";
+  if (!params.registryCanDelete) return "registry locked";
+  if (params.recent) return "recent";
+  return params.detectionConfigured ? "review required" : "review required";
+}
+
+function safeErrorDetail(error: unknown): string {
+  if (error && typeof error === "object") {
+    const statusCode = (error as { statusCode?: unknown }).statusCode;
+    if (typeof statusCode === "number") return `Azure ACR request failed with status ${statusCode}`;
+    const code = (error as { code?: unknown }).code;
+    if (typeof code === "string") return `Azure ACR request failed: ${code}`;
+  }
+  return "Azure ACR request failed";
+}
+
+function isValidRepository(value: string): boolean {
+  return (
+    value.length <= 255 &&
+    REPOSITORY_PATTERN.test(value) &&
+    !value.includes("//") &&
+    !value.endsWith("/")
+  );
+}
+
+function auditAcr(action: string, status: string, details: Record<string, string | null>) {
+  console.info("[admin acr audit]", {
+    action,
+    status,
+    timestamp: new Date().toISOString(),
+    ...details,
+  });
+}
+
+export async function GET() {
+  const session = await requireAdmin();
+  if (!session) {
+    return NextResponse.json({ detail: "Forbidden" }, { status: 403 });
+  }
+
+  const config = getConfig();
+  if (!config) {
+    return NextResponse.json({
+      enabled: false,
+      detail: "Azure Container Registry is not configured for this Web environment.",
+      repositories: [],
+    });
+  }
+
+  const client = createClient(config);
+  const repositories = [];
+  let repositoryCount = 0;
+  let totalManifestCount = 0;
+  let totalTagCount = 0;
+  let totalSizeBytes = 0;
+  let repositoriesTruncated = false;
+
+  try {
+    for await (const repositoryName of client.listRepositoryNames()) {
+      if (repositoryCount >= config.maxRepositories) {
+        repositoriesTruncated = true;
+        break;
+      }
+
+      repositoryCount += 1;
+      const repository = client.getRepository(repositoryName);
+      const properties = await repository.getProperties().catch(() => null);
+      const manifests = [];
+      let manifestCount = 0;
+      let manifestsTruncated = false;
+
+      for await (const manifest of repository.listManifestProperties({
+        order: "LastUpdatedOnDescending",
+      })) {
+        if (manifestCount >= config.maxManifestsPerRepository) {
+          manifestsTruncated = true;
+          break;
+        }
+
+        manifestCount += 1;
+        totalManifestCount += 1;
+        const manifestSize = sizeFromManifest(manifest);
+        if (manifestSize) totalSizeBytes += manifestSize;
+
+        const artifact = repository.getArtifact(manifest.digest);
+        const tags = [];
+        let tagCount = 0;
+        let tagsTruncated = false;
+
+        for await (const tag of artifact.listTagProperties({
+          order: "LastUpdatedOnDescending",
+        })) {
+          if (tagCount >= config.maxTagsPerManifest) {
+            tagsTruncated = true;
+            break;
+          }
+          tagCount += 1;
+          totalTagCount += 1;
+
+          const tagProtected = isProtectedRef(config, repositoryName, tag.name, tag.digest);
+          const tagRecent = isRecent(tag.lastUpdatedOn, config.recentProtectionDays);
+          tags.push({
+            name: tag.name,
+            digest: tag.digest,
+            created_at: toIso(tag.createdOn),
+            last_updated_at: toIso(tag.lastUpdatedOn),
+            can_delete: tag.canDelete !== false && !tagProtected,
+            status: statusForTarget({
+              protected: tagProtected,
+              recent: tagRecent,
+              registryCanDelete: tag.canDelete !== false,
+              detectionConfigured: config.protectedRefsConfigured,
+            }),
+            protected: tagProtected,
+            recent: tagRecent,
+          });
+        }
+
+        const manifestTags = manifest.tags ?? tags.map((tag) => tag.name);
+        const manifestProtected =
+          isProtectedRef(config, repositoryName, null, manifest.digest) ||
+          manifestTags.some((manifestTag) =>
+            isProtectedRef(config, repositoryName, manifestTag, manifest.digest)
+          ) ||
+          tags.some((tag) => tag.protected);
+        const manifestRecent = isRecent(manifest.lastUpdatedOn, config.recentProtectionDays);
+
+        manifests.push({
+          digest: manifest.digest,
+          tags: manifestTags,
+          tag_details: tags,
+          tags_truncated: tagsTruncated,
+          size_bytes: manifestSize,
+          created_at: toIso(manifest.createdOn),
+          last_updated_at: toIso(manifest.lastUpdatedOn),
+          architecture: manifest.architecture ?? null,
+          operating_system: manifest.operatingSystem ?? null,
+          related_artifact_count: manifest.relatedArtifacts?.length ?? 0,
+          can_delete: manifest.canDelete !== false && !manifestProtected,
+          status: statusForTarget({
+            protected: manifestProtected,
+            recent: manifestRecent,
+            registryCanDelete: manifest.canDelete !== false,
+            detectionConfigured: config.protectedRefsConfigured,
+          }),
+          protected: manifestProtected,
+          recent: manifestRecent,
+        });
+      }
+
+      repositories.push({
+        name: repositoryName,
+        created_at: toIso(properties?.createdOn),
+        last_updated_at: toIso(properties?.lastUpdatedOn),
+        manifest_count: properties?.manifestCount ?? manifests.length,
+        tag_count:
+          properties?.tagCount ??
+          manifests.reduce((sum, manifest) => sum + manifest.tag_details.length, 0),
+        can_delete: false,
+        status: "repository delete disabled",
+        manifests,
+        manifests_truncated: manifestsTruncated,
+      });
+    }
+
+    return NextResponse.json({
+      enabled: true,
+      registry: {
+        name: config.registryName,
+        login_server: config.loginServer,
+        endpoint: config.endpoint,
+      },
+      protected_detection: {
+        configured: config.protectedRefsConfigured,
+        protected_ref_count: config.protectedRefs.size,
+        recent_protection_days: config.recentProtectionDays,
+      },
+      limits: {
+        max_repositories: config.maxRepositories,
+        max_manifests_per_repository: config.maxManifestsPerRepository,
+        max_tags_per_manifest: config.maxTagsPerManifest,
+      },
+      total_count: repositoryCount,
+      total_manifest_count: totalManifestCount,
+      total_tag_count: totalTagCount,
+      total_size_bytes: totalSizeBytes,
+      repositories_truncated: repositoriesTruncated,
+      repositories,
+    });
+  } catch (error) {
+    return NextResponse.json({ detail: safeErrorDetail(error) }, { status: 503 });
+  }
+}
+
+export async function DELETE(request: NextRequest) {
+  const session = await requireAdmin();
+  if (!session) {
+    return NextResponse.json({ detail: "Forbidden" }, { status: 403 });
+  }
+
+  const config = getConfig();
+  if (!config) {
+    return NextResponse.json({ detail: "Azure Container Registry is not configured" }, { status: 503 });
+  }
+
+  const body = (await request.json().catch(() => null)) as DeleteRequestBody | null;
+  const repository = typeof body?.repository === "string" ? body.repository.trim() : "";
+  const targetType =
+    body?.target_type === "tag" || body?.target_type === "manifest"
+      ? (body.target_type as DeleteTargetType)
+      : null;
+  const tag = typeof body?.tag === "string" ? body.tag.trim() : "";
+  const digest = typeof body?.digest === "string" ? body.digest.trim() : "";
+  const confirmation = typeof body?.confirmation === "string" ? body.confirmation.trim() : "";
+
+  if (!repository || !isValidRepository(repository)) {
+    return NextResponse.json({ detail: "Invalid repository" }, { status: 400 });
+  }
+  if (!targetType) {
+    return NextResponse.json({ detail: "target_type must be tag or manifest" }, { status: 400 });
+  }
+  if (targetType === "tag" && (!tag || !TAG_PATTERN.test(tag))) {
+    return NextResponse.json({ detail: "Invalid tag" }, { status: 400 });
+  }
+  if (targetType === "manifest" && (!digest || !DIGEST_PATTERN.test(digest))) {
+    return NextResponse.json({ detail: "Invalid manifest digest" }, { status: 400 });
+  }
+  if (body?.final_confirm !== true) {
+    return NextResponse.json({ detail: "final_confirm is required" }, { status: 400 });
+  }
+
+  const expectedConfirmation =
+    targetType === "tag" ? `delete ${repository}:${tag}` : `delete ${repository}@${digest}`;
+  if (confirmation !== expectedConfirmation) {
+    return NextResponse.json({ detail: "Confirmation text does not match target" }, { status: 400 });
+  }
+
+  if (!config.protectedRefsConfigured && body?.acknowledge_deployed_unknown !== true) {
+    return NextResponse.json(
+      {
+        detail:
+          "Deployed image detection is not configured. Acknowledge this before deleting ACR content.",
+      },
+      { status: 409 }
+    );
+  }
+
+  const client = createClient(config);
+  const repositoryClient = client.getRepository(repository);
+
+  try {
+    if (targetType === "tag") {
+      const artifact = repositoryClient.getArtifact(tag);
+      const tagProperties = await artifact.getTagProperties(tag);
+      const tagProtected = isProtectedRef(config, repository, tagProperties.name, tagProperties.digest);
+      const tagRecent = isRecent(tagProperties.lastUpdatedOn, config.recentProtectionDays);
+
+      if (tagProtected) {
+        return NextResponse.json({ detail: "This tag is protected as a deployed image reference" }, { status: 409 });
+      }
+      if (tagProperties.canDelete === false) {
+        return NextResponse.json({ detail: "This tag is locked against deletion in ACR" }, { status: 409 });
+      }
+      if (tagRecent && body?.override_recent !== true) {
+        return NextResponse.json(
+          { detail: "This tag is recent. Explicit recent override is required." },
+          { status: 409 }
+        );
+      }
+
+      await artifact.deleteTag(tag);
+      auditAcr("delete_tag", "success", {
+        repository,
+        tag,
+        digest: tagProperties.digest,
+      });
+      return NextResponse.json({
+        ok: true,
+        action: "delete_tag",
+        repository,
+        tag,
+        digest: tagProperties.digest,
+      });
+    }
+
+    const artifact = repositoryClient.getArtifact(digest);
+    const manifest = await artifact.getManifestProperties();
+    const manifestProtected =
+      isProtectedRef(config, repository, null, manifest.digest) ||
+      (manifest.tags ?? []).some((manifestTag) =>
+        isProtectedRef(config, repository, manifestTag, manifest.digest)
+      );
+    const manifestRecent = isRecent(manifest.lastUpdatedOn, config.recentProtectionDays);
+
+    if (manifestProtected) {
+      return NextResponse.json({ detail: "This manifest is protected as a deployed image reference" }, { status: 409 });
+    }
+    if (manifest.canDelete === false) {
+      return NextResponse.json({ detail: "This manifest is locked against deletion in ACR" }, { status: 409 });
+    }
+    if (manifestRecent && body?.override_recent !== true) {
+      return NextResponse.json(
+        { detail: "This manifest is recent. Explicit recent override is required." },
+        { status: 409 }
+      );
+    }
+
+    await artifact.delete();
+    auditAcr("delete_manifest", "success", {
+      repository,
+      tag: null,
+      digest: manifest.digest,
+    });
+    return NextResponse.json({
+      ok: true,
+      action: "delete_manifest",
+      repository,
+      digest: manifest.digest,
+      deleted_tags: manifest.tags ?? [],
+    });
+  } catch (error) {
+    auditAcr(targetType === "tag" ? "delete_tag" : "delete_manifest", "failed", {
+      repository,
+      tag: targetType === "tag" ? tag : null,
+      digest: targetType === "manifest" ? digest : null,
+    });
+    return NextResponse.json({ detail: safeErrorDetail(error) }, { status: 503 });
+  }
+}
