@@ -11,21 +11,26 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
+import type { Session } from "@supabase/supabase-js";
 import { safeAuthRedirectPath } from "@/lib/auth-redirects";
 import { detectLocale } from "@/lib/i18n";
 import { rememberPendingPublicClaim } from "@/lib/public-analysis-claim";
 import { createSupabaseBrowserClient } from "@/lib/supabase-browser";
 
+const GOOGLE_SESSION_RETRY_DELAYS_MS = [0, 250, 500, 750, 1000, 1000] as const;
+const APP_SESSION_RETRY_DELAYS_MS = [0, 500, 1000, 1000, 1000] as const;
+const TRANSIENT_APP_SESSION_STATUSES = new Set([408, 425, 429, 500, 502, 503, 504]);
+
 const CALLBACK_COPY = {
   en: {
-    loading: "Signing you in with Google...",
+    loading: "Finalising Google sign-in...",
     invalid: "Invalid or expired link. Please request a new one.",
     generic: "Could not continue with Google. Please try again or use email.",
     connection: "Connection error. Please try again.",
     back: "Back to login",
   },
   "pt-BR": {
-    loading: "Entrando com Google...",
+    loading: "Finalizando login com Google...",
     invalid: "Link inválido ou expirado. Solicite um novo link.",
     generic: "Não foi possível continuar com Google. Tente novamente ou use e-mail.",
     connection: "Erro de conexão. Tente novamente.",
@@ -34,6 +39,88 @@ const CALLBACK_COPY = {
 } as const;
 
 type CallbackCopy = (typeof CALLBACK_COPY)[keyof typeof CALLBACK_COPY];
+
+function sleep(ms: number) {
+  return new Promise((resolve) => window.setTimeout(resolve, ms));
+}
+
+function logGoogleCallback(
+  event: string,
+  details: Record<string, string | number | boolean | null> = {},
+) {
+  if (process.env.NODE_ENV === "production") return;
+  console.debug("[auth:google_callback]", {
+    provider: "google",
+    event,
+    ...details,
+  });
+}
+
+async function waitForSupabaseSession(
+  supabase: ReturnType<typeof createSupabaseBrowserClient>,
+): Promise<Session | null> {
+  for (const [retryCount, delayMs] of GOOGLE_SESSION_RETRY_DELAYS_MS.entries()) {
+    if (delayMs > 0) await sleep(delayMs);
+
+    const { data, error } = await supabase.auth.getSession();
+    const session = data.session ?? null;
+    logGoogleCallback("session_retry", {
+      retry_count: retryCount,
+      session_found: Boolean(session?.access_token),
+      has_error: Boolean(error),
+    });
+
+    if (session?.access_token) return session;
+  }
+
+  return null;
+}
+
+async function createAppSession(params: {
+  accessToken: string;
+  tokenType: string | null;
+  redirectTo: string;
+  preferredLocale: string;
+}) {
+  let lastFailure: { status: number; error?: string } | null = null;
+
+  for (const [retryCount, delayMs] of APP_SESSION_RETRY_DELAYS_MS.entries()) {
+    if (delayMs > 0) await sleep(delayMs);
+
+    const res = await fetch("/api/auth/magic-callback", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        access_token: params.accessToken,
+        type: params.tokenType,
+        redirect_to: params.redirectTo,
+        preferred_locale: params.preferredLocale,
+      }),
+    });
+
+    const data = (await res.json().catch(() => ({}))) as {
+      redirect_to?: string;
+      error?: string;
+    };
+
+    logGoogleCallback("app_session_retry", {
+      retry_count: retryCount,
+      status: res.status,
+      session_found: res.ok,
+    });
+
+    if (res.ok) return { ok: true as const, redirectTo: data.redirect_to };
+
+    lastFailure = { status: res.status, error: data.error };
+    if (!TRANSIENT_APP_SESSION_STATUSES.has(res.status)) break;
+  }
+
+  return {
+    ok: false as const,
+    status: lastFailure?.status ?? 0,
+    error: lastFailure?.error,
+  };
+}
 
 export default function AuthCallbackPage() {
   const router = useRouter();
@@ -58,44 +145,52 @@ export default function AuthCallbackPage() {
       const code = search.get("code");
 
       if (!accessToken && code) {
+        logGoogleCallback("callback_entered", { has_code: true });
+        const supabase = createSupabaseBrowserClient();
         try {
-          const supabase = createSupabaseBrowserClient();
           const { data, error: exchangeError } =
             await supabase.auth.exchangeCodeForSession(code);
           if (exchangeError) throw exchangeError;
           accessToken = data.session?.access_token ?? null;
         } catch {
+          logGoogleCallback("code_exchange_failed");
           setError(localizedCopy.generic);
           return;
+        }
+
+        if (!accessToken) {
+          const settledSession = await waitForSupabaseSession(supabase);
+          accessToken = settledSession?.access_token ?? null;
         }
       }
 
       if (!accessToken) {
+        logGoogleCallback("session_failed", { reason: "missing_access_token" });
         setError(localizedCopy.invalid);
         return;
       }
 
       try {
-        const res = await fetch("/api/auth/magic-callback", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            access_token: accessToken,
-            type: tokenType,
-            redirect_to: redirectTo,
-            preferred_locale: locale,
-          }),
+        logGoogleCallback("app_session_exchange_started");
+        const result = await createAppSession({
+          accessToken,
+          tokenType,
+          redirectTo,
+          preferredLocale: locale,
         });
-        if (res.ok) {
-          const data = (await res.json().catch(() => ({}))) as {
-            redirect_to?: string;
-          };
-          router.replace(safeAuthRedirectPath(data.redirect_to ?? "/portal"));
+        if (result.ok) {
+          const finalRedirect = safeAuthRedirectPath(result.redirectTo ?? "/portal");
+          logGoogleCallback("redirect", { redirect_to: finalRedirect });
+          router.replace(finalRedirect);
         } else {
-          const data = await res.json().catch(() => ({}));
-          setError(data.error ?? localizedCopy.generic);
+          logGoogleCallback("app_session_exchange_failed", {
+            status: result.status,
+            has_error: Boolean(result.error),
+          });
+          setError(result.error ?? localizedCopy.generic);
         }
       } catch {
+        logGoogleCallback("connection_failed");
         setError(localizedCopy.connection);
       }
     };
