@@ -538,7 +538,7 @@ export const ptBR: Dictionary = {
       tryAgain: "Algo deu errado. Tente novamente.",
     },
     callback: {
-      loading: "Finalizando seu acesso ao Engage7...",
+      loading: "Configurando seu acesso ao Engage7...",
       invalid: "Link inválido ou expirado. Solicite um novo link.",
       generic:
         "Não foi possível continuar com Google. Tente novamente ou use e-mail.",

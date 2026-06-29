@@ -191,10 +191,19 @@ function checkLabel(value: boolean | null): string {
   return "not configured";
 }
 
+function acrMismatchAction(diagnostics: AcrDiagnostics): string | null {
+  if (!diagnostics.expected || diagnostics.checks.registry_matches_expected !== false) {
+    return null;
+  }
+
+  return `Configured ACR does not match ${diagnostics.environment_label ?? "this environment"}. Update Web runtime env to ${diagnostics.expected.registryName} before diagnosing Azure credentials.`;
+}
+
 function AcrDiagnosticsPanel({
   diagnostics,
 }: Readonly<{ diagnostics?: AcrDiagnostics | null }>) {
   if (!diagnostics) return null;
+  const mismatchAction = acrMismatchAction(diagnostics);
 
   return (
     <div className="rounded-lg border border-border bg-card p-4 text-sm">
@@ -240,6 +249,9 @@ function AcrDiagnosticsPanel({
         <p className="mt-3 text-xs text-amber-300">
           Missing config: {diagnostics.missing_env.join(", ")}
         </p>
+      )}
+      {mismatchAction && (
+        <p className="mt-3 text-xs text-amber-300">{mismatchAction}</p>
       )}
       {diagnostics.error && (
         <p className="mt-3 text-xs text-destructive">
