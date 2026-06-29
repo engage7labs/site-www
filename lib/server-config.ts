@@ -7,10 +7,15 @@
 
 import { ensureProtocol } from "@/lib/config";
 
+function readNonEmptyEnv(name: string): string | undefined {
+  const value = process.env[name]?.trim();
+  return value ? value : undefined;
+}
+
 /** Internal API base URL for server-side proxy calls (no NEXT_PUBLIC_ prefix). */
 export const INTERNAL_API_BASE_URL = ensureProtocol(
-  process.env.API_BASE_URL ??
-    process.env.NEXT_PUBLIC_API_BASE_URL ??
+  readNonEmptyEnv("API_BASE_URL") ??
+    readNonEmptyEnv("NEXT_PUBLIC_API_BASE_URL") ??
     "http://127.0.0.1:8000"
 );
 
