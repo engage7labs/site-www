@@ -25,6 +25,9 @@ interface AcrConfig {
   loginServer: string;
   endpoint: string;
   registryName: string;
+  environmentLabel: string | null;
+  resourceGroup: string | null;
+  subscriptionId: string | null;
   protectedRefs: Set<string>;
   protectedRefsConfigured: boolean;
   recentProtectionDays: number;
@@ -44,10 +47,37 @@ interface DeleteRequestBody {
   override_recent?: unknown;
 }
 
+interface AcrEnvironmentExpectation {
+  registryName: string;
+  resourceGroup: string;
+  subscriptionId: string;
+}
+
+interface AcrErrorInfo {
+  detail: string;
+  type: "credential_unavailable" | "permission_denied" | "not_found" | "request_failed";
+  status_code: number | null;
+  code: string | null;
+  name: string | null;
+}
+
 const REPOSITORY_PATTERN = /^[a-z0-9][a-z0-9._/-]{0,254}$/;
 const TAG_PATTERN = /^[A-Za-z0-9_][A-Za-z0-9_.-]{0,127}$/;
 const DIGEST_PATTERN = /^sha256:[a-f0-9]{64}$/;
 const DEFAULT_RECENT_PROTECTION_DAYS = 14;
+const EXPECTED_AZURE_SUBSCRIPTION_ID = "ae6de222-cc1b-4230-aa85-898b5dae9ef3";
+const ENV_EXPECTATIONS: Record<string, AcrEnvironmentExpectation> = {
+  "prod-neu": {
+    registryName: "acrengage7prodneu",
+    resourceGroup: "rg-engage7-prod-neu",
+    subscriptionId: EXPECTED_AZURE_SUBSCRIPTION_ID,
+  },
+  "dev-neu": {
+    registryName: "acrengage7devneu",
+    resourceGroup: "rg-engage7-dev-neu",
+    subscriptionId: EXPECTED_AZURE_SUBSCRIPTION_ID,
+  },
+};
 
 async function requireAdmin() {
   const cookieStore = await cookies();
@@ -100,6 +130,21 @@ function intFromEnv(name: string, fallback: number): number {
 }
 
 function getConfig(): AcrConfig | null {
+  const environmentLabel = firstEnv(
+    "NEXT_PUBLIC_ADMIN_ENV_LABEL",
+    "ENGAGE7_ENVIRONMENT_LABEL",
+    "APP_ENV"
+  );
+  const resourceGroup = firstEnv(
+    "ENGAGE7_AZURE_RESOURCE_GROUP",
+    "AZURE_RESOURCE_GROUP",
+    "ACA_JOB_RESOURCE_GROUP"
+  );
+  const subscriptionId = firstEnv(
+    "ENGAGE7_AZURE_SUBSCRIPTION_ID",
+    "AZURE_SUBSCRIPTION_ID",
+    "ACA_JOB_SUBSCRIPTION_ID"
+  );
   const configuredLoginServer = firstEnv(
     "ENGAGE7_ACR_LOGIN_SERVER",
     "AZURE_CONTAINER_REGISTRY_LOGIN_SERVER",
@@ -142,6 +187,9 @@ function getConfig(): AcrConfig | null {
     loginServer,
     endpoint: `https://${loginServer}`,
     registryName: loginServer.replace(/\.azurecr\.io$/, ""),
+    environmentLabel,
+    resourceGroup,
+    subscriptionId,
     protectedRefs,
     protectedRefsConfigured: protectedRefs.size > 0,
     recentProtectionDays: intFromEnv(
@@ -213,14 +261,131 @@ function statusForTarget(params: {
   return params.detectionConfigured ? "review required" : "review required";
 }
 
-function safeErrorDetail(error: unknown): string {
+function expectedForEnvironment(label: string | null): AcrEnvironmentExpectation | null {
+  if (!label) return null;
+  return ENV_EXPECTATIONS[label.trim().toLowerCase()] ?? null;
+}
+
+function redactSubscriptionForDisplay(value: string | null): string | null {
+  if (!value) return null;
+  return value === EXPECTED_AZURE_SUBSCRIPTION_ID ? value : `configured (...${value.slice(-6)})`;
+}
+
+function classifyAcrError(error: unknown): AcrErrorInfo {
+  let statusCode: number | null = null;
+  let code: string | null = null;
+  let name: string | null = null;
+
   if (error && typeof error === "object") {
-    const statusCode = (error as { statusCode?: unknown }).statusCode;
-    if (typeof statusCode === "number") return `Azure ACR request failed with status ${statusCode}`;
-    const code = (error as { code?: unknown }).code;
-    if (typeof code === "string") return `Azure ACR request failed: ${code}`;
+    const rawStatusCode = (error as { statusCode?: unknown }).statusCode;
+    if (typeof rawStatusCode === "number") statusCode = rawStatusCode;
+    const rawCode = (error as { code?: unknown }).code;
+    if (typeof rawCode === "string") code = rawCode;
+    const rawName = (error as { name?: unknown }).name;
+    if (typeof rawName === "string") name = rawName;
   }
-  return "Azure ACR request failed";
+
+  if (name === "CredentialUnavailableError" || code === "CredentialUnavailableError") {
+    return {
+      detail:
+        "ACR diagnostics unavailable: Azure credential is unavailable for the Web runtime.",
+      type: "credential_unavailable",
+      status_code: statusCode,
+      code,
+      name,
+    };
+  }
+
+  if (statusCode === 401 || statusCode === 403) {
+    return {
+      detail:
+        "ACR diagnostics unavailable: Azure permission denied for the configured registry.",
+      type: "permission_denied",
+      status_code: statusCode,
+      code,
+      name,
+    };
+  }
+
+  if (statusCode === 404) {
+    return {
+      detail:
+        "ACR diagnostics unavailable: configured registry was not found or is not visible to this identity.",
+      type: "not_found",
+      status_code: statusCode,
+      code,
+      name,
+    };
+  }
+
+  return {
+    detail:
+      typeof statusCode === "number"
+        ? `Azure ACR request failed with status ${statusCode}`
+        : code
+          ? `Azure ACR request failed: ${code}`
+          : "Azure ACR request failed",
+    type: "request_failed",
+    status_code: statusCode,
+    code,
+    name,
+  };
+}
+
+function buildAcrDiagnostics(config: AcrConfig | null, error?: AcrErrorInfo) {
+  const environmentLabel =
+    config?.environmentLabel ??
+    firstEnv("NEXT_PUBLIC_ADMIN_ENV_LABEL", "ENGAGE7_ENVIRONMENT_LABEL", "APP_ENV");
+  const expected = expectedForEnvironment(environmentLabel);
+  const configuredRegistryName =
+    config?.registryName ??
+    firstEnv("ENGAGE7_ACR_NAME", "AZURE_CONTAINER_REGISTRY_NAME", "ACR_NAME");
+  const configuredLoginServer =
+    config?.loginServer ??
+    firstEnv(
+      "ENGAGE7_ACR_LOGIN_SERVER",
+      "AZURE_CONTAINER_REGISTRY_LOGIN_SERVER",
+      "ACR_LOGIN_SERVER"
+    );
+  const configuredResourceGroup =
+    config?.resourceGroup ??
+    firstEnv("ENGAGE7_AZURE_RESOURCE_GROUP", "AZURE_RESOURCE_GROUP", "ACA_JOB_RESOURCE_GROUP");
+  const configuredSubscriptionId =
+    config?.subscriptionId ??
+    firstEnv("ENGAGE7_AZURE_SUBSCRIPTION_ID", "AZURE_SUBSCRIPTION_ID", "ACA_JOB_SUBSCRIPTION_ID");
+
+  return {
+    environment_label: environmentLabel,
+    configured: {
+      registry_name: configuredRegistryName,
+      login_server: configuredLoginServer,
+      resource_group: configuredResourceGroup,
+      subscription_id: redactSubscriptionForDisplay(configuredSubscriptionId),
+    },
+    expected,
+    checks: {
+      registry_matches_expected: expected && configuredRegistryName
+        ? configuredRegistryName === expected.registryName
+        : null,
+      resource_group_matches_expected: expected && configuredResourceGroup
+        ? configuredResourceGroup === expected.resourceGroup
+        : null,
+      subscription_matches_expected: expected && configuredSubscriptionId
+        ? configuredSubscriptionId === expected.subscriptionId
+        : null,
+      protected_refs_configured: config?.protectedRefsConfigured ?? false,
+      azure_identity_env_present: Boolean(
+        firstEnv("AZURE_CLIENT_ID", "AZURE_TENANT_ID", "AZURE_FEDERATED_TOKEN_FILE")
+      ),
+      managed_identity_hint_present: Boolean(firstEnv("AZURE_CLIENT_ID", "MANAGED_IDENTITY_CLIENT_ID")),
+    },
+    missing_env: [
+      configuredRegistryName || configuredLoginServer ? null : "ENGAGE7_ACR_NAME or ENGAGE7_ACR_LOGIN_SERVER",
+      configuredResourceGroup ? null : "AZURE_RESOURCE_GROUP or ENGAGE7_AZURE_RESOURCE_GROUP",
+      configuredSubscriptionId ? null : "AZURE_SUBSCRIPTION_ID or ENGAGE7_AZURE_SUBSCRIPTION_ID",
+    ].filter((item): item is string => Boolean(item)),
+    error,
+  };
 }
 
 function isValidRepository(value: string): boolean {
@@ -252,6 +417,7 @@ export async function GET() {
     return NextResponse.json({
       enabled: false,
       detail: "Azure Container Registry is not configured for this Web environment.",
+      diagnostics: buildAcrDiagnostics(null),
       repositories: [],
     });
   }
@@ -379,6 +545,7 @@ export async function GET() {
         login_server: config.loginServer,
         endpoint: config.endpoint,
       },
+      diagnostics: buildAcrDiagnostics(config),
       protected_detection: {
         configured: config.protectedRefsConfigured,
         protected_ref_count: config.protectedRefs.size,
@@ -397,7 +564,14 @@ export async function GET() {
       repositories,
     });
   } catch (error) {
-    return NextResponse.json({ detail: safeErrorDetail(error) }, { status: 503 });
+    const errorInfo = classifyAcrError(error);
+    return NextResponse.json(
+      {
+        detail: errorInfo.detail,
+        diagnostics: buildAcrDiagnostics(config, errorInfo),
+      },
+      { status: 503 }
+    );
   }
 }
 
@@ -409,7 +583,13 @@ export async function DELETE(request: NextRequest) {
 
   const config = getConfig();
   if (!config) {
-    return NextResponse.json({ detail: "Azure Container Registry is not configured" }, { status: 503 });
+    return NextResponse.json(
+      {
+        detail: "Azure Container Registry is not configured",
+        diagnostics: buildAcrDiagnostics(null),
+      },
+      { status: 503 }
+    );
   }
 
   const body = (await request.json().catch(() => null)) as DeleteRequestBody | null;
@@ -528,11 +708,18 @@ export async function DELETE(request: NextRequest) {
       deleted_tags: manifest.tags ?? [],
     });
   } catch (error) {
+    const errorInfo = classifyAcrError(error);
     auditAcr(targetType === "tag" ? "delete_tag" : "delete_manifest", "failed", {
       repository,
       tag: targetType === "tag" ? tag : null,
       digest: targetType === "manifest" ? digest : null,
     });
-    return NextResponse.json({ detail: safeErrorDetail(error) }, { status: 503 });
+    return NextResponse.json(
+      {
+        detail: errorInfo.detail,
+        diagnostics: buildAcrDiagnostics(config, errorInfo),
+      },
+      { status: 503 }
+    );
   }
 }

@@ -9,6 +9,9 @@ export const ptBR: Dictionary = {
   nav: {
     logo: "Engage7",
     getStarted: "Executar Análise",
+    login: "Login",
+    portal: "Portal",
+    dashboard: "Painel",
   },
 
   // Homepage - Hero Section
@@ -533,6 +536,14 @@ export const ptBR: Dictionary = {
       passwordMismatch: "As senhas não coincidem",
       genericError: "Algo deu errado",
       tryAgain: "Algo deu errado. Tente novamente.",
+    },
+    callback: {
+      loading: "Finalizando seu acesso ao Engage7...",
+      invalid: "Link inválido ou expirado. Solicite um novo link.",
+      generic:
+        "Não foi possível continuar com Google. Tente novamente ou use e-mail.",
+      connection: "Erro de conexão. Tente novamente.",
+      back: "Voltar para o login",
     },
     forgot: {
       checkEmailTitle: "Verifique seu email",
@@ -1180,6 +1191,8 @@ export const ptBR: Dictionary = {
       deleteFinalConfirm: "Sim, excluir minha conta e dados",
       deleteFailed: "A exclusão falhou. Tente novamente.",
       deleteUnexpected: "Ocorreu um erro inesperado. Tente novamente.",
+      deleteSessionChanged:
+        "Sua sessão mudou. Reabra as Configurações antes de excluir uma conta.",
       deletePermanently: "Excluir permanentemente",
       deleting: "Excluindo...",
     },

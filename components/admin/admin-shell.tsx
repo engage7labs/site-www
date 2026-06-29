@@ -5,12 +5,13 @@ import { Logo } from "@/components/shared/logo";
 import { LocaleSwitcher } from "@/components/shared/locale-switcher";
 import { ThemeSwitcher } from "@/components/shared/theme-switcher";
 import { PortalSidebarItem } from "@/components/portal/portal-sidebar-item";
+import { useSessionSafetyGuard } from "@/lib/auth-session-client";
 import {
   Boxes,
   CalendarDays,
   ChevronLeft,
   ChevronRight,
-  Database,
+  Files,
   LayoutDashboard,
   Menu,
   MessageSquare,
@@ -34,7 +35,7 @@ const ADMIN_NAV_ITEMS = [
   { href: "/admin/events", label: "Events", icon: CalendarDays },
   { href: "/admin/features", label: "Features", icon: SlidersHorizontal },
   { href: "/admin/ai-artifacts", label: "AI Artifacts", icon: Sparkles },
-  { href: "/admin/blobs", label: "Blob Storage", icon: Database },
+  { href: "/admin/blobs", label: "Blob Storage", icon: Files },
   { href: "/admin/acr", label: "ACR", icon: Boxes },
   { href: "/admin/feedback", label: "Feedback", icon: MessageSquare },
 ] as const;
@@ -248,6 +249,10 @@ export function AdminShell({
   const [collapsed, setCollapsed] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
   const pathname = usePathname();
+  const sessionGuard = useSessionSafetyGuard({
+    loginPath: "/login?admin=1",
+    requiredRole: "admin",
+  });
 
   useEffect(() => {
     const stored = localStorage.getItem(STORAGE_KEY);
@@ -268,6 +273,14 @@ export function AdminShell({
       "Admin"
     );
   }, [pathname]);
+
+  if (!sessionGuard.ready) {
+    return (
+      <div className="portal-surface flex min-h-screen items-center justify-center text-sm text-muted-foreground">
+        {sessionGuard.status === "refreshing" ? "Redirecting..." : "Loading..."}
+      </div>
+    );
+  }
 
   return (
     <div className="portal-surface flex min-h-screen text-foreground">

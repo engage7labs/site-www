@@ -2,7 +2,7 @@
 
 import { Eye, RefreshCw } from "lucide-react";
 import Link from "next/link";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 
 interface AiArtifactSummary {
   id: number;
@@ -76,6 +76,8 @@ export default function AdminAiArtifactsPage() {
   const [gateMode, setGateMode] = useState("");
   const [featureKey, setFeatureKey] = useState("");
   const [offset, setOffset] = useState(0);
+  const topScrollRef = useRef<HTMLDivElement>(null);
+  const tableScrollRef = useRef<HTMLDivElement>(null);
 
   const limit = 25;
 
@@ -112,6 +114,13 @@ export default function AdminAiArtifactsPage() {
 
   const canPrev = offset > 0;
   const canNext = data ? offset + limit < data.total : false;
+
+  const syncHorizontalScroll = (source: "top" | "table") => {
+    const from = source === "top" ? topScrollRef.current : tableScrollRef.current;
+    const to = source === "top" ? tableScrollRef.current : topScrollRef.current;
+    if (!from || !to || to.scrollLeft === from.scrollLeft) return;
+    to.scrollLeft = from.scrollLeft;
+  };
 
   return (
     <div className="flex flex-col gap-6">
@@ -184,8 +193,21 @@ export default function AdminAiArtifactsPage() {
         </div>
       )}
 
-      <div className="overflow-x-auto rounded-lg border border-border bg-card">
-        <table className="min-w-[1120px] w-full text-left text-sm">
+      <div className="overflow-hidden rounded-lg border border-border bg-card">
+        <div
+          ref={topScrollRef}
+          className="overflow-x-auto border-b border-border bg-muted/20"
+          onScroll={() => syncHorizontalScroll("top")}
+          aria-label="AI artifacts horizontal scroll"
+        >
+          <div className="h-2 min-w-[1280px]" />
+        </div>
+        <div
+          ref={tableScrollRef}
+          className="overflow-x-auto"
+          onScroll={() => syncHorizontalScroll("table")}
+        >
+        <table className="min-w-[1280px] w-full text-left text-sm">
           <thead className="border-b border-border text-xs uppercase text-muted-foreground">
             <tr>
               <th className="px-4 py-3 font-medium">Created</th>
@@ -199,7 +221,7 @@ export default function AdminAiArtifactsPage() {
               <th className="px-4 py-3 font-medium">Codes</th>
               <th className="px-4 py-3 font-medium">Tokens</th>
               <th className="px-4 py-3 font-medium">Lifecycle</th>
-              <th className="px-4 py-3 font-medium">Detail</th>
+              <th className="sticky right-0 bg-card px-4 py-3 font-medium shadow-[-12px_0_18px_-18px_rgba(0,0,0,0.8)]">Detail</th>
             </tr>
           </thead>
           <tbody>
@@ -247,7 +269,7 @@ export default function AdminAiArtifactsPage() {
                       {artifact.is_orphan_candidate ? "orphan candidate" : "valid historical/current"}
                     </span>
                   </td>
-                  <td className="px-4 py-3">
+                  <td className="sticky right-0 bg-card px-4 py-3 shadow-[-12px_0_18px_-18px_rgba(0,0,0,0.8)]">
                     <Link
                       href={`/admin/ai-artifacts/${artifact.id}`}
                       className="inline-flex h-8 items-center gap-2 rounded-md border border-border px-2 text-xs text-accent hover:bg-muted"
@@ -267,6 +289,7 @@ export default function AdminAiArtifactsPage() {
             )}
           </tbody>
         </table>
+        </div>
       </div>
 
       <div className="flex items-center justify-between text-sm text-muted-foreground">

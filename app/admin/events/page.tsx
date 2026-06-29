@@ -1,5 +1,6 @@
 "use client";
 
+import { Check, Copy } from "lucide-react";
 import { useEffect, useState } from "react";
 
 interface UserEvent {
@@ -35,6 +36,7 @@ export default function AdminEventsPage() {
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [loadingMore, setLoadingMore] = useState(false);
+  const [copiedValue, setCopiedValue] = useState<string | null>(null);
   const PAGE_SIZE = 50;
 
   const fetchEvents = async (offset: number) => {
@@ -68,6 +70,40 @@ export default function AdminEventsPage() {
     } finally {
       setLoadingMore(false);
     }
+  };
+
+  const copyId = async (value: string) => {
+    try {
+      await navigator.clipboard.writeText(value);
+      setCopiedValue(value);
+      window.setTimeout(() => setCopiedValue(null), 1500);
+    } catch {
+      setCopiedValue(null);
+    }
+  };
+
+  const renderIdCell = (value: string | null) => {
+    if (!value) return <span className="text-muted-foreground">—</span>;
+    const copied = copiedValue === value;
+    return (
+      <div className="flex min-w-[220px] max-w-[320px] items-center gap-2">
+        <span
+          className="min-w-0 flex-1 break-all font-mono text-[11px] leading-relaxed text-muted-foreground"
+          title={value}
+        >
+          {value}
+        </span>
+        <button
+          type="button"
+          onClick={() => void copyId(value)}
+          className="inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-md border border-border text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+          aria-label="Copy ID"
+          title="Copy full ID"
+        >
+          {copied ? <Check className="h-3.5 w-3.5" /> : <Copy className="h-3.5 w-3.5" />}
+        </button>
+      </div>
+    );
   };
 
   if (loading) {
@@ -120,12 +156,8 @@ export default function AdminEventsPage() {
                     </span>
                   )}
                 </td>
-                <td className="px-4 py-3 text-xs font-mono text-muted-foreground">
-                  {e.job_id ? e.job_id.slice(0, 8) + "…" : "—"}
-                </td>
-                <td className="px-4 py-3 text-xs font-mono text-muted-foreground">
-                  {e.session_id.slice(0, 8)}…
-                </td>
+                <td className="px-4 py-3">{renderIdCell(e.job_id)}</td>
+                <td className="px-4 py-3">{renderIdCell(e.session_id)}</td>
                 <td className="px-4 py-3 text-xs text-muted-foreground">
                   {fmt(e.created_at)}
                 </td>

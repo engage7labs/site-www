@@ -12,17 +12,10 @@
 
 import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
-
-const CONSENT_KEY = "engage7_cookie_consent";
-
-export type CookieConsent = "accepted" | "essential" | null;
-
-export function getCookieConsent(): CookieConsent {
-  if (typeof window === "undefined") return null;
-  const v = localStorage.getItem(CONSENT_KEY);
-  if (v === "accepted" || v === "essential") return v;
-  return null;
-}
+import {
+  COOKIE_CONSENT_KEY,
+  setCookieConsent,
+} from "@/lib/cookie-consent";
 
 export function CookieConsentBanner() {
   const pathname = usePathname();
@@ -34,7 +27,7 @@ export function CookieConsentBanner() {
 
   useEffect(() => {
     if (isProtected) return;
-    const existing = localStorage.getItem(CONSENT_KEY);
+    const existing = localStorage.getItem(COOKIE_CONSENT_KEY);
     if (!existing) {
       setVisible(true);
     }
@@ -43,14 +36,12 @@ export function CookieConsentBanner() {
   if (!visible || isProtected) return null;
 
   const handleAccept = () => {
-    localStorage.setItem(CONSENT_KEY, "accepted");
+    setCookieConsent("accepted");
     setVisible(false);
-    // PostHog session recording will activate on next page view
-    // (PostHogProvider reads consent on init — reload needed for replay)
   };
 
   const handleEssential = () => {
-    localStorage.setItem(CONSENT_KEY, "essential");
+    setCookieConsent("essential");
     setVisible(false);
   };
 

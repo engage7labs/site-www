@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { buildAuthCallbackUrl, safeAuthRedirectPath } from "@/lib/auth-redirects";
+import { publishAuthSessionChanged } from "@/lib/auth-session-client";
 import { detectLocale, getDictionary, type Locale } from "@/lib/i18n";
 import { rememberPendingPublicClaim } from "@/lib/public-analysis-claim";
 import { createSupabaseBrowserClient } from "@/lib/supabase-browser";
@@ -124,6 +125,7 @@ export function LoginFormFields({
       const data = (await res.json().catch(() => ({}))) as { role?: string };
       const role = data.role === "admin" ? "admin" : "user";
 
+      publishAuthSessionChanged("login");
       onSuccess?.();
       router.push(role === "admin" ? "/admin" : redirectTo);
       router.refresh();

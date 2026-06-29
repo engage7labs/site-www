@@ -7,6 +7,9 @@ export const enIE = {
   nav: {
     logo: "Engage7",
     getStarted: "Run Analysis",
+    login: "Login",
+    portal: "Portal",
+    dashboard: "Dashboard",
   },
 
   // Homepage - Hero Section
@@ -524,6 +527,13 @@ export const enIE = {
       passwordMismatch: "Passwords do not match",
       genericError: "Something went wrong",
       tryAgain: "Something went wrong. Please try again.",
+    },
+    callback: {
+      loading: "Finishing your Engage7 sign-in...",
+      invalid: "Invalid or expired link. Please request a new one.",
+      generic: "Could not continue with Google. Please try again or use email.",
+      connection: "Connection error. Please try again.",
+      back: "Back to login",
     },
     forgot: {
       checkEmailTitle: "Check your email",
@@ -1146,6 +1156,8 @@ export const enIE = {
       deleteFinalConfirm: "Yes, delete my account and data",
       deleteFailed: "Deletion failed. Please try again.",
       deleteUnexpected: "An unexpected error occurred. Please try again.",
+      deleteSessionChanged:
+        "Your session changed. Please reopen Settings before deleting an account.",
       deletePermanently: "Delete permanently",
       deleting: "Deleting...",
     },

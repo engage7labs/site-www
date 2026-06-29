@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { publishAuthSessionChanged } from "@/lib/auth-session-client";
 
 interface AdminUser {
   id: string;
@@ -106,6 +107,7 @@ export default function AdminUsersPage() {
       if (response.ok) {
         // Route returns JSON { ok: true } with session cookie set.
         // Navigate to portal via GET (not redirect) to avoid POST /portal → 405.
+        publishAuthSessionChanged("user_switch");
         window.location.href = "/portal";
       } else {
         const body = (await response

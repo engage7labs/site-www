@@ -55,6 +55,7 @@ interface AcrRepository {
 interface AcrResponse {
   enabled: boolean;
   detail?: string;
+  diagnostics?: AcrDiagnostics;
   registry?: {
     name: string;
     login_server: string;
@@ -76,6 +77,37 @@ interface AcrResponse {
   total_size_bytes?: number;
   repositories_truncated?: boolean;
   repositories: AcrRepository[];
+}
+
+interface AcrDiagnostics {
+  environment_label: string | null;
+  configured: {
+    registry_name: string | null;
+    login_server: string | null;
+    resource_group: string | null;
+    subscription_id: string | null;
+  };
+  expected: {
+    registryName: string;
+    resourceGroup: string;
+    subscriptionId: string;
+  } | null;
+  checks: {
+    registry_matches_expected: boolean | null;
+    resource_group_matches_expected: boolean | null;
+    subscription_matches_expected: boolean | null;
+    protected_refs_configured: boolean;
+    azure_identity_env_present: boolean;
+    managed_identity_hint_present: boolean;
+  };
+  missing_env: string[];
+  error?: {
+    detail: string;
+    type: string;
+    status_code: number | null;
+    code: string | null;
+    name: string | null;
+  };
 }
 
 interface DeleteTarget {
@@ -153,10 +185,81 @@ function detailFromPayload(payload: unknown): string | null {
   return null;
 }
 
+function checkLabel(value: boolean | null): string {
+  if (value === true) return "matches";
+  if (value === false) return "mismatch";
+  return "not configured";
+}
+
+function AcrDiagnosticsPanel({
+  diagnostics,
+}: Readonly<{ diagnostics?: AcrDiagnostics | null }>) {
+  if (!diagnostics) return null;
+
+  return (
+    <div className="rounded-lg border border-border bg-card p-4 text-sm">
+      <div className="flex items-center gap-2 text-card-foreground">
+        <AlertTriangle className="h-4 w-4 text-amber-400" />
+        <p className="font-semibold">ACR diagnostics</p>
+      </div>
+      <div className="mt-3 grid gap-3 text-xs text-muted-foreground md:grid-cols-2 xl:grid-cols-3">
+        <p>
+          <span className="text-card-foreground">Environment:</span>{" "}
+          {diagnostics.environment_label ?? "-"}
+        </p>
+        <p>
+          <span className="text-card-foreground">Configured ACR:</span>{" "}
+          {diagnostics.configured.login_server ??
+            diagnostics.configured.registry_name ??
+            "-"}
+        </p>
+        <p>
+          <span className="text-card-foreground">Expected ACR:</span>{" "}
+          {diagnostics.expected?.registryName ?? "-"} (
+          {checkLabel(diagnostics.checks.registry_matches_expected)})
+        </p>
+        <p>
+          <span className="text-card-foreground">Resource group:</span>{" "}
+          {diagnostics.configured.resource_group ?? "-"} (
+          {checkLabel(diagnostics.checks.resource_group_matches_expected)})
+        </p>
+        <p>
+          <span className="text-card-foreground">Subscription:</span>{" "}
+          {diagnostics.configured.subscription_id ?? "-"} (
+          {checkLabel(diagnostics.checks.subscription_matches_expected)})
+        </p>
+        <p>
+          <span className="text-card-foreground">Identity hint:</span>{" "}
+          {diagnostics.checks.azure_identity_env_present ||
+          diagnostics.checks.managed_identity_hint_present
+            ? "configured"
+            : "not visible in env"}
+        </p>
+      </div>
+      {diagnostics.missing_env.length > 0 && (
+        <p className="mt-3 text-xs text-amber-300">
+          Missing config: {diagnostics.missing_env.join(", ")}
+        </p>
+      )}
+      {diagnostics.error && (
+        <p className="mt-3 text-xs text-destructive">
+          Azure failure: {diagnostics.error.type}
+          {diagnostics.error.status_code
+            ? ` (${diagnostics.error.status_code})`
+            : ""}
+          {diagnostics.error.code ? ` · ${diagnostics.error.code}` : ""}
+        </p>
+      )}
+    </div>
+  );
+}
+
 export default function AdminAcrPage() {
   const [data, setData] = useState<AcrResponse | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [errorDiagnostics, setErrorDiagnostics] =
+    useState<AcrDiagnostics | null>(null);
   const [query, setQuery] = useState("");
   const [deleteTarget, setDeleteTarget] = useState<DeleteTarget | null>(null);
   const [confirmation, setConfirmation] = useState("");
@@ -169,10 +272,18 @@ export default function AdminAcrPage() {
   async function load() {
     setLoading(true);
     setError(null);
+    setErrorDiagnostics(null);
     try {
       const response = await fetch("/api/proxy/admin/acr", { cache: "no-store" });
-      const payload = (await response.json()) as AcrResponse | { detail?: unknown };
-      if (!response.ok || !("repositories" in payload)) {
+      const payload = (await response.json()) as
+        | AcrResponse
+        | { detail?: unknown; diagnostics?: AcrDiagnostics };
+      if (!payload || typeof payload !== "object" || !response.ok || !("repositories" in payload)) {
+        setErrorDiagnostics(
+          payload && typeof payload === "object" && "diagnostics" in payload
+            ? (payload.diagnostics ?? null)
+            : null
+        );
         throw new Error(detailFromPayload(payload) ?? `ACR load failed: ${response.status}`);
       }
       setData(payload);
@@ -299,6 +410,9 @@ export default function AdminAcrPage() {
     return (
       <div className="flex flex-col items-center justify-center gap-3 py-24">
         <p className="text-sm text-destructive">{error}</p>
+        <div className="w-full max-w-4xl">
+          <AcrDiagnosticsPanel diagnostics={errorDiagnostics} />
+        </div>
         <button
           type="button"
           onClick={() => void load()}
@@ -318,6 +432,9 @@ export default function AdminAcrPage() {
         <p className="text-sm text-muted-foreground">
           {data?.detail ?? "Azure Container Registry is not configured in this environment."}
         </p>
+        <div className="w-full max-w-4xl">
+          <AcrDiagnosticsPanel diagnostics={data?.diagnostics} />
+        </div>
       </div>
     );
   }
@@ -412,6 +529,8 @@ export default function AdminAcrPage() {
           ACR results were limited by the configured page caps.
         </div>
       )}
+
+      <AcrDiagnosticsPanel diagnostics={data.diagnostics} />
 
       <div className="rounded-lg border border-border bg-card p-4">
         <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">

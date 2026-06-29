@@ -43,7 +43,7 @@ export async function GET() {
   try {
     const upstreamResponse = await fetch(`${INTERNAL_API_BASE_URL}${path}`, {
       method: "GET",
-      headers: { ...sigHeaders },
+      headers: { ...sigHeaders, "X-User-Email": session.sub },
       cache: "no-store",
     });
     const data = await upstreamResponse
@@ -105,7 +105,7 @@ export async function DELETE(request: NextRequest) {
   try {
     userLookupResponse = await fetch(`${INTERNAL_API_BASE_URL}${path}`, {
       method: "GET",
-      headers: { ...getSigHeaders },
+      headers: { ...getSigHeaders, "X-User-Email": email },
       cache: "no-store",
     });
   } catch {
@@ -130,11 +130,25 @@ export async function DELETE(request: NextRequest) {
     typeof userLookupData.id === "string"
       ? userLookupData.id
       : "";
+  const targetUserEmail =
+    userLookupData &&
+    typeof userLookupData === "object" &&
+    "email" in userLookupData &&
+    typeof userLookupData.email === "string"
+      ? userLookupData.email.trim().toLowerCase()
+      : "";
 
   if (!targetUserId) {
     return NextResponse.json(
       { detail: "User service did not return a target user id" },
       { status: 502 }
+    );
+  }
+
+  if (targetUserEmail && targetUserEmail !== email.toLowerCase()) {
+    return NextResponse.json(
+      { detail: "Current session identity does not match the deletion target." },
+      { status: 409 }
     );
   }
 
@@ -160,7 +174,7 @@ export async function DELETE(request: NextRequest) {
   try {
     upstreamResponse = await fetch(`${INTERNAL_API_BASE_URL}${path}`, {
       method: "DELETE",
-      headers: { "Content-Type": "application/json", ...sigHeaders },
+      headers: { "Content-Type": "application/json", ...sigHeaders, "X-User-Email": email },
       body: JSON.stringify({ confirmation_email: confirmationEmail }),
     });
   } catch {

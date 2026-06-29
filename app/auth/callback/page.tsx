@@ -9,36 +9,22 @@
  * Shows a minimal loading state — user should not see this for more than 1-2s.
  */
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import type { Session } from "@supabase/supabase-js";
 import { safeAuthRedirectPath } from "@/lib/auth-redirects";
-import { detectLocale } from "@/lib/i18n";
+import { detectLocale, getDictionary, normalizeLocale } from "@/lib/i18n";
+import {
+  fetchAuthSessionSnapshot,
+  publishAuthSessionChanged,
+} from "@/lib/auth-session-client";
 import { rememberPendingPublicClaim } from "@/lib/public-analysis-claim";
 import { createSupabaseBrowserClient } from "@/lib/supabase-browser";
 
 const GOOGLE_SESSION_RETRY_DELAYS_MS = [0, 250, 500, 750, 1000, 1000] as const;
 const APP_SESSION_RETRY_DELAYS_MS = [0, 500, 1000, 1000, 1000] as const;
+const APP_SESSION_VERIFY_DELAYS_MS = [0, 100, 250, 500, 1000] as const;
 const TRANSIENT_APP_SESSION_STATUSES = new Set([408, 425, 429, 500, 502, 503, 504]);
-
-const CALLBACK_COPY = {
-  en: {
-    loading: "Finalising Google sign-in...",
-    invalid: "Invalid or expired link. Please request a new one.",
-    generic: "Could not continue with Google. Please try again or use email.",
-    connection: "Connection error. Please try again.",
-    back: "Back to login",
-  },
-  "pt-BR": {
-    loading: "Finalizando login com Google...",
-    invalid: "Link inválido ou expirado. Solicite um novo link.",
-    generic: "Não foi possível continuar com Google. Tente novamente ou use e-mail.",
-    connection: "Erro de conexão. Tente novamente.",
-    back: "Voltar para o login",
-  },
-} as const;
-
-type CallbackCopy = (typeof CALLBACK_COPY)[keyof typeof CALLBACK_COPY];
 
 function sleep(ms: number) {
   return new Promise((resolve) => window.setTimeout(resolve, ms));
@@ -76,6 +62,16 @@ async function waitForSupabaseSession(
   return null;
 }
 
+async function waitForAppSession(): Promise<boolean> {
+  for (const delayMs of APP_SESSION_VERIFY_DELAYS_MS) {
+    if (delayMs > 0) await sleep(delayMs);
+    const session = await fetchAuthSessionSnapshot().catch(() => null);
+    if (session?.authenticated) return true;
+  }
+
+  return false;
+}
+
 async function createAppSession(params: {
   accessToken: string;
   tokenType: string | null;
@@ -101,6 +97,7 @@ async function createAppSession(params: {
     const data = (await res.json().catch(() => ({}))) as {
       redirect_to?: string;
       error?: string;
+      error_code?: string;
     };
 
     logGoogleCallback("app_session_retry", {
@@ -109,10 +106,15 @@ async function createAppSession(params: {
       session_found: res.ok,
     });
 
-    if (res.ok) return { ok: true as const, redirectTo: data.redirect_to };
+    if (res.ok && (await waitForAppSession())) {
+      return { ok: true as const, redirectTo: data.redirect_to };
+    }
 
-    lastFailure = { status: res.status, error: data.error };
-    if (!TRANSIENT_APP_SESSION_STATUSES.has(res.status)) break;
+    lastFailure = {
+      status: res.ok ? 425 : res.status,
+      error: data.error_code === "google_sync_failed" ? undefined : data.error,
+    };
+    if (!res.ok && !TRANSIENT_APP_SESSION_STATUSES.has(res.status)) break;
   }
 
   return {
@@ -125,13 +127,16 @@ async function createAppSession(params: {
 export default function AuthCallbackPage() {
   const router = useRouter();
   const [error, setError] = useState<string | null>(null);
-  const [copy, setCopy] = useState<CallbackCopy>(CALLBACK_COPY.en);
+  const [copy, setCopy] = useState(getDictionary("en").auth.callback);
+  const startedRef = useRef(false);
 
   useEffect(() => {
     const run = async () => {
+      if (startedRef.current) return;
+      startedRef.current = true;
       const search = new URLSearchParams(window.location.search);
-      const locale = search.get("locale") ?? detectLocale();
-      const localizedCopy = locale === "pt-BR" ? CALLBACK_COPY["pt-BR"] : CALLBACK_COPY.en;
+      const locale = normalizeLocale(search.get("locale") ?? detectLocale());
+      const localizedCopy = getDictionary(locale).auth.callback;
       setCopy(localizedCopy);
 
       const claimJobId = search.get("claim_job_id");
@@ -154,8 +159,12 @@ export default function AuthCallbackPage() {
           accessToken = data.session?.access_token ?? null;
         } catch {
           logGoogleCallback("code_exchange_failed");
-          setError(localizedCopy.generic);
-          return;
+          const settledSession = await waitForSupabaseSession(supabase);
+          accessToken = settledSession?.access_token ?? null;
+          if (!accessToken) {
+            setError(localizedCopy.generic);
+            return;
+          }
         }
 
         if (!accessToken) {
@@ -181,6 +190,7 @@ export default function AuthCallbackPage() {
         if (result.ok) {
           const finalRedirect = safeAuthRedirectPath(result.redirectTo ?? "/portal");
           logGoogleCallback("redirect", { redirect_to: finalRedirect });
+          publishAuthSessionChanged("login");
           router.replace(finalRedirect);
         } else {
           logGoogleCallback("app_session_exchange_failed", {

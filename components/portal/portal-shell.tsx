@@ -5,6 +5,9 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 import { useLocale } from "@/components/providers/locale-provider";
 import {
+  useSessionSafetyGuard,
+} from "@/lib/auth-session-client";
+import {
   consumePendingPublicClaimForToast,
   readPublicClaimToastCandidateJobId,
 } from "@/lib/public-analysis-claim";
@@ -30,6 +33,7 @@ export function PortalShell({
   const [overviewSubtitle, setOverviewSubtitle] = useState<string | null>(null);
   const publicClaimToastAttemptedRef = useRef(false);
   const { t } = useLocale();
+  const sessionGuard = useSessionSafetyGuard({});
   const sectionTitles = {
     "/portal": t.portal.shell.sections.overview,
     "/portal/reports": t.portal.shell.sections.reports,
@@ -166,6 +170,14 @@ export function PortalShell({
     pathname === "/portal" && overviewSubtitle
       ? overviewSubtitle
       : section?.subtitle;
+
+  if (!sessionGuard.ready) {
+    return (
+      <div className="portal-surface flex min-h-screen items-center justify-center text-sm text-muted-foreground">
+        {sessionGuard.status === "refreshing" ? t.common.redirecting : t.common.loading}
+      </div>
+    );
+  }
 
   return (
     <div className="portal-surface flex min-h-screen text-foreground">

@@ -13,6 +13,10 @@ import {
   initPostHog,
   trackSiteVisited,
 } from "@/lib/telemetry";
+import {
+  getCookieConsent,
+  subscribeCookieConsent,
+} from "@/lib/cookie-consent";
 import { usePathname } from "next/navigation";
 import { useEffect, useRef } from "react";
 
@@ -20,14 +24,21 @@ export function PostHogProvider({ children }: { children: React.ReactNode }) {
   const initialised = useRef(false);
   const pathname = usePathname();
 
-  // Initialise once on first mount and fire site_visited
-  useEffect(() => {
-    if (initialised.current) return;
+  const initialiseTelemetry = () => {
+    if (initialised.current || getCookieConsent() !== "accepted") return;
     initialised.current = true;
     initPostHog();
     trackSiteVisited();
-    // Capture initial pageview
     capturePageview(window.location.href);
+  };
+
+  // Initialise only after optional analytics consent.
+  useEffect(() => {
+    initialiseTelemetry();
+    return subscribeCookieConsent((consent) => {
+      if (consent === "accepted") initialiseTelemetry();
+    });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   // Capture $pageview on every subsequent route change

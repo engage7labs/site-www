@@ -1,6 +1,7 @@
 "use client";
 
 import { useLocale } from "@/components/providers/locale-provider";
+import { publishAuthSessionChanged } from "@/lib/auth-session-client";
 import { LOCALE_NAMES, SUPPORTED_LOCALES, type Locale } from "@/lib/i18n";
 import { Copy } from "lucide-react";
 import { useRouter, useSearchParams } from "next/navigation";
@@ -23,12 +24,36 @@ interface CurrentUserSettingsData {
   email?: string | null;
 }
 
+interface CurrentSessionSettingsData {
+  authenticated?: boolean;
+  email?: string | null;
+  sub?: string | null;
+  role?: string | null;
+  mode?: string | null;
+  read_only?: boolean | null;
+  view_as_user_id?: string | null;
+}
+
 interface HealthFootprintSettingsData {
   protection_enabled?: boolean;
   has_footprint?: boolean;
   can_update_protection?: boolean;
   has_valid_timeline?: boolean;
   status?: string;
+}
+
+function normalizeAccountEmail(value: unknown): string {
+  return typeof value === "string" ? value.trim().toLowerCase() : "";
+}
+
+function sessionFingerprint(session: CurrentSessionSettingsData): string {
+  return [
+    normalizeAccountEmail(session.email ?? session.sub),
+    session.role ?? "",
+    session.mode ?? "",
+    session.read_only === true ? "1" : "0",
+    session.view_as_user_id ?? "",
+  ].join("|");
 }
 
 function formatSettingsDate(
@@ -78,6 +103,10 @@ export default function SettingsPage() {
     "saved" | "error" | null
   >(null);
   const [accountEmail, setAccountEmail] = useState<string | null>(null);
+  const [deleteIdentityLoading, setDeleteIdentityLoading] = useState(false);
+  const [deleteSessionFingerprint, setDeleteSessionFingerprint] = useState<
+    string | null
+  >(null);
   // Sprint 42.0 — User Profile v1
   const [profileType, setProfileType] = useState<string>("general");
   const [profileSaving, setProfileSaving] = useState(false);
@@ -108,11 +137,12 @@ export default function SettingsPage() {
         }
       })
       .catch(() => {});
-    fetch("/api/proxy/users/me")
+    fetch("/api/proxy/users/me", { cache: "no-store" })
       .then((r) => r.json())
       .then((d: CurrentUserSettingsData) => {
-        if (typeof d.email === "string" && d.email.trim()) {
-          setAccountEmail(d.email.trim().toLowerCase());
+        const currentEmail = normalizeAccountEmail(d.email);
+        if (currentEmail) {
+          setAccountEmail(currentEmail);
         }
       })
       .catch(() => {});
@@ -176,7 +206,9 @@ export default function SettingsPage() {
 
   const normalizedEmailConfirmation = emailConfirmText.trim().toLowerCase();
   const canContinueDelete =
-    Boolean(accountEmail) && normalizedEmailConfirmation === accountEmail;
+    !deleteIdentityLoading &&
+    Boolean(accountEmail) &&
+    normalizedEmailConfirmation === accountEmail;
   const protectionCopy = t.portal.settings.protection;
   const protectionDisabled =
     protectionLoading ||
@@ -190,6 +222,83 @@ export default function SettingsPage() {
     setEmailConfirmText("");
     setEmailCopied(false);
     setDeleteError(null);
+    setDeleteIdentityLoading(false);
+    setDeleteSessionFingerprint(null);
+  };
+
+  const handleDetectedSessionChange = () => {
+    publishAuthSessionChanged("session_refresh");
+    setDeleteError(t.portal.settings.deleteSessionChanged);
+    window.setTimeout(() => {
+      window.location.reload();
+    }, 900);
+  };
+
+  const fetchCurrentDeleteIdentity = async () => {
+    const sessionResponse = await fetch("/api/auth/session", {
+      cache: "no-store",
+      headers: { "Cache-Control": "no-store" },
+    });
+    if (!sessionResponse.ok) {
+      throw new Error(t.portal.settings.deleteSessionChanged);
+    }
+    const session = (await sessionResponse.json()) as CurrentSessionSettingsData;
+    const sessionEmail = normalizeAccountEmail(session.email ?? session.sub);
+    if (
+      !sessionEmail ||
+      session.mode === "admin_view" ||
+      session.read_only === true
+    ) {
+      throw new Error(t.portal.settings.deleteSessionChanged);
+    }
+
+    const userResponse = await fetch("/api/proxy/users/me", {
+      cache: "no-store",
+      headers: { "Cache-Control": "no-store" },
+    });
+    const user = (await userResponse
+      .json()
+      .catch(() => ({}))) as CurrentUserSettingsData & { detail?: string };
+    if (!userResponse.ok) {
+      throw new Error(user.detail ?? t.portal.settings.deleteSessionChanged);
+    }
+
+    const userEmail = normalizeAccountEmail(user.email);
+    if (!userEmail || userEmail !== sessionEmail) {
+      throw new Error(t.portal.settings.deleteSessionChanged);
+    }
+
+    return {
+      email: userEmail,
+      fingerprint: sessionFingerprint(session),
+    };
+  };
+
+  const openDeleteModal = async () => {
+    setDeleteStep("email");
+    setEmailConfirmText("");
+    setEmailCopied(false);
+    setDeleteError(null);
+    setAccountEmail(null);
+    setDeleteSessionFingerprint(null);
+    setShowDeleteModal(true);
+    setDeleteIdentityLoading(true);
+
+    try {
+      const identity = await fetchCurrentDeleteIdentity();
+      setAccountEmail(identity.email);
+      setDeleteSessionFingerprint(identity.fingerprint);
+    } catch (err) {
+      setAccountEmail(null);
+      const message =
+        err instanceof Error ? err.message : t.portal.settings.deleteSessionChanged;
+      setDeleteError(message);
+      if (message === t.portal.settings.deleteSessionChanged) {
+        handleDetectedSessionChange();
+      }
+    } finally {
+      setDeleteIdentityLoading(false);
+    }
   };
 
   const copyAccountEmail = async () => {
@@ -279,6 +388,17 @@ export default function SettingsPage() {
     setDeleteError(null);
 
     try {
+      const identity = await fetchCurrentDeleteIdentity();
+      if (
+        identity.email !== normalizedEmailConfirmation ||
+        (deleteSessionFingerprint &&
+          identity.fingerprint !== deleteSessionFingerprint)
+      ) {
+        setDeleting(false);
+        handleDetectedSessionChange();
+        return;
+      }
+
       const res = await fetch("/api/proxy/users/me", {
         method: "DELETE",
         headers: { "Content-Type": "application/json" },
@@ -295,6 +415,7 @@ export default function SettingsPage() {
         );
       }
       // Session cookie cleared by proxy on success — show success then redirect
+      publishAuthSessionChanged("account_deleted");
       setDeleted(true);
       setTimeout(() => router.push("/"), 2500);
     } catch (err) {
@@ -707,13 +828,7 @@ export default function SettingsPage() {
           </p>
           <button
             type="button"
-            onClick={() => {
-              setDeleteStep("email");
-              setEmailConfirmText("");
-              setEmailCopied(false);
-              setDeleteError(null);
-              setShowDeleteModal(true);
-            }}
+            onClick={() => void openDeleteModal()}
             className="mt-4 inline-flex items-center rounded-md border border-destructive/50 px-4 py-2 text-sm font-medium text-destructive hover:bg-destructive/5 transition-colors"
           >
             {t.portal.settings.deleteButton}
@@ -756,7 +871,10 @@ export default function SettingsPage() {
                   </p>
                   <div className="mt-2 flex items-center justify-between gap-3">
                     <p className="min-w-0 break-all font-mono text-sm text-foreground">
-                      {accountEmail ?? t.portal.settings.accountEmailLoading}
+                      {accountEmail ??
+                        (deleteIdentityLoading
+                          ? t.portal.settings.accountEmailLoading
+                          : t.portal.settings.deleteSessionChanged)}
                     </p>
                     <button
                       type="button"
@@ -782,6 +900,7 @@ export default function SettingsPage() {
                     placeholder={t.portal.settings.deleteEmailPlaceholder}
                     className="w-full rounded-md border border-border bg-background px-3 py-2 text-sm text-foreground outline-none placeholder:text-muted-foreground focus:border-destructive"
                     autoComplete="off"
+                    disabled={deleteIdentityLoading || !accountEmail}
                   />
                 </label>
               </>
@@ -808,7 +927,7 @@ export default function SettingsPage() {
                 <button
                   type="button"
                   onClick={() => setDeleteStep("final")}
-                  disabled={!canContinueDelete}
+                  disabled={!canContinueDelete || deleteIdentityLoading}
                   className="rounded-md bg-foreground px-4 py-2 text-sm font-medium text-background hover:bg-foreground/90 disabled:cursor-not-allowed disabled:opacity-50"
                 >
                   {t.portal.settings.deleteContinue}

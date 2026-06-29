@@ -13,12 +13,15 @@ import { safeAuthRedirectPath } from "@/lib/auth-redirects";
 import { signRequest } from "@/lib/api/signing";
 import { INTERNAL_API_BASE_URL } from "@/lib/server-config";
 import { normalizeLocale } from "@/lib/i18n";
+import { randomUUID } from "crypto";
 import { NextRequest, NextResponse } from "next/server";
 
 export const runtime = "nodejs";
 
 const SESSION_30_DAYS = 30 * 24 * 3600;
 const DEFAULT_REDIRECT_TO = "/portal";
+const GOOGLE_SYNC_RETRY_DELAYS_MS = [0, 250, 750] as const;
+const TRANSIENT_GOOGLE_SYNC_STATUSES = new Set([408, 409, 425, 429, 500, 502, 503, 504]);
 
 function logMagicCallback(event: string, fields: Record<string, unknown> = {}): void {
   // Never log Supabase access/refresh tokens or complete magic-link URLs.
@@ -48,19 +51,52 @@ async function syncGoogleUser(params: {
   preferredLocale: string;
 }): Promise<"user" | "admin" | null> {
   const path = "/api/users/sync-authenticated";
-  const sigHeaders = signRequest("POST", path);
+  for (const delayMs of GOOGLE_SYNC_RETRY_DELAYS_MS) {
+    if (delayMs > 0) {
+      await new Promise((resolve) => setTimeout(resolve, delayMs));
+    }
+
+    const sigHeaders = signRequest("POST", path);
+    const upstream = await fetch(`${INTERNAL_API_BASE_URL}${path}`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        ...sigHeaders,
+      },
+      body: JSON.stringify({
+        email: params.email,
+        user_id: params.userId,
+        preferred_locale: params.preferredLocale,
+        auth_provider: "google",
+      }),
+    });
+
+    if (upstream.ok) {
+      const data = (await upstream.json().catch(() => ({}))) as { role?: string };
+      return data.role === "admin" ? "admin" : "user";
+    }
+
+    if (upstream.status === 409) {
+      const existingRole = await readExistingUserRole(params.email);
+      if (existingRole) return existingRole;
+    }
+
+    if (!TRANSIENT_GOOGLE_SYNC_STATUSES.has(upstream.status)) return null;
+  }
+
+  return readExistingUserRole(params.email);
+}
+
+async function readExistingUserRole(email: string): Promise<"user" | "admin" | null> {
+  const path = `/api/users/me?email=${encodeURIComponent(email)}`;
+  const sigHeaders = signRequest("GET", path);
   const upstream = await fetch(`${INTERNAL_API_BASE_URL}${path}`, {
-    method: "POST",
+    method: "GET",
     headers: {
-      "Content-Type": "application/json",
       ...sigHeaders,
+      "X-User-Email": email,
     },
-    body: JSON.stringify({
-      email: params.email,
-      user_id: params.userId,
-      preferred_locale: params.preferredLocale,
-      auth_provider: "google",
-    }),
+    cache: "no-store",
   });
 
   if (!upstream.ok) return null;
@@ -69,6 +105,7 @@ async function syncGoogleUser(params: {
 }
 
 export async function POST(request: NextRequest) {
+  const correlationId = randomUUID();
   try {
     const body = await request.json();
     const accessToken = body?.access_token;
@@ -78,22 +115,30 @@ export async function POST(request: NextRequest) {
     );
 
     logMagicCallback("magic_callback_started", {
+      correlation_id: correlationId,
       has_access_token: typeof accessToken === "string" && accessToken.length > 0,
       redirect_to: redirectTo,
     });
 
     if (!accessToken || typeof accessToken !== "string") {
-      logMagicCallback("magic_callback_failed", { reason: "missing_access_token" });
+      logMagicCallback("magic_callback_failed", {
+        correlation_id: correlationId,
+        reason: "missing_access_token",
+      });
       return NextResponse.json({ error: "Missing access token" }, { status: 400 });
     }
 
-    logMagicCallback("magic_callback_token_found", { token_source: "hash" });
+    logMagicCallback("magic_callback_token_found", {
+      correlation_id: correlationId,
+      token_source: "hash",
+    });
 
     // Verify token with Supabase and get user email
     const { data, error } = await supabaseAdmin.auth.getUser(accessToken);
 
     if (error || !data?.user?.email) {
       logMagicCallback("magic_callback_failed", {
+        correlation_id: correlationId,
         reason: error ? "supabase_user_lookup_failed" : "supabase_user_missing_email",
       });
       return NextResponse.json(
@@ -107,6 +152,7 @@ export async function POST(request: NextRequest) {
 
     if (isGoogleAuthUser(data.user)) {
       logMagicCallback("google_callback_sync_started", {
+        correlation_id: correlationId,
         email_domain: emailDomain(email),
         redirect_to: redirectTo,
       });
@@ -118,12 +164,14 @@ export async function POST(request: NextRequest) {
 
       if (!syncedRole) {
         logMagicCallback("google_callback_sync_failed", {
+          correlation_id: correlationId,
           email_domain: emailDomain(email),
         });
         return NextResponse.json(
           {
             error:
               "Could not continue with Google. Please try again or use email.",
+            error_code: "google_sync_failed",
           },
           { status: 502 }
         );
@@ -148,14 +196,19 @@ export async function POST(request: NextRequest) {
     });
 
     logMagicCallback("magic_callback_session_created", {
+      correlation_id: correlationId,
       email_domain: emailDomain(email),
       role,
     });
-    logMagicCallback("magic_callback_redirect", { redirect_to: redirectTo });
+    logMagicCallback("magic_callback_redirect", {
+      correlation_id: correlationId,
+      redirect_to: redirectTo,
+    });
 
     return res;
   } catch (err) {
     logMagicCallback("magic_callback_failed", {
+      correlation_id: correlationId,
       reason: err instanceof Error ? err.message : "unknown",
     });
     return NextResponse.json({ error: "Internal server error" }, { status: 500 });

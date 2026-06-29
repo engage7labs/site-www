@@ -1,11 +1,11 @@
 import { AppThemeProvider } from "@/components/providers/app-theme-provider";
+import { ConsentAwareAnalytics } from "@/components/providers/consent-aware-analytics";
 import { LocaleProvider } from "@/components/providers/locale-provider";
 import { PostHogProvider } from "@/components/providers/posthog-provider";
 import { CookieConsentBanner } from "@/components/shared/cookie-consent-banner";
 import { DevEnvironmentMarker } from "@/components/shared/dev-environment-marker";
 import { config } from "@/lib/config";
 import { isDevEnvironment } from "@/lib/env";
-import { Analytics } from "@vercel/analytics/next";
 import type { Metadata, Viewport } from "next";
 import { Geist_Mono, Inter } from "next/font/google";
 import type React from "react";
@@ -139,7 +139,7 @@ export default function RootLayout({
         </AppThemeProvider>
         <CookieConsentBanner />
         <DevEnvironmentMarker />
-        <Analytics />
+        <ConsentAwareAnalytics />
         <Toaster richColors position="top-center" />
       </body>
     </html>
