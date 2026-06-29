@@ -26,6 +26,7 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { AdminLogoutButton } from "./admin-logout-button";
 
 const STORAGE_KEY = "engage7_admin_sidebar_collapsed";
+const ADMIN_ENV_LABEL = process.env.NEXT_PUBLIC_ADMIN_ENV_LABEL?.trim();
 
 const ADMIN_NAV_ITEMS = [
   { href: "/admin", label: "Overview", icon: LayoutDashboard },
@@ -153,7 +154,7 @@ function AdminSidebar({
             collapsed ? "text-center" : "px-3"
           }`}
         >
-          v{process.env.NEXT_PUBLIC_APP_VERSION ?? "1.45.1.0"}
+          v{process.env.NEXT_PUBLIC_APP_VERSION ?? "1.45.3.0"}
         </span>
       </nav>
     </div>
@@ -194,6 +195,16 @@ interface AdminHeaderProps {
   sectionTitle: string;
 }
 
+function AdminEnvironmentBadge() {
+  if (!ADMIN_ENV_LABEL) return null;
+
+  return (
+    <div className="inline-flex items-center rounded-full border border-border/80 bg-muted/40 px-2 py-1 text-[11px] font-medium leading-none text-muted-foreground">
+      {ADMIN_ENV_LABEL}
+    </div>
+  );
+}
+
 function AdminHeader({ onToggleMobile, sectionTitle }: AdminHeaderProps) {
   return (
     <header className="sticky top-0 z-20 flex h-16 items-center justify-between border-b border-border bg-background/80 px-4 backdrop-blur sm:px-6">
@@ -218,6 +229,7 @@ function AdminHeader({ onToggleMobile, sectionTitle }: AdminHeaderProps) {
       </div>
 
       <div className="flex items-center gap-1.5">
+        <AdminEnvironmentBadge />
         <div className="hidden items-center gap-1.5 rounded-lg border border-amber-500/30 bg-amber-500/10 px-2.5 py-1.5 text-xs font-medium text-amber-700 dark:text-amber-300 sm:flex">
           <Boxes className="h-3.5 w-3.5" />
           Admin
