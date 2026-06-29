@@ -16,7 +16,6 @@ import {
   releaseAuthTokenUse,
 } from "@/lib/auth-token-consumption";
 import { verifyJwt } from "@/lib/auth-server";
-import { ensureProtocol } from "@/lib/config";
 import { INTERNAL_API_BASE_URL } from "@/lib/server-config";
 import { NextRequest, NextResponse } from "next/server";
 
@@ -126,9 +125,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "Service unavailable" }, { status: 503 });
   }
 
-  const apiBaseUrl = ensureProtocol(
-    process.env.API_BASE_URL ?? INTERNAL_API_BASE_URL
-  );
+  const apiBaseUrl = INTERNAL_API_BASE_URL;
   const path = "/auth/reset-password";
 
   let upstream: Response;

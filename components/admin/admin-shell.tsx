@@ -154,7 +154,7 @@ function AdminSidebar({
             collapsed ? "text-center" : "px-3"
           }`}
         >
-          v{process.env.NEXT_PUBLIC_APP_VERSION ?? "1.45.3.1"}
+          v{process.env.NEXT_PUBLIC_APP_VERSION ?? "1.45.3.3"}
         </span>
       </nav>
     </div>

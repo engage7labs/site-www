@@ -19,17 +19,27 @@ Both **Production** and **Preview** deployments must set these variables:
 
 - `NEXT_PUBLIC_APP_ENV=production`
 - `NEXT_PUBLIC_SITE_URL=https://www.engage7.ie`
-- `NEXT_PUBLIC_API_BASE_URL=https://api.engage7.ie`
+- `NEXT_PUBLIC_API_BASE_URL=<active Engage7 PROD API URL>`
+- `ENGAGE7_API_BASE_URL=<active Engage7 PROD API URL>`
 
 #### Preview / DEV (dev branch)
 
 - `NEXT_PUBLIC_APP_ENV=development`
 - `NEXT_PUBLIC_SITE_URL=https://dev.engage7.ie` (or leave unset for automatic default)
-- `NEXT_PUBLIC_API_BASE_URL=https://engage7-api-dev.orangeisland-abf82cd7.northeurope.azurecontainerapps.io`
+- `NEXT_PUBLIC_API_BASE_URL=<active Engage7 DEV API URL>`
+- `ENGAGE7_API_BASE_URL=<active Engage7 DEV API URL>`
 
 `NEXT_PUBLIC_API_BASE_URL` is embedded into browser JavaScript during the Vercel build.
 Changing it in a runtime environment after `next build` will not update the client bundle;
 fix the Vercel environment variable and redeploy.
+
+`ENGAGE7_API_BASE_URL` is server-side only and is used by Next.js route handlers
+and proxy routes. Keep it aligned with `NEXT_PUBLIC_API_BASE_URL` unless a future
+architecture explicitly introduces a separate internal API endpoint.
+
+`API_BASE_URL` was removed from the Web API routing contract in HOTFIX 45.3.3.
+Do not set it for new deployments and remove it from existing Vercel
+Production/Preview/Development environments when safe.
 
 ## Why This Matters
 
@@ -119,8 +129,8 @@ After any deployment:
 - [ ] DEV badge visible in bottom-left corner (pulsing amber dot + "DEV" text)
 - [ ] Browser tab title: `[DEV] Engage7 — ...`
 - [ ] Open Graph image meta tag points to `dev.engage7.ie`
-- [ ] `/api/debug/env` returns `NEXT_PUBLIC_API_BASE_URL=https://engage7-api-dev.orangeisland-abf82cd7.northeurope.azurecontainerapps.io`
-- [ ] Browser console shows `[api-debug]` with `API_BASE_URL=https://engage7-api-dev.orangeisland-abf82cd7.northeurope.azurecontainerapps.io`
+- [ ] Local `/api/debug/env` returns safe status fields only; hosted DEV/Preview returns 404
+- [ ] Browser console shows `[api-debug]` with the active DEV API URL.
 - [ ] Vercel deployment source includes the expected API URL in built static chunks.
 
 ```bash
@@ -144,10 +154,10 @@ rg "http://localhost:8000" .next/static --glob "!*.map"
 
 ### "dev.engage7.ie calls localhost or the wrong API"
 
-- Check Vercel Preview env var `NEXT_PUBLIC_API_BASE_URL`
-- Expected value: `https://engage7-api-dev.orangeisland-abf82cd7.northeurope.azurecontainerapps.io`
+- Check Vercel Preview env vars `NEXT_PUBLIC_API_BASE_URL` and `ENGAGE7_API_BASE_URL`
+- Expected value: active Engage7 DEV API URL.
 - Redeploy after fixing the env var; `NEXT_PUBLIC_*` values are build-time client values
-- Open `/api/debug/env` on the deployment to compare runtime env with the browser console `[api-debug]` value
+- Use Vercel env inspection and server logs for hosted runtime checks; `/api/debug/env` is closed on hosted deployments
 
 ### "Social shares show wrong domain"
 
