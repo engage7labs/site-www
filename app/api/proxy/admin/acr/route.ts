@@ -55,10 +55,17 @@ interface AcrEnvironmentExpectation {
 
 interface AcrErrorInfo {
   detail: string;
-  type: "credential_unavailable" | "permission_denied" | "not_found" | "request_failed";
+  type:
+    | "credential_unavailable"
+    | "permission_denied"
+    | "not_found"
+    | "invalid_acr_request_shape"
+    | "request_failed";
   status_code: number | null;
   code: string | null;
   name: string | null;
+  failure_status: number | null;
+  failure_class: string;
 }
 
 const REPOSITORY_PATTERN = /^[a-z0-9][a-z0-9._/-]{0,254}$/;
@@ -96,12 +103,23 @@ function firstEnv(...names: string[]): string | null {
   return null;
 }
 
-function normalizeLoginServer(value: string): string {
+function normalizedAcrHostInput(value: string): string {
   return value
     .trim()
     .replace(/^https?:\/\//i, "")
-    .replace(/\/+$/g, "")
-    .toLowerCase();
+    .toLowerCase()
+    .split(/[/?#]/, 1)[0]
+    .replace(/:443$/, "")
+    .replace(/\.+$/g, "");
+}
+
+function normalizeRegistryName(value: string): string {
+  return normalizedAcrHostInput(value).replace(/\.azurecr\.io$/i, "");
+}
+
+function normalizeLoginServer(value: string): string {
+  const host = normalizedAcrHostInput(value);
+  return host.endsWith(".azurecr.io") ? host : `${host}.azurecr.io`;
 }
 
 function splitRefs(value: string | null): string[] {
@@ -159,12 +177,14 @@ function getConfig(): AcrConfig | null {
   const loginServer = configuredLoginServer
     ? normalizeLoginServer(configuredLoginServer)
     : configuredRegistryName
-      ? normalizeLoginServer(`${configuredRegistryName}.azurecr.io`)
+      ? normalizeLoginServer(configuredRegistryName)
       : null;
 
   if (!loginServer || !/^[a-z0-9]{5,50}\.azurecr\.io$/.test(loginServer)) {
     return null;
   }
+
+  const registryName = normalizeRegistryName(loginServer);
 
   const protectedValues = [
     ...splitRefs(process.env.ENGAGE7_ACR_PROTECTED_IMAGES ?? null),
@@ -186,7 +206,7 @@ function getConfig(): AcrConfig | null {
   return {
     loginServer,
     endpoint: `https://${loginServer}`,
-    registryName: loginServer.replace(/\.azurecr\.io$/, ""),
+    registryName,
     environmentLabel,
     resourceGroup,
     subscriptionId,
@@ -293,6 +313,8 @@ function classifyAcrError(error: unknown): AcrErrorInfo {
       status_code: statusCode,
       code,
       name,
+      failure_status: statusCode,
+      failure_class: "credential_unavailable",
     };
   }
 
@@ -304,6 +326,8 @@ function classifyAcrError(error: unknown): AcrErrorInfo {
       status_code: statusCode,
       code,
       name,
+      failure_status: statusCode,
+      failure_class: "permission_denied",
     };
   }
 
@@ -315,6 +339,21 @@ function classifyAcrError(error: unknown): AcrErrorInfo {
       status_code: statusCode,
       code,
       name,
+      failure_status: statusCode,
+      failure_class: "not_found",
+    };
+  }
+
+  if (statusCode === 400) {
+    return {
+      detail:
+        "ACR diagnostics reached Azure, but the registry data-plane request was rejected as invalid. Check the normalized ACR endpoint and SDK request shape.",
+      type: "invalid_acr_request_shape",
+      status_code: statusCode,
+      code,
+      name,
+      failure_status: statusCode,
+      failure_class: "invalid_acr_request_shape",
     };
   }
 
@@ -329,6 +368,8 @@ function classifyAcrError(error: unknown): AcrErrorInfo {
     status_code: statusCode,
     code,
     name,
+    failure_status: statusCode,
+    failure_class: "request_failed",
   };
 }
 
@@ -347,12 +388,36 @@ function buildAcrDiagnostics(config: AcrConfig | null, error?: AcrErrorInfo) {
       "AZURE_CONTAINER_REGISTRY_LOGIN_SERVER",
       "ACR_LOGIN_SERVER"
     );
+  const normalizedRegistryName = config?.registryName ?? (
+    configuredLoginServer
+      ? normalizeRegistryName(configuredLoginServer)
+      : configuredRegistryName
+        ? normalizeRegistryName(configuredRegistryName)
+        : null
+  );
+  const normalizedLoginServer = config?.loginServer ?? (
+    configuredLoginServer
+      ? normalizeLoginServer(configuredLoginServer)
+      : configuredRegistryName
+        ? normalizeLoginServer(configuredRegistryName)
+        : null
+  );
+  const normalizedEndpointHost = normalizedLoginServer;
+  const normalizedEndpoint = normalizedLoginServer ? `https://${normalizedLoginServer}` : null;
   const configuredResourceGroup =
     config?.resourceGroup ??
     firstEnv("ENGAGE7_AZURE_RESOURCE_GROUP", "AZURE_RESOURCE_GROUP", "ACA_JOB_RESOURCE_GROUP");
   const configuredSubscriptionId =
     config?.subscriptionId ??
     firstEnv("ENGAGE7_AZURE_SUBSCRIPTION_ID", "AZURE_SUBSCRIPTION_ID", "ACA_JOB_SUBSCRIPTION_ID");
+  const hasAzureCredential = Boolean(
+    firstEnv("AZURE_CLIENT_ID", "MANAGED_IDENTITY_CLIENT_ID") ||
+    (
+      firstEnv("AZURE_CLIENT_ID") &&
+      firstEnv("AZURE_TENANT_ID") &&
+      firstEnv("AZURE_CLIENT_SECRET", "AZURE_FEDERATED_TOKEN_FILE")
+    )
+  );
 
   return {
     environment_label: environmentLabel,
@@ -362,10 +427,16 @@ function buildAcrDiagnostics(config: AcrConfig | null, error?: AcrErrorInfo) {
       resource_group: configuredResourceGroup,
       subscription_id: redactSubscriptionForDisplay(configuredSubscriptionId),
     },
+    normalized: {
+      registry_name: normalizedRegistryName,
+      login_server: normalizedLoginServer,
+      endpoint: normalizedEndpoint,
+      endpoint_host: normalizedEndpointHost,
+    },
     expected,
     checks: {
       registry_matches_expected: expected && configuredRegistryName
-        ? configuredRegistryName === expected.registryName
+        ? normalizedRegistryName === expected.registryName
         : null,
       resource_group_matches_expected: expected && configuredResourceGroup
         ? configuredResourceGroup === expected.resourceGroup
@@ -377,6 +448,7 @@ function buildAcrDiagnostics(config: AcrConfig | null, error?: AcrErrorInfo) {
       azure_identity_env_present: Boolean(
         firstEnv("AZURE_CLIENT_ID", "AZURE_TENANT_ID", "AZURE_FEDERATED_TOKEN_FILE")
       ),
+      has_azure_credential: hasAzureCredential,
       managed_identity_hint_present: Boolean(firstEnv("AZURE_CLIENT_ID", "MANAGED_IDENTITY_CLIENT_ID")),
     },
     missing_env: [

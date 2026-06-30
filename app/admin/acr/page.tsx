@@ -87,6 +87,12 @@ interface AcrDiagnostics {
     resource_group: string | null;
     subscription_id: string | null;
   };
+  normalized: {
+    registry_name: string | null;
+    login_server: string | null;
+    endpoint: string | null;
+    endpoint_host: string | null;
+  };
   expected: {
     registryName: string;
     resourceGroup: string;
@@ -98,6 +104,7 @@ interface AcrDiagnostics {
     subscription_matches_expected: boolean | null;
     protected_refs_configured: boolean;
     azure_identity_env_present: boolean;
+    has_azure_credential?: boolean;
     managed_identity_hint_present: boolean;
   };
   missing_env: string[];
@@ -107,6 +114,8 @@ interface AcrDiagnostics {
     status_code: number | null;
     code: string | null;
     name: string | null;
+    failure_status?: number | null;
+    failure_class?: string;
   };
 }
 
@@ -223,6 +232,16 @@ function AcrDiagnosticsPanel({
             "-"}
         </p>
         <p>
+          <span className="text-card-foreground">Normalized ACR:</span>{" "}
+          {diagnostics.normalized?.login_server ??
+            diagnostics.normalized?.registry_name ??
+            "-"}
+        </p>
+        <p>
+          <span className="text-card-foreground">Endpoint host:</span>{" "}
+          {diagnostics.normalized?.endpoint_host ?? "-"}
+        </p>
+        <p>
           <span className="text-card-foreground">Expected ACR:</span>{" "}
           {diagnostics.expected?.registryName ?? "-"} (
           {checkLabel(diagnostics.checks.registry_matches_expected)})
@@ -239,7 +258,8 @@ function AcrDiagnosticsPanel({
         </p>
         <p>
           <span className="text-card-foreground">Identity hint:</span>{" "}
-          {diagnostics.checks.azure_identity_env_present ||
+          {diagnostics.checks.has_azure_credential ||
+          diagnostics.checks.azure_identity_env_present ||
           diagnostics.checks.managed_identity_hint_present
             ? "configured"
             : "not visible in env"}
