@@ -93,6 +93,11 @@ interface AcrDiagnostics {
     endpoint: string | null;
     endpoint_host: string | null;
   };
+  normalizedRegistryName?: string | null;
+  normalizedLoginServer?: string | null;
+  sdkEndpointHost?: string | null;
+  sdkEndpointHasHttps?: boolean;
+  sdkAudience?: string;
   expected: {
     registryName: string;
     resourceGroup: string;
@@ -116,6 +121,10 @@ interface AcrDiagnostics {
     name: string | null;
     failure_status?: number | null;
     failure_class?: string;
+    failed_step?: string;
+    failureStatus?: number | null;
+    failureClass?: string;
+    failedStep?: string;
   };
 }
 
@@ -239,7 +248,21 @@ function AcrDiagnosticsPanel({
         </p>
         <p>
           <span className="text-card-foreground">Endpoint host:</span>{" "}
-          {diagnostics.normalized?.endpoint_host ?? "-"}
+          {diagnostics.sdkEndpointHost ??
+            diagnostics.normalized?.endpoint_host ??
+            "-"}
+        </p>
+        <p>
+          <span className="text-card-foreground">SDK endpoint HTTPS:</span>{" "}
+          {diagnostics.sdkEndpointHasHttps === true
+            ? "true"
+            : diagnostics.sdkEndpointHasHttps === false
+              ? "false"
+              : "-"}
+        </p>
+        <p>
+          <span className="text-card-foreground">SDK audience:</span>{" "}
+          {diagnostics.sdkAudience?.replace(/^https:\/\//, "") ?? "-"}
         </p>
         <p>
           <span className="text-card-foreground">Expected ACR:</span>{" "}
@@ -278,6 +301,9 @@ function AcrDiagnosticsPanel({
           Azure failure: {diagnostics.error.type}
           {diagnostics.error.status_code
             ? ` (${diagnostics.error.status_code})`
+            : ""}
+          {diagnostics.error.failedStep || diagnostics.error.failed_step
+            ? ` at ${diagnostics.error.failedStep ?? diagnostics.error.failed_step}`
             : ""}
           {diagnostics.error.code ? ` · ${diagnostics.error.code}` : ""}
         </p>

@@ -20,6 +20,12 @@ export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
 type DeleteTargetType = "tag" | "manifest";
+type AcrFailureStep =
+  | "credential_initialization"
+  | "sdk_client_initialization"
+  | "list_repositories"
+  | "list_tags"
+  | "list_manifests";
 
 interface AcrConfig {
   loginServer: string;
@@ -66,6 +72,10 @@ interface AcrErrorInfo {
   name: string | null;
   failure_status: number | null;
   failure_class: string;
+  failed_step: AcrFailureStep;
+  failureStatus: number | null;
+  failureClass: string;
+  failedStep: AcrFailureStep;
 }
 
 const REPOSITORY_PATTERN = /^[a-z0-9][a-z0-9._/-]{0,254}$/;
@@ -73,6 +83,7 @@ const TAG_PATTERN = /^[A-Za-z0-9_][A-Za-z0-9_.-]{0,127}$/;
 const DIGEST_PATTERN = /^sha256:[a-f0-9]{64}$/;
 const DEFAULT_RECENT_PROTECTION_DAYS = 14;
 const EXPECTED_AZURE_SUBSCRIPTION_ID = "ae6de222-cc1b-4230-aa85-898b5dae9ef3";
+const SDK_AUDIENCE = KnownContainerRegistryAudience.AzureResourceManagerPublicCloud;
 const ENV_EXPECTATIONS: Record<string, AcrEnvironmentExpectation> = {
   "prod-neu": {
     registryName: "acrengage7prodneu",
@@ -222,9 +233,13 @@ function getConfig(): AcrConfig | null {
   };
 }
 
-function createClient(config: AcrConfig): ContainerRegistryClient {
-  return new ContainerRegistryClient(config.endpoint, new DefaultAzureCredential(), {
-    audience: KnownContainerRegistryAudience.AzureResourceManagerPublicCloud,
+function createCredential(): DefaultAzureCredential {
+  return new DefaultAzureCredential();
+}
+
+function createClient(config: AcrConfig, credential: DefaultAzureCredential): ContainerRegistryClient {
+  return new ContainerRegistryClient(config.endpoint, credential, {
+    audience: SDK_AUDIENCE,
   });
 }
 
@@ -244,6 +259,10 @@ function sizeFromManifest(manifest: ArtifactManifestProperties): number | null {
     : typeof record.size === "number"
       ? record.size
       : null;
+}
+
+function hasContinuationToken<T>(page: T[]): boolean {
+  return Boolean((page as T[] & { continuationToken?: unknown }).continuationToken);
 }
 
 function isRecent(value: Date | string | null | undefined, days: number): boolean {
@@ -291,7 +310,7 @@ function redactSubscriptionForDisplay(value: string | null): string | null {
   return value === EXPECTED_AZURE_SUBSCRIPTION_ID ? value : `configured (...${value.slice(-6)})`;
 }
 
-function classifyAcrError(error: unknown): AcrErrorInfo {
+function classifyAcrError(error: unknown, failedStep: AcrFailureStep): AcrErrorInfo {
   let statusCode: number | null = null;
   let code: string | null = null;
   let name: string | null = null;
@@ -305,8 +324,17 @@ function classifyAcrError(error: unknown): AcrErrorInfo {
     if (typeof rawName === "string") name = rawName;
   }
 
-  if (name === "CredentialUnavailableError" || code === "CredentialUnavailableError") {
+  function errorInfo(params: Omit<AcrErrorInfo, "failureStatus" | "failureClass" | "failedStep">): AcrErrorInfo {
     return {
+      ...params,
+      failureStatus: params.failure_status,
+      failureClass: params.failure_class,
+      failedStep: params.failed_step,
+    };
+  }
+
+  if (name === "CredentialUnavailableError" || code === "CredentialUnavailableError") {
+    return errorInfo({
       detail:
         "ACR diagnostics unavailable: Azure credential is unavailable for the Web runtime.",
       type: "credential_unavailable",
@@ -315,11 +343,12 @@ function classifyAcrError(error: unknown): AcrErrorInfo {
       name,
       failure_status: statusCode,
       failure_class: "credential_unavailable",
-    };
+      failed_step: failedStep,
+    });
   }
 
   if (statusCode === 401 || statusCode === 403) {
-    return {
+    return errorInfo({
       detail:
         "ACR diagnostics unavailable: Azure permission denied for the configured registry.",
       type: "permission_denied",
@@ -328,11 +357,12 @@ function classifyAcrError(error: unknown): AcrErrorInfo {
       name,
       failure_status: statusCode,
       failure_class: "permission_denied",
-    };
+      failed_step: failedStep,
+    });
   }
 
   if (statusCode === 404) {
-    return {
+    return errorInfo({
       detail:
         "ACR diagnostics unavailable: configured registry was not found or is not visible to this identity.",
       type: "not_found",
@@ -341,11 +371,12 @@ function classifyAcrError(error: unknown): AcrErrorInfo {
       name,
       failure_status: statusCode,
       failure_class: "not_found",
-    };
+      failed_step: failedStep,
+    });
   }
 
   if (statusCode === 400) {
-    return {
+    return errorInfo({
       detail:
         "ACR diagnostics reached Azure, but the registry data-plane request was rejected as invalid. Check the normalized ACR endpoint and SDK request shape.",
       type: "invalid_acr_request_shape",
@@ -354,10 +385,11 @@ function classifyAcrError(error: unknown): AcrErrorInfo {
       name,
       failure_status: statusCode,
       failure_class: "invalid_acr_request_shape",
-    };
+      failed_step: failedStep,
+    });
   }
 
-  return {
+  return errorInfo({
     detail:
       typeof statusCode === "number"
         ? `Azure ACR request failed with status ${statusCode}`
@@ -370,7 +402,32 @@ function classifyAcrError(error: unknown): AcrErrorInfo {
     name,
     failure_status: statusCode,
     failure_class: "request_failed",
-  };
+    failed_step: failedStep,
+  });
+}
+
+async function listRepositoryNames(
+  client: ContainerRegistryClient,
+  maxRepositories: number
+): Promise<{ names: string[]; truncated: boolean }> {
+  const names: string[] = [];
+  let truncated = false;
+
+  for await (const page of client.listRepositoryNames().byPage({ maxPageSize: maxRepositories })) {
+    for (const repositoryName of page) {
+      if (names.length >= maxRepositories) {
+        truncated = true;
+        break;
+      }
+      names.push(repositoryName);
+    }
+    if (truncated || names.length >= maxRepositories) {
+      truncated = hasContinuationToken(page);
+      break;
+    }
+  }
+
+  return { names, truncated };
 }
 
 function buildAcrDiagnostics(config: AcrConfig | null, error?: AcrErrorInfo) {
@@ -404,6 +461,7 @@ function buildAcrDiagnostics(config: AcrConfig | null, error?: AcrErrorInfo) {
   );
   const normalizedEndpointHost = normalizedLoginServer;
   const normalizedEndpoint = normalizedLoginServer ? `https://${normalizedLoginServer}` : null;
+  const sdkEndpointHasHttps = normalizedEndpoint ? normalizedEndpoint.startsWith("https://") : false;
   const configuredResourceGroup =
     config?.resourceGroup ??
     firstEnv("ENGAGE7_AZURE_RESOURCE_GROUP", "AZURE_RESOURCE_GROUP", "ACA_JOB_RESOURCE_GROUP");
@@ -433,6 +491,11 @@ function buildAcrDiagnostics(config: AcrConfig | null, error?: AcrErrorInfo) {
       endpoint: normalizedEndpoint,
       endpoint_host: normalizedEndpointHost,
     },
+    normalizedRegistryName,
+    normalizedLoginServer,
+    sdkEndpointHost: normalizedEndpointHost,
+    sdkEndpointHasHttps,
+    sdkAudience: SDK_AUDIENCE,
     expected,
     checks: {
       registry_matches_expected: expected && configuredRegistryName
@@ -494,21 +557,38 @@ export async function GET() {
     });
   }
 
-  const client = createClient(config);
   const repositories = [];
   let repositoryCount = 0;
   let totalManifestCount = 0;
   let totalTagCount = 0;
   let totalSizeBytes = 0;
   let repositoriesTruncated = false;
+  let client: ContainerRegistryClient;
 
   try {
-    for await (const repositoryName of client.listRepositoryNames()) {
-      if (repositoryCount >= config.maxRepositories) {
-        repositoriesTruncated = true;
-        break;
-      }
+    let credential: DefaultAzureCredential;
+    try {
+      credential = createCredential();
+    } catch (error) {
+      throw classifyAcrError(error, "credential_initialization");
+    }
 
+    try {
+      client = createClient(config, credential);
+    } catch (error) {
+      throw classifyAcrError(error, "sdk_client_initialization");
+    }
+
+    let repositoryNames: string[];
+    try {
+      const result = await listRepositoryNames(client, config.maxRepositories);
+      repositoryNames = result.names;
+      repositoriesTruncated = result.truncated;
+    } catch (error) {
+      throw classifyAcrError(error, "list_repositories");
+    }
+
+    for (const repositoryName of repositoryNames) {
       repositoryCount += 1;
       const repository = client.getRepository(repositoryName);
       const properties = await repository.getProperties().catch(() => null);
@@ -516,83 +596,106 @@ export async function GET() {
       let manifestCount = 0;
       let manifestsTruncated = false;
 
-      for await (const manifest of repository.listManifestProperties({
-        order: "LastUpdatedOnDescending",
-      })) {
-        if (manifestCount >= config.maxManifestsPerRepository) {
-          manifestsTruncated = true;
-          break;
-        }
+      try {
+        for await (const page of repository
+          .listManifestProperties({ order: "LastUpdatedOnDescending" })
+          .byPage({ maxPageSize: config.maxManifestsPerRepository })) {
+          for (const manifest of page) {
+            if (manifestCount >= config.maxManifestsPerRepository) {
+              manifestsTruncated = true;
+              break;
+            }
 
-        manifestCount += 1;
-        totalManifestCount += 1;
-        const manifestSize = sizeFromManifest(manifest);
-        if (manifestSize) totalSizeBytes += manifestSize;
+            manifestCount += 1;
+            totalManifestCount += 1;
+            const manifestSize = sizeFromManifest(manifest);
+            if (manifestSize) totalSizeBytes += manifestSize;
 
-        const artifact = repository.getArtifact(manifest.digest);
-        const tags = [];
-        let tagCount = 0;
-        let tagsTruncated = false;
+            const artifact = repository.getArtifact(manifest.digest);
+            const tags = [];
+            let tagCount = 0;
+            let tagsTruncated = false;
 
-        for await (const tag of artifact.listTagProperties({
-          order: "LastUpdatedOnDescending",
-        })) {
-          if (tagCount >= config.maxTagsPerManifest) {
-            tagsTruncated = true;
+            try {
+              for await (const tagPage of artifact
+                .listTagProperties({ order: "LastUpdatedOnDescending" })
+                .byPage({ maxPageSize: config.maxTagsPerManifest })) {
+                for (const tag of tagPage) {
+                  if (tagCount >= config.maxTagsPerManifest) {
+                    tagsTruncated = true;
+                    break;
+                  }
+                  tagCount += 1;
+                  totalTagCount += 1;
+
+                  const tagProtected = isProtectedRef(config, repositoryName, tag.name, tag.digest);
+                  const tagRecent = isRecent(tag.lastUpdatedOn, config.recentProtectionDays);
+                  tags.push({
+                    name: tag.name,
+                    digest: tag.digest,
+                    created_at: toIso(tag.createdOn),
+                    last_updated_at: toIso(tag.lastUpdatedOn),
+                    can_delete: tag.canDelete !== false && !tagProtected,
+                    status: statusForTarget({
+                      protected: tagProtected,
+                      recent: tagRecent,
+                      registryCanDelete: tag.canDelete !== false,
+                      detectionConfigured: config.protectedRefsConfigured,
+                    }),
+                    protected: tagProtected,
+                    recent: tagRecent,
+                  });
+                }
+                if (tagsTruncated || tagCount >= config.maxTagsPerManifest) {
+                  tagsTruncated = hasContinuationToken(tagPage);
+                  break;
+                }
+              }
+            } catch (error) {
+              throw classifyAcrError(error, "list_tags");
+            }
+
+            const manifestTags = manifest.tags ?? tags.map((tag) => tag.name);
+            const manifestProtected =
+              isProtectedRef(config, repositoryName, null, manifest.digest) ||
+              manifestTags.some((manifestTag) =>
+                isProtectedRef(config, repositoryName, manifestTag, manifest.digest)
+              ) ||
+              tags.some((tag) => tag.protected);
+            const manifestRecent = isRecent(manifest.lastUpdatedOn, config.recentProtectionDays);
+
+            manifests.push({
+              digest: manifest.digest,
+              tags: manifestTags,
+              tag_details: tags,
+              tags_truncated: tagsTruncated,
+              size_bytes: manifestSize,
+              created_at: toIso(manifest.createdOn),
+              last_updated_at: toIso(manifest.lastUpdatedOn),
+              architecture: manifest.architecture ?? null,
+              operating_system: manifest.operatingSystem ?? null,
+              related_artifact_count: manifest.relatedArtifacts?.length ?? 0,
+              can_delete: manifest.canDelete !== false && !manifestProtected,
+              status: statusForTarget({
+                protected: manifestProtected,
+                recent: manifestRecent,
+                registryCanDelete: manifest.canDelete !== false,
+                detectionConfigured: config.protectedRefsConfigured,
+              }),
+              protected: manifestProtected,
+              recent: manifestRecent,
+            });
+          }
+          if (manifestsTruncated || manifestCount >= config.maxManifestsPerRepository) {
+            manifestsTruncated = hasContinuationToken(page);
             break;
           }
-          tagCount += 1;
-          totalTagCount += 1;
-
-          const tagProtected = isProtectedRef(config, repositoryName, tag.name, tag.digest);
-          const tagRecent = isRecent(tag.lastUpdatedOn, config.recentProtectionDays);
-          tags.push({
-            name: tag.name,
-            digest: tag.digest,
-            created_at: toIso(tag.createdOn),
-            last_updated_at: toIso(tag.lastUpdatedOn),
-            can_delete: tag.canDelete !== false && !tagProtected,
-            status: statusForTarget({
-              protected: tagProtected,
-              recent: tagRecent,
-              registryCanDelete: tag.canDelete !== false,
-              detectionConfigured: config.protectedRefsConfigured,
-            }),
-            protected: tagProtected,
-            recent: tagRecent,
-          });
         }
-
-        const manifestTags = manifest.tags ?? tags.map((tag) => tag.name);
-        const manifestProtected =
-          isProtectedRef(config, repositoryName, null, manifest.digest) ||
-          manifestTags.some((manifestTag) =>
-            isProtectedRef(config, repositoryName, manifestTag, manifest.digest)
-          ) ||
-          tags.some((tag) => tag.protected);
-        const manifestRecent = isRecent(manifest.lastUpdatedOn, config.recentProtectionDays);
-
-        manifests.push({
-          digest: manifest.digest,
-          tags: manifestTags,
-          tag_details: tags,
-          tags_truncated: tagsTruncated,
-          size_bytes: manifestSize,
-          created_at: toIso(manifest.createdOn),
-          last_updated_at: toIso(manifest.lastUpdatedOn),
-          architecture: manifest.architecture ?? null,
-          operating_system: manifest.operatingSystem ?? null,
-          related_artifact_count: manifest.relatedArtifacts?.length ?? 0,
-          can_delete: manifest.canDelete !== false && !manifestProtected,
-          status: statusForTarget({
-            protected: manifestProtected,
-            recent: manifestRecent,
-            registryCanDelete: manifest.canDelete !== false,
-            detectionConfigured: config.protectedRefsConfigured,
-          }),
-          protected: manifestProtected,
-          recent: manifestRecent,
-        });
+      } catch (error) {
+        if (error && typeof error === "object" && "failed_step" in error) {
+          throw error;
+        }
+        throw classifyAcrError(error, "list_manifests");
       }
 
       repositories.push({
@@ -636,7 +739,10 @@ export async function GET() {
       repositories,
     });
   } catch (error) {
-    const errorInfo = classifyAcrError(error);
+    const errorInfo =
+      error && typeof error === "object" && "failed_step" in error
+        ? (error as AcrErrorInfo)
+        : classifyAcrError(error, "list_repositories");
     return NextResponse.json(
       {
         detail: errorInfo.detail,
@@ -706,7 +812,7 @@ export async function DELETE(request: NextRequest) {
     );
   }
 
-  const client = createClient(config);
+  const client = createClient(config, createCredential());
   const repositoryClient = client.getRepository(repository);
 
   try {
@@ -780,7 +886,7 @@ export async function DELETE(request: NextRequest) {
       deleted_tags: manifest.tags ?? [],
     });
   } catch (error) {
-    const errorInfo = classifyAcrError(error);
+    const errorInfo = classifyAcrError(error, targetType === "tag" ? "list_tags" : "list_manifests");
     auditAcr(targetType === "tag" ? "delete_tag" : "delete_manifest", "failed", {
       repository,
       tag: targetType === "tag" ? tag : null,
