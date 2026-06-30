@@ -54,6 +54,7 @@ interface AcrRepository {
 
 interface AcrResponse {
   enabled: boolean;
+  status?: string;
   detail?: string;
   diagnostics?: AcrDiagnostics;
   registry?: {
@@ -98,6 +99,11 @@ interface AcrDiagnostics {
   sdkEndpointHost?: string | null;
   sdkEndpointHasHttps?: boolean;
   sdkAudience?: string;
+  credentialClientIdSuffix?: string | null;
+  protectedRefsCount?: number;
+  protectedRepositories?: string[];
+  knownImageCheckStatus?: string | null;
+  catalogListingStatus?: string | null;
   expected: {
     registryName: string;
     resourceGroup: string;
@@ -125,6 +131,8 @@ interface AcrDiagnostics {
     failureStatus?: number | null;
     failureClass?: string;
     failedStep?: string;
+    safe_error_snippet?: string | null;
+    safeErrorSnippet?: string | null;
   };
 }
 
@@ -287,6 +295,26 @@ function AcrDiagnosticsPanel({
             ? "configured"
             : "not visible in env"}
         </p>
+        <p>
+          <span className="text-card-foreground">Client ID suffix:</span>{" "}
+          {diagnostics.credentialClientIdSuffix ?? "-"}
+        </p>
+        <p>
+          <span className="text-card-foreground">Protected refs:</span>{" "}
+          {diagnostics.protectedRefsCount ?? 0}
+        </p>
+        <p>
+          <span className="text-card-foreground">Known repositories:</span>{" "}
+          {diagnostics.protectedRepositories?.join(", ") || "-"}
+        </p>
+        <p>
+          <span className="text-card-foreground">Known image check:</span>{" "}
+          {diagnostics.knownImageCheckStatus ?? "-"}
+        </p>
+        <p>
+          <span className="text-card-foreground">Catalog listing:</span>{" "}
+          {diagnostics.catalogListingStatus ?? "-"}
+        </p>
       </div>
       {diagnostics.missing_env.length > 0 && (
         <p className="mt-3 text-xs text-amber-300">
@@ -306,6 +334,9 @@ function AcrDiagnosticsPanel({
             ? ` at ${diagnostics.error.failedStep ?? diagnostics.error.failed_step}`
             : ""}
           {diagnostics.error.code ? ` · ${diagnostics.error.code}` : ""}
+          {diagnostics.error.safeErrorSnippet || diagnostics.error.safe_error_snippet
+            ? ` · ${diagnostics.error.safeErrorSnippet ?? diagnostics.error.safe_error_snippet}`
+            : ""}
         </p>
       )}
     </div>
@@ -507,6 +538,7 @@ export default function AdminAcrPage() {
           <h1 className="text-2xl font-bold text-foreground">ACR</h1>
           <p className="mt-1 text-sm text-muted-foreground">
             {data.registry?.login_server ?? "Container Registry"}
+            {data.status ? ` · ${data.status}` : ""}
           </p>
         </div>
         <button

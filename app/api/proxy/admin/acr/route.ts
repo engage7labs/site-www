@@ -23,7 +23,11 @@ type DeleteTargetType = "tag" | "manifest";
 type AcrFailureStep =
   | "credential_initialization"
   | "sdk_client_initialization"
-  | "list_repositories"
+  | "protected_ref_parse"
+  | "known_repository_lookup"
+  | "known_tag_lookup"
+  | "known_manifest_lookup"
+  | "catalog_list_repositories"
   | "list_tags"
   | "list_manifests";
 
@@ -35,6 +39,7 @@ interface AcrConfig {
   resourceGroup: string | null;
   subscriptionId: string | null;
   protectedRefs: Set<string>;
+  protectedImageRefs: ProtectedImageRef[];
   protectedRefsConfigured: boolean;
   recentProtectionDays: number;
   maxRepositories: number;
@@ -76,6 +81,61 @@ interface AcrErrorInfo {
   failureStatus: number | null;
   failureClass: string;
   failedStep: AcrFailureStep;
+  safe_error_snippet: string | null;
+  safeErrorSnippet: string | null;
+}
+
+interface ProtectedImageRef {
+  repository: string;
+  tag: string | null;
+  digest: string | null;
+  reference: string;
+}
+
+interface AcrRepositoryResult {
+  name: string;
+  created_at: string | null;
+  last_updated_at: string | null;
+  manifest_count: number;
+  tag_count: number;
+  can_delete: false;
+  status: string;
+  manifests: Array<{
+    digest: string;
+    tags: string[];
+    tag_details: Array<{
+      name: string;
+      digest: string;
+      created_at: string | null;
+      last_updated_at: string | null;
+      can_delete: boolean;
+      status: "protected" | "registry locked" | "recent" | "review required";
+      protected: boolean;
+      recent: boolean;
+    }>;
+    tags_truncated: boolean;
+    size_bytes: number | null;
+    created_at: string | null;
+    last_updated_at: string | null;
+    architecture: string | null;
+    operating_system: string | null;
+    related_artifact_count: number;
+    can_delete: boolean;
+    status: "protected" | "registry locked" | "recent" | "review required";
+    protected: boolean;
+    recent: boolean;
+  }>;
+  manifests_truncated: boolean;
+}
+
+interface AcrListResult {
+  repositories: AcrRepositoryResult[];
+  repositoryCount: number;
+  totalManifestCount: number;
+  totalTagCount: number;
+  totalSizeBytes: number;
+  repositoriesTruncated: boolean;
+  error: AcrErrorInfo | null;
 }
 
 const REPOSITORY_PATTERN = /^[a-z0-9][a-z0-9._/-]{0,254}$/;
@@ -151,6 +211,36 @@ function normalizeProtectedRef(value: string, loginServer: string): string | nul
   return withoutRegistry.toLowerCase();
 }
 
+function parseProtectedImageRef(value: string, loginServer: string): ProtectedImageRef | null {
+  const withoutProtocol = value.trim().replace(/^https?:\/\//i, "").replace(/\/+$/g, "");
+  if (!withoutProtocol.startsWith(`${loginServer}/`)) return null;
+  const imageRef = withoutProtocol.slice(loginServer.length + 1);
+  const digestIndex = imageRef.indexOf("@sha256:");
+  if (digestIndex > 0) {
+    const repository = imageRef.slice(0, digestIndex).toLowerCase();
+    const digest = imageRef.slice(digestIndex + 1).toLowerCase();
+    if (!isValidRepository(repository) || !DIGEST_PATTERN.test(digest)) return null;
+    return {
+      repository,
+      tag: null,
+      digest,
+      reference: `${repository}@${digest}`,
+    };
+  }
+
+  const tagIndex = imageRef.lastIndexOf(":");
+  if (tagIndex <= 0) return null;
+  const repository = imageRef.slice(0, tagIndex).toLowerCase();
+  const tag = imageRef.slice(tagIndex + 1);
+  if (!isValidRepository(repository) || !TAG_PATTERN.test(tag)) return null;
+  return {
+    repository,
+    tag,
+    digest: null,
+    reference: `${repository}:${tag}`,
+  };
+}
+
 function intFromEnv(name: string, fallback: number): number {
   const raw = process.env[name]?.trim();
   if (!raw) return fallback;
@@ -213,6 +303,14 @@ function getConfig(): AcrConfig | null {
       .map((item) => normalizeProtectedRef(item, loginServer))
       .filter((item): item is string => Boolean(item))
   );
+  const protectedImageRefs = Array.from(
+    new Map(
+      protectedValues
+        .map((item) => parseProtectedImageRef(item, loginServer))
+        .filter((item): item is ProtectedImageRef => Boolean(item))
+        .map((item) => [item.reference.toLowerCase(), item])
+    ).values()
+  );
 
   return {
     loginServer,
@@ -222,6 +320,7 @@ function getConfig(): AcrConfig | null {
     resourceGroup,
     subscriptionId,
     protectedRefs,
+    protectedImageRefs,
     protectedRefsConfigured: protectedRefs.size > 0,
     recentProtectionDays: intFromEnv(
       "ENGAGE7_ACR_RECENT_PROTECTION_DAYS",
@@ -310,6 +409,30 @@ function redactSubscriptionForDisplay(value: string | null): string | null {
   return value === EXPECTED_AZURE_SUBSCRIPTION_ID ? value : `configured (...${value.slice(-6)})`;
 }
 
+function credentialClientIdSuffix(): string | null {
+  const value = firstEnv("AZURE_CLIENT_ID", "MANAGED_IDENTITY_CLIENT_ID");
+  return value ? value.slice(-8) : null;
+}
+
+function safeErrorSnippet(error: unknown): string | null {
+  let raw: string | null = null;
+  if (error && typeof error === "object") {
+    const parsedBody = (error as { parsedBody?: unknown }).parsedBody;
+    if (parsedBody && typeof parsedBody === "object") {
+      const message = (parsedBody as { message?: unknown; error?: { message?: unknown } }).message ??
+        (parsedBody as { error?: { message?: unknown } }).error?.message;
+      if (typeof message === "string") raw = message;
+    }
+    if (!raw) {
+      const message = (error as { message?: unknown }).message;
+      if (typeof message === "string") raw = message;
+    }
+  }
+  if (!raw) return null;
+  if (/(authorization|bearer|token|secret|password|client_secret|refresh)/i.test(raw)) return null;
+  return raw.replace(/\s+/g, " ").slice(0, 220);
+}
+
 function classifyAcrError(error: unknown, failedStep: AcrFailureStep): AcrErrorInfo {
   let statusCode: number | null = null;
   let code: string | null = null;
@@ -324,12 +447,15 @@ function classifyAcrError(error: unknown, failedStep: AcrFailureStep): AcrErrorI
     if (typeof rawName === "string") name = rawName;
   }
 
-  function errorInfo(params: Omit<AcrErrorInfo, "failureStatus" | "failureClass" | "failedStep">): AcrErrorInfo {
+  function errorInfo(
+    params: Omit<AcrErrorInfo, "failureStatus" | "failureClass" | "failedStep" | "safeErrorSnippet">
+  ): AcrErrorInfo {
     return {
       ...params,
       failureStatus: params.failure_status,
       failureClass: params.failure_class,
       failedStep: params.failed_step,
+      safeErrorSnippet: params.safe_error_snippet,
     };
   }
 
@@ -344,6 +470,7 @@ function classifyAcrError(error: unknown, failedStep: AcrFailureStep): AcrErrorI
       failure_status: statusCode,
       failure_class: "credential_unavailable",
       failed_step: failedStep,
+      safe_error_snippet: safeErrorSnippet(error),
     });
   }
 
@@ -358,6 +485,7 @@ function classifyAcrError(error: unknown, failedStep: AcrFailureStep): AcrErrorI
       failure_status: statusCode,
       failure_class: "permission_denied",
       failed_step: failedStep,
+      safe_error_snippet: safeErrorSnippet(error),
     });
   }
 
@@ -372,6 +500,7 @@ function classifyAcrError(error: unknown, failedStep: AcrFailureStep): AcrErrorI
       failure_status: statusCode,
       failure_class: "not_found",
       failed_step: failedStep,
+      safe_error_snippet: safeErrorSnippet(error),
     });
   }
 
@@ -386,6 +515,7 @@ function classifyAcrError(error: unknown, failedStep: AcrFailureStep): AcrErrorI
       failure_status: statusCode,
       failure_class: "invalid_acr_request_shape",
       failed_step: failedStep,
+      safe_error_snippet: safeErrorSnippet(error),
     });
   }
 
@@ -403,6 +533,7 @@ function classifyAcrError(error: unknown, failedStep: AcrFailureStep): AcrErrorI
     failure_status: statusCode,
     failure_class: "request_failed",
     failed_step: failedStep,
+    safe_error_snippet: safeErrorSnippet(error),
   });
 }
 
@@ -430,7 +561,14 @@ async function listRepositoryNames(
   return { names, truncated };
 }
 
-function buildAcrDiagnostics(config: AcrConfig | null, error?: AcrErrorInfo) {
+function buildAcrDiagnostics(
+  config: AcrConfig | null,
+  error?: AcrErrorInfo,
+  statuses?: {
+    knownImageCheckStatus?: string;
+    catalogListingStatus?: string;
+  }
+) {
   const environmentLabel =
     config?.environmentLabel ??
     firstEnv("NEXT_PUBLIC_ADMIN_ENV_LABEL", "ENGAGE7_ENVIRONMENT_LABEL", "APP_ENV");
@@ -496,6 +634,11 @@ function buildAcrDiagnostics(config: AcrConfig | null, error?: AcrErrorInfo) {
     sdkEndpointHost: normalizedEndpointHost,
     sdkEndpointHasHttps,
     sdkAudience: SDK_AUDIENCE,
+    credentialClientIdSuffix: credentialClientIdSuffix(),
+    protectedRefsCount: config?.protectedImageRefs.length ?? 0,
+    protectedRepositories: Array.from(new Set(config?.protectedImageRefs.map((item) => item.repository) ?? [])),
+    knownImageCheckStatus: statuses?.knownImageCheckStatus ?? null,
+    catalogListingStatus: statuses?.catalogListingStatus ?? null,
     expected,
     checks: {
       registry_matches_expected: expected && configuredRegistryName
@@ -541,51 +684,158 @@ function auditAcr(action: string, status: string, details: Record<string, string
   });
 }
 
-export async function GET() {
-  const session = await requireAdmin();
-  if (!session) {
-    return NextResponse.json({ detail: "Forbidden" }, { status: 403 });
+function emptyListResult(): AcrListResult {
+  return {
+    repositories: [],
+    repositoryCount: 0,
+    totalManifestCount: 0,
+    totalTagCount: 0,
+    totalSizeBytes: 0,
+    repositoriesTruncated: false,
+    error: null,
+  };
+}
+
+function appendRepositoryResult(
+  repositories: AcrRepositoryResult[],
+  repositoryResult: AcrRepositoryResult
+) {
+  const existing = repositories.find((item) => item.name === repositoryResult.name);
+  if (!existing) {
+    repositories.push(repositoryResult);
+    return;
+  }
+  existing.manifests.push(...repositoryResult.manifests);
+  existing.manifest_count = existing.manifests.length;
+  existing.tag_count += repositoryResult.tag_count;
+  existing.last_updated_at = existing.last_updated_at ?? repositoryResult.last_updated_at;
+}
+
+function buildRepositoryResult(params: {
+  config: AcrConfig;
+  imageRef: ProtectedImageRef;
+  manifest: ArtifactManifestProperties;
+  tag: ArtifactTagProperties | null;
+}): AcrRepositoryResult {
+  const { config, imageRef, manifest, tag } = params;
+  const manifestSize = sizeFromManifest(manifest);
+  const tagDetails = tag
+    ? [{
+        name: tag.name,
+        digest: tag.digest,
+        created_at: toIso(tag.createdOn),
+        last_updated_at: toIso(tag.lastUpdatedOn),
+        can_delete: false,
+        status: "protected" as const,
+        protected: true,
+        recent: isRecent(tag.lastUpdatedOn, config.recentProtectionDays),
+      }]
+    : [];
+  const manifestTags = manifest.tags ?? tagDetails.map((item) => item.name);
+  const manifestRecent = isRecent(manifest.lastUpdatedOn, config.recentProtectionDays);
+
+  return {
+    name: imageRef.repository,
+    created_at: null,
+    last_updated_at: toIso(manifest.lastUpdatedOn ?? tag?.lastUpdatedOn),
+    manifest_count: 1,
+    tag_count: tagDetails.length || manifestTags.length,
+    can_delete: false,
+    status: "repository delete disabled",
+    manifests: [{
+      digest: manifest.digest,
+      tags: manifestTags,
+      tag_details: tagDetails,
+      tags_truncated: false,
+      size_bytes: manifestSize,
+      created_at: toIso(manifest.createdOn),
+      last_updated_at: toIso(manifest.lastUpdatedOn),
+      architecture: manifest.architecture ?? null,
+      operating_system: manifest.operatingSystem ?? null,
+      related_artifact_count: manifest.relatedArtifacts?.length ?? 0,
+      can_delete: false,
+      status: statusForTarget({
+        protected: true,
+        recent: manifestRecent,
+        registryCanDelete: false,
+        detectionConfigured: config.protectedRefsConfigured,
+      }),
+      protected: true,
+      recent: manifestRecent,
+    }],
+    manifests_truncated: false,
+  };
+}
+
+async function checkKnownProtectedRefs(
+  client: ContainerRegistryClient,
+  config: AcrConfig
+): Promise<AcrListResult> {
+  const result = emptyListResult();
+
+  for (const imageRef of config.protectedImageRefs) {
+    const repository = client.getRepository(imageRef.repository);
+    try {
+      await repository.getProperties().catch(() => null);
+    } catch (error) {
+      result.error = classifyAcrError(error, "known_repository_lookup");
+      continue;
+    }
+
+    try {
+      if (imageRef.tag) {
+        const tagArtifact = repository.getArtifact(imageRef.tag);
+        const tag = await tagArtifact.getTagProperties(imageRef.tag);
+        const manifest = await repository.getArtifact(tag.digest).getManifestProperties();
+        appendRepositoryResult(result.repositories, buildRepositoryResult({
+          config,
+          imageRef,
+          manifest,
+          tag,
+        }));
+      } else if (imageRef.digest) {
+        const manifest = await repository.getArtifact(imageRef.digest).getManifestProperties();
+        appendRepositoryResult(result.repositories, buildRepositoryResult({
+          config,
+          imageRef,
+          manifest,
+          tag: null,
+        }));
+      }
+    } catch (error) {
+      result.error = classifyAcrError(error, imageRef.tag ? "known_tag_lookup" : "known_manifest_lookup");
+    }
   }
 
-  const config = getConfig();
-  if (!config) {
-    return NextResponse.json({
-      enabled: false,
-      detail: "Azure Container Registry is not configured for this Web environment.",
-      diagnostics: buildAcrDiagnostics(null),
-      repositories: [],
-    });
-  }
+  result.repositoryCount = result.repositories.length;
+  result.totalManifestCount = result.repositories.reduce((sum, repo) => sum + repo.manifests.length, 0);
+  result.totalTagCount = result.repositories.reduce((sum, repo) => sum + repo.tag_count, 0);
+  result.totalSizeBytes = result.repositories.reduce(
+    (sum, repo) => sum + repo.manifests.reduce((manifestSum, manifest) => manifestSum + (manifest.size_bytes ?? 0), 0),
+    0
+  );
+  return result;
+}
 
-  const repositories = [];
+async function checkCatalogListing(
+  client: ContainerRegistryClient,
+  config: AcrConfig
+): Promise<AcrListResult> {
+  const repositories: AcrRepositoryResult[] = [];
   let repositoryCount = 0;
   let totalManifestCount = 0;
   let totalTagCount = 0;
   let totalSizeBytes = 0;
   let repositoriesTruncated = false;
-  let client: ContainerRegistryClient;
 
   try {
-    let credential: DefaultAzureCredential;
-    try {
-      credential = createCredential();
-    } catch (error) {
-      throw classifyAcrError(error, "credential_initialization");
-    }
-
-    try {
-      client = createClient(config, credential);
-    } catch (error) {
-      throw classifyAcrError(error, "sdk_client_initialization");
-    }
-
     let repositoryNames: string[];
     try {
       const result = await listRepositoryNames(client, config.maxRepositories);
       repositoryNames = result.names;
       repositoriesTruncated = result.truncated;
     } catch (error) {
-      throw classifyAcrError(error, "list_repositories");
+      throw classifyAcrError(error, "catalog_list_repositories");
     }
 
     for (const repositoryName of repositoryNames) {
@@ -713,44 +963,144 @@ export async function GET() {
       });
     }
 
-    return NextResponse.json({
-      enabled: true,
-      registry: {
-        name: config.registryName,
-        login_server: config.loginServer,
-        endpoint: config.endpoint,
-      },
-      diagnostics: buildAcrDiagnostics(config),
-      protected_detection: {
-        configured: config.protectedRefsConfigured,
-        protected_ref_count: config.protectedRefs.size,
-        recent_protection_days: config.recentProtectionDays,
-      },
-      limits: {
-        max_repositories: config.maxRepositories,
-        max_manifests_per_repository: config.maxManifestsPerRepository,
-        max_tags_per_manifest: config.maxTagsPerManifest,
-      },
-      total_count: repositoryCount,
-      total_manifest_count: totalManifestCount,
-      total_tag_count: totalTagCount,
-      total_size_bytes: totalSizeBytes,
-      repositories_truncated: repositoriesTruncated,
+    return {
       repositories,
-    });
+      repositoryCount,
+      totalManifestCount,
+      totalTagCount,
+      totalSizeBytes,
+      repositoriesTruncated,
+      error: null,
+    };
   } catch (error) {
     const errorInfo =
       error && typeof error === "object" && "failed_step" in error
         ? (error as AcrErrorInfo)
-        : classifyAcrError(error, "list_repositories");
+        : classifyAcrError(error, "catalog_list_repositories");
+    return {
+      ...emptyListResult(),
+      error: errorInfo,
+    };
+  }
+}
+
+export async function GET() {
+  const session = await requireAdmin();
+  if (!session) {
+    return NextResponse.json({ detail: "Forbidden" }, { status: 403 });
+  }
+
+  const config = getConfig();
+  if (!config) {
     return NextResponse.json(
       {
-        detail: errorInfo.detail,
-        diagnostics: buildAcrDiagnostics(config, errorInfo),
+        enabled: false,
+        detail: "Azure Container Registry is not configured for this Web environment.",
+        diagnostics: buildAcrDiagnostics(null),
+        repositories: [],
+      }
+    );
+  }
+
+  let credential: DefaultAzureCredential;
+  try {
+    credential = createCredential();
+  } catch (error) {
+    const errorInfo = classifyAcrError(error, "credential_initialization");
+    return NextResponse.json(
+      { detail: errorInfo.detail, diagnostics: buildAcrDiagnostics(config, errorInfo) },
+      { status: 503 }
+    );
+  }
+
+  let client: ContainerRegistryClient;
+  try {
+    client = createClient(config, credential);
+  } catch (error) {
+    const errorInfo = classifyAcrError(error, "sdk_client_initialization");
+    return NextResponse.json(
+      { detail: errorInfo.detail, diagnostics: buildAcrDiagnostics(config, errorInfo) },
+      { status: 503 }
+    );
+  }
+
+  const knownResult = config.protectedImageRefs.length > 0
+    ? await checkKnownProtectedRefs(client, config)
+    : emptyListResult();
+  const protectedParseError = config.protectedRefsConfigured && config.protectedImageRefs.length === 0
+    ? classifyAcrError(
+        new Error("Configured protected image refs did not match the normalized ACR login server or tag/digest shape."),
+        "protected_ref_parse"
+      )
+    : null;
+  const catalogResult = await checkCatalogListing(client, config);
+  const useKnownResults = knownResult.repositories.length > 0;
+  const selectedResult = useKnownResults ? knownResult : catalogResult;
+  const blockingError = !useKnownResults ? catalogResult.error ?? knownResult.error ?? protectedParseError : null;
+
+  if (blockingError) {
+    return NextResponse.json(
+      {
+        detail: blockingError.detail,
+        diagnostics: buildAcrDiagnostics(config, blockingError, {
+          knownImageCheckStatus: protectedParseError
+            ? "protected_ref_parse_failed"
+            : config.protectedImageRefs.length > 0
+              ? "failed"
+              : "missing_protected_image_refs_env",
+          catalogListingStatus: catalogResult.error ? "catalog_listing_failed" : "ok",
+        }),
       },
       { status: 503 }
     );
   }
+
+  const knownImageCheckStatus = config.protectedImageRefs.length === 0
+    ? protectedParseError
+      ? "protected_ref_parse_failed"
+      : "missing_protected_image_refs_env"
+    : knownResult.error
+      ? "partial_success"
+      : "ok";
+  const catalogListingStatus = catalogResult.error ? "catalog_listing_failed" : "ok";
+  const overallStatus =
+    useKnownResults && catalogResult.error
+      ? "protected_images_ok_catalog_unavailable"
+      : useKnownResults && knownResult.error
+        ? "partial_success"
+      : useKnownResults
+        ? "success"
+        : "catalog_success";
+
+  return NextResponse.json({
+    enabled: true,
+    status: overallStatus,
+    registry: {
+      name: config.registryName,
+      login_server: config.loginServer,
+      endpoint: config.endpoint,
+    },
+    diagnostics: buildAcrDiagnostics(config, catalogResult.error ?? knownResult.error ?? protectedParseError ?? undefined, {
+      knownImageCheckStatus,
+      catalogListingStatus,
+    }),
+    protected_detection: {
+      configured: config.protectedRefsConfigured,
+      protected_ref_count: config.protectedRefs.size,
+      recent_protection_days: config.recentProtectionDays,
+    },
+    limits: {
+      max_repositories: config.maxRepositories,
+      max_manifests_per_repository: config.maxManifestsPerRepository,
+      max_tags_per_manifest: config.maxTagsPerManifest,
+    },
+    total_count: selectedResult.repositoryCount,
+    total_manifest_count: selectedResult.totalManifestCount,
+    total_tag_count: selectedResult.totalTagCount,
+    total_size_bytes: selectedResult.totalSizeBytes,
+    repositories_truncated: selectedResult.repositoriesTruncated,
+    repositories: selectedResult.repositories,
+  });
 }
 
 export async function DELETE(request: NextRequest) {
