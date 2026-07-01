@@ -9,6 +9,9 @@ main branch → production → deploy to: www.engage7.ie / engage7.ie
 dev branch  → development → deploy to: dev.engage7.ie
 ```
 
+`main` is the intended production publication branch. `dev` is the intended DEV
+publication branch.
+
 ## Environment Variables
 
 ### Per-Environment Configuration (via Vercel Dashboard)
@@ -21,13 +24,31 @@ Both **Production** and **Preview** deployments must set these variables:
 - `NEXT_PUBLIC_SITE_URL=https://www.engage7.ie`
 - `NEXT_PUBLIC_API_BASE_URL=<active Engage7 PROD API URL>`
 - `ENGAGE7_API_BASE_URL=<active Engage7 PROD API URL>`
+- `NEXT_PUBLIC_ADMIN_ENV_LABEL=prod-neu`
+- `NEXT_PUBLIC_SUPABASE_URL=<PROD Supabase project URL>`
+- `NEXT_PUBLIC_SUPABASE_ANON_KEY=<PROD Supabase anon key>`
+- `SUPABASE_SERVICE_ROLE_KEY=<PROD service role key, server-side only>`
+- `NEXT_PUBLIC_POSTHOG_KEY=<PROD PostHog key>`
+- `NEXT_PUBLIC_POSTHOG_HOST=<PROD PostHog ingest host>`
+- `NEXT_PUBLIC_POSTHOG_UI_HOST=<PROD PostHog UI host>`
+- `RESEND_API_KEY=<PROD Resend key, server-side only>`
+- `EMAIL_FROM=<PROD verified sender>`
 
 #### Preview / DEV (dev branch)
 
 - `NEXT_PUBLIC_APP_ENV=development`
 - `NEXT_PUBLIC_SITE_URL=https://dev.engage7.ie` (or leave unset for automatic default)
-- `NEXT_PUBLIC_API_BASE_URL=<active Engage7 DEV API URL>`
-- `ENGAGE7_API_BASE_URL=<active Engage7 DEV API URL>`
+- `NEXT_PUBLIC_API_BASE_URL=https://aca-engage7-api-dev-neu.nicewater-a1f85a44.northeurope.azurecontainerapps.io`
+- `ENGAGE7_API_BASE_URL=https://aca-engage7-api-dev-neu.nicewater-a1f85a44.northeurope.azurecontainerapps.io`
+- `NEXT_PUBLIC_ADMIN_ENV_LABEL=dev-neu`
+- `NEXT_PUBLIC_SUPABASE_URL=<DEV Supabase project URL>`
+- `NEXT_PUBLIC_SUPABASE_ANON_KEY=<DEV Supabase anon key>`
+- `SUPABASE_SERVICE_ROLE_KEY=<DEV service role key, server-side only>`
+- `NEXT_PUBLIC_POSTHOG_KEY=<DEV PostHog key, or empty to disable analytics>`
+- `NEXT_PUBLIC_POSTHOG_HOST=<DEV PostHog ingest host>`
+- `NEXT_PUBLIC_POSTHOG_UI_HOST=<DEV PostHog UI host>`
+- `RESEND_API_KEY=<DEV/test Resend key, server-side only>`
+- `EMAIL_FROM=<DEV verified or allowlisted sender>`
 
 `NEXT_PUBLIC_API_BASE_URL` is embedded into browser JavaScript during the Vercel build.
 Changing it in a runtime environment after `next build` will not update the client bundle;
@@ -132,9 +153,10 @@ After any deployment:
 - [ ] Local `/api/debug/env` returns safe status fields only; hosted DEV/Preview returns 404
 - [ ] Browser console shows `[api-debug]` with the active DEV API URL.
 - [ ] Vercel deployment source includes the expected API URL in built static chunks.
+- [ ] API calls resolve to the DEV ACA URL, not PROD and not localhost.
 
 ```bash
-rg "engage7-api-dev\\.orangeisland-abf82cd7\\.northeurope\\.azurecontainerapps\\.io" .next/static --glob "!*.map"
+rg "aca-engage7-api-dev-neu\\.nicewater-a1f85a44\\.northeurope\\.azurecontainerapps\\.io" .next/static --glob "!*.map"
 rg "http://localhost:8000" .next/static --glob "!*.map"
 ```
 
