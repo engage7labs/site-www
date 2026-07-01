@@ -12,6 +12,9 @@ dev branch  → development → deploy to: dev.engage7.ie
 `main` is the intended production publication branch. `dev` is the intended DEV
 publication branch.
 
+DEV publish/cloud-write workflows require `api`, `infra`, and `web` all on
+`dev`. PROD publish/cloud-write workflows require all three repos on `main`.
+
 ## Environment Variables
 
 ### Per-Environment Configuration (via Vercel Dashboard)
@@ -106,15 +109,19 @@ git push origin main
 ### Vercel CLI Commands (if needed)
 
 ```bash
-# Deploy current code to production (main branch only!)
-vercel --prod
+# Read-only validation; reports names/targets without printing secret values.
+vercel project inspect
+vercel env ls
+vercel env ls preview
+vercel env ls production
 
-# Deploy to staging/preview
-vercel   # (without --prod flag)
-
-# DANGER: vercel --prod from dev branch pushes code to www.engage7.ie
-# Never do this without explicit review.
+# Branch-specific Preview resolution only when needed.
+# Writes local .vercel/ cache/env material; do not print or commit outputs.
+vercel pull --environment=preview --git-branch=dev
 ```
+
+Do not run `vercel env add`, `vercel env update`, `vercel env rm`,
+`vercel deploy`, or `vercel --prod` during validation.
 
 ## Vercel Project Configuration
 
