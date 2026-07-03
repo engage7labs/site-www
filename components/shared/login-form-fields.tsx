@@ -3,7 +3,11 @@
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { buildAuthCallbackUrl, safeAuthRedirectPath } from "@/lib/auth-redirects";
+import {
+  buildAuthCallbackUrl,
+  resolveAuthRedirectOrigin,
+  safeAuthRedirectPath,
+} from "@/lib/auth-redirects";
 import { publishAuthSessionChanged } from "@/lib/auth-session-client";
 import { detectLocale, getDictionary, type Locale } from "@/lib/i18n";
 import { rememberPendingPublicClaim } from "@/lib/public-analysis-claim";
@@ -144,7 +148,8 @@ export function LoginFormFields({
 
     try {
       const nextPath = safeAuthRedirectPath(redirectTo);
-      const redirectUrl = buildAuthCallbackUrl(window.location.origin, nextPath);
+      const redirectOrigin = resolveAuthRedirectOrigin(window.location.origin);
+      const redirectUrl = buildAuthCallbackUrl(redirectOrigin, nextPath);
       if (claimJobId) {
         const callback = new URL(redirectUrl);
         callback.searchParams.set("claim_job_id", claimJobId);

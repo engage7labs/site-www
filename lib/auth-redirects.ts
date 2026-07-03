@@ -21,3 +21,22 @@ export function buildAuthCallbackUrl(origin: string, nextPath: string): string {
   callback.searchParams.set("next", safeAuthRedirectPath(nextPath));
   return callback.toString();
 }
+
+export function resolveAuthRedirectOrigin(windowOrigin: string): string {
+  const configured =
+    process.env.NEXT_PUBLIC_SITE_URL ?? process.env.NEXT_PUBLIC_APP_URL ?? "";
+  const trimmed = configured.trim().replace(/\/+$/, "");
+
+  if (trimmed) {
+    try {
+      const url = new URL(trimmed);
+      if (url.protocol === "https:" || url.protocol === "http:") {
+        return url.origin;
+      }
+    } catch {
+      // Fall through to the browser origin for local development.
+    }
+  }
+
+  return windowOrigin;
+}

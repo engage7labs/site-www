@@ -1,5 +1,6 @@
 const PRODUCTION_APP_URL = "https://www.engage7.ie";
-const DEVELOPMENT_APP_URL = "http://localhost:3000";
+const DEVELOPMENT_APP_URL = "https://dev.engage7.ie";
+const LOCAL_DEVELOPMENT_APP_URL = "http://localhost:3000";
 
 export interface CanonicalAppUrlResolution {
   appUrl: string;
@@ -30,6 +31,10 @@ function isProductionRuntime(): boolean {
   return process.env.NODE_ENV === "production";
 }
 
+function isVercelRuntime(): boolean {
+  return Boolean(process.env.VERCEL_ENV || process.env.VERCEL_URL);
+}
+
 function isVercelDeploymentUrl(appUrl: string): boolean {
   return new URL(appUrl).hostname.endsWith(".vercel.app");
 }
@@ -39,7 +44,9 @@ function isBareProductionHost(appUrl: string): boolean {
 }
 
 export function resolveCanonicalAppUrl(): CanonicalAppUrlResolution {
-  const configured = normalizeAppUrl(process.env.NEXT_PUBLIC_APP_URL ?? "");
+  const configured = normalizeAppUrl(
+    process.env.NEXT_PUBLIC_SITE_URL ?? process.env.NEXT_PUBLIC_APP_URL ?? ""
+  );
 
   if (configured) {
     if (
@@ -56,7 +63,9 @@ export function resolveCanonicalAppUrl(): CanonicalAppUrlResolution {
 
     return {
       appUrl: configured,
-      source: "NEXT_PUBLIC_APP_URL",
+      source: process.env.NEXT_PUBLIC_SITE_URL
+        ? "NEXT_PUBLIC_SITE_URL"
+        : "NEXT_PUBLIC_APP_URL",
     };
   }
 
@@ -67,9 +76,16 @@ export function resolveCanonicalAppUrl(): CanonicalAppUrlResolution {
     };
   }
 
+  if (isVercelRuntime()) {
+    return {
+      appUrl: DEVELOPMENT_APP_URL,
+      source: "VERCEL_DEVELOPMENT_FALLBACK",
+    };
+  }
+
   return {
-    appUrl: DEVELOPMENT_APP_URL,
-    source: "DEVELOPMENT_FALLBACK",
+    appUrl: LOCAL_DEVELOPMENT_APP_URL,
+    source: "LOCAL_DEVELOPMENT_FALLBACK",
   };
 }
 
