@@ -1,7 +1,7 @@
 /**
  * CommunityActivity — reusable social proof metrics widget.
  *
- * Fetches aggregate anonymous metrics from GET /api/metrics and displays
+ * Fetches aggregate anonymous metrics from GET /api/proxy/metrics and displays
  * community activity: total uploads, recent uploads, and unique locales.
  */
 

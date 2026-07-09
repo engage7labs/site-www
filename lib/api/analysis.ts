@@ -197,7 +197,7 @@ export function getCsvUrl(jobId: string): string {
 /**
  * Fetches aggregate anonymous metrics for social proof display.
  *
- * GET /api/metrics
+ * GET /api/proxy/metrics
  */
 export interface PublicMetrics {
   total_uploads: number;

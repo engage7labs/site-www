@@ -4,7 +4,7 @@
  * Base configuration for Engage7 API client.
  * Sensitive endpoints route through the Next.js server-side proxy so the
  * browser never calls the API directly for protected operations.
- * Non-sensitive endpoints (health, metrics) still use the public API URL.
+ * Non-sensitive health/version endpoints still use the public API URL.
  */
 
 import { config } from "@/lib/config";
@@ -17,7 +17,7 @@ export const API_BASE_URL = config.apiBaseUrl;
 /**
  * API endpoints.
  * Sensitive operations go through /api/proxy/* (server-side, signed).
- * Public read-only endpoints use the API base URL directly.
+ * Public health/version endpoints use the API base URL directly.
  */
 export const API_ENDPOINTS = {
   // Sensitive — proxied through Next.js server
@@ -28,8 +28,8 @@ export const API_ENDPOINTS = {
   getPdf: (jobId: string) => `/api/proxy/result/${jobId}/pdf`,
   getCsv: (jobId: string) => `/api/proxy/result/${jobId}/csv`,
 
-  // Public — direct to API
-  getMetrics: "/api/metrics",
+  // Public aggregate — proxied through Next.js to avoid browser-baked API drift
+  getMetrics: "/api/proxy/metrics",
 
   // Health
   getHealth: "/health",

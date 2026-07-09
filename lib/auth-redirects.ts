@@ -22,21 +22,43 @@ export function buildAuthCallbackUrl(origin: string, nextPath: string): string {
   return callback.toString();
 }
 
-export function resolveAuthRedirectOrigin(windowOrigin: string): string {
-  const configured =
-    process.env.NEXT_PUBLIC_SITE_URL ?? process.env.NEXT_PUBLIC_APP_URL ?? "";
-  const trimmed = configured.trim().replace(/\/+$/, "");
+function parseHttpOrigin(value: string): string | null {
+  const trimmed = value.trim().replace(/\/+$/, "");
+  if (!trimmed) return null;
 
-  if (trimmed) {
-    try {
-      const url = new URL(trimmed);
-      if (url.protocol === "https:" || url.protocol === "http:") {
-        return url.origin;
-      }
-    } catch {
-      // Fall through to the browser origin for local development.
+  try {
+    const url = new URL(trimmed);
+    if (url.protocol === "https:" || url.protocol === "http:") {
+      return url.origin;
     }
+  } catch {
+    return null;
   }
 
-  return windowOrigin;
+  return null;
+}
+
+function isLocalOrigin(origin: string): boolean {
+  try {
+    const hostname = new URL(origin).hostname;
+    return hostname === "localhost" || hostname === "127.0.0.1";
+  } catch {
+    return false;
+  }
+}
+
+export function resolveAuthRedirectOrigin(windowOrigin: string): string {
+  const browserOrigin = parseHttpOrigin(windowOrigin) ?? windowOrigin;
+  const configured =
+    process.env.NEXT_PUBLIC_SITE_URL ?? process.env.NEXT_PUBLIC_APP_URL ?? "";
+  const configuredOrigin = parseHttpOrigin(configured);
+
+  if (
+    configuredOrigin &&
+    (!isLocalOrigin(configuredOrigin) || isLocalOrigin(browserOrigin))
+  ) {
+    return configuredOrigin;
+  }
+
+  return browserOrigin;
 }
