@@ -51,6 +51,18 @@ assert(
   modal.includes("onEmailSubmit") && modal.includes("onGoogleSubmit"),
   "premium modal must retain email onboarding alongside Google onboarding",
 );
+const consentIndex = modal.indexOf('id="consent-checkbox"');
+const googleIndex = modal.indexOf("t.result.premiumModal.google");
+const emailIndex = modal.indexOf('htmlFor="premium-email"');
+assert(
+  consentIndex >= 0 && consentIndex < googleIndex && googleIndex < emailIndex,
+  "premium consent must appear before both Google and email onboarding choices",
+);
+assert(
+  modal.includes("disabled={!consentChecked || submitting || redirecting}") &&
+    modal.includes("const canSubmit = isValidEmail && consentChecked"),
+  "Google and email onboarding must remain consent-gated",
+);
 assert(
   modal.includes("{!isProtectedHandoff && <div") &&
     modal.includes('htmlFor="premium-email"') &&

@@ -141,6 +141,23 @@ export function PostAnalysisModal({
             </p>
           </div>
 
+          {/* Consent is explicit and required before either onboarding choice. */}
+          {!isProtectedHandoff && <div className="flex items-start gap-3">
+            <input
+              id="consent-checkbox"
+              type="checkbox"
+              checked={consentChecked}
+              onChange={(e) => setConsentChecked(e.target.checked)}
+              className="mt-0.5 h-4 w-4 rounded border-border accent-[#e6b800] cursor-pointer"
+            />
+            <label
+              htmlFor="consent-checkbox"
+              className="text-xs text-muted-foreground leading-relaxed cursor-pointer"
+            >
+              {t.result.premiumModal.consent}
+            </label>
+          </div>}
+
           {!isProtectedHandoff && onGoogleSubmit && <>
             <button
               type="button"
@@ -184,23 +201,6 @@ export function PostAnalysisModal({
             {emailError && (
               <p className="text-xs text-destructive">{emailError}</p>
             )}
-          </div>}
-
-          {/* Consent checkbox — required before unlock */}
-          {!isProtectedHandoff && <div className="flex items-start gap-3">
-            <input
-              id="consent-checkbox"
-              type="checkbox"
-              checked={consentChecked}
-              onChange={(e) => setConsentChecked(e.target.checked)}
-              className="mt-0.5 h-4 w-4 rounded border-border accent-[#e6b800] cursor-pointer"
-            />
-            <label
-              htmlFor="consent-checkbox"
-              className="text-xs text-muted-foreground leading-relaxed cursor-pointer"
-            >
-              {t.result.premiumModal.consent}
-            </label>
           </div>}
 
           {/* Error from backend */}
