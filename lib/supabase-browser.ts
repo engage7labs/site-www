@@ -14,7 +14,9 @@ export function createSupabaseBrowserClient() {
     auth: {
       detectSessionInUrl: false,
       flowType: "pkce",
-      persistSession: true,
+      // PKCE verifier storage is still handled by auth-js, but the resulting
+      // Supabase session is exchanged for HttpOnly server cookies.
+      persistSession: false,
     },
   });
 }

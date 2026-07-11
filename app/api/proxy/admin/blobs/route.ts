@@ -34,7 +34,7 @@ export async function GET() {
   try {
     const res = await fetch(`${INTERNAL_API_BASE_URL}${path}`, {
       method: "GET",
-      headers: { ...sigHeaders, "X-User-Email": session.sub },
+      headers: { ...sigHeaders, "X-User-Id": session.user_id, "X-User-Email": session.sub },
     });
     const data = await res.json().catch(() => ({ detail: `Upstream error ${res.status}` }));
     return NextResponse.json(data, { status: res.status });
@@ -63,7 +63,7 @@ export async function DELETE(request: NextRequest) {
   try {
     const res = await fetch(`${INTERNAL_API_BASE_URL}${path}`, {
       method: "DELETE",
-      headers: { ...sigHeaders, "X-User-Email": session.sub },
+      headers: { ...sigHeaders, "X-User-Id": session.user_id, "X-User-Email": session.sub },
     });
     const data = await res.json().catch(() => ({ detail: `Upstream error ${res.status}` }));
     return NextResponse.json(data, { status: res.status });

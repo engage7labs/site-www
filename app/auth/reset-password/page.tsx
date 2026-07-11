@@ -14,9 +14,9 @@ function ResetPasswordForm() {
   const { t } = useLocale();
   const searchParams = useSearchParams();
   const router = useRouter();
-  const token = searchParams.get("token") ?? "";
   const isWelcome = searchParams.get("mode") === "welcome";
   const linkError = searchParams.get("error");
+  const [hasSession, setHasSession] = useState<boolean | null>(null);
 
   const [password, setPassword] = useState("");
   const [confirm, setConfirm] = useState("");
@@ -29,6 +29,12 @@ function ResetPasswordForm() {
   const valid = password.length >= 8 && password === confirm;
 
   useEffect(() => {
+    fetch("/api/auth/session", { cache: "no-store" })
+      .then((response) => setHasSession(response.ok))
+      .catch(() => setHasSession(false));
+  }, []);
+
+  useEffect(() => {
     if (isWelcome && status === "success") {
       const timer = setTimeout(() => router.push("/portal"), 800);
       return () => clearTimeout(timer);
@@ -37,7 +43,7 @@ function ResetPasswordForm() {
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
-    if (!valid || !token) return;
+    if (!valid || !hasSession) return;
 
     setStatus("loading");
     setError("");
@@ -47,7 +53,7 @@ function ResetPasswordForm() {
       const res = await fetch("/api/auth/reset-password", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ token, password }),
+        body: JSON.stringify({ password }),
       });
 
       if (res.ok) {
@@ -66,7 +72,7 @@ function ResetPasswordForm() {
     }
   }
 
-  if (linkError || !token) {
+  if (linkError || hasSession === false) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background px-4">
         <div className="max-w-sm w-full text-center space-y-4">
@@ -83,6 +89,14 @@ function ResetPasswordForm() {
             {t.auth.reset.requestNewLink}
           </a>
         </div>
+      </div>
+    );
+  }
+
+  if (hasSession === null) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-background">
+        <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
       </div>
     );
   }

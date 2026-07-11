@@ -53,7 +53,7 @@ export async function DELETE(
       method: "DELETE",
       headers: {
         ...sigHeaders,
-        "X-User-Email": session.sub,
+        "X-User-Id": session.user_id, "X-User-Email": session.sub,
         "Content-Type": "application/json",
       },
       body: JSON.stringify(body ?? {}),

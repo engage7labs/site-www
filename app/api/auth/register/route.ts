@@ -1,109 +1,62 @@
-/**
- * POST /api/auth/register
- *
- * Proxies user registration to the Python API's /auth/register endpoint.
- * Validates input at this boundary before forwarding.
- *
- * Dev fallback: when the Python API is unavailable or returns 404 (stale instance),
- * registration is handled in-process using bcryptjs + an in-memory store so local
- * validation works without a running Python API. The in-memory store is cleared on
- * Next.js server restart and is never used in production.
- */
-
-import { devUserStore } from "@/lib/dev-user-store";
-import { INTERNAL_API_BASE_URL } from "@/lib/server-config";
-import { NextResponse } from "next/server";
+import { syncAuthenticatedAppUser } from "@/lib/app-user-sync";
+import { buildAuthCallbackUrl, resolveAuthRedirectOrigin } from "@/lib/auth-redirects";
+import { createSupabaseAuthServerClient } from "@/lib/supabase-auth-server";
+import { NextRequest, NextResponse } from "next/server";
 
 export const runtime = "nodejs";
 
-export async function POST(request: Request) {
+export async function POST(request: NextRequest) {
+  const body = await request.json().catch(() => null);
+  const email = typeof body?.email === "string" ? body.email.trim().toLowerCase() : "";
+  const password = typeof body?.password === "string" ? body.password : "";
+  const confirmation =
+    typeof body?.confirmPassword === "string" ? body.confirmPassword : "";
+  if (!email || password.length < 8 || password !== confirmation) {
+    return NextResponse.json({ error: "Unable to create account." }, { status: 422 });
+  }
+
   try {
-    const body = await request.json().catch(() => null);
-
-    if (
-      !body ||
-      typeof body.email !== "string" ||
-      typeof body.password !== "string" ||
-      typeof body.confirmPassword !== "string"
-    ) {
+    const origin = resolveAuthRedirectOrigin(request.nextUrl.origin);
+    const emailRedirectTo = buildAuthCallbackUrl(origin, "/portal");
+    const supabase = createSupabaseAuthServerClient();
+    const { data, error } = await supabase.auth.signUp({
+      email,
+      password,
+      options: { emailRedirectTo },
+    });
+    if (error) {
       return NextResponse.json(
-        { error: "Email, password, and confirmPassword are required" },
-        { status: 400 }
+        { error: "Unable to create account. Please check the details and try again." },
+        { status: 400 },
       );
     }
 
-    const { email, password, confirmPassword } = body as {
-      email: string;
-      password: string;
-      confirmPassword: string;
-    };
-
-    if (password !== confirmPassword) {
-      return NextResponse.json(
-        { error: "Passwords do not match" },
-        { status: 400 }
-      );
-    }
-
-    // ------------------------------------------------------------------
-    // Phase 1: Python API (primary store — required in production)
-    // ------------------------------------------------------------------
-    let apiAvailable = false;
-    try {
-      const upstream = await fetch(`${INTERNAL_API_BASE_URL}/auth/register`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email, password }),
+    if (data.user?.id && data.user.email && (data.user.identities?.length ?? 0) > 0) {
+      const role = await syncAuthenticatedAppUser({
+        userId: data.user.id,
+        email: data.user.email,
+        provider: "email",
       });
-
-      // 409 = duplicate email; 422 = validation error — both are real API errors
-      if (upstream.status === 409 || upstream.status === 422) {
-        const data = await upstream.json().catch(() => ({}));
-        const detail =
-          (data as { detail?: string }).detail ?? "Registration failed";
+      if (!role) {
         return NextResponse.json(
-          { error: detail },
-          { status: upstream.status }
+          { error: "Could not safely resolve this account." },
+          { status: 409 },
         );
       }
-
-      if (upstream.ok) {
-        return NextResponse.json({ ok: true }, { status: 201 });
-      }
-
-      // Any other non-ok status — fall through to dev fallback below
-      apiAvailable = upstream.status !== 404; // 404 = stale instance
-    } catch {
-      // Network error — Python API not running
-      apiAvailable = false;
     }
 
-    // ------------------------------------------------------------------
-    // Phase 2: Dev-only in-memory fallback
-    // Activated when API is unreachable or returns 404 (stale instance).
-    // NOT used in production.
-    // ------------------------------------------------------------------
-    if (process.env.NODE_ENV !== "production") {
-      const result = await devUserStore.register(email, password);
-      if (result === "conflict") {
-        return NextResponse.json(
-          { error: "Email already registered" },
-          { status: 409 }
-        );
-      }
-      return NextResponse.json({ ok: true }, { status: 201 });
-    }
-
-    // Production: API unavailable
-    void apiAvailable; // suppress unused-var lint
+    // Same response for new and existing addresses prevents enumeration.
     return NextResponse.json(
-      { error: "Registration service unavailable" },
-      { status: 503 }
+      {
+        ok: true,
+        message: "If the account is eligible, check your email for next steps.",
+      },
+      { status: 202 },
     );
   } catch {
     return NextResponse.json(
-      { error: "Internal server error" },
-      { status: 500 }
+      { error: "Registration service unavailable" },
+      { status: 503 },
     );
   }
 }

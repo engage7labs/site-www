@@ -74,6 +74,7 @@ async function waitForAppSession(): Promise<boolean> {
 
 async function createAppSession(params: {
   accessToken: string;
+  refreshToken: string;
   tokenType: string | null;
   redirectTo: string;
   preferredLocale: string;
@@ -88,6 +89,7 @@ async function createAppSession(params: {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
         access_token: params.accessToken,
+        refresh_token: params.refreshToken,
         type: params.tokenType,
         redirect_to: params.redirectTo,
         preferred_locale: params.preferredLocale,
@@ -146,6 +148,7 @@ export default function AuthCallbackPage() {
       const hash = window.location.hash;
       const hashParams = hash ? new URLSearchParams(hash.slice(1)) : null;
       let accessToken = hashParams?.get("access_token") ?? null;
+      let refreshToken = hashParams?.get("refresh_token") ?? null;
       const tokenType = hashParams?.get("type") ?? null;
       const code = search.get("code");
 
@@ -157,10 +160,12 @@ export default function AuthCallbackPage() {
             await supabase.auth.exchangeCodeForSession(code);
           if (exchangeError) throw exchangeError;
           accessToken = data.session?.access_token ?? null;
+          refreshToken = data.session?.refresh_token ?? null;
         } catch {
           logGoogleCallback("code_exchange_failed");
           const settledSession = await waitForSupabaseSession(supabase);
           accessToken = settledSession?.access_token ?? null;
+          refreshToken = settledSession?.refresh_token ?? null;
           if (!accessToken) {
             setError(localizedCopy.generic);
             return;
@@ -170,10 +175,11 @@ export default function AuthCallbackPage() {
         if (!accessToken) {
           const settledSession = await waitForSupabaseSession(supabase);
           accessToken = settledSession?.access_token ?? null;
+          refreshToken = settledSession?.refresh_token ?? null;
         }
       }
 
-      if (!accessToken) {
+      if (!accessToken || !refreshToken) {
         logGoogleCallback("session_failed", { reason: "missing_access_token" });
         setError(localizedCopy.invalid);
         return;
@@ -183,6 +189,7 @@ export default function AuthCallbackPage() {
         logGoogleCallback("app_session_exchange_started");
         const result = await createAppSession({
           accessToken,
+          refreshToken,
           tokenType,
           redirectTo,
           preferredLocale: locale,

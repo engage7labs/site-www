@@ -26,7 +26,10 @@ Portal route → client component → `/api/proxy/...` → verified Portal cooki
 
 ## Authentication and protected areas
 
-- Portal session: `lib/auth-server.ts` and `app/api/auth/`; authentication changes require explicit sprint approval.
+- Password and Google authenticate through Supabase Auth. `app/api/auth/` exchanges the Supabase session for HttpOnly Supabase cookies plus the existing HttpOnly Portal session containing canonical `user_id`.
+- `lib/supabase-auth-server.ts`, `lib/app-user-sync.ts`, `lib/auth-server.ts`, and `lib/auth-edge.ts` own the server session/projection boundary.
+- Settings exposes Password/Google connected state from Supabase identities; password setup uses authenticated `updateUser`, and Google connection uses authenticated `linkIdentity` with `openid email profile` only.
+- Portal proxies send signed `X-User-Id`; email remains display/contact metadata and cannot select ownership.
 - High-risk: auth, public claim/import, upload, account deletion, billing, telemetry consent, AI Reflection, Health data, API origin/signing, Admin.
 - Admin and public marketing routes are not authenticated Portal parity scope.
 

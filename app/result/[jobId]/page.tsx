@@ -374,6 +374,23 @@ export default function ResultPage({
       );
     }
 
+    const activation = (await response.json().catch(() => ({}))) as {
+      authentication_required?: boolean;
+      email_delivery?: { status?: string; reason?: string };
+    };
+    if (activation.authentication_required) {
+      rememberPendingPremiumOnboarding(jobId);
+      const status = activation.email_delivery?.status;
+      if (status && status !== "sent") {
+        const { toast } = await import("sonner");
+        toast.warning(t.result.preview.fullReport.emailWarning);
+      } else {
+        const { toast } = await import("sonner");
+        toast.success(t.result.preview.fullReport.checkEmail);
+      }
+      return;
+    }
+
     try {
       await claimPublicAnalysis(jobId, { deferToast: true });
       clearPendingPublicClaim();
@@ -394,10 +411,7 @@ export default function ResultPage({
     // blocking the portal redirect. Show a calm warning toast if the
     // welcome/magic-link email failed; the user is still authenticated
     // via the session cookie set by the proxy.
-    const data = (await response.json().catch(() => ({}))) as {
-      email_delivery?: { status?: string; reason?: string };
-    };
-    const status = data.email_delivery?.status;
+    const status = activation.email_delivery?.status;
     if (status && status !== "sent" && status !== "skipped_existing_user") {
       const { toast } = await import("sonner");
       toast.warning(

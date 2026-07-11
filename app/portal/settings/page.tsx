@@ -1,5 +1,6 @@
 "use client";
 
+import { ConnectedSignInMethods } from "@/components/portal/connected-sign-in-methods";
 import { useLocale } from "@/components/providers/locale-provider";
 import { publishAuthSessionChanged } from "@/lib/auth-session-client";
 import { LOCALE_NAMES, SUPPORTED_LOCALES, type Locale } from "@/lib/i18n";
@@ -684,6 +685,8 @@ export default function SettingsPage() {
           )}
         </div>
       </div>
+
+      {!readOnlyAdminView && <ConnectedSignInMethods />}
 
       <div className="rounded-xl border border-border bg-card p-5">
         <h2 className="text-sm font-semibold text-card-foreground">

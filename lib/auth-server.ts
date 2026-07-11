@@ -78,6 +78,7 @@ export function verifyJwt(token: string): SessionPayload | null {
       Buffer.from(body, "base64url").toString("utf-8")
     ) as SessionPayload;
     if (payload.exp && Date.now() / 1000 > payload.exp) return null;
+    if (!payload.user_id) return null;
     return payload;
   } catch {
     return null;

@@ -46,7 +46,7 @@ export async function GET(request: NextRequest) {
       method: "GET",
       headers: {
         ...sigHeaders,
-        "X-User-Email": session.sub,
+        "X-User-Id": session.user_id, "X-User-Email": session.sub,
       },
       cache: "no-store",
     });

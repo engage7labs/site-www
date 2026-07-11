@@ -30,6 +30,7 @@ export function getJwtSecret(): string {
 
 export type SessionPayload = {
   sub: string; // email
+  user_id: string; // canonical Supabase auth.users.id
   role: "user" | "admin";
   iat: number;
   exp: number;
@@ -146,5 +147,6 @@ export async function isValidSession(
   const payload = await verifyJwtEdge(cookieValue);
   if (!payload) return null;
   if (payload.role !== "user" && payload.role !== "admin") return null;
+  if (!payload.user_id) return null;
   return payload;
 }

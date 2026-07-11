@@ -374,7 +374,9 @@ export const enIE = {
         downloadButton: "Open my Premium Free Portal",
         runAnother: "Run another analysis",
         emailWarning:
-          "We couldn't send your welcome email — your portal is still open.",
+          "We couldn't send sign-in instructions right now. Please try again.",
+        checkEmail:
+          "Check your email to verify your identity, then we'll open your Portal.",
       },
       protectedHandoff: {
         title: "Update your existing Portal",
@@ -764,6 +766,20 @@ export const enIE = {
       save: "Save access code",
       genericError: "Something went wrong — please try again",
       networkError: "Network error — please try again",
+    },
+    signInMethods: {
+      title: "Connected sign-in methods",
+      body: "These methods sign in to the same Engage7 account.",
+      password: "Password",
+      google: "Google",
+      connected: "Connected",
+      notConnected: "Not connected",
+      newPassword: "New Engage7 password",
+      addPassword: "Add password",
+      connectGoogle: "Connect Google",
+      passwordConnected: "Password connected.",
+      reauthenticate: "Please sign in again before changing sign-in methods.",
+      googleError: "Google could not be connected. Please try again.",
     },
     compareImprove: {
       title: "Compare & Improve",

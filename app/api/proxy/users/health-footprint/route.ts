@@ -30,7 +30,7 @@ export async function GET() {
   try {
     const res = await fetch(`${INTERNAL_API_BASE_URL}${path}`, {
       method: "GET",
-      headers: { ...sigHeaders, "X-User-Email": session.sub },
+      headers: { ...sigHeaders, "X-User-Id": session.user_id, "X-User-Email": session.sub },
       cache: "no-store",
     });
     const data = await res.json().catch(() => ({ detail: `Upstream error ${res.status}` }));
@@ -59,7 +59,7 @@ export async function PATCH(request: NextRequest) {
       method: "PATCH",
       headers: {
         ...sigHeaders,
-        "X-User-Email": session.sub,
+        "X-User-Id": session.user_id, "X-User-Email": session.sub,
         "X-Session-Mode": session.mode ?? "",
         "X-Read-Only": "false",
         "Content-Type": "application/json",

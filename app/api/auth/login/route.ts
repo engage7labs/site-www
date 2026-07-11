@@ -1,111 +1,66 @@
+import { syncAuthenticatedAppUser } from "@/lib/app-user-sync";
 import {
-  getAdminEmail,
-  getAdminPasswordHash,
   SESSION_COOKIE_NAME,
   SESSION_HOURS,
   signJwt,
-  verifyPassword,
 } from "@/lib/auth-server";
-import { INTERNAL_API_BASE_URL } from "@/lib/server-config";
+import {
+  createSupabaseAuthServerClient,
+  setSupabaseSessionCookies,
+} from "@/lib/supabase-auth-server";
 import { NextResponse } from "next/server";
+
+export const runtime = "nodejs";
+
+function invalidCredentials() {
+  return NextResponse.json({ error: "Invalid credentials" }, { status: 401 });
+}
 
 export async function POST(request: Request) {
   try {
-    const { email, password } = await request.json();
+    const body = await request.json().catch(() => null);
+    const email = typeof body?.email === "string" ? body.email.trim().toLowerCase() : "";
+    const password = typeof body?.password === "string" ? body.password : "";
+    if (!email || !password) return invalidCredentials();
 
-    if (
-      typeof email !== "string" ||
-      typeof password !== "string" ||
-      !email ||
-      !password
-    ) {
+    const supabase = createSupabaseAuthServerClient();
+    const { data, error } = await supabase.auth.signInWithPassword({ email, password });
+    const authUser = data.user;
+    const authSession = data.session;
+    if (error || !authUser?.id || !authUser.email || !authSession) {
+      return invalidCredentials();
+    }
+
+    const provider = authUser.identities?.some((identity) => identity.provider === "google")
+      ? "google"
+      : "email";
+    const role = await syncAuthenticatedAppUser({
+      userId: authUser.id,
+      email: authUser.email,
+      provider,
+    });
+    if (!role) {
       return NextResponse.json(
-        { error: "Email and password are required" },
-        { status: 400 }
+        { error: "Could not safely resolve this account." },
+        { status: 409 },
       );
     }
 
-    // ------------------------------------------------------------------
-    // Phase 1: env-var admin account (always present, no DB required)
-    // ------------------------------------------------------------------
-    let authenticatedEmail: string | null = null;
-    let authenticatedRole: "user" | "admin" = "user";
-
-    try {
-      const adminEmail = getAdminEmail();
-      const adminHash = getAdminPasswordHash();
-      const emailMatch = email.toLowerCase() === adminEmail.toLowerCase();
-      const passMatch = await verifyPassword(password, adminHash);
-      if (emailMatch && passMatch) {
-        authenticatedEmail = adminEmail;
-        authenticatedRole = "admin";
-      }
-    } catch {
-      // Admin env vars not configured — skip
-    }
-
-    // ------------------------------------------------------------------
-    // Phase 2: DB-registered users
-    // 2a: dev in-memory store (when Python API is unavailable)
-    // 2b: Python API (production / running API)
-    // ------------------------------------------------------------------
-    if (!authenticatedEmail && process.env.NODE_ENV !== "production") {
-      try {
-        const { devUserStore } = await import("@/lib/dev-user-store");
-        const devOk = await devUserStore.verify(email, password);
-        if (devOk) {
-          authenticatedEmail = email.toLowerCase().trim();
-          authenticatedRole = "user";
-        }
-      } catch {
-        // ignore
-      }
-    }
-
-    if (!authenticatedEmail) {
-      try {
-        const upstream = await fetch(`${INTERNAL_API_BASE_URL}/auth/login`, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ email, password }),
-        });
-        if (upstream.ok) {
-          const data = (await upstream.json()) as {
-            email?: string;
-            role?: string;
-          };
-          authenticatedEmail = data.email ?? email.toLowerCase().trim();
-          authenticatedRole = data.role === "admin" ? "admin" : "user";
-        }
-      } catch {
-        // Python API unreachable — fall through to 401
-      }
-    }
-
-    if (!authenticatedEmail) {
-      return NextResponse.json(
-        { error: "Invalid credentials" },
-        { status: 401 }
-      );
-    }
-
-    const token = signJwt({ sub: authenticatedEmail, role: authenticatedRole });
-
-    const res = NextResponse.json({ ok: true, role: authenticatedRole });
-    res.cookies.set(SESSION_COOKIE_NAME, token, {
+    const token = signJwt({ sub: authUser.email, user_id: authUser.id, role });
+    const response = NextResponse.json({ ok: true, role });
+    response.cookies.set(SESSION_COOKIE_NAME, token, {
       httpOnly: true,
       secure: process.env.NODE_ENV === "production",
       sameSite: "lax",
       path: "/",
       maxAge: SESSION_HOURS * 3600,
     });
-    return res;
-  } catch (err) {
-    const msg =
-      err instanceof Error && err.message.includes("ENGAGE7_JWT_SECRET")
-        ? "Server authentication is misconfigured"
-        : "Internal server error";
-    console.error("[login]", err);
-    return NextResponse.json({ error: msg }, { status: 500 });
+    setSupabaseSessionCookies(response, authSession);
+    return response;
+  } catch {
+    return NextResponse.json(
+      { error: "Authentication service unavailable" },
+      { status: 503 },
+    );
   }
 }

@@ -38,9 +38,9 @@ export function PasswordSetupAlert() {
       setDismissed(true);
       return;
     }
-    fetch("/api/proxy/users/portal-overview")
+    fetch("/api/auth/methods", { cache: "no-store" })
       .then((r) => r.json())
-      .then((d) => setHasPassword(d.has_password ?? true))
+      .then((d) => setHasPassword(d.password ?? true))
       .catch(() => setHasPassword(true));
   }, []);
 

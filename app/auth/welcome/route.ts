@@ -131,6 +131,7 @@ export async function GET(request: NextRequest) {
   const now = Math.floor(Date.now() / 1000);
   const sessionToken = signJwt({
     sub: email,
+    user_id: authUserId,
     role: "user",
     exp: now + SESSION_30_DAYS,
   });
@@ -140,6 +141,7 @@ export async function GET(request: NextRequest) {
   // route. The reset-password API validates purpose === "password_reset".
   const setupToken = signJwt({
     sub: email,
+    user_id: authUserId,
     role: "user",
     purpose: "password_reset",
     exp: now + SETUP_TOKEN_TTL,

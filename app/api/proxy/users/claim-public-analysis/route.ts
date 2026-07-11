@@ -38,7 +38,7 @@ export async function POST(request: NextRequest) {
       headers: {
         "Content-Type": "application/json",
         ...sigHeaders,
-        "X-User-Email": session.sub,
+        "X-User-Id": session.user_id, "X-User-Email": session.sub,
       },
       body: JSON.stringify({ job_id: body.job_id }),
     });

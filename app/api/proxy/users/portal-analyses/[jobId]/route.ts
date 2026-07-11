@@ -35,7 +35,7 @@ export async function GET(
   try {
     upstreamResponse = await fetch(`${INTERNAL_API_BASE_URL}${path}`, {
       method: "GET",
-      headers: { ...sigHeaders, "X-User-Email": session.sub },
+      headers: { ...sigHeaders, "X-User-Id": session.user_id, "X-User-Email": session.sub },
     });
   } catch {
     return NextResponse.json(

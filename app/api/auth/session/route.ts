@@ -23,6 +23,7 @@ export async function GET() {
     authenticated: true,
     sub: session.sub,
     email: session.sub,
+    user_id: session.user_id,
     role: session.role,
     mode: session.mode,
     read_only: session.read_only === true,

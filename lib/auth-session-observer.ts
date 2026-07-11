@@ -17,7 +17,7 @@ export async function markAuthenticatedSessionObserved(
       method: "POST",
       headers: {
         ...sigHeaders,
-        "X-User-Email": session.sub,
+        "X-User-Id": session.user_id, "X-User-Email": session.sub,
         "X-Session-Mode": session.mode ?? "",
         "X-Read-Only": isReadOnly ? "true" : "false",
       },

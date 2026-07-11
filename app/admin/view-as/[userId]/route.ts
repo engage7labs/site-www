@@ -303,6 +303,7 @@ function createAdminViewSession(
   // Preserve current admin-view contract.
   const adminViewToken = signJwt({
     sub: targetUser.email,
+    user_id: targetUserId,
     role: "user",
     mode: "admin_view",
     view_as_user_id: targetUserId,

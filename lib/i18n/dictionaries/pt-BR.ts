@@ -380,7 +380,9 @@ export const ptBR: Dictionary = {
         downloadButton: "Abrir meu Portal Premium Free",
         runAnother: "Executar outra análise",
         emailWarning:
-          "Não conseguimos enviar seu email de boas-vindas — seu Portal continua aberto.",
+          "Não conseguimos enviar as instruções de entrada agora. Tente novamente.",
+        checkEmail:
+          "Verifique seu e-mail para confirmar sua identidade; depois abriremos seu Portal.",
       },
       protectedHandoff: {
         title: "Atualize seu Portal existente",
@@ -776,6 +778,20 @@ export const ptBR: Dictionary = {
       save: "Salvar código de acesso",
       genericError: "Algo deu errado — tente novamente",
       networkError: "Erro de rede — tente novamente",
+    },
+    signInMethods: {
+      title: "Métodos de entrada conectados",
+      body: "Estes métodos entram na mesma conta Engage7.",
+      password: "Senha",
+      google: "Google",
+      connected: "Conectado",
+      notConnected: "Não conectado",
+      newPassword: "Nova senha do Engage7",
+      addPassword: "Adicionar senha",
+      connectGoogle: "Conectar Google",
+      passwordConnected: "Senha conectada.",
+      reauthenticate: "Entre novamente antes de alterar os métodos de entrada.",
+      googleError: "Não foi possível conectar o Google. Tente novamente.",
     },
     compareImprove: {
       title: "Comparar e melhorar",

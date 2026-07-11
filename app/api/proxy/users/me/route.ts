@@ -13,6 +13,7 @@
 import { signRequest } from "@/lib/api/signing";
 import { SESSION_COOKIE_NAME, verifyJwt } from "@/lib/auth-server";
 import { INTERNAL_API_BASE_URL } from "@/lib/server-config";
+import { clearSupabaseSessionCookies } from "@/lib/supabase-auth-server";
 import { deleteSupabaseAuthUserForAccount } from "@/lib/supabase-admin";
 import { cookies } from "next/headers";
 import { NextRequest, NextResponse } from "next/server";
@@ -43,7 +44,7 @@ export async function GET() {
   try {
     const upstreamResponse = await fetch(`${INTERNAL_API_BASE_URL}${path}`, {
       method: "GET",
-      headers: { ...sigHeaders, "X-User-Email": session.sub },
+      headers: { ...sigHeaders, "X-User-Id": session.user_id, "X-User-Email": session.sub },
       cache: "no-store",
     });
     const data = await upstreamResponse
@@ -105,7 +106,7 @@ export async function DELETE(request: NextRequest) {
   try {
     userLookupResponse = await fetch(`${INTERNAL_API_BASE_URL}${path}`, {
       method: "GET",
-      headers: { ...getSigHeaders, "X-User-Email": email },
+      headers: { ...getSigHeaders, "X-User-Id": session.user_id, "X-User-Email": email },
       cache: "no-store",
     });
   } catch {
@@ -145,6 +146,13 @@ export async function DELETE(request: NextRequest) {
     );
   }
 
+  if (targetUserId !== session.user_id) {
+    return NextResponse.json(
+      { detail: "Current session identity does not match the deletion target." },
+      { status: 409 },
+    );
+  }
+
   if (targetUserEmail && targetUserEmail !== email.toLowerCase()) {
     return NextResponse.json(
       { detail: "Current session identity does not match the deletion target." },
@@ -174,7 +182,7 @@ export async function DELETE(request: NextRequest) {
   try {
     upstreamResponse = await fetch(`${INTERNAL_API_BASE_URL}${path}`, {
       method: "DELETE",
-      headers: { "Content-Type": "application/json", ...sigHeaders, "X-User-Email": email },
+      headers: { "Content-Type": "application/json", ...sigHeaders, "X-User-Id": session.user_id, "X-User-Email": email },
       body: JSON.stringify({ confirmation_email: confirmationEmail }),
     });
   } catch {
@@ -247,6 +255,7 @@ export async function DELETE(request: NextRequest) {
       path: "/",
       maxAge: 0,
     });
+    clearSupabaseSessionCookies(res);
   }
 
   return res;
