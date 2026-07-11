@@ -41,6 +41,17 @@ assert(
   "modal does not expose protected handoff mode",
 );
 assert(
+  modal.includes("Continue with Google") === false &&
+    modal.includes("t.result.premiumModal.google") &&
+    en.includes('google: "Continue with Google"') &&
+    pt.includes('google: "Continuar com Google"'),
+  "premium modal does not expose translated Google onboarding",
+);
+assert(
+  modal.includes("onEmailSubmit") && modal.includes("onGoogleSubmit"),
+  "premium modal must retain email onboarding alongside Google onboarding",
+);
+assert(
   modal.includes("{!isProtectedHandoff && <div") &&
     modal.includes('htmlFor="premium-email"') &&
     modal.includes('id="consent-checkbox"'),

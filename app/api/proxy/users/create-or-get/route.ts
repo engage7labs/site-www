@@ -12,7 +12,7 @@
  */
 
 import { signRequest } from "@/lib/api/signing";
-import { SESSION_COOKIE_NAME, signJwt } from "@/lib/auth-server";
+import { SESSION_COOKIE_NAME, signJwt, verifyJwt } from "@/lib/auth-server";
 import { resolveCanonicalAppUrl } from "@/lib/canonical-app-url";
 import { welcomeEmail, sendEmail } from "@/lib/email";
 import { normalizeLocale, type Locale } from "@/lib/i18n";
@@ -131,6 +131,7 @@ export async function POST(request: NextRequest) {
   const rawBody = await request.text();
   let forwardedBody = rawBody;
   let requestLocale: Locale = "en";
+  const authenticatedSession = verifyJwt(request.cookies.get(SESSION_COOKIE_NAME)?.value ?? "");
 
   try {
     const parsed = JSON.parse(rawBody) as {
@@ -138,13 +139,17 @@ export async function POST(request: NextRequest) {
       user_id?: unknown;
       preferred_locale?: unknown;
     };
-    const email = typeof parsed.email === "string" ? parsed.email.trim().toLowerCase() : "";
+    // A verified session is authoritative. A form email must never replace it.
+    const email = authenticatedSession?.sub ??
+      (typeof parsed.email === "string" ? parsed.email.trim().toLowerCase() : "");
     requestLocale =
       typeof parsed.preferred_locale === "string"
         ? normalizeLocale(parsed.preferred_locale)
         : "en";
 
-    if (email && typeof parsed.user_id !== "string") {
+    if (authenticatedSession?.sub) {
+      forwardedBody = JSON.stringify({ ...parsed, email, preferred_locale: requestLocale });
+    } else if (email && typeof parsed.user_id !== "string") {
       logStructured("unlock_supabase_auth_user_resolve_attempt", { email });
       const authUser = await ensureSupabaseAuthUser(email);
       if (!authUser.ok || !authUser.userId) {

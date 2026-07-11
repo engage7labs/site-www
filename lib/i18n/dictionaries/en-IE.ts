@@ -391,7 +391,9 @@ export const enIE = {
     },
     premiumModal: {
       title: "Open your Premium Free Portal",
-      description: "Enter your email to unlock 90 days of Premium Free access.",
+      description: "Save this analysis and unlock 90 days of Premium Free access.",
+      google: "Continue with Google",
+      divider: "or",
       emailLabel: "Your email",
       emailRequired: "Email is required to unlock Premium Free.",
       emailInvalid: "Please enter a valid email address.",

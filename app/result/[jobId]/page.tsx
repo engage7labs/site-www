@@ -26,8 +26,11 @@ import {
   claimPublicAnalysis,
   clearPendingPublicClaim,
   PublicClaimBlockedError,
+  rememberPendingPremiumOnboarding,
   rememberPendingPublicClaim,
 } from "@/lib/public-analysis-claim";
+import { buildAuthCallbackUrl, resolveAuthRedirectOrigin } from "@/lib/auth-redirects";
+import { createSupabaseBrowserClient } from "@/lib/supabase-browser";
 import type { AnalysisResult } from "@/lib/types/analysis";
 import { motion } from "framer-motion";
 import { AlertCircle, ArrowLeft } from "lucide-react";
@@ -403,6 +406,21 @@ export default function ResultPage({
     }
   };
 
+  const handleModalGoogle = async (): Promise<void> => {
+    if (!jobId) return;
+    rememberPendingPremiumOnboarding(jobId);
+    const callback = new URL(
+      buildAuthCallbackUrl(resolveAuthRedirectOrigin(window.location.origin), "/portal"),
+    );
+    callback.searchParams.set("claim_job_id", jobId);
+    callback.searchParams.set("locale", locale);
+    const { error } = await createSupabaseBrowserClient().auth.signInWithOAuth({
+      provider: "google",
+      options: { redirectTo: callback.toString() },
+    });
+    if (error) throw error;
+  };
+
   const handleModalShare = async (): Promise<void> => {
     const shareUrl = "https://www.engage7.ie";
 
@@ -638,6 +656,7 @@ export default function ResultPage({
         onDownload={handleModalDownload}
         onFeedback={() => undefined}
         onEmailSubmit={handleModalEmail}
+        onGoogleSubmit={handleModalGoogle}
         onShare={handleModalShare}
         mode={isProtectedHandoff ? "protected-handoff" : "premium"}
         onProtectedHandoff={handleProtectedHandoff}

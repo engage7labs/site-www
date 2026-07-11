@@ -398,7 +398,9 @@ export const ptBR: Dictionary = {
     premiumModal: {
       title: "Abra seu Portal Premium Free",
       description:
-        "Informe seu email para liberar 90 dias de acesso Premium Free.",
+        "Salve esta análise e libere 90 dias de acesso Premium Free.",
+      google: "Continuar com Google",
+      divider: "ou",
       emailLabel: "Seu email",
       emailRequired: "O email é necessário para liberar o Premium Free.",
       emailInvalid: "Informe um endereço de email válido.",

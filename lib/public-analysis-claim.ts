@@ -2,6 +2,7 @@
 
 const PENDING_CLAIM_KEY = "engage7_pending_public_claim_job_id";
 const PENDING_CLAIM_EMAIL_PREFIX = "engage7.pendingPublicClaim.email.";
+const PENDING_PREMIUM_ONBOARDING_PREFIX = "engage7.pendingPremiumOnboarding.";
 const CONSUMED_CLAIMS_KEY = "engage7_consumed_public_claim_job_ids";
 const TERMINAL_CLAIM_PREFIX = "engage7.publicClaim.consumed.";
 const TOAST_QUEUE_KEY = "engage7.publicClaim.toastQueue";
@@ -78,6 +79,21 @@ export function rememberPendingPublicClaim(jobId: string, email?: string | null)
   }
 }
 
+/** Records explicit consent before leaving for OAuth; no health data is stored here. */
+export function rememberPendingPremiumOnboarding(jobId: string): void {
+  if (!jobId) return;
+  rememberPendingPublicClaim(jobId);
+  window.sessionStorage.setItem(`${PENDING_PREMIUM_ONBOARDING_PREFIX}${jobId}`, "consent-v1");
+}
+
+function hasPendingPremiumOnboarding(jobId: string): boolean {
+  return window.sessionStorage.getItem(`${PENDING_PREMIUM_ONBOARDING_PREFIX}${jobId}`) === "consent-v1";
+}
+
+function clearPendingPremiumOnboarding(jobId: string): void {
+  window.sessionStorage.removeItem(`${PENDING_PREMIUM_ONBOARDING_PREFIX}${jobId}`);
+}
+
 export function readPendingPublicClaim(): string | null {
   return window.sessionStorage.getItem(PENDING_CLAIM_KEY);
 }
@@ -87,6 +103,7 @@ export function clearPendingPublicClaim(): void {
   window.sessionStorage.removeItem(PENDING_CLAIM_KEY);
   if (jobId) {
     window.sessionStorage.removeItem(pendingClaimEmailKey(jobId));
+    clearPendingPremiumOnboarding(jobId);
   }
 }
 
@@ -106,6 +123,7 @@ export function clearPublicClaimStateForJob(jobId: string): void {
     clearPendingPublicClaim();
   }
   window.sessionStorage.removeItem(pendingClaimEmailKey(jobId));
+  clearPendingPremiumOnboarding(jobId);
   unqueuePublicClaimToast(jobId);
   window.localStorage.removeItem(terminalClaimKey(jobId));
   forgetConsumedPublicClaim(jobId);
@@ -131,6 +149,12 @@ export function clearPublicClaimClientState(): void {
     }
   }
   sessionKeys.forEach((key) => window.sessionStorage.removeItem(key));
+  const premiumKeys: string[] = [];
+  for (let index = 0; index < window.sessionStorage.length; index += 1) {
+    const key = window.sessionStorage.key(index);
+    if (key?.startsWith(PENDING_PREMIUM_ONBOARDING_PREFIX)) premiumKeys.push(key);
+  }
+  premiumKeys.forEach((key) => window.sessionStorage.removeItem(key));
 }
 
 function normalizeFinalStatus(status: PublicClaimStatus | undefined): PublicClaimFinalStatus | null {
@@ -308,6 +332,17 @@ export async function claimPublicAnalysis(
   jobId: string,
   options: { deferToast?: boolean } = {},
 ): Promise<PublicClaimResult> {
+  if (hasPendingPremiumOnboarding(jobId)) {
+    const activation = await fetch("/api/proxy/users/create-or-get", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ consent: true, job_id: jobId }),
+    });
+    if (!activation.ok) {
+      throw new Error("We couldn't save this analysis to your portal yet. Please try again.");
+    }
+    clearPendingPremiumOnboarding(jobId);
+  }
   await assertPendingClaimMatchesSession(jobId);
   const res = await fetch("/api/proxy/users/claim-public-analysis", {
     method: "POST",

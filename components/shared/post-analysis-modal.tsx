@@ -11,6 +11,7 @@ interface PostAnalysisModalProps {
   onDownload: () => void;
   onFeedback: (value: string, note?: string) => void;
   onEmailSubmit: (email: string, consent: boolean) => Promise<void>;
+  onGoogleSubmit?: () => Promise<void>;
   onShare: () => Promise<void>;
   pdfAvailable?: boolean;
   mode?: "premium" | "protected-handoff";
@@ -23,6 +24,7 @@ export function PostAnalysisModal({
   open,
   onClose,
   onEmailSubmit,
+  onGoogleSubmit,
   onProtectedHandoff,
   mode = "premium",
 }: Readonly<PostAnalysisModalProps>) {
@@ -73,12 +75,8 @@ export function PostAnalysisModal({
       redirectTimerRef.current = setTimeout(() => {
         window.location.href = "/portal";
       }, 3000);
-    } catch (err) {
-      setSubmitError(
-        err instanceof Error
-          ? err.message
-          : t.result.premiumModal.genericError
-      );
+    } catch {
+      setSubmitError(t.result.premiumModal.genericError);
       setSubmitting(false);
     }
   };
@@ -95,6 +93,18 @@ export function PostAnalysisModal({
           ? err.message
           : t.result.protectedHandoffModal.genericError
       );
+      setSubmitting(false);
+    }
+  };
+
+  const handleGoogle = async () => {
+    if (!onGoogleSubmit || !consentChecked || submitting || redirecting) return;
+    setSubmitError(null);
+    setSubmitting(true);
+    try {
+      await onGoogleSubmit();
+    } catch {
+      setSubmitError(t.result.premiumModal.genericError);
       setSubmitting(false);
     }
   };
@@ -131,7 +141,24 @@ export function PostAnalysisModal({
             </p>
           </div>
 
-          {/* Email input — required */}
+          {!isProtectedHandoff && onGoogleSubmit && <>
+            <button
+              type="button"
+              onClick={handleGoogle}
+              disabled={!consentChecked || submitting || redirecting}
+              className="inline-flex w-full items-center justify-center gap-2 rounded-lg border border-border bg-background px-5 py-3 text-sm font-semibold text-foreground transition-colors hover:bg-muted disabled:cursor-not-allowed disabled:opacity-50"
+            >
+              {submitting ? <Loader2 className="h-4 w-4 animate-spin" /> : <LogIn className="h-4 w-4" />}
+              {t.result.premiumModal.google}
+            </button>
+            <div className="flex items-center gap-3 text-xs text-muted-foreground">
+              <span className="h-px flex-1 bg-border" />
+              <span>{t.result.premiumModal.divider}</span>
+              <span className="h-px flex-1 bg-border" />
+            </div>
+          </>}
+
+          {/* Email input — remains a supported onboarding path. */}
           {!isProtectedHandoff && <div className="space-y-2">
             <label
               className="text-sm font-medium text-foreground"
