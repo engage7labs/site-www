@@ -203,6 +203,7 @@ export interface PublicMetrics {
   total_uploads: number;
   uploads_24h: number;
   unique_locales: number;
+  active_users: number;
 }
 
 export interface APIHealth {

@@ -2,7 +2,8 @@
  * CommunityActivity — reusable social proof metrics widget.
  *
  * Fetches aggregate anonymous metrics from GET /api/proxy/metrics and displays
- * community activity: total uploads, recent uploads, and unique locales.
+ * community activity: total uploads, recent uploads, unique locales, and
+ * distinct active users.
  */
 
 "use client";
@@ -10,7 +11,7 @@
 import { getPublicMetrics, type PublicMetrics } from "@/lib/api/analysis";
 import { SUPPORTED_LOCALES } from "@/lib/i18n/config";
 import { motion } from "framer-motion";
-import { BarChart3, Clock, Globe } from "lucide-react";
+import { BarChart3, Clock, Globe, Users } from "lucide-react";
 import { useEffect, useState } from "react";
 
 interface CommunityActivityProps {
@@ -19,6 +20,7 @@ interface CommunityActivityProps {
     totalUploads: string;
     recentUploads: string;
     languages: string;
+    activeUsers: string;
     loading: string;
     error: string;
   };
@@ -58,7 +60,7 @@ export function CommunityActivity({ t, className }: CommunityActivityProps) {
             {t.loading}
           </p>
         ) : (
-          <div className="grid grid-cols-3 gap-4">
+          <div className="grid grid-cols-2 gap-4 md:grid-cols-4">
             <div className="text-center space-y-1">
               <div className="mx-auto w-10 h-10 rounded-full bg-accent/10 flex items-center justify-center">
                 <BarChart3 className="h-5 w-5 text-accent" />
@@ -85,6 +87,15 @@ export function CommunityActivity({ t, className }: CommunityActivityProps) {
                 {publicLanguageCount}
               </p>
               <p className="text-xs text-muted-foreground">{t.languages}</p>
+            </div>
+            <div className="text-center space-y-1">
+              <div className="mx-auto w-10 h-10 rounded-full bg-accent/10 flex items-center justify-center">
+                <Users className="h-5 w-5 text-accent" />
+              </div>
+              <p className="text-2xl font-semibold text-foreground">
+                {metrics.active_users}
+              </p>
+              <p className="text-xs text-muted-foreground">{t.activeUsers}</p>
             </div>
           </div>
         )}
