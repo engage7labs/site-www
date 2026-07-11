@@ -1,42 +1,40 @@
-# MAP - Web Repository
+# MAP.md — Web
 
-## Purpose
+## Purpose and runtime role
 
-Next.js Web, Portal, and Admin frontend for Engage7 public upload, authenticated Portal, Admin utilities, analytics consent, and API proxy routes.
+Next.js application for Engage7 public pages, authenticated Portal, and Admin. The Portal presents server-derived data; it does not own DARTH or physiological logic.
 
-## Key Paths
+## Primary entry points
 
-- `app/` - Next.js routes, layouts, pages, and route handlers.
-- `components/` - shared UI, Portal, Admin, charts, and product components.
-- `lib/` - API clients, auth/session helpers, contracts, utilities, analytics, and feature logic.
-- `styles/` - global styling.
-- `public/` - static assets.
-- `proxy.ts` - request proxy/middleware boundary.
-- `instrumentation.ts` - instrumentation entrypoint.
-- `package.json` - Web version and scripts.
+- `app/portal/layout.tsx` and `components/portal/portal-shell.tsx` — authenticated shell/navigation.
+- `components/portal/portal-sidebar.tsx` — authoritative Portal surface list.
+- `app/api/proxy/` — authenticated server-side API proxy boundary.
+- `lib/auth-server.ts`, `lib/api/signing.ts`, `lib/server-config.ts` — session, request signing, and API origin.
 
-## Canonical Flows
+## Feature-to-code map
 
-- Public flow: upload, teaser/result, and claim/import into Portal.
-- Authenticated flow: Portal Overview, Insights, Health, Data Lab, My Reports, and Settings.
-- Admin flow: admin-only shell and utility pages.
-- Server API access: use the approved Engage7 API URL contract; do not reintroduce generic fallback behavior.
+- Overview: `app/portal/page.tsx` → portal overview/trends/health-data proxies.
+- Insights: `app/portal/insights/page.tsx`, `components/portal/compare-improve-block.tsx` → analyses/trends/overview proxies.
+- Health: `app/portal/health/page.tsx` and `health/{sleep,recovery,activity,all}/` → health-data proxy; DARTH panel and AI reflection components are server-artifact displays.
+- Data Lab: `app/portal/trends/page.tsx` → trends proxy.
+- Reports: `app/portal/reports/` and `lib/api/analysis.ts` → analyses list/detail proxy and safe AI Reflection panel.
+- Settings: `app/portal/settings/page.tsx` → account, overview, profile, preference, and footprint proxies.
 
-## Explicit Approval Areas
+## Canonical flow
 
-- Auth/session behavior, Google sign-in callback, account deletion, billing, analytics consent, public claim/import, upload-token handling, AI Reflection rendering, Health dashboard reads, API URL resolution, Admin diagnostics, and visible product versioning.
-- Any change that could expose private data, raw health values, identifiers, blob/SAS paths, provider envelopes, stack traces, or emails.
+Portal route → client component → `/api/proxy/...` → verified Portal cookie session → signed API request → API response. Do not call protected API routes directly from browser code or copy server business rules to the client.
 
-## Common Validation
+## Authentication and protected areas
 
-- `npm run lint`
-- `npx tsc --noEmit`
-- `npm run build`
-- Browser smoke for touched user journeys when UI behavior changes.
+- Portal session: `lib/auth-server.ts` and `app/api/auth/`; authentication changes require explicit sprint approval.
+- High-risk: auth, public claim/import, upload, account deletion, billing, telemetry consent, AI Reflection, Health data, API origin/signing, Admin.
+- Admin and public marketing routes are not authenticated Portal parity scope.
 
-## Related Docs
+## Validation and related docs
 
-- `README.md`
-- `DEPLOYMENT.md`
-- `../docs/AI_CONTEXT.md`
-- `../docs/contracts/PORTAL_DATA_CONTRACT.md`
+- `npm run lint`, `npx tsc --noEmit`, `npm run build`; browser smoke for changed journeys.
+- Read `README.md`, `DEPLOYMENT.md`, `../docs/AI_CONTEXT.md`, `../docs/contracts/PORTAL_DATA_CONTRACT.md`, and the iOS architecture doc when relevant.
+
+## Maintenance rule
+
+Update this map when a Portal surface, proxy flow, auth/config boundary, protected area, or validation command moves.
