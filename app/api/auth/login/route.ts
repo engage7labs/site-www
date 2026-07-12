@@ -5,6 +5,7 @@ import {
   signJwt,
 } from "@/lib/auth-server";
 import {
+  clearSupabaseSessionCookies,
   createSupabaseAuthServerClient,
   setSupabaseSessionCookies,
 } from "@/lib/supabase-auth-server";
@@ -21,6 +22,7 @@ export async function POST(request: Request) {
     const body = await request.json().catch(() => null);
     const email = typeof body?.email === "string" ? body.email.trim().toLowerCase() : "";
     const password = typeof body?.password === "string" ? body.password : "";
+    const requireAdmin = body?.admin === true;
     if (!email || !password) return invalidCredentials();
 
     const supabase = createSupabaseAuthServerClient();
@@ -44,6 +46,22 @@ export async function POST(request: Request) {
         { error: "Could not safely resolve this account." },
         { status: 409 },
       );
+    }
+
+    if (requireAdmin && role !== "admin") {
+      const response = NextResponse.json(
+        { error: "This account is not authorised for the Admin Portal." },
+        { status: 403 },
+      );
+      response.cookies.set(SESSION_COOKIE_NAME, "", {
+        httpOnly: true,
+        secure: process.env.NODE_ENV === "production",
+        sameSite: "lax",
+        path: "/",
+        maxAge: 0,
+      });
+      clearSupabaseSessionCookies(response);
+      return response;
     }
 
     const token = signJwt({ sub: authUser.email, user_id: authUser.id, role });

@@ -20,6 +20,7 @@ interface LoginFormFieldsProps {
   readonly redirectTo?: string;
   readonly claimJobId?: string | null;
   readonly enableSocialLogin?: boolean;
+  readonly requireAdmin?: boolean;
   /** Called when login succeeds — allows parent to close a modal */
   readonly onSuccess?: () => void;
 }
@@ -56,6 +57,7 @@ export function LoginFormFields({
   redirectTo = "/portal",
   claimJobId,
   enableSocialLogin = true,
+  requireAdmin = false,
   onSuccess,
 }: LoginFormFieldsProps) {
   const router = useRouter();
@@ -102,7 +104,7 @@ export function LoginFormFields({
       const endpoint = isRegister ? "/api/auth/register" : "/api/auth/login";
       const bodyPayload = isRegister
         ? { email, password, confirmPassword }
-        : { email, password };
+        : { email, password, admin: requireAdmin };
 
       const res = await fetch(endpoint, {
         method: "POST",
@@ -128,6 +130,10 @@ export function LoginFormFields({
 
       const data = (await res.json().catch(() => ({}))) as { role?: string };
       const role = data.role === "admin" ? "admin" : "user";
+      if (requireAdmin && role !== "admin") {
+        setError("This account is not authorised for the Admin Portal.");
+        return;
+      }
 
       publishAuthSessionChanged("login");
       onSuccess?.();

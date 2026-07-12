@@ -55,6 +55,7 @@ export function LoginForm() {
           redirectTo={isAdmin ? "/admin" : next}
           claimJobId={claimJobId}
           enableSocialLogin={!isAdmin}
+          requireAdmin={isAdmin}
         />
       </CardContent>
     </Card>
