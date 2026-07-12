@@ -1,12 +1,16 @@
 import { signRequest } from "@/lib/api/signing";
+import {
+  resolveAuthenticatedAppUserSyncResponse,
+  type AuthenticatedAppUserSyncResult,
+} from "@/lib/app-user-sync-result";
 import { INTERNAL_API_BASE_URL } from "@/lib/server-config";
 
-export async function syncAuthenticatedAppUser(params: {
+export async function syncAuthenticatedAppUserWithDiagnostics(params: {
   userId: string;
   email: string;
   provider: "email" | "google";
   preferredLocale?: string;
-}): Promise<"user" | "admin" | null> {
+}): Promise<AuthenticatedAppUserSyncResult> {
   const path = "/api/users/sync-authenticated";
   const upstream = await fetch(`${INTERNAL_API_BASE_URL}${path}`, {
     method: "POST",
@@ -22,7 +26,29 @@ export async function syncAuthenticatedAppUser(params: {
     }),
     cache: "no-store",
   });
-  if (!upstream.ok) return null;
-  const data = (await upstream.json().catch(() => ({}))) as { role?: string };
-  return data.role === "admin" ? "admin" : "user";
+  if (!upstream.ok) {
+    return {
+      role: null,
+      appUserId: null,
+      lookupStatus: "error",
+      roleSource: "sync_authenticated_upstream_error",
+      failureStage: "sync_authenticated_upstream",
+    };
+  }
+
+  const data = (await upstream.json().catch(() => ({}))) as {
+    id?: unknown;
+    role?: unknown;
+  };
+  return resolveAuthenticatedAppUserSyncResponse(data);
+}
+
+export async function syncAuthenticatedAppUser(params: {
+  userId: string;
+  email: string;
+  provider: "email" | "google";
+  preferredLocale?: string;
+}): Promise<"user" | "admin" | null> {
+  const result = await syncAuthenticatedAppUserWithDiagnostics(params);
+  return result.role;
 }

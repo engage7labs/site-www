@@ -6,6 +6,7 @@
     "build": "next build",
     "dev": "next dev -p 3000",
     "lint": "eslint .",
+    "test:admin-role-resolution-diagnostics": "node --experimental-strip-types scripts/test-admin-role-resolution-diagnostics.mjs",
     "test:admin-post-login-routing": "node --experimental-strip-types scripts/test-admin-post-login-routing.mjs",
     "start": "next start"
   },
