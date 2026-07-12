@@ -1,6 +1,6 @@
 {
   "name": "my-v0-project",
-  "version": "1.48.9.3",
+  "version": "1.48.9.5",
   "private": true,
   "scripts": {
     "build": "next build",
@@ -8,6 +8,7 @@
     "lint": "eslint .",
     "test:admin-role-resolution-diagnostics": "node --experimental-strip-types scripts/test-admin-role-resolution-diagnostics.mjs",
     "test:admin-post-login-routing": "node --experimental-strip-types scripts/test-admin-post-login-routing.mjs",
+    "test:google-pkce-storage": "node --experimental-strip-types scripts/test-google-pkce-storage.mjs",
     "start": "next start"
   },
   "dependencies": {

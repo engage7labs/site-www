@@ -1,6 +1,7 @@
 "use client";
 
 import { createClient } from "@supabase/supabase-js";
+import { createPkceVerifierStorage } from "@/lib/supabase-pkce-storage";
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL ?? "";
 const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ?? "";
@@ -14,9 +15,11 @@ export function createSupabaseBrowserClient() {
     auth: {
       detectSessionInUrl: false,
       flowType: "pkce",
-      // PKCE verifier storage is still handled by auth-js, but the resulting
-      // Supabase session is exchanged for HttpOnly server cookies.
-      persistSession: false,
+      // Persist only the PKCE verifier across the external OAuth redirect.
+      // Supabase access/refresh tokens remain excluded from browser storage
+      // and are exchanged for Engage7 HttpOnly cookies by the callback route.
+      persistSession: true,
+      storage: createPkceVerifierStorage(window.sessionStorage),
     },
   });
 }
