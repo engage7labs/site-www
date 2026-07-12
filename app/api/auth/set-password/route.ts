@@ -7,6 +7,16 @@ import { NextRequest, NextResponse } from "next/server";
 
 export const runtime = "nodejs";
 
+function identifierSuffix(value: string | null | undefined): string | null {
+  return value ? value.slice(-8) : null;
+}
+
+function safeSymbol(value: unknown): string | null {
+  if (typeof value !== "string") return null;
+  const normalized = value.trim().toLowerCase();
+  return /^[a-z0-9_.-]{1,64}$/.test(normalized) ? normalized : "unknown";
+}
+
 export async function POST(request: NextRequest) {
   const appSession = verifyJwt(request.cookies.get(SESSION_COOKIE_NAME)?.value ?? "");
   if (!appSession?.user_id || appSession.mode === "admin_view") {
@@ -29,6 +39,40 @@ export async function POST(request: NextRequest) {
     );
   }
   const { data, error } = await authenticated.client.auth.updateUser({ password });
+  const providers = Array.from(
+    new Set(
+      (authenticated.session.user.identities ?? [])
+        .map((identity) => safeSymbol(identity.provider))
+        .filter((provider): provider is string => Boolean(provider)),
+    ),
+  );
+  console.info(JSON.stringify({
+    event: "access_code_update_decision",
+    environment: safeSymbol(
+      process.env.NEXT_PUBLIC_APP_ENV ?? process.env.VERCEL_ENV,
+    ),
+    supabase_project_ref: (() => {
+      try {
+        return safeSymbol(
+          new URL(process.env.NEXT_PUBLIC_SUPABASE_URL ?? "").hostname.split(".")[0],
+        );
+      } catch {
+        return "unknown";
+      }
+    })(),
+    auth_user_id_suffix: identifierSuffix(authenticated.session.user.id),
+    app_user_id_suffix: identifierSuffix(appSession.user_id),
+    canonical_ids_match:
+      authenticated.session.user.id === appSession.user_id,
+    supabase_session_status: "present",
+    providers,
+    password_update_status: error || !data.user ? "error" : "success",
+    supabase_error_code: safeSymbol(error?.code),
+    supabase_error_status:
+      typeof error?.status === "number" ? error.status : null,
+    authorization_decision: error || !data.user ? "deny" : "allow",
+    failure_stage: error || !data.user ? "supabase_update_user" : null,
+  }));
   if (error || !data.user) {
     return NextResponse.json(
       { error: "Could not update this sign-in method. Please sign in again." },
