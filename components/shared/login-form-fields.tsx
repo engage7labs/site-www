@@ -10,9 +10,9 @@ import {
 } from "@/lib/auth-redirects";
 import { publishAuthSessionChanged } from "@/lib/auth-session-client";
 import { detectLocale, getDictionary, type Locale } from "@/lib/i18n";
+import { postLoginDestination } from "@/lib/post-login-routing";
 import { rememberPendingPublicClaim } from "@/lib/public-analysis-claim";
 import { createSupabaseBrowserClient } from "@/lib/supabase-browser";
-import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 
 interface LoginFormFieldsProps {
@@ -60,7 +60,6 @@ export function LoginFormFields({
   requireAdmin = false,
   onSuccess,
 }: LoginFormFieldsProps) {
-  const router = useRouter();
   const [mode, setMode] = useState<"login" | "register">("login");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -137,8 +136,9 @@ export function LoginFormFields({
 
       publishAuthSessionChanged("login");
       onSuccess?.();
-      router.push(role === "admin" ? "/admin" : redirectTo);
-      router.refresh();
+      // Keep post-login navigation as one committed browser transition. A client
+      // refresh immediately after router.push can supersede the intended route.
+      window.location.assign(postLoginDestination({ requireAdmin, redirectTo }));
     } catch {
       setError(copy.tryAgain);
     } finally {
