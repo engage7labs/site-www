@@ -16,6 +16,17 @@ export interface SignatureHeaders {
   "X-Engage7-Signature": string;
 }
 
+function canonicalSignaturePath(path: string): string {
+  const trimmed = path.trim();
+  if (!trimmed) return "/";
+
+  try {
+    return new URL(trimmed, "https://engage7.local").pathname || "/";
+  } catch {
+    return trimmed.split("?")[0]?.split("#")[0] || "/";
+  }
+}
+
 /**
  * Compute HMAC-SHA256 signature headers for a request.
  * Returns empty object when no signing secret is configured (dev mode).
@@ -28,7 +39,8 @@ export function signRequest(
   if (!SIGNING_SECRET) return {};
 
   const timestamp = Math.floor(Date.now() / 1000).toString();
-  const canonical = `${method}\n${path}\n${timestamp}\n${bodyHash}`;
+  const canonicalPath = canonicalSignaturePath(path);
+  const canonical = `${method}\n${canonicalPath}\n${timestamp}\n${bodyHash}`;
   const signature = createHmac("sha256", SIGNING_SECRET)
     .update(canonical)
     .digest("hex");
