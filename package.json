@@ -1,6 +1,6 @@
 {
   "name": "my-v0-project",
-  "version": "1.48.9.6",
+  "version": "1.48.9.7",
   "private": true,
   "scripts": {
     "build": "next build",
@@ -10,6 +10,7 @@
     "test:admin-post-login-routing": "node --experimental-strip-types scripts/test-admin-post-login-routing.mjs",
     "test:google-pkce-storage": "node --experimental-strip-types scripts/test-google-pkce-storage.mjs",
     "test:password-update-error": "node --experimental-strip-types scripts/test-password-update-error.mjs",
+    "test:password-method-status": "node --experimental-strip-types scripts/test-password-method-status.mjs",
     "start": "next start"
   },
   "dependencies": {

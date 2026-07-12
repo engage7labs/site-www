@@ -1,4 +1,5 @@
 import { SESSION_COOKIE_NAME, verifyJwt } from "@/lib/auth-server";
+import { PASSWORD_ENABLED_METADATA_KEY } from "@/lib/password-method-status";
 import { classifyPasswordUpdateFailure } from "@/lib/password-update-error";
 import {
   authenticatedSupabaseClient,
@@ -39,7 +40,17 @@ export async function POST(request: NextRequest) {
       { status: 401 },
     );
   }
-  const { data, error } = await authenticated.client.auth.updateUser({ password });
+  let { data, error } = await authenticated.client.auth.updateUser({
+    password,
+    data: { [PASSWORD_ENABLED_METADATA_KEY]: true },
+  });
+  if (error?.code === "same_password") {
+    const markerUpdate = await authenticated.client.auth.updateUser({
+      data: { [PASSWORD_ENABLED_METADATA_KEY]: true },
+    });
+    data = markerUpdate.data;
+    error = markerUpdate.error;
+  }
   const providers = Array.from(
     new Set(
       (authenticated.session.user.identities ?? [])

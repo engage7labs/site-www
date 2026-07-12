@@ -1,4 +1,5 @@
 import { SESSION_COOKIE_NAME, verifyJwt } from "@/lib/auth-server";
+import { hasPasswordSignInMethod } from "@/lib/password-method-status";
 import { supabaseAdmin } from "@/lib/supabase-admin";
 import { NextRequest, NextResponse } from "next/server";
 
@@ -20,7 +21,7 @@ export async function GET(request: NextRequest) {
   );
   for (const identity of data.user.identities ?? []) providers.add(identity.provider);
   return NextResponse.json({
-    password: providers.has("email"),
+    password: hasPasswordSignInMethod(data.user),
     google: providers.has("google"),
   });
 }
