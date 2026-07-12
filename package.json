@@ -1,6 +1,6 @@
 {
   "name": "my-v0-project",
-  "version": "1.48.9.5",
+  "version": "1.48.9.6",
   "private": true,
   "scripts": {
     "build": "next build",
@@ -9,6 +9,7 @@
     "test:admin-role-resolution-diagnostics": "node --experimental-strip-types scripts/test-admin-role-resolution-diagnostics.mjs",
     "test:admin-post-login-routing": "node --experimental-strip-types scripts/test-admin-post-login-routing.mjs",
     "test:google-pkce-storage": "node --experimental-strip-types scripts/test-google-pkce-storage.mjs",
+    "test:password-update-error": "node --experimental-strip-types scripts/test-password-update-error.mjs",
     "start": "next start"
   },
   "dependencies": {

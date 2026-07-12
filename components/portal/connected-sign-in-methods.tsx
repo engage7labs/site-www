@@ -37,7 +37,14 @@ export function ConnectedSignInMethods() {
       setMessage(copy.passwordConnected);
       await load();
     } else {
-      setMessage(copy.reauthenticate);
+      const data = (await response?.json().catch(() => ({}))) as {
+        error_code?: string;
+      };
+      setMessage(
+        data.error_code === "weak_password"
+          ? copy.weakPassword
+          : copy.reauthenticate,
+      );
     }
     setBusy(false);
   }

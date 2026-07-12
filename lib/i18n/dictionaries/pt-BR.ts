@@ -774,8 +774,10 @@ export const ptBR: Dictionary = {
       bannerSuffix: "para voltar de qualquer dispositivo.",
       title: "Crie seu código de acesso",
       description:
-        "Escolha um código pessoal para voltar ao seu painel de qualquer dispositivo. Pelo menos 8 caracteres.",
+        "Escolha um código pessoal para voltar ao seu painel de qualquer dispositivo. Use pelo menos 8 caracteres e evite códigos comuns ou fáceis de adivinhar.",
       save: "Salvar código de acesso",
+      weakPassword:
+        "Escolha um código de acesso mais forte. Evite códigos comuns ou fáceis de adivinhar e combine diferentes tipos de caracteres.",
       genericError: "Algo deu errado — tente novamente",
       networkError: "Erro de rede — tente novamente",
     },
@@ -790,6 +792,8 @@ export const ptBR: Dictionary = {
       addPassword: "Adicionar senha",
       connectGoogle: "Conectar Google",
       passwordConnected: "Senha conectada.",
+      weakPassword:
+        "Escolha uma senha mais forte. Evite senhas comuns ou fáceis de adivinhar e combine diferentes tipos de caracteres.",
       reauthenticate: "Entre novamente antes de alterar os métodos de entrada.",
       googleError: "Não foi possível conectar o Google. Tente novamente.",
     },

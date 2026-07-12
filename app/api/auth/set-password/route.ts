@@ -1,4 +1,5 @@
 import { SESSION_COOKIE_NAME, verifyJwt } from "@/lib/auth-server";
+import { classifyPasswordUpdateFailure } from "@/lib/password-update-error";
 import {
   authenticatedSupabaseClient,
   setSupabaseSessionCookies,
@@ -74,9 +75,16 @@ export async function POST(request: NextRequest) {
     failure_stage: error || !data.user ? "supabase_update_user" : null,
   }));
   if (error || !data.user) {
+    const failure = classifyPasswordUpdateFailure(error);
     return NextResponse.json(
-      { error: "Could not update this sign-in method. Please sign in again." },
-      { status: 409 },
+      {
+        error:
+          failure.errorCode === "weak_password"
+            ? "This access code does not meet the security requirements."
+            : "Could not update this sign-in method. Please sign in again.",
+        error_code: failure.errorCode,
+      },
+      { status: failure.status },
     );
   }
   const response = NextResponse.json({ ok: true });

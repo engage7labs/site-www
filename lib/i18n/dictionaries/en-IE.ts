@@ -762,8 +762,10 @@ export const enIE = {
       bannerSuffix: "to return from any device.",
       title: "Create your access code",
       description:
-        "Choose a personal code to return to your dashboard from any device. At least 8 characters.",
+        "Choose a personal code to return to your dashboard from any device. Use at least 8 characters and avoid common or easily guessed codes.",
       save: "Save access code",
+      weakPassword:
+        "Choose a stronger access code. Avoid common or easily guessed codes and combine different character types.",
       genericError: "Something went wrong — please try again",
       networkError: "Network error — please try again",
     },
@@ -778,6 +780,8 @@ export const enIE = {
       addPassword: "Add password",
       connectGoogle: "Connect Google",
       passwordConnected: "Password connected.",
+      weakPassword:
+        "Choose a stronger password. Avoid common or easily guessed passwords and combine different character types.",
       reauthenticate: "Please sign in again before changing sign-in methods.",
       googleError: "Google could not be connected. Please try again.",
     },
