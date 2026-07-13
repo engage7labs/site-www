@@ -1,4 +1,3 @@
-import { syncAuthenticatedAppUser } from "@/lib/app-user-sync";
 import { buildAuthCallbackUrl, resolveAuthRedirectOrigin } from "@/lib/auth-redirects";
 import { createSupabaseAuthServerClient } from "@/lib/supabase-auth-server";
 import { NextRequest, NextResponse } from "next/server";
@@ -29,20 +28,6 @@ export async function POST(request: NextRequest) {
         { error: "Unable to create account. Please check the details and try again." },
         { status: 400 },
       );
-    }
-
-    if (data.user?.id && data.user.email && (data.user.identities?.length ?? 0) > 0) {
-      const role = await syncAuthenticatedAppUser({
-        userId: data.user.id,
-        email: data.user.email,
-        provider: "email",
-      });
-      if (!role) {
-        return NextResponse.json(
-          { error: "Could not safely resolve this account." },
-          { status: 409 },
-        );
-      }
     }
 
     // Same response for new and existing addresses prevents enumeration.

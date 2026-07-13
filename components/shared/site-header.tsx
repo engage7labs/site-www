@@ -6,7 +6,7 @@
 
 import { useLocale } from "@/components/providers/locale-provider";
 import { LocaleSwitcher } from "@/components/shared/locale-switcher";
-import { LoginFormFields } from "@/components/shared/login-form-fields";
+import { PasswordlessLoginFormFields } from "@/components/shared/passwordless-login-form-fields";
 import { Logo } from "@/components/shared/logo";
 import { ThemeSwitcher } from "@/components/shared/theme-switcher";
 import { Button } from "@/components/ui/button";
@@ -132,7 +132,7 @@ export function SiteHeader() {
                     {t.auth.login.subtitle}
                   </DialogDescription>
                 </DialogHeader>
-                <LoginFormFields onSuccess={() => setLoginOpen(false)} />
+                <PasswordlessLoginFormFields onSuccess={() => setLoginOpen(false)} />
               </DialogContent>
             </Dialog>
           ) : (

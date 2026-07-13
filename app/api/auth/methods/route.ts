@@ -22,6 +22,8 @@ export async function GET(request: NextRequest) {
   for (const identity of data.user.identities ?? []) providers.add(identity.provider);
   return NextResponse.json({
     password: hasPasswordSignInMethod(data.user),
+    email: providers.has("email") || Boolean(data.user.email),
     google: providers.has("google"),
+    apple: providers.has("apple"),
   });
 }

@@ -20,7 +20,6 @@ import { createPollingManager } from "@/lib/polling";
 import {
   trackAnalysisCompleted,
   trackTeaserViewed,
-  trackTrialUnlockCompleted,
 } from "@/lib/telemetry";
 import {
   claimPublicAnalysis,
@@ -343,81 +342,15 @@ export default function ResultPage({
     email: string,
     consent: boolean
   ): Promise<void> => {
-    if (!jobId) return;
-    rememberPendingPublicClaim(jobId, email);
-    const analysisData = result
-      ? {
-          report_label: "Health Analysis",
-          summary: result.summary,
-          highlights: result.highlights,
-          sections: result.sections,
-        }
-      : undefined;
-
-    const response = await fetch("/api/proxy/users/create-or-get", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        email,
-        consent,
-        preferred_locale: locale,
-        job_id: jobId,
-        analysis_data: analysisData,
-      }),
-    });
-
-    if (!response.ok) {
-      const data = await response.json().catch(() => ({}));
-      throw new Error(
-        (data as { detail?: string }).detail ||
-          "Failed to create account. Please try again."
-      );
-    }
-
-    const activation = (await response.json().catch(() => ({}))) as {
-      authentication_required?: boolean;
-      email_delivery?: { status?: string; reason?: string };
-    };
-    if (activation.authentication_required) {
-      rememberPendingPremiumOnboarding(jobId);
-      const status = activation.email_delivery?.status;
-      if (status && status !== "sent") {
-        const { toast } = await import("sonner");
-        toast.warning(t.result.preview.fullReport.emailWarning);
-      } else {
-        const { toast } = await import("sonner");
-        toast.success(t.result.preview.fullReport.checkEmail);
-      }
-      return;
-    }
-
-    try {
-      await claimPublicAnalysis(jobId, { deferToast: true });
-      clearPendingPublicClaim();
-    } catch (err) {
-      if (err instanceof PublicClaimBlockedError && err.status === "claim_email_mismatch") {
-        throw new Error(t.portal.shell.claimEmailMismatch);
-      }
-      throw new Error(
-        err instanceof Error
-          ? `Your account is ready, but we could not import this analysis yet: ${err.message}`
-          : "Your account is ready, but we could not import this analysis yet. Please try again from the Portal.",
-      );
-    }
-
-    trackTrialUnlockCompleted(jobId);
-
-    // Sprint 37.8: surface email-delivery outcome from the proxy without
-    // blocking the portal redirect. Show a calm warning toast if the
-    // welcome/magic-link email failed; the user is still authenticated
-    // via the session cookie set by the proxy.
-    const status = activation.email_delivery?.status;
-    if (status && status !== "sent" && status !== "skipped_existing_user") {
-      const { toast } = await import("sonner");
-      toast.warning(
-        t.result.preview.fullReport.emailWarning
-      );
-    }
+    if (!jobId || !consent) return;
+    rememberPendingPremiumOnboarding(jobId);
+    rememberPendingPublicClaim(jobId);
+    window.sessionStorage.setItem("engage7.pendingSignupEmail", email.trim().toLowerCase());
+    const login = new URL("/login", window.location.origin);
+    login.searchParams.set("next", "/portal");
+    login.searchParams.set("claim_job_id", jobId);
+    login.searchParams.set("signup", "1");
+    window.location.assign(login.toString());
   };
 
   const handleModalGoogle = async (): Promise<void> => {
@@ -430,6 +363,21 @@ export default function ResultPage({
     callback.searchParams.set("locale", locale);
     const { error } = await createSupabaseBrowserClient().auth.signInWithOAuth({
       provider: "google",
+      options: { redirectTo: callback.toString() },
+    });
+    if (error) throw error;
+  };
+
+  const handleModalApple = async (): Promise<void> => {
+    if (!jobId) return;
+    rememberPendingPremiumOnboarding(jobId);
+    const callback = new URL(
+      buildAuthCallbackUrl(resolveAuthRedirectOrigin(window.location.origin), "/portal"),
+    );
+    callback.searchParams.set("claim_job_id", jobId);
+    callback.searchParams.set("locale", locale);
+    const { error } = await createSupabaseBrowserClient().auth.signInWithOAuth({
+      provider: "apple",
       options: { redirectTo: callback.toString() },
     });
     if (error) throw error;
@@ -670,6 +618,7 @@ export default function ResultPage({
         onDownload={handleModalDownload}
         onFeedback={() => undefined}
         onEmailSubmit={handleModalEmail}
+        onAppleSubmit={handleModalApple}
         onGoogleSubmit={handleModalGoogle}
         onShare={handleModalShare}
         mode={isProtectedHandoff ? "protected-handoff" : "premium"}

@@ -6,9 +6,7 @@ import {
 import { INTERNAL_API_BASE_URL } from "@/lib/server-config";
 
 export async function syncAuthenticatedAppUserWithDiagnostics(params: {
-  userId: string;
-  email: string;
-  provider: "email" | "google";
+  accessToken: string;
   preferredLocale?: string;
 }): Promise<AuthenticatedAppUserSyncResult> {
   const path = "/api/users/sync-authenticated";
@@ -16,12 +14,10 @@ export async function syncAuthenticatedAppUserWithDiagnostics(params: {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
+      Authorization: `Bearer ${params.accessToken}`,
       ...signRequest("POST", path),
     },
     body: JSON.stringify({
-      email: params.email,
-      user_id: params.userId,
-      auth_provider: params.provider,
       preferred_locale: params.preferredLocale,
     }),
     cache: "no-store",
@@ -44,9 +40,7 @@ export async function syncAuthenticatedAppUserWithDiagnostics(params: {
 }
 
 export async function syncAuthenticatedAppUser(params: {
-  userId: string;
-  email: string;
-  provider: "email" | "google";
+  accessToken: string;
   preferredLocale?: string;
 }): Promise<"user" | "admin" | null> {
   const result = await syncAuthenticatedAppUserWithDiagnostics(params);

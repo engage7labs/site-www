@@ -54,13 +54,8 @@ export async function POST(request: Request) {
       return invalidCredentials();
     }
 
-    const provider = authUser.identities?.some((identity) => identity.provider === "google")
-      ? "google"
-      : "email";
     const appUserSync = await syncAuthenticatedAppUserWithDiagnostics({
-      userId: authUser.id,
-      email: authUser.email,
-      provider,
+      accessToken: authSession.access_token,
     });
     const role = appUserSync.role;
     if (!role) {

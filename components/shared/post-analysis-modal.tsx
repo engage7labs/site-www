@@ -12,6 +12,7 @@ interface PostAnalysisModalProps {
   onFeedback: (value: string, note?: string) => void;
   onEmailSubmit: (email: string, consent: boolean) => Promise<void>;
   onGoogleSubmit?: () => Promise<void>;
+  onAppleSubmit?: () => Promise<void>;
   onShare: () => Promise<void>;
   pdfAvailable?: boolean;
   mode?: "premium" | "protected-handoff";
@@ -25,6 +26,7 @@ export function PostAnalysisModal({
   onClose,
   onEmailSubmit,
   onGoogleSubmit,
+  onAppleSubmit,
   onProtectedHandoff,
   mode = "premium",
 }: Readonly<PostAnalysisModalProps>) {
@@ -97,12 +99,13 @@ export function PostAnalysisModal({
     }
   };
 
-  const handleGoogle = async () => {
-    if (!onGoogleSubmit || !consentChecked || submitting || redirecting) return;
+  const handleProvider = async (provider: "apple" | "google") => {
+    const submit = provider === "apple" ? onAppleSubmit : onGoogleSubmit;
+    if (!submit || !consentChecked || submitting || redirecting) return;
     setSubmitError(null);
     setSubmitting(true);
     try {
-      await onGoogleSubmit();
+      await submit();
     } catch {
       setSubmitError(t.result.premiumModal.genericError);
       setSubmitting(false);
@@ -158,10 +161,20 @@ export function PostAnalysisModal({
             </label>
           </div>}
 
+          {!isProtectedHandoff && onAppleSubmit && (
+            <button
+              type="button"
+              onClick={() => void handleProvider("apple")}
+              disabled={!consentChecked || submitting || redirecting}
+              className="inline-flex w-full items-center justify-center gap-2 rounded-lg bg-black px-5 py-3 text-sm font-semibold text-white disabled:opacity-50"
+            >
+              {t.result.premiumModal.apple}
+            </button>
+          )}
           {!isProtectedHandoff && onGoogleSubmit && <>
             <button
               type="button"
-              onClick={handleGoogle}
+              onClick={() => void handleProvider("google")}
               disabled={!consentChecked || submitting || redirecting}
               className="inline-flex w-full items-center justify-center gap-2 rounded-lg border border-border bg-background px-5 py-3 text-sm font-semibold text-foreground transition-colors hover:bg-muted disabled:cursor-not-allowed disabled:opacity-50"
             >

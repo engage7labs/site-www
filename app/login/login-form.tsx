@@ -1,7 +1,7 @@
 "use client";
 
 import { useLocale } from "@/components/providers/locale-provider";
-import { LoginFormFields } from "@/components/shared/login-form-fields";
+import { PasswordlessLoginFormFields } from "@/components/shared/passwordless-login-form-fields";
 import { Logo } from "@/components/shared/logo";
 import {
   Card,
@@ -21,6 +21,7 @@ export function LoginForm() {
   const claimJobId = searchParams.get("claim_job_id");
   const unauth = searchParams.get("unauth") === "1";
   const isAdmin = searchParams.get("admin") === "1";
+  const isSignup = searchParams.get("signup") === "1";
 
   // Show session-expired banner before the form renders
   const [showExpired] = useState(unauth);
@@ -51,11 +52,12 @@ export function LoginForm() {
             Session expired. Please sign in again.
           </p>
         )}
-        <LoginFormFields
+        <PasswordlessLoginFormFields
           redirectTo={isAdmin ? "/admin" : next}
           claimJobId={claimJobId}
           enableSocialLogin={!isAdmin}
           requireAdmin={isAdmin}
+          initialMode={isSignup ? "register" : "login"}
         />
       </CardContent>
     </Card>

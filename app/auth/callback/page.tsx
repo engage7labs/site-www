@@ -3,7 +3,7 @@
 /**
  * /auth/callback — Supabase Auth callback handler.
  *
- * Handles existing magic-link hash tokens and Google OAuth PKCE code returns,
+ * Handles existing email hash tokens and provider-neutral OAuth PKCE returns,
  * then exchanges the Supabase session for Engage7's app session cookie.
  *
  * Shows a minimal loading state — user should not see this for more than 1-2s.
@@ -21,7 +21,7 @@ import {
 import { rememberPendingPublicClaim } from "@/lib/public-analysis-claim";
 import { createSupabaseBrowserClient } from "@/lib/supabase-browser";
 
-const GOOGLE_SESSION_RETRY_DELAYS_MS = [0, 250, 500, 750, 1000, 1000] as const;
+const AUTH_SESSION_RETRY_DELAYS_MS = [0, 250, 500, 750, 1000, 1000] as const;
 const APP_SESSION_RETRY_DELAYS_MS = [0, 500, 1000, 1000, 1000] as const;
 const APP_SESSION_VERIFY_DELAYS_MS = [0, 100, 250, 500, 1000] as const;
 const TRANSIENT_APP_SESSION_STATUSES = new Set([408, 425, 429, 500, 502, 503, 504]);
@@ -30,13 +30,12 @@ function sleep(ms: number) {
   return new Promise((resolve) => window.setTimeout(resolve, ms));
 }
 
-function logGoogleCallback(
+function logAuthCallback(
   event: string,
   details: Record<string, string | number | boolean | null> = {},
 ) {
   if (process.env.NODE_ENV === "production") return;
-  console.debug("[auth:google_callback]", {
-    provider: "google",
+  console.debug("[auth:callback]", {
     event,
     ...details,
   });
@@ -45,12 +44,12 @@ function logGoogleCallback(
 async function waitForSupabaseSession(
   supabase: ReturnType<typeof createSupabaseBrowserClient>,
 ): Promise<Session | null> {
-  for (const [retryCount, delayMs] of GOOGLE_SESSION_RETRY_DELAYS_MS.entries()) {
+  for (const [retryCount, delayMs] of AUTH_SESSION_RETRY_DELAYS_MS.entries()) {
     if (delayMs > 0) await sleep(delayMs);
 
     const { data, error } = await supabase.auth.getSession();
     const session = data.session ?? null;
-    logGoogleCallback("session_retry", {
+    logAuthCallback("session_retry", {
       retry_count: retryCount,
       session_found: Boolean(session?.access_token),
       has_error: Boolean(error),
@@ -79,7 +78,7 @@ async function createAppSession(params: {
   redirectTo: string;
   preferredLocale: string;
 }) {
-  let lastFailure: { status: number; error?: string } | null = null;
+  let lastFailure: { status: number; error?: string; errorCode?: string } | null = null;
 
   for (const [retryCount, delayMs] of APP_SESSION_RETRY_DELAYS_MS.entries()) {
     if (delayMs > 0) await sleep(delayMs);
@@ -102,7 +101,7 @@ async function createAppSession(params: {
       error_code?: string;
     };
 
-    logGoogleCallback("app_session_retry", {
+    logAuthCallback("app_session_retry", {
       retry_count: retryCount,
       status: res.status,
       session_found: res.ok,
@@ -114,7 +113,8 @@ async function createAppSession(params: {
 
     lastFailure = {
       status: res.ok ? 425 : res.status,
-      error: data.error_code === "google_sync_failed" ? undefined : data.error,
+      error: data.error_code === "auth_sync_failed" ? undefined : data.error,
+      errorCode: data.error_code,
     };
     if (!res.ok && !TRANSIENT_APP_SESSION_STATUSES.has(res.status)) break;
   }
@@ -123,6 +123,7 @@ async function createAppSession(params: {
     ok: false as const,
     status: lastFailure?.status ?? 0,
     error: lastFailure?.error,
+    errorCode: lastFailure?.errorCode,
   };
 }
 
@@ -153,7 +154,7 @@ export default function AuthCallbackPage() {
       const code = search.get("code");
 
       if (!accessToken && code) {
-        logGoogleCallback("callback_entered", { has_code: true });
+        logAuthCallback("callback_entered", { has_code: true });
         const supabase = createSupabaseBrowserClient();
         try {
           const { data, error: exchangeError } =
@@ -162,7 +163,7 @@ export default function AuthCallbackPage() {
           accessToken = data.session?.access_token ?? null;
           refreshToken = data.session?.refresh_token ?? null;
         } catch {
-          logGoogleCallback("code_exchange_failed");
+          logAuthCallback("code_exchange_failed");
           const settledSession = await waitForSupabaseSession(supabase);
           accessToken = settledSession?.access_token ?? null;
           refreshToken = settledSession?.refresh_token ?? null;
@@ -180,13 +181,13 @@ export default function AuthCallbackPage() {
       }
 
       if (!accessToken || !refreshToken) {
-        logGoogleCallback("session_failed", { reason: "missing_access_token" });
+        logAuthCallback("session_failed", { reason: "missing_access_token" });
         setError(localizedCopy.invalid);
         return;
       }
 
       try {
-        logGoogleCallback("app_session_exchange_started");
+        logAuthCallback("app_session_exchange_started");
         const result = await createAppSession({
           accessToken,
           refreshToken,
@@ -196,18 +197,22 @@ export default function AuthCallbackPage() {
         });
         if (result.ok) {
           const finalRedirect = safeAuthRedirectPath(result.redirectTo ?? "/portal");
-          logGoogleCallback("redirect", { redirect_to: finalRedirect });
+          logAuthCallback("redirect", { redirect_to: finalRedirect });
           publishAuthSessionChanged("login");
           router.replace(finalRedirect);
         } else {
-          logGoogleCallback("app_session_exchange_failed", {
+          logAuthCallback("app_session_exchange_failed", {
             status: result.status,
             has_error: Boolean(result.error),
           });
-          setError(result.error ?? localizedCopy.generic);
+          setError(
+            result.errorCode === "identity_mismatch"
+              ? localizedCopy.identityMismatch
+              : result.error ?? localizedCopy.generic,
+          );
         }
       } catch {
-        logGoogleCallback("connection_failed");
+        logAuthCallback("connection_failed");
         setError(localizedCopy.connection);
       }
     };

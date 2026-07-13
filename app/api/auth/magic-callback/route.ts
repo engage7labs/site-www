@@ -1,7 +1,8 @@
 import { syncAuthenticatedAppUser } from "@/lib/app-user-sync";
 import { safeAuthRedirectPath } from "@/lib/auth-redirects";
-import { SESSION_COOKIE_NAME, signJwt } from "@/lib/auth-server";
+import { SESSION_COOKIE_NAME, signJwt, verifyJwt } from "@/lib/auth-server";
 import { normalizeLocale } from "@/lib/i18n";
+import { preservesCanonicalUser } from "@/lib/auth-intent";
 import { setSupabaseSessionCookies } from "@/lib/supabase-auth-server";
 import { supabaseAdmin } from "@/lib/supabase-admin";
 import type { Session } from "@supabase/supabase-js";
@@ -19,10 +20,8 @@ function logCallback(event: string, fields: Record<string, unknown> = {}) {
 
 function providerFor(user: {
   identities?: Array<{ provider?: string }> | null;
-}): "email" | "google" {
-  return user.identities?.some((identity) => identity.provider === "google")
-    ? "google"
-    : "email";
+}): string {
+  return user.identities?.find((identity) => identity.provider)?.provider ?? "email";
 }
 
 export async function POST(request: NextRequest) {
@@ -42,17 +41,36 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: "Invalid or expired sign-in." }, { status: 401 });
   }
 
+  const existingAppSession = verifyJwt(
+    request.cookies.get(SESSION_COOKIE_NAME)?.value ?? "",
+  );
+  if (
+    existingAppSession?.user_id &&
+    existingAppSession.mode !== "admin_view" &&
+    !preservesCanonicalUser(existingAppSession.user_id, user.id)
+  ) {
+    logCallback("auth_callback_identity_mismatch", { correlation_id: correlationId });
+    return NextResponse.json(
+      {
+        error: "This sign-in method is already connected to another Engage7 account.",
+        error_code: "identity_mismatch",
+      },
+      { status: 409 },
+    );
+  }
+
   const provider = providerFor(user);
   const role = await syncAuthenticatedAppUser({
-    userId: user.id,
-    email: user.email,
-    provider,
+    accessToken,
     preferredLocale,
   }).catch(() => null);
   if (!role) {
     logCallback("auth_callback_sync_failed", { correlation_id: correlationId, provider });
     return NextResponse.json(
-      { error: "Could not safely resolve this account." },
+      {
+        error: "Could not safely resolve this account.",
+        error_code: "auth_sync_failed",
+      },
       { status: 409 },
     );
   }
