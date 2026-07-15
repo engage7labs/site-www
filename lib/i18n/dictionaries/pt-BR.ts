@@ -616,29 +616,29 @@ export const ptBR: Dictionary = {
   // Privacy Policy
   privacyPolicy: {
     title: "Política de Privacidade",
-    lastUpdated: "Última atualização: 8 de março de 2026",
+    lastUpdated: "Última atualização: 15 de julho de 2026",
     intro:
-      "O Engage7 está comprometido em proteger sua privacidade. Esta política explica como lidamos com seus dados ao usar nosso serviço de análise.",
+      "Esta política explica como a Engage7 Labs trata dados pessoais quando você usa o site, o aplicativo iOS, os serviços de autenticação e os recursos de análise de saúde do Engage7.",
     sections: {
       dataCollection: {
-        title: "Coleta de Dados",
+        title: "Dados que Coletamos",
         content:
-          "Quando você carrega um conjunto de dados para análise, processamos o arquivo para gerar insights determinísticos. Você mantém a propriedade de seus dados.",
+          "Coletamos dados de conta e autenticação, incluindo identificador da conta, endereço de email e nome quando fornecido por um provedor de identidade; idioma preferido; arquivos de saúde e fitness do Apple Health ou de outros dispositivos vestíveis que você escolha enviar; e as análises e o histórico da conta gerados a partir desses arquivos. Também coletamos registros operacionais de uso e diagnóstico que podem incluir endereço IP, rota solicitada, status HTTP, horários, identificadores de job ou análise, latência e informações de erro. Se você aceitar cookies opcionais de analytics no site, também poderemos coletar visualizações de página, eventos selecionados do produto, localidade, fuso horário, referência e categorias amplas de navegador, tela e dispositivo. Valores brutos de saúde, arquivos enviados, emails e feedback em texto livre não são enviados a serviços de analytics do produto.",
       },
       dataUsage: {
-        title: "Uso de Dados",
+        title: "Como Usamos os Dados",
         content:
-          "Seu conjunto de dados é usado exclusivamente para gerar seu relatório de análise. Não treinamos modelos de IA externos com seus dados. O processamento segue regras determinísticas baseadas em linhas de base fisiológicas.",
+          "Usamos dados pessoais para autenticar contas, fornecer e personalizar recursos do Engage7, processar uploads de saúde e fitness autorizados pelo usuário, gerar relatórios e histórico da conta, proteger o serviço, prevenir abuso, prestar suporte, manter a disponibilidade e melhorar escalabilidade e desempenho. Analytics opcionais do site são usados somente após consentimento para entender a adoção de recursos e a efetividade do produto. Quando você seleciona explicitamente Gerar reflexão com IA no site, um resumo sanitizado derivado da sua análise é enviado à OpenAI exclusivamente para gerar essa reflexão. O resumo exclui seu nome, endereço de email, identificador direto da conta, arquivo bruto enviado e séries temporais brutas. Dados da API da OpenAI não são usados para treinar modelos por padrão; logs de segurança e monitoramento de abuso do provedor podem manter o conteúdo enviado por até 30 dias. O Engage7 não vende dados pessoais nem os utiliza para rastreamento publicitário entre aplicativos ou sites.",
       },
       dataStorage: {
-        title: "Armazenamento de Dados",
+        title: "Provedores, Armazenamento e Retenção",
         content:
-          "Os resultados da análise e arquivos carregados são armazenados temporariamente para gerar seu relatório. Não vendemos nem compartilhamos seus dados com terceiros.",
+          "O Engage7 utiliza Supabase para autenticação de contas e serviços de banco de dados, Microsoft Azure para processamento da aplicação, armazenamento protegido e logs operacionais, Vercel para o site e Apple ou Google quando você escolhe esses serviços de login. PostHog e Vercel Analytics podem processar analytics opcionais do site somente após consentimento. A OpenAI processa um resumo sanitizado da análise somente quando você solicita uma reflexão com IA. Exigimos que provedores de serviço com acesso a dados pessoais os protejam com padrões pelo menos equivalentes aos desta política e da legislação aplicável. Dados da conta e histórico de análises pertencente ao usuário são mantidos enquanto necessários para fornecer a conta e estão incluídos no processo de exclusão de conta dentro do aplicativo. Artefatos de análises públicas não reivindicadas podem ser mantidos por até 7 dias. Logs operacionais do Azure são mantidos por até 30 dias. Backups limitados, registros de segurança ou registros de provedores podem permanecer durante o respectivo período operacional ou legal aplicável.",
       },
       dataRights: {
-        title: "Seus Direitos",
+        title: "Suas Escolhas e Direitos",
         content:
-          "Você mantém a propriedade total de seus dados. Por padrão, o Engage7 não retém conjuntos de dados identificáveis ou resultados de análise além do operacionalmente necessário. Se recursos de armazenamento persistente ou histórico de conta forem introduzidos no futuro, eles exigirão seu consentimento explícito e serão acompanhados de termos de privacidade atualizados.",
+          "Você mantém a propriedade dos dados enviados. É possível recusar ou retirar o consentimento para analytics opcionais do site e excluir sua conta Engage7 pelo aplicativo para iniciar a exclusão dos dados pertencentes à conta. Dependendo da sua localização, você também pode solicitar acesso, correção, exclusão, restrição, oposição ou portabilidade dos seus dados pessoais. Use a página de Contato para fazer uma solicitação de privacidade ou perguntar como seus dados são tratados. Atualizaremos esta política e sua data quando nossas práticas mudarem de forma relevante.",
       },
     },
     backToHome: "Voltar para Início",
@@ -1331,6 +1331,8 @@ export const ptBR: Dictionary = {
         subtitle: "Prévia de desempenho e recuperação",
         generate: "Gerar reflexão com IA",
         generating: "Gerando...",
+        consentDisclosure:
+          "Ao selecionar Gerar reflexão com IA, você consente com o envio de um resumo sanitizado desta análise à OpenAI exclusivamente para gerar a reflexão. O resumo exclui seu nome, email, identificador direto da conta, upload bruto e séries temporais brutas.",
         badge: "Assistido por IA",
         previewWarning:
           "Aviso de Preview: esta resposta não passaria no modo restrito.",

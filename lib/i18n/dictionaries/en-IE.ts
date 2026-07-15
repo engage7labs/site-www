@@ -606,29 +606,29 @@ export const enIE = {
   // Privacy Policy
   privacyPolicy: {
     title: "Privacy Policy",
-    lastUpdated: "Last updated: March 8, 2026",
+    lastUpdated: "Last updated: July 15, 2026",
     intro:
-      "Engage7 is committed to protecting your privacy. This policy explains how we handle your data when you use our analysis service.",
+      "This policy explains how Engage7 Labs handles personal data when you use the Engage7 website, iOS app, authentication services, and health analysis features.",
     sections: {
       dataCollection: {
-        title: "Data Collection",
+        title: "Data We Collect",
         content:
-          "When you upload a dataset for analysis, we process the file to generate deterministic insights. You retain ownership of your data.",
+          "We collect account and authentication data, including your account identifier, email address, and name when an identity provider supplies it; your preferred language; Apple Health or other wearable health and fitness files that you choose to upload; and the analyses and account history generated from those files. We also collect operational usage and diagnostic records that may include an IP address, requested route, HTTP status, timestamps, job or analysis identifiers, latency, and error information. If you accept optional analytics cookies on the website, we may also collect page views, selected product events, locale, time zone, referrer, and broad browser, screen, and device categories. Raw health values, uploaded files, emails, and free-text feedback are not sent to product analytics services.",
       },
       dataUsage: {
-        title: "Data Usage",
+        title: "How We Use Data",
         content:
-          "Your dataset is used solely to generate your analysis report. We do not train external AI models on your data. Processing follows deterministic rules based on your recent personal pattern.",
+          "We use personal data to authenticate accounts, provide and personalise Engage7 features, process user-authorised health and fitness uploads, generate reports and account history, protect the service, prevent abuse, provide support, maintain availability, and improve scalability and performance. Optional website analytics are used only after consent to understand feature adoption and product effectiveness. When you explicitly select Generate AI reflection on the website, a sanitised summary derived from your analysis is sent to OpenAI solely to generate that reflection. The summary excludes your name, email address, direct account identifier, raw uploaded file, and raw time series. OpenAI API data is not used to train models by default; provider security and abuse-monitoring logs may retain submitted content for up to 30 days. Engage7 does not sell personal data or use it for cross-app or cross-site advertising tracking.",
       },
       dataStorage: {
-        title: "Data Storage",
+        title: "Service Providers, Storage, and Retention",
         content:
-          "Analysis results and uploaded files are temporarily stored to generate your report. We do not sell or share your data with third parties.",
+          "Engage7 uses Supabase for account authentication and database services, Microsoft Azure for application processing, protected storage, and operational logs, Vercel for the website, and Apple or Google when you choose their sign-in services. PostHog and Vercel Analytics may process optional website analytics only after analytics consent. OpenAI processes a sanitised analysis summary only when you request an AI reflection. We require service providers that access personal data to protect it to standards at least equivalent to this policy and applicable law. Account data and user-owned analysis history are retained while needed to provide your account and are included in the in-app account-deletion process. Unclaimed public analysis artifacts may be retained for up to 7 days. Azure operational logs are retained for up to 30 days. Limited backups, security records, or provider records may remain for their applicable operational or legal retention period.",
       },
       dataRights: {
-        title: "Your Rights",
+        title: "Your Choices and Rights",
         content:
-          "You retain full ownership of your data. By default, Engage7 does not retain identifiable uploaded datasets or analysis results longer than operationally necessary. If persistent storage or account history features are introduced in the future, they will require your explicit consent and will be accompanied by updated privacy terms.",
+          "You retain ownership of the data you submit. You can decline or withdraw optional website analytics consent, and you can delete your Engage7 account from the app to initiate deletion of account-owned data. Depending on your location, you may also request access, correction, deletion, restriction, objection, or portability of your personal data. Use the Contact page to make a privacy request or ask how your data is handled. We will update this policy and its date when our practices materially change.",
       },
     },
     backToHome: "Back to Home",
@@ -1294,6 +1294,8 @@ export const enIE = {
         subtitle: "Performance and recovery preview",
         generate: "Generate AI reflection",
         generating: "Generating...",
+        consentDisclosure:
+          "By selecting Generate AI reflection, you consent to sending a sanitised summary of this analysis to OpenAI solely to generate the reflection. It excludes your name, email, direct account identifier, raw upload, and raw time series.",
         badge: "AI-assisted",
         previewWarning: "Preview warning: this response would not pass Restricted Mode.",
         warningCodes: "Warning codes",

@@ -35,6 +35,7 @@ import {
   isRenderableAiReflection,
 } from "@/lib/ai-reflections";
 import { usePreviewFeatures } from "@/lib/feature-preview";
+import Link from "next/link";
 import {
   AlertTriangle,
   ArrowDown,
@@ -530,6 +531,18 @@ export function DarthStatePanel({ sections, currentAnalysisId = null }: DarthSta
               </button>
             )}
           </div>
+
+          {!canRenderAiNarrative && !canRenderAiFallback && (
+            <p className="mt-2 text-[11px] leading-relaxed text-muted-foreground">
+              {aiCopy.consentDisclosure}{" "}
+              <Link
+                href="/privacy-policy"
+                className="font-medium text-accent underline underline-offset-2"
+              >
+                {t.home.footer.privacy}
+              </Link>
+            </p>
+          )}
 
           {aiErrorMessage && (
             <p className="mt-3 rounded-md border border-destructive/20 bg-destructive/10 px-3 py-2 text-xs text-destructive">
