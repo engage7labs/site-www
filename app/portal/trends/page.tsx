@@ -74,7 +74,7 @@ const TECHNICAL_LABELS: Record<string, string> = {
   hrv_sdnn_mean: "HRV",
   hr_resting: "resting heart rate",
   resting_hr: "resting heart rate",
-  hr_mean: "resting heart rate",
+  hr_mean: "average heart rate",
   total_steps: "daily steps",
   steps: "daily steps",
   active_energy_cal: "active energy",
@@ -103,6 +103,8 @@ interface TrendsData {
     volatility: Record<string, unknown> | null;
   };
   analysis_count: number;
+  feature_contract_version?: string;
+  feature_quality_status?: "pass" | "warning" | "reject" | null;
   portal_data_status?: unknown;
 }
 
@@ -437,14 +439,14 @@ function BaselineRangesChart({
     () => extractBaselineRanges(baseline, [
       { key: "sleep_hours", label: `${t.portal.dataLab.sleepDuration} (h)`, scale: 1 },
       { key: "hrv_sdnn_mean", label: `${t.common.metrics.hrv} (ms)`, scale: 1 },
-      { key: "hr_mean", label: `${t.portal.dataLab.restingHeartRate} (bpm)`, scale: 1 },
+      { key: "hr_mean", label: `${t.portal.dataLab.heartRate} (bpm)`, scale: 1 },
       { key: "total_steps", label: `${t.portal.dataLab.dailySteps} (k)`, scale: 0.001 },
     ]),
     [
       baseline,
       t.common.metrics.hrv,
       t.portal.dataLab.dailySteps,
-      t.portal.dataLab.restingHeartRate,
+      t.portal.dataLab.heartRate,
       t.portal.dataLab.sleepDuration,
     ],
   );
@@ -583,7 +585,7 @@ function CorrelationHeatmapChart({
       const metrics = [
         t.portal.dataLab.sleepDuration,
         t.common.metrics.hrv,
-        t.portal.dataLab.restingHeartRate,
+        t.portal.dataLab.heartRate,
         t.portal.dataLab.dailySteps,
         t.portal.dataLab.activeMinutes,
       ];
@@ -720,8 +722,22 @@ function StatCard({
   );
 }
 
-function DataLabHeader() {
+function DataLabHeader({
+  contractVersion,
+  qualityStatus,
+}: Readonly<{
+  contractVersion?: string;
+  qualityStatus?: "pass" | "warning" | "reject" | null;
+}>) {
   const { t } = useLocale();
+  const qualityLabel =
+    qualityStatus === "pass"
+      ? t.portal.dataLab.qualityPass
+      : qualityStatus === "warning"
+        ? t.portal.dataLab.qualityWarning
+        : qualityStatus === "reject"
+          ? t.portal.dataLab.qualityReject
+          : null;
   return (
     <div className="flex flex-col gap-3">
       <div>
@@ -739,6 +755,16 @@ function DataLabHeader() {
         <span className="rounded-full border border-border/70 bg-muted/30 px-3 py-1">
           {t.portal.dataLab.correlationDisclaimer}
         </span>
+        {contractVersion && (
+          <span className="rounded-full border border-emerald-500/30 bg-emerald-500/10 px-3 py-1 text-emerald-700 dark:text-emerald-300">
+            {t.portal.dataLab.scientificContract}: {contractVersion.replace("user_feature_store.", "Feature Store ")}
+          </span>
+        )}
+        {qualityLabel && (
+          <span className="rounded-full border border-border/70 bg-muted/30 px-3 py-1">
+            {t.portal.dataLab.extractionQuality}: {qualityLabel}
+          </span>
+        )}
       </div>
     </div>
   );
@@ -1176,7 +1202,10 @@ export default function TrendsPage() {
   if (loading) {
     return (
       <div className="flex flex-col gap-6">
-        <DataLabHeader />
+        <DataLabHeader
+          contractVersion={trendsData?.feature_contract_version}
+          qualityStatus={trendsData?.feature_quality_status}
+        />
         <p className="text-sm text-muted-foreground">{t.portal.dataLab.loading}</p>
       </div>
     );
@@ -1316,7 +1345,10 @@ export default function TrendsPage() {
 
   return (
     <div className="flex flex-col gap-8">
-      <DataLabHeader />
+      <DataLabHeader
+        contractVersion={trendsData.feature_contract_version}
+        qualityStatus={trendsData.feature_quality_status}
+      />
 
       <PeriodSelector value={period} onChange={setPeriod} />
 
@@ -1355,7 +1387,7 @@ export default function TrendsPage() {
         )}
         {avgHr != null && (
           <StatCard
-            label={t.portal.dataLab.averageRestingHeartRate}
+            label={t.portal.dataLab.averageHeartRate}
             value={Math.round(avgHr).toString()}
             unit="bpm"
             count={hrVals.length}
