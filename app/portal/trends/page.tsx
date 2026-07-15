@@ -2,15 +2,30 @@
 
 import type { PortalDataStatus } from "@/lib/portal-data-status";
 import { parsePortalDataStatus } from "@/lib/portal-data-status";
+import {
+  alignTrendSeries,
+  buildDataLabCsv,
+  describeTrend,
+  filterTrendPoints,
+  latestValidDate,
+  type DataLabPeriod,
+  type DataLabTrendPoint,
+  type DescriptiveStatistics,
+  type NamedTrendSeries,
+} from "@/lib/data-lab-statistics";
 import { useLocale } from "@/components/providers/locale-provider";
 import type { EChartsOption } from "echarts";
 import {
   Activity,
+  CalendarRange,
+  Database,
+  Download,
   Heart,
   Moon,
+  Sigma,
   TrendingUp as TrendingUpIcon,
 } from "lucide-react";
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 export const dynamic = "force-dynamic";
 
@@ -74,10 +89,7 @@ const TECHNICAL_LABELS: Record<string, string> = {
 // Data types
 // ---------------------------------------------------------------------------
 
-interface TrendPoint {
-  date: string;
-  value: number | null;
-}
+type TrendPoint = DataLabTrendPoint;
 
 interface TrendsData {
   trends: {
@@ -103,8 +115,8 @@ function avg(vals: number[]): number | null {
   return vals.reduce((a, b) => a + b, 0) / vals.length;
 }
 
-function formatDate(d: string): string {
-  return new Date(d).toLocaleDateString("en-IE", {
+function formatDate(d: string, locale: string): string {
+  return new Date(d).toLocaleDateString(locale, {
     month: "short",
     day: "numeric",
   });
@@ -192,12 +204,13 @@ function SectionChart({
   dates: string[];
   series: {
     name: string;
-    data: number[];
+    data: Array<number | null>;
     color: string;
     yAxisIndex?: number;
   }[];
   height?: number;
 }>) {
+  const { locale } = useLocale();
   const containerRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -237,7 +250,7 @@ function SectionChart({
         grid: { left: 44, right: hasSecondAxis ? 44 : 16, top: 32, bottom: 24 },
         xAxis: {
           type: "category",
-          data: dates.map(formatDate),
+          data: dates.map((date) => formatDate(date, locale)),
           axisLabel: { fontSize: 10, color: axisLabelColor },
           axisLine: { lineStyle: { color: "transparent" } },
           axisTick: { show: false },
@@ -293,7 +306,7 @@ function SectionChart({
       disposed = true;
       chart?.dispose();
     };
-  }, [dates, series, height]);
+  }, [dates, series, height, locale]);
 
   return <div ref={containerRef} style={{ height }} className="w-full" />;
 }
@@ -304,7 +317,7 @@ function SectionChart({
 
 function WeeklyPatternsChart({
   sleepByDay,
-}: Readonly<{ sleepByDay: number[] }>) {
+}: Readonly<{ sleepByDay: Array<number | null> }>) {
   const { t } = useLocale();
   const containerRef = useRef<HTMLDivElement>(null);
 
@@ -388,11 +401,54 @@ function WeeklyPatternsChart({
 // Baseline Ranges Chart
 // ---------------------------------------------------------------------------
 
+function extractBaselineRanges(
+  baseline: Record<string, unknown> | null,
+  definitions: Array<{ key: string; label: string; scale: number }>,
+) {
+  const metrics =
+    (baseline as Record<string, Record<string, Record<string, number>>> | null)
+      ?.metrics ?? {};
+  return definitions.flatMap((definition) => {
+    const metric = metrics[definition.key];
+    if (
+      !metric ||
+      !Number.isFinite(metric.p25) ||
+      !Number.isFinite(metric.median) ||
+      !Number.isFinite(metric.p75)
+    ) {
+      return [];
+    }
+    return [{
+      label: definition.label,
+      low: metric.p25 * definition.scale,
+      median: metric.median * definition.scale,
+      high: metric.p75 * definition.scale,
+    }];
+  });
+}
+
 function BaselineRangesChart({
   baseline,
 }: Readonly<{ baseline: Record<string, unknown> | null }>) {
   const { t } = useLocale();
   const containerRef = useRef<HTMLDivElement>(null);
+
+  const ranges = useMemo(
+    () => extractBaselineRanges(baseline, [
+      { key: "sleep_hours", label: `${t.portal.dataLab.sleepDuration} (h)`, scale: 1 },
+      { key: "hrv_sdnn_mean", label: `${t.common.metrics.hrv} (ms)`, scale: 1 },
+      { key: "hr_mean", label: `${t.portal.dataLab.restingHeartRate} (bpm)`, scale: 1 },
+      { key: "total_steps", label: `${t.portal.dataLab.dailySteps} (k)`, scale: 0.001 },
+    ]),
+    [
+      baseline,
+      t.common.metrics.hrv,
+      t.portal.dataLab.dailySteps,
+      t.portal.dataLab.restingHeartRate,
+      t.portal.dataLab.sleepDuration,
+    ],
+  );
+  const hasRanges = ranges.length > 0;
 
   useEffect(() => {
     let chart:
@@ -410,38 +466,11 @@ function BaselineRangesChart({
         ? "rgba(229, 231, 235, 0.09)"
         : "rgba(148, 163, 184, 0.18)";
 
-      const bMetrics =
-        (baseline as Record<string, Record<string, Record<string, number>>>)
-          ?.metrics ?? {};
-      const sleepM = bMetrics.sleep_hours ?? {};
-      const hrvM = bMetrics.hrv_sdnn_mean ?? {};
-      const hrM = bMetrics.hr_mean ?? {};
-      const stepsM = bMetrics.total_steps ?? {};
-
-      const metrics = [
-        `${t.portal.dataLab.sleepDuration} (h)`,
-        `${t.common.metrics.hrv} (ms)`,
-        `${t.portal.dataLab.restingHeartRate} (bpm)`,
-        `${t.portal.dataLab.dailySteps} (k)`,
-      ];
-      const baselines = [
-        sleepM.median ?? 7.2,
-        hrvM.median ?? 43,
-        hrM.median ?? 72,
-        (stepsM.median ?? 8500) / 1000,
-      ];
-      const lows = [
-        sleepM.p25 ?? (sleepM.median ? sleepM.median - 0.7 : 6.5),
-        hrvM.p25 ?? (hrvM.median ?? 43) - 8,
-        hrM.p25 ?? (hrM.median ?? 72) - 7,
-        (stepsM.p25 ?? (stepsM.median ?? 8500) - 2500) / 1000,
-      ];
-      const highs = [
-        sleepM.p75 ?? (sleepM.median ?? 7.2) + 0.8,
-        hrvM.p75 ?? (hrvM.median ?? 43) + 9,
-        hrM.p75 ?? (hrM.median ?? 72) + 8,
-        (stepsM.p75 ?? (stepsM.median ?? 8500) + 3500) / 1000,
-      ];
+      if (ranges.length === 0) return;
+      const metrics = ranges.map((range) => range.label);
+      const baselines = ranges.map((range) => range.median);
+      const lows = ranges.map((range) => range.low);
+      const highs = ranges.map((range) => range.high);
 
       const option: EChartsOption = {
         textStyle: { color: axisLabelColor, fontFamily: "Inter, sans-serif" },
@@ -505,7 +534,7 @@ function BaselineRangesChart({
       disposed = true;
       chart?.dispose();
     };
-  }, [baseline]);
+  }, [ranges]);
 
   return (
     <div className="portal-panel rounded-xl border border-border/70 bg-card/85 p-4">
@@ -517,7 +546,13 @@ function BaselineRangesChart({
           {t.portal.dataLab.baselineRangesDescription}
         </span>
       </div>
-      <div ref={containerRef} className="h-48 w-full" />
+      {hasRanges ? (
+        <div ref={containerRef} className="h-48 w-full" />
+      ) : (
+        <p className="py-8 text-center text-sm text-muted-foreground">
+          {t.portal.dataLab.baselineUnavailable}
+        </p>
+      )}
     </div>
   );
 }
@@ -564,14 +599,10 @@ function CorrelationHeatmapChart({
         ];
         for (let i = 0; i < keys.length; i++) {
           for (let j = 0; j < keys.length; j++) {
-            const val = matrix[keys[i]]?.[keys[j]] ?? (i === j ? 1.0 : 0);
-            corrData.push([i, j, Math.round(val * 100) / 100]);
-          }
-        }
-      } else {
-        for (let i = 0; i < 5; i++) {
-          for (let j = 0; j < 5; j++) {
-            corrData.push([i, j, i === j ? 1.0 : 0]);
+            const val = matrix[keys[i]]?.[keys[j]];
+            if (typeof val === "number" && Number.isFinite(val)) {
+              corrData.push([i, j, Math.round(val * 100) / 100]);
+            }
           }
         }
       }
@@ -710,6 +741,193 @@ function DataLabHeader() {
         </span>
       </div>
     </div>
+  );
+}
+
+function PeriodSelector({
+  value,
+  onChange,
+}: Readonly<{
+  value: DataLabPeriod;
+  onChange: (period: DataLabPeriod) => void;
+}>) {
+  const { t } = useLocale();
+  const periods: Array<{ value: DataLabPeriod; label: string }> = [
+    { value: "30d", label: t.portal.dataLab.period30Days },
+    { value: "90d", label: t.portal.dataLab.period90Days },
+    { value: "all", label: t.portal.dataLab.periodAll },
+  ];
+
+  return (
+    <div className="flex flex-wrap items-center gap-2" aria-label={t.portal.dataLab.periodLabel}>
+      <CalendarRange className="h-4 w-4 text-muted-foreground" />
+      <span className="mr-1 text-xs font-medium text-muted-foreground">
+        {t.portal.dataLab.periodLabel}
+      </span>
+      <div className="flex rounded-lg border border-border/70 bg-muted/20 p-1">
+        {periods.map((period) => (
+          <button
+            key={period.value}
+            type="button"
+            onClick={() => onChange(period.value)}
+            aria-pressed={value === period.value}
+            className={`rounded-md px-3 py-1.5 text-xs font-medium transition-colors ${
+              value === period.value
+                ? "bg-background text-foreground shadow-sm"
+                : "text-muted-foreground hover:text-foreground"
+            }`}
+          >
+            {period.label}
+          </button>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+interface StatisticsRow {
+  key: string;
+  label: string;
+  unit: string;
+  statistics: DescriptiveStatistics;
+}
+
+function formatStatistic(
+  value: number | null,
+  locale: string,
+  maximumFractionDigits = 1,
+): string {
+  if (value == null || !Number.isFinite(value)) return "—";
+  return value.toLocaleString(locale, { maximumFractionDigits });
+}
+
+function formatPercentage(value: number | null, locale: string): string {
+  return value == null ? "—" : `${formatStatistic(value * 100, locale)}%`;
+}
+
+function EvidenceSummary({
+  analysisCount,
+  rows,
+  onExport,
+}: Readonly<{
+  analysisCount: number;
+  rows: StatisticsRow[];
+  onExport: () => void;
+}>) {
+  const { t, locale } = useLocale();
+  const availableRows = rows.filter((row) => row.statistics.observations > 0);
+  const observations = availableRows.reduce(
+    (total, row) => total + row.statistics.observations,
+    0,
+  );
+  const timestamps = availableRows.flatMap((row) => [
+    row.statistics.firstDate,
+    row.statistics.lastDate,
+  ]).filter((date): date is string => Boolean(date));
+  timestamps.sort((a, b) => new Date(a).getTime() - new Date(b).getTime());
+  const dateRange = timestamps.length > 0
+    ? `${formatDate(timestamps[0], locale)} – ${formatDate(timestamps[timestamps.length - 1], locale)}`
+    : t.portal.dataLab.noData;
+  const facts = [
+    { label: t.portal.dataLab.analyses, value: analysisCount.toLocaleString(locale) },
+    { label: t.portal.dataLab.observations, value: observations.toLocaleString(locale) },
+    { label: t.portal.dataLab.signals, value: availableRows.length.toLocaleString(locale) },
+    { label: t.portal.dataLab.dateRange, value: dateRange },
+  ];
+
+  return (
+    <section className="portal-panel overflow-hidden rounded-2xl border border-border/70 bg-card/90">
+      <div className="flex flex-col gap-4 border-b border-border/60 p-5 sm:flex-row sm:items-center sm:justify-between">
+        <div>
+          <div className="flex items-center gap-2">
+            <Database className="h-4 w-4 text-accent" />
+            <h2 className="text-sm font-semibold text-card-foreground">
+              {t.portal.dataLab.evidenceWindow}
+            </h2>
+          </div>
+          <p className="mt-1 max-w-2xl text-xs text-muted-foreground">
+            {t.portal.dataLab.evidenceWindowDescription}
+          </p>
+        </div>
+        <button
+          type="button"
+          onClick={onExport}
+          disabled={observations === 0}
+          className="inline-flex items-center justify-center gap-2 rounded-lg border border-border/70 bg-background px-3 py-2 text-xs font-semibold text-foreground transition-colors hover:bg-muted/50 disabled:cursor-not-allowed disabled:opacity-40"
+        >
+          <Download className="h-4 w-4" />
+          {t.portal.dataLab.exportCsv}
+        </button>
+      </div>
+      <div className="grid grid-cols-2 gap-px bg-border/50 lg:grid-cols-4">
+        {facts.map((fact) => (
+          <div key={fact.label} className="bg-card px-5 py-4">
+            <p className="text-[10px] font-medium uppercase tracking-wider text-muted-foreground">
+              {fact.label}
+            </p>
+            <p className="mt-1 text-sm font-semibold text-card-foreground">{fact.value}</p>
+          </div>
+        ))}
+      </div>
+    </section>
+  );
+}
+
+function DescriptiveStatisticsTable({ rows }: Readonly<{ rows: StatisticsRow[] }>) {
+  const { t, locale } = useLocale();
+  const headings = [
+    t.portal.dataLab.signal,
+    "N",
+    t.portal.dataLab.missing,
+    t.portal.dataLab.coverage,
+    t.portal.dataLab.mean,
+    t.portal.dataLab.median,
+    t.portal.dataLab.standardDeviation,
+    t.portal.dataLab.coefficientVariation,
+    t.portal.dataLab.range,
+    t.portal.dataLab.maxGap,
+  ];
+
+  return (
+    <section className="portal-panel overflow-hidden rounded-2xl border border-border/70 bg-card/90">
+      <div className="border-b border-border/60 p-5">
+        <div className="flex items-center gap-2">
+          <Sigma className="h-4 w-4 text-accent" />
+          <h2 className="text-sm font-semibold text-card-foreground">
+            {t.portal.dataLab.descriptiveStatistics}
+          </h2>
+        </div>
+        <p className="mt-1 max-w-3xl text-xs text-muted-foreground">
+          {t.portal.dataLab.descriptiveStatisticsDescription}
+        </p>
+      </div>
+      <div className="overflow-x-auto">
+        <table className="w-full min-w-[980px] text-left text-xs">
+          <thead className="bg-muted/30 text-[10px] uppercase tracking-wider text-muted-foreground">
+            <tr>{headings.map((heading) => <th key={heading} className="px-4 py-3 font-semibold">{heading}</th>)}</tr>
+          </thead>
+          <tbody className="divide-y divide-border/60">
+            {rows.map((row) => {
+              const stats = row.statistics;
+              return (
+                <tr key={row.key} className="text-card-foreground">
+                  <th className="whitespace-nowrap px-4 py-3 font-semibold">{row.label}</th>
+                  <td className="px-4 py-3 tabular-nums">{stats.observations}</td>
+                  <td className="px-4 py-3 tabular-nums">{stats.missingValues}</td>
+                  <td className="px-4 py-3 tabular-nums">{formatPercentage(stats.observedDayCoverage, locale)}</td>
+                  <td className="px-4 py-3 tabular-nums">{formatStatistic(stats.mean, locale)} {row.unit}</td>
+                  <td className="px-4 py-3 tabular-nums">{formatStatistic(stats.median, locale)} {row.unit}</td>
+                  <td className="px-4 py-3 tabular-nums">{formatStatistic(stats.standardDeviation, locale)} {row.unit}</td>
+                  <td className="px-4 py-3 tabular-nums">{formatPercentage(stats.coefficientOfVariation, locale)}</td>
+                  <td className="px-4 py-3 tabular-nums">{formatStatistic(stats.minimum, locale)}–{formatStatistic(stats.maximum, locale)} {row.unit}</td>
+                  <td className="px-4 py-3 tabular-nums">{stats.maximumGapDays == null ? "—" : `${stats.maximumGapDays} ${t.portal.dataLab.days}`}</td>
+                </tr>
+              );
+            })}
+          </tbody>
+        </table>
+      </div>
+    </section>
   );
 }
 
@@ -919,10 +1137,11 @@ function TechnicalAvailability({
 // ---------------------------------------------------------------------------
 
 export default function TrendsPage() {
-  const { t } = useLocale();
+  const { t, locale } = useLocale();
   const [trendsData, setTrendsData] = useState<TrendsData | null>(null);
   const [portalStatus, setPortalStatus] = useState<PortalDataStatus | null>(null);
   const [loading, setLoading] = useState(true);
+  const [period, setPeriod] = useState<DataLabPeriod>("90d");
 
   useEffect(() => {
     (async () => {
@@ -981,17 +1200,50 @@ export default function TrendsPage() {
     );
   }
 
-  const { trends } = trendsData;
+  const rawTrends = trendsData.trends;
+  const latestDate = latestValidDate([
+    rawTrends.sleep,
+    rawTrends.hrv,
+    rawTrends.hr,
+    rawTrends.steps,
+    rawTrends.activity,
+  ]);
+  const trends = {
+    ...rawTrends,
+    sleep: filterTrendPoints(rawTrends.sleep, period, latestDate),
+    hrv: filterTrendPoints(rawTrends.hrv, period, latestDate),
+    hr: filterTrendPoints(rawTrends.hr, period, latestDate),
+    steps: filterTrendPoints(rawTrends.steps, period, latestDate),
+    activity: filterTrendPoints(rawTrends.activity, period, latestDate),
+  };
+  const namedSeries: NamedTrendSeries[] = [
+    { key: "sleep_hours", points: trends.sleep },
+    { key: "hrv_sdnn_ms", points: trends.hrv },
+    { key: "resting_heart_rate_bpm", points: trends.hr },
+    { key: "daily_steps", points: trends.steps },
+    { key: "active_minutes", points: trends.activity },
+  ];
+  const statisticsRows: StatisticsRow[] = [
+    { key: "sleep", label: t.portal.dataLab.sleepDuration, unit: "h", statistics: describeTrend(trends.sleep) },
+    { key: "hrv", label: t.common.metrics.hrv, unit: "ms", statistics: describeTrend(trends.hrv) },
+    { key: "hr", label: t.portal.dataLab.restingHeartRate, unit: "bpm", statistics: describeTrend(trends.hr) },
+    { key: "steps", label: t.portal.dataLab.dailySteps, unit: t.portal.dataLab.steps, statistics: describeTrend(trends.steps) },
+    { key: "activity", label: t.portal.dataLab.activeMinutes, unit: "min", statistics: describeTrend(trends.activity) },
+  ];
+  const recoverySeries = alignTrendSeries([
+    { key: "hrv", points: trends.hrv },
+    { key: "hr", points: trends.hr },
+  ]);
+  const activitySeries = alignTrendSeries([
+    { key: "steps", points: trends.steps },
+    { key: "activity", points: trends.activity },
+  ]);
   const sleepVals = extractVals(trends.sleep);
   const hrvVals = extractVals(trends.hrv);
   const hrVals = extractVals(trends.hr);
   const stepVals = extractVals(trends.steps);
   const activityVals = extractVals(trends.activity);
   const sleepDates = extractDts(trends.sleep);
-  const hrvDates = extractDts(trends.hrv);
-  const hrDates = extractDts(trends.hr);
-  const stepDates = extractDts(trends.steps);
-  const activityDates = extractDts(trends.activity);
 
   // Summary stats
   const avgSleep = avg(sleepVals);
@@ -1033,26 +1285,48 @@ export default function TrendsPage() {
     });
     return vals.length
       ? +(vals.reduce((a, b) => a + b, 0) / vals.length).toFixed(1)
-      : 0;
+      : null;
   });
 
   const hasSleep = sleepVals.length > 0;
   const hasRecovery = hrvVals.length > 0 || hrVals.length > 0;
   const hasActivity = stepVals.length > 0 || activityVals.length > 0;
   const hasTrendData = [
-    trends.sleep,
-    trends.hrv,
-    trends.hr,
-    trends.steps,
-    trends.activity,
+    rawTrends.sleep,
+    rawTrends.hrv,
+    rawTrends.hr,
+    rawTrends.steps,
+    rawTrends.activity,
   ].some(hasTrendPoints);
-  const hasBaseline = hasObjectData(trends.baseline);
-  const hasCorrelations = hasObjectData(trends.correlations);
-  const hasVolatility = hasObjectData(trends.volatility);
+  const hasBaseline = hasObjectData(rawTrends.baseline);
+  const hasCorrelations = hasObjectData(rawTrends.correlations);
+  const hasVolatility = hasObjectData(rawTrends.volatility);
+
+  const exportCsv = () => {
+    const csv = buildDataLabCsv(namedSeries);
+    const url = URL.createObjectURL(
+      new Blob([csv], { type: "text/csv;charset=utf-8" }),
+    );
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = `engage7-data-lab-${period}.csv`;
+    link.click();
+    URL.revokeObjectURL(url);
+  };
 
   return (
     <div className="flex flex-col gap-8">
       <DataLabHeader />
+
+      <PeriodSelector value={period} onChange={setPeriod} />
+
+      <EvidenceSummary
+        analysisCount={trendsData.analysis_count}
+        rows={statisticsRows}
+        onExport={exportCsv}
+      />
+
+      <DescriptiveStatisticsTable rows={statisticsRows} />
 
       <TechnicalAvailability
         hasTrendData={hasTrendData}
@@ -1090,7 +1364,7 @@ export default function TrendsPage() {
         {avgSteps != null && (
           <StatCard
             label={t.portal.dataLab.averageDailySteps}
-            value={avgSteps.toLocaleString("en-IE", {
+            value={avgSteps.toLocaleString(locale, {
               maximumFractionDigits: 0,
             })}
             unit={t.portal.dataLab.steps}
@@ -1129,16 +1403,16 @@ export default function TrendsPage() {
           narrative={recoveryNarrative}
         >
           <SectionChart
-            dates={hrvDates.length >= hrDates.length ? hrvDates : hrDates}
+            dates={recoverySeries.dates}
             series={[
               ...(hrvVals.length > 0
-                ? [{ name: `${t.common.metrics.hrv} (ms)`, data: hrvVals, color: COLORS.hrv }]
+                ? [{ name: `${t.common.metrics.hrv} (ms)`, data: recoverySeries.values.hrv, color: COLORS.hrv }]
                 : []),
               ...(hrVals.length > 0
                 ? [
                     {
                       name: t.portal.dataLab.restingHeartRate,
-                      data: hrVals,
+                      data: recoverySeries.values.hr,
                       color: COLORS.hr,
                       yAxisIndex: hrvVals.length > 0 ? 1 : 0,
                     },
@@ -1158,17 +1432,13 @@ export default function TrendsPage() {
           narrative={activityNarrative}
         >
           <SectionChart
-            dates={
-              stepDates.length >= activityDates.length
-                ? stepDates
-                : activityDates
-            }
+            dates={activitySeries.dates}
             series={[
               ...(stepVals.length > 0
                 ? [
                     {
                       name: t.portal.dataLab.dailySteps,
-                      data: stepVals,
+                      data: activitySeries.values.steps,
                       color: COLORS.steps,
                     },
                   ]
@@ -1177,7 +1447,7 @@ export default function TrendsPage() {
                 ? [
                     {
                       name: t.portal.dataLab.activeMinutes,
-                      data: activityVals,
+                      data: activitySeries.values.activity,
                       color: COLORS.activity,
                       yAxisIndex: stepVals.length > 0 ? 1 : 0,
                     },
@@ -1224,7 +1494,7 @@ export default function TrendsPage() {
       </details>
 
       {/* Correlations (secondary) */}
-      {trends.correlations && (
+      {hasCorrelations && (
         <details className="group">
           <summary className="cursor-pointer text-sm font-semibold uppercase tracking-wider text-muted-foreground/60 hover:text-muted-foreground transition-colors">
             {t.portal.dataLab.signalCorrelationsReference}
