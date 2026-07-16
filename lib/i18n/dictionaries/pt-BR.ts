@@ -745,6 +745,10 @@ export const ptBR: Dictionary = {
           title: "Configurações",
           subtitle: "Gerencie suas preferências do Portal",
         },
+        sources: {
+          title: "Fontes",
+          subtitle: "Veja de onde vêm as informações de saúde mostradas no Engage7",
+        },
         upload: {
           title: "Atualizar Dados",
           subtitle: "Atualize sua linha do tempo do Apple Health",
@@ -1275,15 +1279,67 @@ export const ptBR: Dictionary = {
       deletePermanently: "Excluir permanentemente",
       deleting: "Excluindo...",
     },
+    sources: {
+      introTitle: "De onde vêm suas informações",
+      intro:
+        "Cada cartão conecta uma métrica de saúde às informações atualmente disponíveis sobre sua fonte.",
+      transparencyNote:
+        "O Engage7 mostra apenas os detalhes de fonte presentes nos seus dados armazenados. Detalhes ausentes aparecem como desconhecidos.",
+      loading: "Carregando fontes...",
+      loadErrorTitle: "Não foi possível carregar as fontes",
+      loadError: "Tente novamente em alguns instantes.",
+      emptyTitle: "Ainda não há informações de fonte",
+      empty:
+        "Envie uma exportação do Apple Health para ver de onde vêm suas métricas disponíveis.",
+      source: "Aplicativo de origem",
+      device: "Dispositivo",
+      acquisition: "Adicionado por",
+      lastSynchronized: "Última sincronização",
+      lastObserved: "Dados mais recentes da métrica",
+      unknown: "Desconhecido",
+      never: "Não disponível",
+      acquisitionMethods: {
+        apple_health_export: "Exportação do Apple Health",
+      },
+      statuses: {
+        available: "Disponível",
+        no_recent_data: "Nenhum dado recente detectado",
+        not_available: "Não disponível nestes dados",
+      },
+      metrics: {
+        sleep: "Sono",
+        heart_rate: "Frequência cardíaca",
+        resting_heart_rate: "Frequência cardíaca de repouso",
+        hrv: "VFC",
+        steps: "Passos",
+        active_energy: "Energia ativa",
+        distance: "Distância",
+        active_minutes: "Minutos ativos",
+        oxygen_saturation: "Saturação de oxigênio",
+        respiratory_rate: "Frequência respiratória",
+        vo2_max: "VO₂ máx.",
+      },
+    },
     health: {
       periods: {
         today: "Hoje",
-        last_day: "Último dia",
-        week: "Última semana",
-        month: "Último mês",
-        year: "Último ano",
+        day: "Dia",
+        week: "Semana",
+        month: "Mês",
+        last_7_days: "Últimos 7 dias",
+        last_30_days: "Últimos 30 dias",
+        year: "Ano",
         all: "Todo o período",
       },
+      periodNavigation: "Navegação do período de saúde",
+      inclusiveRange: "Intervalo inclusivo",
+      previousPeriod: "Período anterior",
+      nextPeriod: "Próximo período",
+      jumpToLatest: "Mais recente",
+      jumpToPeriod: "Ir para",
+      choosePeriod: "Escolher período",
+      chooseWeekDate: "Escolher uma data na semana",
+      chooseEndDate: "Escolher a data final da janela",
       domains: {
         all: {
           title: "Todos",
@@ -1357,7 +1413,7 @@ export const ptBR: Dictionary = {
       },
       todayRaw: "Hoje",
       todayRawWithDate: "Hoje: {date}",
-      todayMayBePartial: "Último dia armazenado; pode estar parcial.",
+      todayMayBePartial: "Dia local atual; pode estar parcial.",
       latestCompleteDay: "Último dia completo disponível",
       latestCompleteDayWithDate: "Último dia completo disponível: {date}",
       comparedWithPreviousAvailableDay:
@@ -1490,13 +1546,12 @@ export const ptBR: Dictionary = {
       todayNoComparison:
         "Hoje pode estar parcial, então a comparação de dia completo não é exibida.",
       todayNoFullDayComparison:
-        "Hoje pode estar parcial; a comparação de dia completo usa Último dia.",
+        "Hoje pode estar parcial; selecione Dia para ver a data armazenada mais recente.",
       latestComparedWithPrevious:
-        "Último dia completo disponível comparado com o dia disponível anterior",
+        "Dia selecionado comparado com o dia disponível anterior",
       selectedRangeVsTimeline:
         "Intervalo selecionado comparado com toda a linha do tempo armazenada",
-      latestVsPrevious:
-        "Último dia completo disponível vs dia disponível anterior.",
+      latestVsPrevious: "Dia selecionado vs dia disponível anterior.",
       selectedVsTimeline:
         "Intervalo selecionado vs toda a linha do tempo armazenada.",
       comparisonNeedsData:

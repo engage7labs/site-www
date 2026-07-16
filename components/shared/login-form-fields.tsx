@@ -194,7 +194,7 @@ export function LoginFormFields({
           <Button
             type="button"
             variant="outline"
-            className="h-11 w-full border-border bg-white text-sm font-semibold text-slate-950 shadow-sm hover:bg-slate-50 focus-visible:ring-lime-400/60 disabled:bg-white disabled:text-slate-500 disabled:opacity-70 dark:border-slate-200 dark:bg-white dark:text-slate-950 dark:hover:bg-slate-50"
+            className="h-11 w-full border-slate-300 bg-white text-sm font-semibold text-slate-950 shadow-sm hover:border-slate-400 hover:bg-slate-50 focus-visible:border-slate-400 focus-visible:ring-slate-400/40 active:bg-slate-100 disabled:bg-white disabled:text-slate-500 disabled:opacity-70 dark:border-slate-300 dark:bg-white dark:text-slate-950 dark:hover:border-slate-400 dark:hover:bg-slate-50 dark:active:bg-slate-100"
             disabled={loading || googleLoading}
             onClick={handleGoogleSignIn}
           >

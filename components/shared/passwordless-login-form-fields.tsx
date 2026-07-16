@@ -208,7 +208,7 @@ export function PasswordlessLoginFormFields({
             <Apple className="h-4 w-4" />
             {socialLoading === "apple" ? copy.appleLoading : copy.apple}
           </Button>
-          <Button type="button" variant="outline" className="h-11 w-full bg-white font-semibold text-slate-950 hover:bg-slate-50" disabled={loading || socialLoading !== null} onClick={() => void socialSignIn("google")}>
+          <Button type="button" variant="outline" className="h-11 w-full border-slate-300 bg-white font-semibold text-slate-950 shadow-sm hover:border-slate-400 hover:bg-slate-50 focus-visible:border-slate-400 focus-visible:ring-slate-400/40 active:bg-slate-100 disabled:bg-white disabled:text-slate-500 dark:border-slate-300 dark:bg-white dark:text-slate-950 dark:hover:border-slate-400 dark:hover:bg-slate-50 dark:active:bg-slate-100" disabled={loading || socialLoading !== null} onClick={() => void socialSignIn("google")}>
             <GoogleMark />
             {socialLoading === "google" ? copy.googleLoading : copy.google}
           </Button>

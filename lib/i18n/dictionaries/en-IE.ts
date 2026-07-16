@@ -734,6 +734,10 @@ export const enIE = {
           title: "Settings",
           subtitle: "Manage your portal preferences",
         },
+        sources: {
+          title: "Sources",
+          subtitle: "See where the health information shown in Engage7 comes from",
+        },
         upload: {
           title: "Update Data",
           subtitle: "Refresh your Apple Health timeline",
@@ -1240,15 +1244,67 @@ export const enIE = {
       deletePermanently: "Delete permanently",
       deleting: "Deleting...",
     },
+    sources: {
+      introTitle: "Where your information comes from",
+      intro:
+        "Each card connects a health metric to the information currently available about its source.",
+      transparencyNote:
+        "Engage7 only shows source details that are present in your stored data. Missing details are marked as unknown.",
+      loading: "Loading sources...",
+      loadErrorTitle: "Sources could not be loaded",
+      loadError: "Please try again in a moment.",
+      emptyTitle: "No source information yet",
+      empty:
+        "Upload an Apple Health export to see where your available metrics come from.",
+      source: "Source application",
+      device: "Device",
+      acquisition: "Added through",
+      lastSynchronized: "Last synchronized",
+      lastObserved: "Latest metric data",
+      unknown: "Unknown",
+      never: "Not available",
+      acquisitionMethods: {
+        apple_health_export: "Apple Health export",
+      },
+      statuses: {
+        available: "Available",
+        no_recent_data: "No recent data detected",
+        not_available: "Not available in this data",
+      },
+      metrics: {
+        sleep: "Sleep",
+        heart_rate: "Heart rate",
+        resting_heart_rate: "Resting heart rate",
+        hrv: "HRV",
+        steps: "Steps",
+        active_energy: "Active energy",
+        distance: "Distance",
+        active_minutes: "Active minutes",
+        oxygen_saturation: "Oxygen saturation",
+        respiratory_rate: "Respiratory rate",
+        vo2_max: "VO₂ max",
+      },
+    },
     health: {
       periods: {
         today: "Today",
-        last_day: "Last day",
-        week: "Last week",
-        month: "Last month",
-        year: "Last year",
+        day: "Day",
+        week: "Week",
+        month: "Month",
+        last_7_days: "Last 7 days",
+        last_30_days: "Last 30 days",
+        year: "Year",
         all: "All time",
       },
+      periodNavigation: "Health period navigation",
+      inclusiveRange: "Inclusive range",
+      previousPeriod: "Previous period",
+      nextPeriod: "Next period",
+      jumpToLatest: "Latest",
+      jumpToPeriod: "Jump to",
+      choosePeriod: "Choose period",
+      chooseWeekDate: "Choose a date in the week",
+      chooseEndDate: "Choose window end date",
       domains: {
         all: {
           title: "All",
@@ -1319,7 +1375,7 @@ export const enIE = {
       },
       todayRaw: "Today",
       todayRawWithDate: "Today: {date}",
-      todayMayBePartial: "Latest stored day; may be partial.",
+      todayMayBePartial: "Current local day; may be partial.",
       latestCompleteDay: "Latest complete day available",
       latestCompleteDayWithDate: "Latest complete day available: {date}",
       comparedWithPreviousAvailableDay: "Compared with previous available day",
@@ -1449,13 +1505,12 @@ export const enIE = {
       todayNoComparison:
         "Today may be partial, so full-day comparison is not shown.",
       todayNoFullDayComparison:
-        "Today may be partial; full-day comparison uses Last day.",
+        "Today may be partial; select Day to inspect the latest stored date.",
       latestComparedWithPrevious:
-        "Latest complete day available compared with the previous available day",
+        "Selected day compared with the previous available day",
       selectedRangeVsTimeline:
         "Selected range compared with your full stored timeline",
-      latestVsPrevious:
-        "Latest complete day available vs previous available day.",
+      latestVsPrevious: "Selected day vs previous available day.",
       selectedVsTimeline: "Selected range vs full stored timeline.",
       comparisonNeedsData:
         "A comparison needs enough current and baseline data.",
