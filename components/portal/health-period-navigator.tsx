@@ -165,7 +165,7 @@ export function HealthPeriodNavigator({
                   {selectorOpen && (
                     <div
                       id={selectorId}
-                      className="absolute right-0 top-full z-20 mt-2 w-72 max-w-[calc(100vw-3rem)] rounded-lg border border-border bg-popover p-3 text-popover-foreground shadow-xl"
+                      className="absolute right-0 bottom-full z-20 mb-2 w-72 max-w-[calc(100vw-3rem)] rounded-lg border border-border bg-popover p-3 text-popover-foreground shadow-xl"
                     >
                       <label
                         htmlFor={pickerInputId}

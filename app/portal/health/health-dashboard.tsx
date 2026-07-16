@@ -1818,8 +1818,6 @@ export function HealthDashboard({
   const { Icon } = meta;
   const storedDaysCount = rangePoints.length;
   const headerRangeLabel = filtered.rangeLabel;
-  const headerComparisonLabel =
-    domain === "all" ? null : filtered.comparisonLabel;
 
   return (
     <div className="flex flex-col gap-6">
@@ -1850,11 +1848,6 @@ export function HealthDashboard({
                   String(storedDaysCount),
                 )}
               </p>
-              {headerComparisonLabel && (
-                <p className="mt-1 text-xs text-muted-foreground">
-                  {headerComparisonLabel}
-                </p>
-              )}
             </div>
           </div>
           <div className="border-t border-border/50 pt-4">

@@ -165,6 +165,7 @@ const dashboardSource = await readFile(
 assert.match(dashboardSource, /resolveHealthDateBounds\(availablePoints\.map/);
 assert.match(dashboardSource, /filterByRange\(\s*allPoints,\s*item,\s*range,/);
 assert.doesNotMatch(dashboardSource, /latestRawAndValidDays|filterByPeriod|new Date\(point\.date\)/);
+assert.doesNotMatch(dashboardSource, /headerComparisonLabel/);
 const navigatorSource = await readFile(
   new URL("../components/portal/health-period-navigator.tsx", import.meta.url),
   "utf8",
@@ -177,6 +178,8 @@ assert.match(navigatorSource, /CalendarDays/);
 assert.match(navigatorSource, /jumpToPeriod/);
 assert.match(navigatorSource, /aria-label=.*jumpToPeriod/);
 assert.doesNotMatch(navigatorSource, /ChevronDown/);
+assert.match(navigatorSource, /bottom-full/);
+assert.doesNotMatch(navigatorSource, /top-full/);
 assert.ok(
   navigatorSource.indexOf("onClick={onPrevious}") <
     navigatorSource.indexOf("onClick={onNext}"),
