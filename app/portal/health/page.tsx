@@ -2,6 +2,11 @@
 
 import { useLocale } from "@/components/providers/locale-provider";
 import { DarthStatePanel } from "@/components/portal/darth-state-panel";
+import {
+  compareCalendarDates,
+  formatCalendarDate,
+  parseCalendarDate,
+} from "@/lib/health-time-range";
 import { trackHealthDashboardViewed } from "@/lib/telemetry";
 import { Activity, ArrowRight, HeartPulse, Moon } from "lucide-react";
 import Link from "next/link";
@@ -96,27 +101,10 @@ function valueFor(point: HealthPoint, keys: string[]): number | null {
   return null;
 }
 
-function parseDate(value: string): Date | null {
-  const iso = /^(\d{4})-(\d{1,2})-(\d{1,2})$/.exec(value.trim());
-  if (iso) {
-    return new Date(Date.UTC(Number(iso[1]), Number(iso[2]) - 1, Number(iso[3])));
-  }
-  const parsed = new Date(value);
-  return Number.isNaN(parsed.getTime()) ? null : parsed;
-}
-
-function dateTime(point: HealthPoint): number {
-  return parseDate(point.date)?.getTime() ?? 0;
-}
-
 function formatDisplayDate(value: string, locale: string): string {
-  const parsed = parseDate(value);
+  const parsed = parseCalendarDate(value);
   if (!parsed) return value;
-  return parsed.toLocaleDateString(locale === "pt-BR" ? "pt-BR" : "en-IE", {
-    day: "2-digit",
-    month: "2-digit",
-    year: "numeric",
-  });
+  return formatCalendarDate(parsed, locale);
 }
 
 function latestDomainPoint(
@@ -124,8 +112,13 @@ function latestDomainPoint(
   domain: HealthDomain,
 ): HealthPoint | null {
   return [...points]
-    .filter((point) => parseDate(point.date))
-    .sort((a, b) => dateTime(b) - dateTime(a))
+    .filter((point) => parseCalendarDate(point.date))
+    .sort((a, b) =>
+      compareCalendarDates(
+        parseCalendarDate(b.date)!,
+        parseCalendarDate(a.date)!,
+      ),
+    )
     .find((point) => valueFor(point, DOMAIN_KEYS[domain]) !== null) ?? null;
 }
 
@@ -182,8 +175,13 @@ export default function HealthPage() {
   );
   const points = data?.data_points ?? [];
   const latestAnyPoint = [...points]
-    .filter((point) => parseDate(point.date))
-    .sort((a, b) => dateTime(b) - dateTime(a))[0];
+    .filter((point) => parseCalendarDate(point.date))
+    .sort((a, b) =>
+      compareCalendarDates(
+        parseCalendarDate(b.date)!,
+        parseCalendarDate(a.date)!,
+      ),
+    )[0];
 
   if (loading) {
     return (

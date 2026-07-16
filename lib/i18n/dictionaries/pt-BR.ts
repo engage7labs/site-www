@@ -1278,12 +1278,19 @@ export const ptBR: Dictionary = {
     health: {
       periods: {
         today: "Hoje",
-        last_day: "Último dia",
-        week: "Última semana",
-        month: "Último mês",
-        year: "Último ano",
+        day: "Dia",
+        week: "Semana",
+        month: "Mês",
+        last_7_days: "Últimos 7 dias",
+        last_30_days: "Últimos 30 dias",
+        year: "Ano",
         all: "Todo o período",
       },
+      periodNavigation: "Navegação do período de saúde",
+      inclusiveRange: "Intervalo inclusivo",
+      previousPeriod: "Período anterior",
+      nextPeriod: "Próximo período",
+      jumpToLatest: "Mais recente",
       domains: {
         all: {
           title: "Todos",
@@ -1357,7 +1364,7 @@ export const ptBR: Dictionary = {
       },
       todayRaw: "Hoje",
       todayRawWithDate: "Hoje: {date}",
-      todayMayBePartial: "Último dia armazenado; pode estar parcial.",
+      todayMayBePartial: "Dia local atual; pode estar parcial.",
       latestCompleteDay: "Último dia completo disponível",
       latestCompleteDayWithDate: "Último dia completo disponível: {date}",
       comparedWithPreviousAvailableDay:
@@ -1490,13 +1497,12 @@ export const ptBR: Dictionary = {
       todayNoComparison:
         "Hoje pode estar parcial, então a comparação de dia completo não é exibida.",
       todayNoFullDayComparison:
-        "Hoje pode estar parcial; a comparação de dia completo usa Último dia.",
+        "Hoje pode estar parcial; selecione Dia para ver a data armazenada mais recente.",
       latestComparedWithPrevious:
-        "Último dia completo disponível comparado com o dia disponível anterior",
+        "Dia selecionado comparado com o dia disponível anterior",
       selectedRangeVsTimeline:
         "Intervalo selecionado comparado com toda a linha do tempo armazenada",
-      latestVsPrevious:
-        "Último dia completo disponível vs dia disponível anterior.",
+      latestVsPrevious: "Dia selecionado vs dia disponível anterior.",
       selectedVsTimeline:
         "Intervalo selecionado vs toda a linha do tempo armazenada.",
       comparisonNeedsData:

@@ -1,6 +1,6 @@
 {
   "name": "my-v0-project",
-  "version": "1.50.7.1",
+  "version": "1.50.8.0",
   "private": true,
   "scripts": {
     "build": "next build",
@@ -12,6 +12,7 @@
     "test:password-update-error": "node --experimental-strip-types scripts/test-password-update-error.mjs",
     "test:password-method-status": "node --experimental-strip-types scripts/test-password-method-status.mjs",
     "test:identity-auth-foundation": "node --experimental-strip-types scripts/test-identity-auth-foundation.mjs",
+    "test:health-time-range": "node --experimental-strip-types scripts/test-health-time-range.mjs",
     "start": "next start"
   },
   "dependencies": {

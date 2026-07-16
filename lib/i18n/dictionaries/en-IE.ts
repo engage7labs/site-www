@@ -1243,12 +1243,19 @@ export const enIE = {
     health: {
       periods: {
         today: "Today",
-        last_day: "Last day",
-        week: "Last week",
-        month: "Last month",
-        year: "Last year",
+        day: "Day",
+        week: "Week",
+        month: "Month",
+        last_7_days: "Last 7 days",
+        last_30_days: "Last 30 days",
+        year: "Year",
         all: "All time",
       },
+      periodNavigation: "Health period navigation",
+      inclusiveRange: "Inclusive range",
+      previousPeriod: "Previous period",
+      nextPeriod: "Next period",
+      jumpToLatest: "Latest",
       domains: {
         all: {
           title: "All",
@@ -1319,7 +1326,7 @@ export const enIE = {
       },
       todayRaw: "Today",
       todayRawWithDate: "Today: {date}",
-      todayMayBePartial: "Latest stored day; may be partial.",
+      todayMayBePartial: "Current local day; may be partial.",
       latestCompleteDay: "Latest complete day available",
       latestCompleteDayWithDate: "Latest complete day available: {date}",
       comparedWithPreviousAvailableDay: "Compared with previous available day",
@@ -1449,13 +1456,12 @@ export const enIE = {
       todayNoComparison:
         "Today may be partial, so full-day comparison is not shown.",
       todayNoFullDayComparison:
-        "Today may be partial; full-day comparison uses Last day.",
+        "Today may be partial; select Day to inspect the latest stored date.",
       latestComparedWithPrevious:
-        "Latest complete day available compared with the previous available day",
+        "Selected day compared with the previous available day",
       selectedRangeVsTimeline:
         "Selected range compared with your full stored timeline",
-      latestVsPrevious:
-        "Latest complete day available vs previous available day.",
+      latestVsPrevious: "Selected day vs previous available day.",
       selectedVsTimeline: "Selected range vs full stored timeline.",
       comparisonNeedsData:
         "A comparison needs enough current and baseline data.",

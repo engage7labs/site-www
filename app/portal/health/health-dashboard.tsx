@@ -3,6 +3,18 @@
 import { useLocale } from "@/components/providers/locale-provider";
 import { EChart } from "@/components/insights/echart";
 import { RecoveryScoreChart } from "@/components/insights/recovery-score-chart";
+import { HealthPeriodNavigator } from "@/components/portal/health-period-navigator";
+import { useHealthTimeRange } from "@/hooks/use-health-time-range";
+import {
+  calendarDateWeekday,
+  compareCalendarDates,
+  formatCalendarDate,
+  isCalendarDateInRange,
+  parseCalendarDate,
+  resolveHealthDateBounds,
+  type HealthInclusiveRange,
+  type HealthTimeRangeMode,
+} from "@/lib/health-time-range";
 import type { PortalDataStatus } from "@/lib/portal-data-status";
 import { parsePortalDataStatus } from "@/lib/portal-data-status";
 import { trackHealthDashboardViewed } from "@/lib/telemetry";
@@ -26,7 +38,7 @@ import { useEffect, useMemo, useState } from "react";
 
 type HealthDomain = "sleep" | "recovery" | "activity";
 type HealthDashboardDomain = HealthDomain | "all";
-type Period = "today" | "last_day" | "week" | "month" | "year" | "all";
+type Period = HealthTimeRangeMode;
 type JsonScalar = string | number | boolean | null;
 type UnknownRecord = Record<string, unknown>;
 type HealthCopy =
@@ -65,8 +77,6 @@ interface ChartSeries {
   yAxisIndex?: number;
   stack?: string;
 }
-
-const PERIODS: Period[] = ["today", "last_day", "week", "month", "year", "all"];
 
 const COLORS = {
   sleep: "#3dbe73",
@@ -219,55 +229,19 @@ function plausibleDailySteps(value: number): number | null {
   return value >= 0 && value <= 200_000 ? value : null;
 }
 
-function parseDate(value: string): Date | null {
-  const trimmed = value.trim();
-  const iso = /^(\d{4})-(\d{1,2})-(\d{1,2})$/.exec(trimmed);
-  if (iso) {
-    return new Date(Date.UTC(Number(iso[1]), Number(iso[2]) - 1, Number(iso[3])));
-  }
-
-  const dayFirst = /^(\d{1,2})[/-](\d{1,2})[/-](\d{4})$/.exec(trimmed);
-  if (dayFirst) {
-    const first = Number(dayFirst[1]);
-    const second = Number(dayFirst[2]);
-    const day = first > 12 ? first : second > 12 ? second : first;
-    const month = first > 12 ? second : second > 12 ? first : second;
-    return new Date(Date.UTC(Number(dayFirst[3]), month - 1, day));
-  }
-
-  const parsed = new Date(trimmed);
-  return Number.isNaN(parsed.getTime()) ? null : parsed;
-}
-
-function dateTime(point: HealthPoint): number {
-  return parseDate(point.date)?.getTime() ?? 0;
-}
-
 function formatChartDate(value: string, locale: string): string {
-  const parsed = parseDate(value);
+  const parsed = parseCalendarDate(value);
   if (!parsed) return value;
-  return parsed.toLocaleDateString(locale === "pt-BR" ? "pt-BR" : "en-IE", {
+  return formatCalendarDate(parsed, locale, {
     day: "numeric",
     month: "short",
   });
 }
 
 function formatDisplayDate(value: string, locale: string): string {
-  const parsed = parseDate(value);
+  const parsed = parseCalendarDate(value);
   if (!parsed) return value;
-  return parsed.toLocaleDateString(locale === "pt-BR" ? "pt-BR" : "en-IE", {
-    day: "2-digit",
-    month: "2-digit",
-    year: "numeric",
-  });
-}
-
-function formatDisplayDateObject(date: Date, locale: string): string {
-  return date.toLocaleDateString(locale === "pt-BR" ? "pt-BR" : "en-IE", {
-    day: "2-digit",
-    month: "2-digit",
-    year: "numeric",
-  });
+  return formatCalendarDate(parsed, locale);
 }
 
 function domainHasData(domain: HealthDomain, point: HealthPoint): boolean {
@@ -276,113 +250,53 @@ function domainHasData(domain: HealthDomain, point: HealthPoint): boolean {
 
 function sortedPoints(points: HealthPoint[]): HealthPoint[] {
   return [...points]
-    .filter((point) => parseDate(point.date))
-    .sort((a, b) => dateTime(a) - dateTime(b));
+    .filter((point) => parseCalendarDate(point.date))
+    .sort((a, b) => {
+      const left = parseCalendarDate(a.date)!;
+      const right = parseCalendarDate(b.date)!;
+      return compareCalendarDates(left, right);
+    });
 }
 
-function getPeriodStart(anchor: Date, period: Period): Date {
-  const start = new Date(anchor);
-  if (period === "week") start.setDate(start.getDate() - 7);
-  if (period === "month") start.setMonth(start.getMonth() - 1);
-  if (period === "year") start.setFullYear(start.getFullYear() - 1);
-  return start;
-}
-
-function latestRawAndValidDays(domainPoints: HealthPoint[]) {
-  const latestRawDay = domainPoints.at(-1) ?? null;
-  const lastValidDay =
-    domainPoints.length >= 2 ? domainPoints[domainPoints.length - 2] : latestRawDay;
-  const previousValidDay =
-    domainPoints.length >= 3 ? domainPoints[domainPoints.length - 3] : null;
-  return { latestRawDay, lastValidDay, previousValidDay };
-}
-
-function filterByPeriod(
+function filterByRange(
   points: HealthPoint[],
   domain: HealthDomain,
+  range: HealthInclusiveRange,
   period: Period,
   copy: HealthCopy,
   locale: string,
 ) {
   const all = sortedPoints(points);
   const domainPoints = all.filter((point) => domainHasData(domain, point));
-  const { latestRawDay, lastValidDay, previousValidDay } =
-    latestRawAndValidDays(domainPoints);
-  const anchorPoint = lastValidDay ?? domainPoints.at(-1) ?? all.at(-1);
-  const anchor = anchorPoint ? parseDate(anchorPoint.date) : null;
-
-  if (period === "today") {
-    return {
-      points: latestRawDay ? [latestRawDay] : [],
-      comparisonPoints: [],
-      hasAnyDomainData: domainPoints.length > 0,
-      hasDomainDataInRange: Boolean(latestRawDay),
-      rangeLabel: latestRawDay
-        ? copy.todayRawWithDate.replace(
-            "{date}",
-            formatDisplayDate(latestRawDay.date, locale),
-          )
-        : copy.todayRaw,
-      comparisonLabel: copy.todayMayBePartial,
-      isTodayRaw: true,
-    };
-  }
-
-  if (period === "last_day") {
-    return {
-      points: lastValidDay ? [lastValidDay] : [],
-      comparisonPoints: previousValidDay ? [previousValidDay] : [],
-      hasAnyDomainData: domainPoints.length > 0,
-      hasDomainDataInRange: Boolean(lastValidDay),
-      rangeLabel: lastValidDay
-        ? copy.latestCompleteDayWithDate.replace(
-            "{date}",
-            formatDisplayDate(lastValidDay.date, locale),
-          )
-        : copy.latestCompleteDay,
-      comparisonLabel: previousValidDay
-        ? copy.comparedWithPreviousAvailableDay
-        : copy.comparisonUnavailable,
-      isTodayRaw: false,
-    };
-  }
-
-  if (!anchor || period === "all") {
-    return {
-      points: domainPoints,
-      comparisonPoints: [],
-      hasAnyDomainData: domainPoints.length > 0,
-      hasDomainDataInRange: domainPoints.length > 0,
-      rangeLabel:
-        domainPoints.length > 0
-          ? `${formatDisplayDate(domainPoints[0].date, locale)} - ${formatDisplayDate(domainPoints[domainPoints.length - 1].date, locale)}`
-          : copy.noRange,
-      comparisonLabel: null,
-      isTodayRaw: false,
-    };
-  }
-
-  const start = getPeriodStart(anchor, period);
-  const filtered = all.filter((point) => {
-    const parsed = parseDate(point.date);
-    return parsed ? parsed >= start && parsed <= anchor : false;
-  });
-  const hasDomainDataInRange = filtered.some((point) =>
-    domainHasData(domain, point),
+  const domainFiltered = domainPoints.filter((point) =>
+    isCalendarDateInRange(point.date, range),
   );
-  const domainFiltered = filtered.filter((point) => domainHasData(domain, point));
+  const previousAvailableDay =
+    period === "day"
+      ? [...domainPoints]
+          .reverse()
+          .find((point) => {
+            const parsed = parseCalendarDate(point.date);
+            return parsed && compareCalendarDates(parsed, range.start) < 0;
+          }) ?? null
+      : null;
+  const startLabel = formatCalendarDate(range.start, locale);
+  const endLabel = formatCalendarDate(range.end, locale);
 
   return {
     points: domainFiltered,
-    comparisonPoints: [],
+    comparisonPoints: previousAvailableDay ? [previousAvailableDay] : [],
     hasAnyDomainData: domainPoints.length > 0,
-    hasDomainDataInRange,
-    rangeLabel:
-      domainFiltered.length > 0
-        ? `${formatDisplayDate(domainFiltered[0].date, locale)} - ${formatDisplayDate(domainFiltered[domainFiltered.length - 1].date, locale)}`
-        : `${formatDisplayDateObject(start, locale)} - ${formatDisplayDateObject(anchor, locale)}`,
-    comparisonLabel: null,
-    isTodayRaw: false,
+    hasDomainDataInRange: domainFiltered.length > 0,
+    rangeLabel: startLabel === endLabel ? startLabel : `${startLabel} - ${endLabel}`,
+    comparisonLabel:
+      period === "today"
+        ? copy.todayMayBePartial
+        : period === "day"
+          ? previousAvailableDay
+            ? copy.comparedWithPreviousAvailableDay
+            : copy.comparisonUnavailable
+          : null,
   };
 }
 
@@ -774,7 +688,10 @@ function weeklyAverage(points: HealthPoint[], keys: string[]): (number | null)[]
   return WEEK_DAYS.map((_, index) => {
     const target = index === 6 ? 0 : index + 1;
     const dayValues = points
-      .filter((point) => parseDate(point.date)?.getDay() === target)
+      .filter((point) => {
+        const date = parseCalendarDate(point.date);
+        return date ? calendarDateWeekday(date) === target : false;
+      })
       .map((point) => valueFor(point, keys))
       .filter((value): value is number => value !== null);
     return dayValues.length ? Number(average(dayValues)!.toFixed(1)) : null;
@@ -792,31 +709,6 @@ function bestAndLowest(points: HealthPoint[], keys: string[]) {
       row.value < winner.value ? row : winner,
     ),
   };
-}
-
-function PeriodSwitcher({
-  period,
-  onChange,
-}: Readonly<{ period: Period; onChange: (period: Period) => void }>) {
-  const { t, locale } = useLocale();
-  return (
-    <div className="flex flex-wrap gap-1 rounded-lg bg-muted/40 p-0.5">
-      {PERIODS.map((item) => (
-        <button
-          key={item}
-          type="button"
-          onClick={() => onChange(item)}
-          className={`rounded-md px-3 py-1.5 text-xs font-medium transition-colors ${
-            period === item
-              ? "bg-background text-foreground shadow-sm"
-              : "text-muted-foreground hover:text-foreground"
-          }`}
-        >
-          {t.portal.health.periods[item]}
-        </button>
-      ))}
-    </div>
-  );
 }
 
 function TruthBadge({ status }: Readonly<{ status: string }>) {
@@ -1047,7 +939,7 @@ function SleepDashboard({
   period: Period;
 }>) {
   const { t, locale } = useLocale();
-  const isOneDayRange = period === "last_day" || points.length <= 1;
+  const isOneDayRange = period === "day" || points.length <= 1;
   const sleepPoints = points.filter((point) =>
     hasAnyValue(point, [SLEEP_DURATION_KEYS]),
   );
@@ -1314,7 +1206,7 @@ function RecoveryDashboard({
   };
   const hrvComparison = period === "today"
     ? todayComparisonUnavailable
-    : period === "last_day"
+    : period === "day"
       ? previousAvailableComparison({
         current: currentHrv,
         previous: average(previousHrvVals),
@@ -1334,7 +1226,7 @@ function RecoveryDashboard({
       });
   const hrComparison = period === "today"
     ? todayComparisonUnavailable
-    : period === "last_day"
+    : period === "day"
       ? previousAvailableComparison({
         current: currentHr,
         previous: average(previousHrVals),
@@ -1368,7 +1260,7 @@ function RecoveryDashboard({
       : sectionScore !== null
         ? 1
         : 0);
-  const isOneDayRange = period === "last_day" || points.length <= 1;
+  const isOneDayRange = period === "day" || points.length <= 1;
 
   return (
     <div className="flex flex-col gap-5">
@@ -1472,7 +1364,7 @@ function RecoveryDashboard({
         subtitle={
           period === "today"
             ? t.portal.health.todayNoComparison
-            : period === "last_day"
+            : period === "day"
             ? t.portal.health.latestComparedWithPrevious
             : t.portal.health.selectedRangeVsTimeline
         }
@@ -1491,7 +1383,7 @@ function RecoveryDashboard({
               {hrvComparison.status === "valid"
                 ? period === "today"
                   ? t.portal.health.todayNoFullDayComparison
-                  : period === "last_day"
+                  : period === "day"
                   ? t.portal.health.latestVsPrevious
                   : t.portal.health.selectedVsTimeline
                 : period === "today"
@@ -1514,7 +1406,7 @@ function RecoveryDashboard({
               {hrComparison.status === "valid"
                 ? period === "today"
                   ? t.portal.health.todayNoFullDayComparison
-                  : period === "last_day"
+                  : period === "day"
                   ? t.portal.health.latestVsPrevious
                   : t.portal.health.selectedVsTimeline
                 : period === "today"
@@ -1570,7 +1462,7 @@ function ActivityDashboard({
     };
   });
   const { best, lowest } = bestAndLowest(stepPoints, ACTIVITY_STEPS_KEYS);
-  const isOneDayRange = period === "last_day" || points.length <= 1;
+  const isOneDayRange = period === "day" || points.length <= 1;
   const hasEnoughStepDaysForComparison = stepsVals.length >= 2;
 
   return (
@@ -1775,7 +1667,6 @@ export function HealthDashboard({
   const [data, setData] = useState<HealthDataResponse | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [period, setPeriod] = useState<Period>("last_day");
   const [exporting, setExporting] = useState(false);
   const [exportError, setExportError] = useState<string | null>(null);
 
@@ -1811,6 +1702,21 @@ export function HealthDashboard({
     [data?.latest_sections],
   );
   const allPoints = useMemo(() => sortedPoints(data?.data_points ?? []), [data]);
+  const availablePoints = useMemo(
+    () =>
+      allPoints.filter((point) =>
+        (["sleep", "recovery", "activity"] as const).some((item) =>
+          domainHasData(item, point),
+        ),
+      ),
+    [allPoints],
+  );
+  const dateBounds = useMemo(
+    () => resolveHealthDateBounds(availablePoints.map((point) => point.date)),
+    [availablePoints],
+  );
+  const healthTimeRange = useHealthTimeRange(dateBounds);
+  const period = healthTimeRange.selected?.mode ?? "day";
   const portalStatus = useMemo(
     () => parsePortalDataStatus(data?.portal_data_status),
     [data?.portal_data_status],
@@ -1822,23 +1728,44 @@ export function HealthDashboard({
         : ([domain] as const),
     [domain],
   );
-  const domainFilters = useMemo(
-    () =>
-      Object.fromEntries(
+  const domainFilters = useMemo(() => {
+    const range = healthTimeRange.range;
+    if (!range) return null;
+    return Object.fromEntries(
         activeDomains.map((item) => [
           item,
-          filterByPeriod(allPoints, item, period, t.portal.health, locale),
+          filterByRange(
+            allPoints,
+            item,
+            range,
+            period,
+            t.portal.health,
+            locale,
+          ),
         ]),
-      ) as Record<HealthDomain, ReturnType<typeof filterByPeriod>>,
-    [activeDomains, allPoints, period, t.portal.health, locale],
-  );
+      ) as Record<HealthDomain, ReturnType<typeof filterByRange>>;
+  }, [
+    activeDomains,
+    allPoints,
+    healthTimeRange.range,
+    period,
+    t.portal.health,
+    locale,
+  ]);
   const filtered = useMemo(
     () =>
-      domain === "all"
-        ? domainFilters.sleep
-        : domainFilters[domain],
+      domainFilters &&
+      (domain === "all" ? domainFilters.sleep : domainFilters[domain]),
     [domain, domainFilters],
   );
+  const rangePoints = useMemo(() => {
+    const range = healthTimeRange.range;
+    return range
+      ? availablePoints.filter((point) =>
+          isCalendarDateInRange(point.date, range),
+        )
+      : [];
+  }, [availablePoints, healthTimeRange.range]);
 
   const handleExportPdf = async () => {
     try {
@@ -1867,7 +1794,15 @@ export function HealthDashboard({
     );
   }
 
-  if (!data || data.analysis_count === 0 || allPoints.length === 0) {
+  if (
+    !data ||
+    data.analysis_count === 0 ||
+    availablePoints.length === 0 ||
+    !healthTimeRange.selected ||
+    !healthTimeRange.range ||
+    !domainFilters ||
+    !filtered
+  ) {
     return (
       <DatasetEmptyState
         status={data?.data_status}
@@ -1880,15 +1815,8 @@ export function HealthDashboard({
   const domainCopy =
     domain === "all" ? t.portal.health.domains.all : t.portal.health.domains[domain];
   const { Icon } = meta;
-  const allStoredDays = new Set(
-    activeDomains.flatMap((item) =>
-      domainFilters[item].points.map((point) => point.date),
-    ),
-  ).size;
-  const storedDaysCount =
-    domain === "all" ? allStoredDays : filtered.points.length;
-  const headerRangeLabel =
-    domain === "all" ? t.portal.health.periods[period] : filtered.rangeLabel;
+  const storedDaysCount = rangePoints.length;
+  const headerRangeLabel = filtered.rangeLabel;
   const headerComparisonLabel =
     domain === "all" ? null : filtered.comparisonLabel;
 
@@ -1929,7 +1857,17 @@ export function HealthDashboard({
             </div>
           </div>
           <div className="border-t border-border/50 pt-4">
-            <PeriodSwitcher period={period} onChange={setPeriod} />
+            <HealthPeriodNavigator
+              selected={healthTimeRange.selected}
+              range={healthTimeRange.range}
+              canMoveBackward={healthTimeRange.canMoveBackward}
+              canMoveForward={healthTimeRange.canMoveForward}
+              isLatest={healthTimeRange.isLatest}
+              onModeChange={healthTimeRange.selectMode}
+              onPrevious={healthTimeRange.moveBackward}
+              onNext={healthTimeRange.moveForward}
+              onJumpToLatest={healthTimeRange.jumpToLatest}
+            />
           </div>
         </div>
       </div>
