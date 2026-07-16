@@ -40,6 +40,7 @@ export function PortalShell({
     "/portal/trends": t.portal.shell.sections.dataLab,
     "/portal/insights": t.portal.shell.sections.insights,
     "/portal/settings": t.portal.shell.sections.settings,
+    "/portal/sources": t.portal.shell.sections.sources,
     "/portal/upload": t.portal.shell.sections.upload,
     "/portal/health": t.portal.shell.sections.health,
     "/portal/health/all": t.portal.shell.sections.all,

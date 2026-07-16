@@ -745,6 +745,10 @@ export const ptBR: Dictionary = {
           title: "Configurações",
           subtitle: "Gerencie suas preferências do Portal",
         },
+        sources: {
+          title: "Fontes",
+          subtitle: "Veja de onde vêm as informações de saúde mostradas no Engage7",
+        },
         upload: {
           title: "Atualizar Dados",
           subtitle: "Atualize sua linha do tempo do Apple Health",
@@ -1274,6 +1278,47 @@ export const ptBR: Dictionary = {
         "Sua sessão mudou. Reabra as Configurações antes de excluir uma conta.",
       deletePermanently: "Excluir permanentemente",
       deleting: "Excluindo...",
+    },
+    sources: {
+      introTitle: "De onde vêm suas informações",
+      intro:
+        "Cada cartão conecta uma métrica de saúde às informações atualmente disponíveis sobre sua fonte.",
+      transparencyNote:
+        "O Engage7 mostra apenas os detalhes de fonte presentes nos seus dados armazenados. Detalhes ausentes aparecem como desconhecidos.",
+      loading: "Carregando fontes...",
+      loadErrorTitle: "Não foi possível carregar as fontes",
+      loadError: "Tente novamente em alguns instantes.",
+      emptyTitle: "Ainda não há informações de fonte",
+      empty:
+        "Envie uma exportação do Apple Health para ver de onde vêm suas métricas disponíveis.",
+      source: "Aplicativo de origem",
+      device: "Dispositivo",
+      acquisition: "Adicionado por",
+      lastSynchronized: "Última sincronização",
+      lastObserved: "Dados mais recentes da métrica",
+      unknown: "Desconhecido",
+      never: "Não disponível",
+      acquisitionMethods: {
+        apple_health_export: "Exportação do Apple Health",
+      },
+      statuses: {
+        available: "Disponível",
+        no_recent_data: "Nenhum dado recente detectado",
+        not_available: "Não disponível nestes dados",
+      },
+      metrics: {
+        sleep: "Sono",
+        heart_rate: "Frequência cardíaca",
+        resting_heart_rate: "Frequência cardíaca de repouso",
+        hrv: "VFC",
+        steps: "Passos",
+        active_energy: "Energia ativa",
+        distance: "Distância",
+        active_minutes: "Minutos ativos",
+        oxygen_saturation: "Saturação de oxigênio",
+        respiratory_rate: "Frequência respiratória",
+        vo2_max: "VO₂ máx.",
+      },
     },
     health: {
       periods: {

@@ -734,6 +734,10 @@ export const enIE = {
           title: "Settings",
           subtitle: "Manage your portal preferences",
         },
+        sources: {
+          title: "Sources",
+          subtitle: "See where the health information shown in Engage7 comes from",
+        },
         upload: {
           title: "Update Data",
           subtitle: "Refresh your Apple Health timeline",
@@ -1239,6 +1243,47 @@ export const enIE = {
         "Your session changed. Please reopen Settings before deleting an account.",
       deletePermanently: "Delete permanently",
       deleting: "Deleting...",
+    },
+    sources: {
+      introTitle: "Where your information comes from",
+      intro:
+        "Each card connects a health metric to the information currently available about its source.",
+      transparencyNote:
+        "Engage7 only shows source details that are present in your stored data. Missing details are marked as unknown.",
+      loading: "Loading sources...",
+      loadErrorTitle: "Sources could not be loaded",
+      loadError: "Please try again in a moment.",
+      emptyTitle: "No source information yet",
+      empty:
+        "Upload an Apple Health export to see where your available metrics come from.",
+      source: "Source application",
+      device: "Device",
+      acquisition: "Added through",
+      lastSynchronized: "Last synchronized",
+      lastObserved: "Latest metric data",
+      unknown: "Unknown",
+      never: "Not available",
+      acquisitionMethods: {
+        apple_health_export: "Apple Health export",
+      },
+      statuses: {
+        available: "Available",
+        no_recent_data: "No recent data detected",
+        not_available: "Not available in this data",
+      },
+      metrics: {
+        sleep: "Sleep",
+        heart_rate: "Heart rate",
+        resting_heart_rate: "Resting heart rate",
+        hrv: "HRV",
+        steps: "Steps",
+        active_energy: "Active energy",
+        distance: "Distance",
+        active_minutes: "Active minutes",
+        oxygen_saturation: "Oxygen saturation",
+        respiratory_rate: "Respiratory rate",
+        vo2_max: "VO₂ max",
+      },
     },
     health: {
       periods: {

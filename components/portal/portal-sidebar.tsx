@@ -12,6 +12,7 @@ import {
   LayoutDashboard,
   Lightbulb,
   Moon,
+  ScanSearch,
   Settings,
   TrendingUp,
   Upload,
@@ -24,7 +25,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { PortalSidebarItem } from "./portal-sidebar-item";
 
 interface NavItem {
-  key: "overview" | "reports" | "health" | "all" | "sleep" | "recovery" | "activity" | "insights" | "dataLab" | "settings";
+  key: "overview" | "reports" | "health" | "all" | "sleep" | "recovery" | "activity" | "insights" | "dataLab" | "sources" | "settings";
   label: string;
   href: string;
   icon: React.ElementType;
@@ -48,6 +49,7 @@ const NAV_ITEMS: NavItem[] = [
   },
   { key: "dataLab", label: "Data Lab", href: "/portal/trends", icon: TrendingUp },
   { key: "reports", label: "My Reports", href: "/portal/reports", icon: Upload },
+  { key: "sources", label: "Sources", href: "/portal/sources", icon: ScanSearch },
 ];
 
 const LOWER_NAV_ITEMS: NavItem[] = [
