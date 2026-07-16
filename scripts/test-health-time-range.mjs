@@ -176,6 +176,14 @@ assert.match(navigatorSource, /selected\.mode !== "today" && selected\.mode !== 
 assert.match(navigatorSource, /CalendarDays/);
 assert.match(navigatorSource, /jumpToPeriod/);
 assert.match(navigatorSource, /aria-label=.*jumpToPeriod/);
-assert.match(navigatorSource, /sm:w-auto/);
+assert.doesNotMatch(navigatorSource, /ChevronDown/);
+assert.ok(
+  navigatorSource.indexOf("onClick={onPrevious}") <
+    navigatorSource.indexOf("onClick={onNext}"),
+);
+assert.ok(
+  navigatorSource.indexOf("onClick={onNext}") <
+    navigatorSource.indexOf("aria-expanded={selectorOpen}"),
+);
 
 console.log("Health calendar range and shared-dashboard consistency checks passed.");
