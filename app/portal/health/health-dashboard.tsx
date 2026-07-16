@@ -1798,6 +1798,7 @@ export function HealthDashboard({
     !data ||
     data.analysis_count === 0 ||
     availablePoints.length === 0 ||
+    !dateBounds ||
     !healthTimeRange.selected ||
     !healthTimeRange.range ||
     !domainFilters ||
@@ -1859,6 +1860,7 @@ export function HealthDashboard({
           <div className="border-t border-border/50 pt-4">
             <HealthPeriodNavigator
               selected={healthTimeRange.selected}
+              bounds={dateBounds}
               range={healthTimeRange.range}
               canMoveBackward={healthTimeRange.canMoveBackward}
               canMoveForward={healthTimeRange.canMoveForward}
@@ -1867,6 +1869,7 @@ export function HealthDashboard({
               onPrevious={healthTimeRange.moveBackward}
               onNext={healthTimeRange.moveForward}
               onJumpToLatest={healthTimeRange.jumpToLatest}
+              onAnchorChange={healthTimeRange.selectAnchor}
             />
           </div>
         </div>

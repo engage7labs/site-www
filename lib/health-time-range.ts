@@ -238,6 +238,21 @@ export function moveHealthPeriod(
   return { mode, anchor };
 }
 
+export function selectHealthPeriodAnchor(
+  selected: HealthSelectedPeriod,
+  anchor: CalendarDate,
+  bounds: HealthDateBounds,
+): HealthSelectedPeriod {
+  if (selected.mode === "today" || selected.mode === "all") return selected;
+  if (
+    compareCalendarDates(anchor, bounds.min) < 0 ||
+    compareCalendarDates(anchor, bounds.max) > 0
+  ) {
+    return selected;
+  }
+  return { ...selected, anchor };
+}
+
 export function canMoveHealthPeriodBackward(
   selected: HealthSelectedPeriod,
   bounds: HealthDateBounds,

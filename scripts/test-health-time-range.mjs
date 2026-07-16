@@ -14,6 +14,7 @@ const {
   resolveHealthDateBounds,
   resolveHealthPeriodRange,
   resolveInitialHealthPeriod,
+  selectHealthPeriodAnchor,
 } = await import("../lib/health-time-range.ts");
 
 const key = calendarDateToKey;
@@ -47,6 +48,17 @@ assert.equal(key(moveHealthPeriod(latestDay, -1).anchor), "2024-03-28");
 assert.equal(key(moveHealthPeriod(moveHealthPeriod(latestDay, -1), 1).anchor), "2024-03-29");
 assert.equal(canMoveHealthPeriodForward(latestDay, bounds), false);
 assert.equal(isLatestHealthPeriod(latestDay, bounds), true);
+
+const pickedDay = selectHealthPeriodAnchor(
+  latestDay,
+  parseCalendarDate("2024-02-29"),
+  bounds,
+);
+assert.equal(key(resolveHealthPeriodRange(pickedDay, bounds).start), "2024-02-29");
+assert.deepEqual(
+  selectHealthPeriodAnchor(latestDay, parseCalendarDate("2025-01-01"), bounds),
+  latestDay,
+);
 
 const week = resolveHealthPeriodRange(
   { mode: "week", anchor: parseCalendarDate("2024-03-01") },
@@ -97,6 +109,19 @@ assert.equal(key(calendarWeek.start), "2024-03-25");
 assert.equal(key(calendarWeek.end), "2024-03-31");
 assert.equal(key(rolling7.start), "2024-03-23");
 assert.equal(key(rolling7.end), "2024-03-29");
+assert.equal(
+  key(
+    resolveHealthPeriodRange(
+      selectHealthPeriodAnchor(
+        { mode: "last_7_days", anchor: bounds.max },
+        parseCalendarDate("2024-02-29"),
+        bounds,
+      ),
+      bounds,
+    ).end,
+  ),
+  "2024-02-29",
+);
 
 const december = { mode: "month", anchor: parseCalendarDate("2023-12-31") };
 assert.equal(key(moveHealthPeriod(december, 1).anchor), "2024-01-31");
@@ -140,5 +165,13 @@ const dashboardSource = await readFile(
 assert.match(dashboardSource, /resolveHealthDateBounds\(availablePoints\.map/);
 assert.match(dashboardSource, /filterByRange\(\s*allPoints,\s*item,\s*range,/);
 assert.doesNotMatch(dashboardSource, /latestRawAndValidDays|filterByPeriod|new Date\(point\.date\)/);
+const navigatorSource = await readFile(
+  new URL("../components/portal/health-period-navigator.tsx", import.meta.url),
+  "utf8",
+);
+assert.match(navigatorSource, /type="date"/);
+assert.match(navigatorSource, /type="month"/);
+assert.match(navigatorSource, /pickerKind === "year"/);
+assert.match(navigatorSource, /selected\.mode !== "today" && selected\.mode !== "all"/);
 
 console.log("Health calendar range and shared-dashboard consistency checks passed.");

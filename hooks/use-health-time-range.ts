@@ -7,6 +7,8 @@ import {
   moveHealthPeriod,
   resolveHealthPeriodRange,
   resolveInitialHealthPeriod,
+  selectHealthPeriodAnchor,
+  type CalendarDate,
   type HealthDateBounds,
   type HealthSelectedPeriod,
   type HealthTimeRangeMode,
@@ -35,6 +37,11 @@ export function useHealthTimeRange(bounds: HealthDateBounds | null) {
       setSelection(resolveInitialHealthPeriod(selected.mode, bounds));
     }
   };
+  const selectAnchor = (anchor: CalendarDate) => {
+    if (bounds && selected) {
+      setSelection(selectHealthPeriodAnchor(selected, anchor, bounds));
+    }
+  };
 
   return {
     selected,
@@ -43,6 +50,7 @@ export function useHealthTimeRange(bounds: HealthDateBounds | null) {
     moveBackward: () => move(-1),
     moveForward: () => move(1),
     jumpToLatest,
+    selectAnchor,
     canMoveBackward: Boolean(
       bounds && selected && canMoveHealthPeriodBackward(selected, bounds),
     ),

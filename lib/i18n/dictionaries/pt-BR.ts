@@ -1291,6 +1291,9 @@ export const ptBR: Dictionary = {
       previousPeriod: "Período anterior",
       nextPeriod: "Próximo período",
       jumpToLatest: "Mais recente",
+      choosePeriod: "Escolher período",
+      chooseWeekDate: "Escolher uma data na semana",
+      chooseEndDate: "Escolher a data final da janela",
       domains: {
         all: {
           title: "Todos",

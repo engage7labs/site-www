@@ -1256,6 +1256,9 @@ export const enIE = {
       previousPeriod: "Previous period",
       nextPeriod: "Next period",
       jumpToLatest: "Latest",
+      choosePeriod: "Choose period",
+      chooseWeekDate: "Choose a date in the week",
+      chooseEndDate: "Choose window end date",
       domains: {
         all: {
           title: "All",
