@@ -1291,6 +1291,7 @@ export const ptBR: Dictionary = {
       previousPeriod: "Período anterior",
       nextPeriod: "Próximo período",
       jumpToLatest: "Mais recente",
+      jumpToPeriod: "Ir para",
       choosePeriod: "Escolher período",
       chooseWeekDate: "Escolher uma data na semana",
       chooseEndDate: "Escolher a data final da janela",

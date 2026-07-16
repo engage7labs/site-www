@@ -13,7 +13,13 @@ import {
   type HealthSelectedPeriod,
   type HealthTimeRangeMode,
 } from "@/lib/health-time-range";
-import { ChevronLeft, ChevronRight, LocateFixed } from "lucide-react";
+import {
+  CalendarDays,
+  ChevronDown,
+  ChevronLeft,
+  ChevronRight,
+  LocateFixed,
+} from "lucide-react";
 import { useId, useState } from "react";
 
 export function HealthPeriodNavigator({
@@ -106,10 +112,20 @@ export function HealthPeriodNavigator({
               type="button"
               aria-expanded={selectorOpen}
               aria-controls={selectorId}
+              aria-label={`${t.portal.health.jumpToPeriod}: ${periodLabel}`}
               onClick={() => setSelectorOpen((open) => !open)}
-              className="rounded-sm text-left text-sm font-semibold capitalize text-card-foreground underline-offset-4 hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+              className="group inline-flex min-h-10 w-full max-w-full items-center gap-2 rounded-md border border-border bg-background px-3 py-2 text-left text-sm font-semibold text-card-foreground shadow-sm transition-colors hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring sm:w-auto"
             >
-              {periodLabel}
+              <CalendarDays className="h-4 w-4 shrink-0" aria-hidden="true" />
+              <span className="min-w-0 break-words">
+                {t.portal.health.jumpToPeriod}: {periodLabel}
+              </span>
+              <ChevronDown
+                className={`h-4 w-4 shrink-0 transition-transform ${
+                  selectorOpen ? "rotate-180" : ""
+                }`}
+                aria-hidden="true"
+              />
             </button>
           ) : (
             <p className="text-sm font-semibold capitalize text-card-foreground">

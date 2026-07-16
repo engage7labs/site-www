@@ -1256,6 +1256,7 @@ export const enIE = {
       previousPeriod: "Previous period",
       nextPeriod: "Next period",
       jumpToLatest: "Latest",
+      jumpToPeriod: "Jump to",
       choosePeriod: "Choose period",
       chooseWeekDate: "Choose a date in the week",
       chooseEndDate: "Choose window end date",

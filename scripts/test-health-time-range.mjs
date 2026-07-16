@@ -173,5 +173,9 @@ assert.match(navigatorSource, /type="date"/);
 assert.match(navigatorSource, /type="month"/);
 assert.match(navigatorSource, /pickerKind === "year"/);
 assert.match(navigatorSource, /selected\.mode !== "today" && selected\.mode !== "all"/);
+assert.match(navigatorSource, /CalendarDays/);
+assert.match(navigatorSource, /jumpToPeriod/);
+assert.match(navigatorSource, /aria-label=.*jumpToPeriod/);
+assert.match(navigatorSource, /sm:w-auto/);
 
 console.log("Health calendar range and shared-dashboard consistency checks passed.");
