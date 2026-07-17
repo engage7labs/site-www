@@ -1054,11 +1054,26 @@ export const ptBR: Dictionary = {
       notFoundDescription:
         "Este relatório não pôde ser carregado. Ele pode ter expirado ou o link pode estar incorreto.",
       loading: "Carregando relatório...",
+      loadingReports: "Carregando relatórios...",
       stillWorking: "Ainda trabalhando na sua análise...",
       autoUpdates: "Esta página é atualizada automaticamente.",
       failedTitle: "Tivemos dificuldade para processar este arquivo",
       failedDescription:
         "Isso pode acontecer com exportações incompatíveis ou incompletas. Tente novamente.",
+      empty:
+        "Ainda não há relatórios. Atualize sua linha do tempo do Apple Health para gerar seu primeiro relatório do Portal.",
+      table: {
+        date: "Data",
+        report: "Relatório",
+        period: "Período",
+        status: "Status",
+        action: "Ação",
+        updated: "Atualizado",
+        view: "Ver",
+        healthAnalysis: "Análise de saúde",
+        claimedPublicAnalysis: "Análise pública reivindicada",
+        timelineThrough: "Linha do tempo até {date}",
+      },
     },
     metrics: {
       plan: "Plano",
@@ -1091,8 +1106,8 @@ export const ptBR: Dictionary = {
       premium: "Premium",
       expired: "Sem plano",
     },
-    sleepTrend: "Sono — Últimos 14 Dias com Dados",
-    healthBalance: "Equilíbrio de Saúde — Últimos 7 Dias com Dados",
+    sleepTrend: "Sono — Últimos 14 dias com dados",
+    healthBalance: "Equilíbrio de saúde — Últimos 7 dias com dados",
     latestAnalysis: {
       title: "Análise Mais Recente",
       noDataTitle: "Análises Recentes",
@@ -1503,6 +1518,8 @@ export const ptBR: Dictionary = {
         "Nenhum valor de contagem de passos está presente no intervalo selecionado.",
       hiddenStepOutliers:
         "{count} valores extremos de passos estão ocultos da escala do gráfico.",
+      hiddenStepOutliersSingular:
+        "{count} valor extremo de passos está oculto da escala do gráfico.",
       energyAndDistance: "Energia e distância",
       energyDistanceSelectedDay: "Energia e distância no dia selecionado",
       energyCal: "Energia (Cal)",
@@ -1560,7 +1577,7 @@ export const ptBR: Dictionary = {
       activeEnergyAverage: "Energia ativa média de {value} calorias.",
       energyDistanceSubtitle:
         "Energia ativa com sobreposição de distância quando disponível",
-      bestVsLowest: "Melhor vs menor",
+      bestVsLowest: "Melhor vs. menor",
       stepRangeAnchors: "Referências do intervalo de passos",
       bestDay: "Melhor dia",
       lowestDay: "Menor dia",
