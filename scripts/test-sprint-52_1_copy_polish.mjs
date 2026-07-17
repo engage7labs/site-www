@@ -74,8 +74,42 @@ assert.equal(
   getReportDisplayName(
     { report_label: "Custom label", upload_status: "queued" },
     ptReport,
+    "pt-BR",
   ),
   "Custom label",
+);
+assert.equal(
+  getReportDisplayName(
+    {
+      report_label: "Claimed public analysis 2017-12-04 to 2026-05-20",
+      upload_status: "imported",
+    },
+    ptReport,
+    "pt-BR",
+  ),
+  "Análise pública reivindicada 2017-12-04 a 2026-05-20",
+);
+assert.equal(
+  getReportDisplayName(
+    {
+      report_label: "Claimed public analysis 2017-12-04 to 2026-05-20",
+      upload_status: "imported",
+    },
+    enReport,
+    "en-IE",
+  ),
+  "Claimed public analysis 2017-12-04 to 2026-05-20",
+);
+assert.equal(
+  getReportDisplayName(
+    {
+      report_label: "Health analysis 2018-01-01 to 2018-12-31",
+      upload_status: "completed",
+    },
+    ptReport,
+    "pt-BR",
+  ),
+  "Análise de saúde 2018-01-01 a 2018-12-31",
 );
 
 const reportsSource = await readFile(

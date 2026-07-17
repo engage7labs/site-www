@@ -200,7 +200,7 @@ export default function ReportsPage() {
                         <div className="flex items-start gap-2 text-card-foreground">
                           <FileText className="mt-0.5 h-4 w-4 text-muted-foreground" />
                           <div>
-                            <p>{getReportDisplayName(report, copy)}</p>
+                            <p>{getReportDisplayName(report, copy, locale)}</p>
                             <p className="mt-0.5 font-mono text-[10px] text-muted-foreground">
                               {shortJobId(report.job_id)}
                             </p>
