@@ -1029,11 +1029,26 @@ export const enIE = {
       notFoundDescription:
         "This report could not be loaded. It may have expired or the link is incorrect.",
       loading: "Loading report...",
+      loadingReports: "Loading reports...",
       stillWorking: "Still working on your analysis...",
       autoUpdates: "This page updates automatically.",
       failedTitle: "We had trouble processing this file",
       failedDescription:
         "This can happen with unsupported or incomplete exports. Please try again.",
+      empty:
+        "No reports yet. Refresh your Apple Health timeline to generate your first Portal report.",
+      table: {
+        date: "Date",
+        report: "Report",
+        period: "Period",
+        status: "Status",
+        action: "Action",
+        updated: "Updated",
+        view: "View",
+        healthAnalysis: "Health Analysis",
+        claimedPublicAnalysis: "Claimed public analysis",
+        timelineThrough: "Timeline through {date}",
+      },
     },
     metrics: {
       plan: "Plan",
@@ -1066,8 +1081,8 @@ export const enIE = {
       premium: "Premium",
       expired: "No plan",
     },
-    sleepTrend: "Sleep — Last 14 Days with Data",
-    healthBalance: "Health Balance — Last 7 Days with Data",
+    sleepTrend: "Sleep — Last 14 days with data",
+    healthBalance: "Health Balance — Last 7 days with data",
     latestAnalysis: {
       title: "Latest Analysis",
       noDataTitle: "Recent Analyses",
@@ -1463,6 +1478,8 @@ export const enIE = {
         "No step-count values are present in the selected range.",
       hiddenStepOutliers:
         "{count} extreme step values are hidden from chart scale.",
+      hiddenStepOutliersSingular:
+        "{count} extreme step value is hidden from chart scale.",
       energyAndDistance: "Energy and Distance",
       energyDistanceSelectedDay: "Energy and distance on the selected day",
       energyCal: "Energy (Cal)",

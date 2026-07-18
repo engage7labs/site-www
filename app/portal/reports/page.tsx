@@ -1,6 +1,7 @@
 "use client";
 
 import { useLocale } from "@/components/providers/locale-provider";
+import { getReportDisplayName, formatTimelineThroughLabel } from "@/lib/portal-copy";
 import { Eye, FileText } from "lucide-react";
 import Link from "next/link";
 import { useEffect, useState } from "react";
@@ -69,6 +70,7 @@ function formatPeriodLabel(
   latestFeatureStore: FeatureStoreSummary | null,
   isLatestReport: boolean,
   locale: string,
+  copy: { timelineThrough: string },
 ): string {
   const summaryPeriod = periodFromSource(report.summary);
   const sectionsPeriod =
@@ -81,7 +83,7 @@ function formatPeriodLabel(
   const formattedEnd = end ? formatPeriodDate(end, locale) : null;
 
   if (formattedStart && formattedEnd) return `${formattedStart} – ${formattedEnd}`;
-  if (formattedEnd) return `Timeline through ${formattedEnd}`;
+  if (formattedEnd) return formatTimelineThroughLabel(formattedEnd, copy);
 
   const canUseLatestTimeline =
     isLatestReport &&
@@ -96,15 +98,8 @@ function formatPeriodLabel(
     ? formatPeriodDate(latestFeatureStore.date_end, locale)
     : null;
   if (timelineStart && timelineEnd) return `${timelineStart} – ${timelineEnd}`;
-  if (timelineEnd) return `Timeline through ${timelineEnd}`;
+  if (timelineEnd) return formatTimelineThroughLabel(timelineEnd, copy);
   return "—";
-}
-
-function reportName(report: AnalysisReport): string {
-  if (report.report_label) return report.report_label;
-  return report.upload_status === "imported"
-    ? "Claimed public analysis"
-    : "Health analysis";
 }
 
 function shortJobId(jobId: string): string {
@@ -112,10 +107,11 @@ function shortJobId(jobId: string): string {
 }
 
 export default function ReportsPage() {
-  const { locale } = useLocale();
+  const { locale, t } = useLocale();
   const [reports, setReports] = useState<AnalysisReport[]>([]);
   const [featureStore, setFeatureStore] = useState<FeatureStoreSummary | null>(null);
   const [loading, setLoading] = useState(true);
+  const copy = t.portal.reportDetail.table;
 
   useEffect(() => {
     (async () => {
@@ -143,13 +139,14 @@ export default function ReportsPage() {
   return (
     <div className="flex flex-col gap-6">
       {loading ? (
-        <p className="text-sm text-muted-foreground">Loading…</p>
+        <p className="text-sm text-muted-foreground">
+          {t.portal.reportDetail.loadingReports}
+        </p>
       ) : reports.length === 0 ? (
         <div className="portal-panel rounded-xl border border-border/70 bg-card/85 p-6 text-center">
           <FileText className="mx-auto h-8 w-8 text-muted-foreground mb-2" />
           <p className="text-sm text-muted-foreground">
-            No data updates yet. Refresh your Apple Health timeline to generate
-            your first Portal report.
+            {t.portal.reportDetail.empty}
           </p>
         </div>
       ) : (
@@ -159,19 +156,19 @@ export default function ReportsPage() {
               <thead>
                 <tr className="border-b border-border">
                   <th className="px-4 py-3 font-medium text-muted-foreground">
-                    Date
+                    {copy.date}
                   </th>
                   <th className="px-4 py-3 font-medium text-muted-foreground">
-                    Report
+                    {copy.report}
                   </th>
                   <th className="px-4 py-3 font-medium text-muted-foreground">
-                    Period
+                    {copy.period}
                   </th>
                   <th className="px-4 py-3 font-medium text-muted-foreground">
-                    Status
+                    {copy.status}
                   </th>
                   <th className="px-4 py-3 font-medium text-muted-foreground">
-                    Action
+                    {copy.action}
                   </th>
                 </tr>
               </thead>
@@ -183,7 +180,13 @@ export default function ReportsPage() {
                         timeStyle: "short",
                       })
                     : "—";
-                  const period = formatPeriodLabel(report, featureStore, index === 0, locale);
+                  const period = formatPeriodLabel(
+                    report,
+                    featureStore,
+                    index === 0,
+                    locale,
+                    copy,
+                  );
 
                   return (
                     <tr
@@ -197,7 +200,7 @@ export default function ReportsPage() {
                         <div className="flex items-start gap-2 text-card-foreground">
                           <FileText className="mt-0.5 h-4 w-4 text-muted-foreground" />
                           <div>
-                            <p>{reportName(report)}</p>
+                            <p>{getReportDisplayName(report, copy, locale)}</p>
                             <p className="mt-0.5 font-mono text-[10px] text-muted-foreground">
                               {shortJobId(report.job_id)}
                             </p>
@@ -209,7 +212,7 @@ export default function ReportsPage() {
                       </td>
                       <td className="px-4 py-3">
                         <span className="inline-flex items-center rounded-full bg-accent/10 text-accent px-2.5 py-0.5 text-xs font-medium">
-                          Updated
+                          {copy.updated}
                         </span>
                       </td>
                       <td className="px-4 py-3">
@@ -218,7 +221,7 @@ export default function ReportsPage() {
                           className="inline-flex items-center gap-1.5 text-sm text-accent hover:underline"
                         >
                           <Eye className="h-3.5 w-3.5" />
-                          View
+                          {copy.view}
                         </Link>
                       </td>
                     </tr>

@@ -35,6 +35,7 @@ import {
 } from "lucide-react";
 import type { ElementType, ReactNode } from "react";
 import { useEffect, useMemo, useState } from "react";
+import { formatHiddenStepOutliersMessage } from "@/lib/portal-copy";
 
 type HealthDomain = "sleep" | "recovery" | "activity";
 type HealthDashboardDomain = HealthDomain | "all";
@@ -1539,9 +1540,12 @@ function ActivityDashboard({
             />
             {hiddenStepOutliers > 0 && (
               <p className="text-xs text-muted-foreground">
-                {t.portal.health.hiddenStepOutliers.replace(
-                  "{count}",
-                  String(hiddenStepOutliers),
+                {formatHiddenStepOutliersMessage(
+                  hiddenStepOutliers,
+                  {
+                    plural: t.portal.health.hiddenStepOutliers,
+                    singular: t.portal.health.hiddenStepOutliersSingular,
+                  },
                 )}
               </p>
             )}
