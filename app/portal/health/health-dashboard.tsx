@@ -10,11 +10,17 @@ import {
   compareCalendarDates,
   formatCalendarDate,
   isCalendarDateInRange,
+  normaliseHealthCalendarDate,
   parseCalendarDate,
   resolveHealthDateBounds,
   type HealthInclusiveRange,
   type HealthTimeRangeMode,
 } from "@/lib/health-time-range";
+import {
+  buildSleepStageSeries,
+  hasSleepStageData,
+  SLEEP_STAGE_FIELD_GROUPS,
+} from "@/lib/sleep-stage-data";
 import type { PortalDataStatus } from "@/lib/portal-data-status";
 import { parsePortalDataStatus } from "@/lib/portal-data-status";
 import { trackHealthDashboardViewed } from "@/lib/telemetry";
@@ -148,9 +154,7 @@ const ACTIVITY_STEPS_KEYS = ["total_steps", "steps"];
 const DOMAIN_KEYS: Record<HealthDomain, string[][]> = {
   sleep: [
     SLEEP_DURATION_KEYS,
-    ["sleep_hours_core"],
-    ["sleep_hours_deep"],
-    ["sleep_hours_rem"],
+    ...SLEEP_STAGE_FIELD_GROUPS,
     ["sleep_efficiency"],
     ["sleep_inbed_hours"],
   ],
@@ -257,6 +261,13 @@ function sortedPoints(points: HealthPoint[]): HealthPoint[] {
       const right = parseCalendarDate(b.date)!;
       return compareCalendarDates(left, right);
     });
+}
+
+function normaliseHealthPoints(points: HealthPoint[]): HealthPoint[] {
+  return points.flatMap((point) => {
+    const date = normaliseHealthCalendarDate(point.date);
+    return date ? [{ ...point, date }] : [];
+  });
 }
 
 function filterByRange(
@@ -944,22 +955,9 @@ function SleepDashboard({
   const sleepPoints = points.filter((point) =>
     hasAnyValue(point, [SLEEP_DURATION_KEYS]),
   );
-  const stagePoints = points.filter((point) =>
-    hasAnyValue(point, [
-      ["sleep_hours_core"],
-      ["sleep_hours_deep"],
-      ["sleep_hours_rem"],
-      ["sleep_awake_minutes"],
-    ]),
-  );
+  const stagePoints = points.filter(hasSleepStageData);
   const sleep = metricSeries(sleepPoints, SLEEP_DURATION_KEYS);
-  const core = metricSeries(stagePoints, ["sleep_hours_core"]);
-  const deep = metricSeries(stagePoints, ["sleep_hours_deep"]);
-  const rem = metricSeries(stagePoints, ["sleep_hours_rem"]);
-  const awake = stagePoints.map((point) => {
-    const minutes = valueFor(point, ["sleep_awake_minutes"]);
-    return { date: point.date, value: minutes === null ? null : minutes / 60 };
-  });
+  const sleepStageData = buildSleepStageSeries(stagePoints);
   const inBed = metricSeries(
     points.filter((point) => valueFor(point, ["sleep_inbed_hours"]) !== null),
     ["sleep_inbed_hours"],
@@ -977,16 +975,20 @@ function SleepDashboard({
   const sleepSection = getSection(sections, "sleep_stages");
   const stageDays = toNumber(sleepSection?.n_days_with_stages);
 
-  const stageSeries = [
-    { name: t.portal.health.stageCore, color: COLORS.core, data: core.map((point) => point.value) },
-    { name: t.portal.health.stageDeep, color: COLORS.deep, data: deep.map((point) => point.value) },
-    { name: t.portal.health.stageRem, color: COLORS.rem, data: rem.map((point) => point.value) },
-    {
-      name: t.portal.health.stageAwake,
-      color: COLORS.awake,
-      data: awake.map((point) => point.value),
-    },
-  ].filter((item) => item.data.some((value) => value !== null));
+  const stageSeries = sleepStageData
+    .map((item) => ({
+      ...item,
+      name:
+        item.key === "core"
+          ? t.portal.health.stageCore
+          : item.key === "deep"
+            ? t.portal.health.stageDeep
+            : item.key === "rem"
+              ? t.portal.health.stageRem
+              : t.portal.health.stageAwake,
+      color: COLORS[item.key],
+    }))
+    .filter((item) => item.data.some((value) => value !== null));
 
   const weekly = weeklyAverage(sleepPoints, SLEEP_DURATION_KEYS);
   const currentAvg = average(sleepVals);
@@ -1705,7 +1707,10 @@ export function HealthDashboard({
     () => normaliseSections(data?.latest_sections),
     [data?.latest_sections],
   );
-  const allPoints = useMemo(() => sortedPoints(data?.data_points ?? []), [data]);
+  const allPoints = useMemo(
+    () => sortedPoints(normaliseHealthPoints(data?.data_points ?? [])),
+    [data],
+  );
   const availablePoints = useMemo(
     () =>
       allPoints.filter((point) =>
