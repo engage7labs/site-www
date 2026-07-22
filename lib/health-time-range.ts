@@ -97,6 +97,24 @@ export function normaliseHealthCalendarDate(value: string): string | null {
   return date ? calendarDateToKey(date) : null;
 }
 
+export function selectLatestHealthPoint<T extends { date: string }>(
+  points: readonly T[],
+): T | undefined {
+  return points
+    .map((point) => {
+      const normalisedDate = normaliseHealthCalendarDate(point.date);
+      return normalisedDate
+        ? { point, date: parseCalendarDate(normalisedDate) }
+        : null;
+    })
+    .filter(
+      (entry): entry is { point: T; date: CalendarDate } =>
+        entry !== null && entry.date !== null,
+    )
+    .sort((left, right) => compareCalendarDates(right.date, left.date))[0]
+    ?.point;
+}
+
 export function calendarDateToKey(date: CalendarDate): string {
   return `${String(date.year).padStart(4, "0")}-${String(date.month).padStart(2, "0")}-${String(date.day).padStart(2, "0")}`;
 }

@@ -16,6 +16,7 @@ const {
   resolveHealthDateBounds,
   resolveHealthPeriodRange,
   resolveInitialHealthPeriod,
+  selectLatestHealthPoint,
   selectHealthPeriodAnchor,
 } = await import("../lib/health-time-range.ts");
 const {
@@ -52,6 +53,23 @@ assert.deepEqual(parseHealthCalendarDate("01/03/2024"), {
 assert.equal(
   normaliseHealthCalendarDate("2024-03-01T00:30:00-03:00"),
   "2024-03-01",
+);
+
+const healthPoints = [
+  { date: "2024-03-02", marker: "canonical" },
+  { date: "03/03/2024", marker: "legacy" },
+  { date: "2024-03-04T23:30:00-03:00", marker: "iso" },
+  { date: "not-a-date", marker: "invalid" },
+];
+const healthPointOrder = healthPoints.map((point) => point.marker);
+assert.equal(selectLatestHealthPoint([healthPoints[0]])?.marker, "canonical");
+assert.equal(selectLatestHealthPoint([healthPoints[1]])?.marker, "legacy");
+assert.equal(selectLatestHealthPoint([healthPoints[2]])?.marker, "iso");
+assert.equal(selectLatestHealthPoint([healthPoints[3]]), undefined);
+assert.equal(selectLatestHealthPoint(healthPoints), healthPoints[2]);
+assert.deepEqual(
+  healthPoints.map((point) => point.marker),
+  healthPointOrder,
 );
 
 const actualToday = { year: 2026, month: 7, day: 16 };
