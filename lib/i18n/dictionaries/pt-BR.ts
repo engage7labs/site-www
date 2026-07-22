@@ -721,6 +721,12 @@ export const ptBR: Dictionary = {
   // Portal
   portal: {
     loading: "Carregando…",
+    analyticsReupload: {
+      title: "Seus dados de saúde precisam ser atualizados",
+      body:
+        "O Engage7 agora usa uma nova versão de análise. Envie novamente seu arquivo do Apple Health para continuar recebendo insights com o contrato analítico mais recente.",
+      action: "Enviar dados novamente",
+    },
     shell: {
       sections: {
         overview: {

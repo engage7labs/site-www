@@ -17,6 +17,7 @@ import {
   trackPortalOpened,
 } from "@/lib/telemetry";
 import { AdminViewBanner } from "../admin-view-banner";
+import { AnalyticsReuploadBanner } from "./analytics-reupload-banner";
 import { PasswordSetupAlert } from "./password-setup-alert";
 import { PortalHeader } from "./portal-header";
 import { PortalSidebar } from "./portal-sidebar";
@@ -197,6 +198,7 @@ export function PortalShell({
           sectionSubtitle={sectionSubtitle}
         />
 
+        <AnalyticsReuploadBanner />
         <PasswordSetupAlert />
         <TrialExpiredBanner />
 

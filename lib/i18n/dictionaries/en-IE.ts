@@ -710,6 +710,12 @@ export const enIE = {
   // Portal
   portal: {
     loading: "Loading…",
+    analyticsReupload: {
+      title: "Your health data needs to be updated",
+      body:
+        "Engage7 now uses a newer analysis version. Upload your Apple Health export again to continue receiving insights based on the latest analytical contract.",
+      action: "Upload data again",
+    },
     shell: {
       sections: {
         overview: {
