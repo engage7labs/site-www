@@ -1312,6 +1312,12 @@ export const enIE = {
         all: "All time",
       },
       periodNavigation: "Health period navigation",
+      periodNavigationByDomain: {
+        overview: "Health overview period navigation",
+        sleep: "Sleep period navigation",
+        recovery: "Recovery period navigation",
+        activity: "Activity period navigation",
+      },
       inclusiveRange: "Inclusive range",
       previousPeriod: "Previous period",
       nextPeriod: "Next period",
@@ -1480,6 +1486,16 @@ export const enIE = {
         "{count} extreme step values are hidden from chart scale.",
       hiddenStepOutliersSingular:
         "{count} extreme step value is hidden from chart scale.",
+      stepsAverageLabel: "Average: {value} {unit}",
+      stepsAboveVisibleScale: "Above the visible scale of {value}",
+      stepsClippingNote:
+        "Extreme values are visually limited. The real value appears in the tooltip.",
+      stepsChartAccessibility:
+        "Daily steps chart. Average {mean} {unit}. Real values follow.",
+      stepsAccessibleValues: "Daily step values",
+      stepsAccessiblePoint: "{date}: {value} steps.",
+      stepsAccessiblePointClipped:
+        "{date}: {value} steps; the bar exceeds the visible chart scale of {ceiling}.",
       energyAndDistance: "Energy and Distance",
       energyDistanceSelectedDay: "Energy and distance on the selected day",
       energyCal: "Energy (Cal)",

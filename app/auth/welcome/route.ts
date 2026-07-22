@@ -18,7 +18,6 @@ export const runtime = "nodejs";
 
 const SESSION_30_DAYS = 30 * 24 * 3600;
 const SETUP_TOKEN_TTL = 30 * 60; // 30 minutes
-const PORTAL_PATH = "/portal";
 const LOGIN_PATH = "/login";
 const SETUP_PATH = "/auth/reset-password";
 const LINK_USED_ERROR_PATH = "/auth/reset-password?error=used";

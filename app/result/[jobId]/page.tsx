@@ -24,7 +24,6 @@ import {
 import {
   claimPublicAnalysis,
   clearPendingPublicClaim,
-  PublicClaimBlockedError,
   rememberPendingPremiumOnboarding,
   rememberPendingPublicClaim,
 } from "@/lib/public-analysis-claim";

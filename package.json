@@ -1,6 +1,6 @@
 {
   "name": "my-v0-project",
-  "version": "1.52.2.1",
+  "version": "1.52.4.1",
   "private": true,
   "engines": {
     "node": "24.x"
@@ -8,14 +8,16 @@
   "scripts": {
     "build": "next build",
     "dev": "next dev -p 3000",
-    "lint": "eslint . --max-warnings 81",
-    "test:admin-role-resolution-diagnostics": "node --experimental-strip-types scripts/test-admin-role-resolution-diagnostics.mjs",
-    "test:admin-post-login-routing": "node --experimental-strip-types scripts/test-admin-post-login-routing.mjs",
-    "test:google-pkce-storage": "node --experimental-strip-types scripts/test-google-pkce-storage.mjs",
-    "test:password-update-error": "node --experimental-strip-types scripts/test-password-update-error.mjs",
-    "test:password-method-status": "node --experimental-strip-types scripts/test-password-method-status.mjs",
-    "test:identity-auth-foundation": "node --experimental-strip-types scripts/test-identity-auth-foundation.mjs",
-    "test:health-time-range": "node --experimental-strip-types scripts/test-health-time-range.mjs",
+    "lint": "eslint . --max-warnings 57",
+    "test:admin-role-resolution-diagnostics": "node --experimental-strip-types --disable-warning=MODULE_TYPELESS_PACKAGE_JSON scripts/test-admin-role-resolution-diagnostics.mjs",
+    "test:admin-post-login-routing": "node --experimental-strip-types --disable-warning=MODULE_TYPELESS_PACKAGE_JSON scripts/test-admin-post-login-routing.mjs",
+    "test:google-pkce-storage": "node --experimental-strip-types --disable-warning=MODULE_TYPELESS_PACKAGE_JSON scripts/test-google-pkce-storage.mjs",
+    "test:password-update-error": "node --experimental-strip-types --disable-warning=MODULE_TYPELESS_PACKAGE_JSON scripts/test-password-update-error.mjs",
+    "test:password-method-status": "node --experimental-strip-types --disable-warning=MODULE_TYPELESS_PACKAGE_JSON scripts/test-password-method-status.mjs",
+    "test:identity-auth-foundation": "node --experimental-strip-types --disable-warning=MODULE_TYPELESS_PACKAGE_JSON scripts/test-identity-auth-foundation.mjs",
+    "test:health-time-range": "node --experimental-strip-types --disable-warning=MODULE_TYPELESS_PACKAGE_JSON scripts/test-health-time-range.mjs",
+    "test:steps-chart-scale": "node --experimental-strip-types --disable-warning=MODULE_TYPELESS_PACKAGE_JSON scripts/test-steps-chart-scale.mjs",
+    "test:sprint-52_1-copy-polish": "node --experimental-strip-types --disable-warning=MODULE_TYPELESS_PACKAGE_JSON scripts/test-sprint-52_1_copy_polish.mjs",
     "start": "next start"
   },
   "dependencies": {

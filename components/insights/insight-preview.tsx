@@ -36,11 +36,8 @@ import {
 import { formatDatasetDuration, type DurationInfo } from "@/lib/formatting";
 import {
   extractActivityInsights,
-  extractActivitySignalInsights,
   extractRecoveryInsights,
-  extractRecoverySignalInsights,
   extractSleepInsights,
-  extractSleepStageInsights,
   getPreviewInsight,
   getSurprisingInsight,
 } from "@/lib/insights";
@@ -416,30 +413,6 @@ export function InsightPreview({
     [sections]
   );
 
-  // ---- Sprint 24.3: New signal insights from expanded sections ----------
-  const sleepStageInsights = useMemo(
-    () => extractSleepStageInsights(sections),
-    [sections]
-  );
-  const recoverySignalInsights = useMemo(
-    () => extractRecoverySignalInsights(sections),
-    [sections]
-  );
-  const activitySignalInsights = useMemo(
-    () => extractActivitySignalInsights(sections),
-    [sections]
-  );
-
-  // Combined new insights — max 4, highest score first
-  const newSignalInsights = useMemo(() => {
-    const all = [
-      ...sleepStageInsights,
-      ...recoverySignalInsights,
-      ...activitySignalInsights,
-    ].sort((a, b) => (b.score ?? 0) - (a.score ?? 0));
-    return all.slice(0, 4);
-  }, [sleepStageInsights, recoverySignalInsights, activitySignalInsights]);
-
   // ---- Sprint 25.0: Deterministic Insight Engine ---------------------------
   const engineInsights = useMemo(() => generateInsights(result), [result]);
 
@@ -490,12 +463,6 @@ export function InsightPreview({
   useEffect(() => {
     if (telFired.current) return;
     telFired.current = true;
-    const meta = {
-      jobId,
-      datasetDurationUnit: durationInfo?.unit,
-      datasetDurationValue: durationInfo?.value,
-      previewStage: "sleep",
-    };
   }, [jobId, durationInfo]);
 
   // ---- Progressive section reveal (Sprint 24.0) -------------------------
@@ -514,7 +481,7 @@ export function InsightPreview({
   }, []);
 
   // ---- Expanded state for mobile cards -----------------------------------
-  const [activeStage, setActiveStage] = useState<
+  const [, setActiveStage] = useState<
     "sleep" | "recovery" | "activity"
   >("sleep");
 
@@ -545,7 +512,7 @@ export function InsightPreview({
     scrollToSection("activity");
   };
 
-  const handleChartInteraction = (_insightType: string) => {};
+  const handleChartInteraction = () => {};
 
   // ---- Full report CTA --------------------------------------------------
   const fullReportRef = useRef<HTMLDivElement>(null);
@@ -1388,7 +1355,7 @@ export function InsightPreview({
                     <EChart
                       option={sleepChartOption}
                       height={180}
-                      onInteraction={() => handleChartInteraction("sleep")}
+                      onInteraction={() => handleChartInteraction()}
                     />
                   ) : undefined
                 }
@@ -1414,7 +1381,7 @@ export function InsightPreview({
                     <EChart
                       option={recoveryChartOption}
                       height={180}
-                      onInteraction={() => handleChartInteraction("recovery")}
+                      onInteraction={() => handleChartInteraction()}
                     />
                   ) : undefined
                 }
@@ -1440,7 +1407,7 @@ export function InsightPreview({
                     <EChart
                       option={activityChartOption}
                       height={180}
-                      onInteraction={() => handleChartInteraction("activity")}
+                      onInteraction={() => handleChartInteraction()}
                     />
                   ) : undefined
                 }
@@ -1470,7 +1437,7 @@ export function InsightPreview({
                   <EChart
                     option={sleepChartOption}
                     height={200}
-                    onInteraction={() => handleChartInteraction("sleep")}
+                    onInteraction={() => handleChartInteraction()}
                   />
                 ) : undefined
               }
@@ -1494,7 +1461,7 @@ export function InsightPreview({
                   <EChart
                     option={recoveryChartOption}
                     height={200}
-                    onInteraction={() => handleChartInteraction("recovery")}
+                    onInteraction={() => handleChartInteraction()}
                   />
                 ) : undefined
               }
@@ -1520,7 +1487,7 @@ export function InsightPreview({
                   <EChart
                     option={activityChartOption}
                     height={200}
-                    onInteraction={() => handleChartInteraction("activity")}
+                    onInteraction={() => handleChartInteraction()}
                   />
                 ) : undefined
               }

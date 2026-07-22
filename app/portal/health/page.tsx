@@ -2,10 +2,15 @@
 
 import { useLocale } from "@/components/providers/locale-provider";
 import { DarthStatePanel } from "@/components/portal/darth-state-panel";
+import { HealthPeriodNavigator } from "@/components/portal/health-period-navigator";
+import { useHealthTimeRange } from "@/hooks/use-health-time-range";
 import {
+  calendarDateToKey,
   compareCalendarDates,
   formatCalendarDate,
+  normaliseHealthCalendarDate,
   parseCalendarDate,
+  resolveHealthDateBounds,
 } from "@/lib/health-time-range";
 import { trackHealthDashboardViewed } from "@/lib/telemetry";
 import { Activity, ArrowRight, HeartPulse, Moon } from "lucide-react";
@@ -173,7 +178,18 @@ export default function HealthPage() {
     () => normaliseSections(data?.latest_sections),
     [data?.latest_sections],
   );
-  const points = data?.data_points ?? [];
+  const points = useMemo(() => data?.data_points ?? [], [data?.data_points]);
+  const dateBounds = useMemo(
+    () =>
+      resolveHealthDateBounds(
+        points.flatMap((point) => {
+          const date = normaliseHealthCalendarDate(point.date);
+          return date ? [date] : [];
+        }),
+      ),
+    [points],
+  );
+  const healthTimeRange = useHealthTimeRange(dateBounds);
   const latestAnyPoint = [...points]
     .filter((point) => parseCalendarDate(point.date))
     .sort((a, b) =>
@@ -288,6 +304,28 @@ export default function HealthPage() {
       <p className="text-sm text-muted-foreground">
         {t.portal.health.overviewHelper}
       </p>
+
+      {dateBounds && healthTimeRange.selected && healthTimeRange.range && (
+        <div data-health-period-navigation="overview" className="min-w-0">
+          <HealthPeriodNavigator
+            key={`overview-${healthTimeRange.selected.mode}-${calendarDateToKey(
+              healthTimeRange.selected.anchor,
+            )}`}
+            ariaLabel={t.portal.health.periodNavigationByDomain.overview}
+            selected={healthTimeRange.selected}
+            bounds={dateBounds}
+            range={healthTimeRange.range}
+            canMoveBackward={healthTimeRange.canMoveBackward}
+            canMoveForward={healthTimeRange.canMoveForward}
+            isLatest={healthTimeRange.isLatest}
+            onModeChange={healthTimeRange.selectMode}
+            onPrevious={healthTimeRange.moveBackward}
+            onNext={healthTimeRange.moveForward}
+            onJumpToLatest={healthTimeRange.jumpToLatest}
+            onAnchorChange={healthTimeRange.selectAnchor}
+          />
+        </div>
+      )}
 
       <DarthStatePanel
         sections={sections}

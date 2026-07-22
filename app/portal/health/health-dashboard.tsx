@@ -6,17 +6,29 @@ import { RecoveryScoreChart } from "@/components/insights/recovery-score-chart";
 import { HealthPeriodNavigator } from "@/components/portal/health-period-navigator";
 import { useHealthTimeRange } from "@/hooks/use-health-time-range";
 import {
+  calendarDateToKey,
   calendarDateWeekday,
   compareCalendarDates,
   formatCalendarDate,
   isCalendarDateInRange,
+  normaliseHealthCalendarDate,
   parseCalendarDate,
   resolveHealthDateBounds,
   type HealthInclusiveRange,
   type HealthTimeRangeMode,
 } from "@/lib/health-time-range";
+import {
+  buildSleepStageSeries,
+  hasSleepStageData,
+  SLEEP_STAGE_FIELD_GROUPS,
+} from "@/lib/sleep-stage-data";
 import type { PortalDataStatus } from "@/lib/portal-data-status";
 import { parsePortalDataStatus } from "@/lib/portal-data-status";
+import {
+  buildStepsScaleModel,
+  type StepsScaleModel,
+  validDailySteps,
+} from "@/lib/steps-chart-scale";
 import { trackHealthDashboardViewed } from "@/lib/telemetry";
 import type { EChartsOption } from "echarts";
 import {
@@ -35,7 +47,6 @@ import {
 } from "lucide-react";
 import type { ElementType, ReactNode } from "react";
 import { useEffect, useMemo, useState } from "react";
-import { formatHiddenStepOutliersMessage } from "@/lib/portal-copy";
 
 type HealthDomain = "sleep" | "recovery" | "activity";
 type HealthDashboardDomain = HealthDomain | "all";
@@ -148,9 +159,7 @@ const ACTIVITY_STEPS_KEYS = ["total_steps", "steps"];
 const DOMAIN_KEYS: Record<HealthDomain, string[][]> = {
   sleep: [
     SLEEP_DURATION_KEYS,
-    ["sleep_hours_core"],
-    ["sleep_hours_deep"],
-    ["sleep_hours_rem"],
+    ...SLEEP_STAGE_FIELD_GROUPS,
     ["sleep_efficiency"],
     ["sleep_inbed_hours"],
   ],
@@ -174,7 +183,6 @@ const DOMAIN_KEYS: Record<HealthDomain, string[][]> = {
 
 const WEEK_DAYS = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
 const WEEK_DAY_KEYS = ["mon", "tue", "wed", "thu", "fri", "sat", "sun"] as const;
-const STEP_DISPLAY_CAP = 80_000;
 
 function isRecord(value: unknown): value is UnknownRecord {
   return value !== null && typeof value === "object" && !Array.isArray(value);
@@ -226,10 +234,6 @@ function positiveMetricValue(value: number): number | null {
   return value > 0 ? value : null;
 }
 
-function plausibleDailySteps(value: number): number | null {
-  return value >= 0 && value <= 200_000 ? value : null;
-}
-
 function formatChartDate(value: string, locale: string): string {
   const parsed = parseCalendarDate(value);
   if (!parsed) return value;
@@ -257,6 +261,13 @@ function sortedPoints(points: HealthPoint[]): HealthPoint[] {
       const right = parseCalendarDate(b.date)!;
       return compareCalendarDates(left, right);
     });
+}
+
+function normaliseHealthPoints(points: HealthPoint[]): HealthPoint[] {
+  return points.flatMap((point) => {
+    const date = normaliseHealthCalendarDate(point.date);
+    return date ? [{ ...point, date }] : [];
+  });
 }
 
 function filterByRange(
@@ -341,17 +352,6 @@ function standardDeviation(numbers: number[]): number | null {
 
 function latestValue(series: MetricSeries[]): number | null {
   return [...series].reverse().find((point) => point.value !== null)?.value ?? null;
-}
-
-function latestPointWith(
-  points: HealthPoint[],
-  keys: string[],
-): HealthPoint | null {
-  return (
-    [...points]
-      .reverse()
-      .find((point) => valueFor(point, keys) !== null) ?? null
-  );
 }
 
 function formatValue(
@@ -676,6 +676,125 @@ function lineChartOption(
   };
 }
 
+function stepsChartOption(
+  scale: StepsScaleModel,
+  seriesName: string,
+  stepsUnit: string,
+  locale: string,
+  copy: Pick<HealthCopy, "stepsAverageLabel" | "stepsAboveVisibleScale">,
+): EChartsOption {
+  const option = lineChartOption(
+    scale.points.map((point) => ({ date: point.date })),
+    [
+      {
+        name: seriesName,
+        color: COLORS.steps,
+        data: scale.points.map((point) => point.renderedValue),
+        type: "bar",
+      },
+    ],
+    locale,
+    false,
+    scale.visualCeiling,
+  );
+  const numberFormatter = new Intl.NumberFormat(locale, {
+    maximumFractionDigits: 0,
+  });
+  const realValueFormatter = new Intl.NumberFormat(locale, {
+    maximumFractionDigits: 20,
+  });
+  const firstSeries = Array.isArray(option.series)
+    ? (option.series[0] as UnknownRecord)
+    : null;
+
+  option.tooltip = {
+    ...(option.tooltip as UnknownRecord),
+    formatter: (params: unknown) => {
+      const item = (Array.isArray(params) ? params[0] : params) as
+        | {
+            axisValue?: string;
+            axisValueLabel?: string;
+            marker?: string;
+            seriesName?: string;
+            data?: { realValue?: number; isClipped?: boolean };
+          }
+        | undefined;
+      const datum = item?.data;
+      if (!item || typeof datum?.realValue !== "number") return "";
+      const rows = [
+        item.axisValueLabel ?? item.axisValue,
+        `${item.marker ?? ""}${item.seriesName ?? seriesName}: ${realValueFormatter.format(datum.realValue)} ${stepsUnit}`,
+      ];
+      if (datum.isClipped) {
+        rows.push(
+          copy.stepsAboveVisibleScale.replace(
+            "{value}",
+            numberFormatter.format(scale.visualCeiling),
+          ),
+        );
+      }
+      return rows.filter(Boolean).join("<br/>");
+    },
+  };
+
+  if (firstSeries) {
+    firstSeries.data = scale.points.map((point) =>
+      point.realValue === null
+        ? null
+        : {
+            value: point.renderedValue,
+            realValue: point.realValue,
+            isClipped: point.isClipped,
+          },
+    );
+    firstSeries.markLine =
+      scale.mean === null
+        ? undefined
+        : {
+            silent: true,
+            symbol: "none",
+            lineStyle: {
+              color: COLORS.muted,
+              type: "dashed",
+              width: 1.5,
+            },
+            label: {
+              show: true,
+              position: "insideEndTop",
+              color: COLORS.muted,
+              fontSize: 11,
+              formatter: copy.stepsAverageLabel
+                .replace("{value}", numberFormatter.format(scale.mean))
+                .replace("{unit}", stepsUnit),
+            },
+            data: [{ yAxis: scale.mean }],
+          };
+    firstSeries.markPoint =
+      scale.clippedPointCount === 0
+        ? undefined
+        : {
+            silent: true,
+            symbol: "triangle",
+            symbolSize: 10,
+            symbolOffset: [0, -5],
+            itemStyle: {
+              color: COLORS.steps,
+              borderColor: "#0f172a",
+              borderWidth: 1,
+            },
+            label: { show: false },
+            tooltip: { show: false },
+            data: scale.points.flatMap((point, index) =>
+              point.isClipped
+                ? [{ coord: [index, scale.visualCeiling] }]
+                : [],
+            ),
+          };
+  }
+
+  return option;
+}
+
 function sleepEfficiency(point: HealthPoint): number | null {
   const direct = valueFor(point, ["sleep_efficiency"]);
   if (direct !== null) return direct;
@@ -713,7 +832,7 @@ function bestAndLowest(points: HealthPoint[], keys: string[]) {
 }
 
 function TruthBadge({ status }: Readonly<{ status: string }>) {
-  const { t, locale } = useLocale();
+  const { t } = useLocale();
   const tone =
     status === "valid"
       ? "border-emerald-500/20 bg-emerald-500/10 text-emerald-300"
@@ -746,7 +865,7 @@ function SignalCard({
   status: string;
   Icon: ElementType;
 }>) {
-  const { t, locale } = useLocale();
+  const { t } = useLocale();
   return (
     <div className="portal-panel rounded-lg border border-border/70 bg-card/85 px-4 py-3">
       <div className="mb-3 flex items-start justify-between gap-3">
@@ -812,7 +931,7 @@ function MetricState({
 }
 
 function LoadingState() {
-  const { t, locale } = useLocale();
+  const { t } = useLocale();
   return (
     <div className="flex flex-col gap-6">
       <div className="portal-panel rounded-lg border border-border/70 bg-card/85 p-6">
@@ -826,7 +945,7 @@ function DatasetEmptyState({
   status,
   portalStatus,
 }: Readonly<{ status: string | undefined; portalStatus: PortalDataStatus | null }>) {
-  const { t, locale } = useLocale();
+  const { t } = useLocale();
   const message =
     !portalStatus?.hasAnalyses || portalStatus.analysisStatus === "no_analysis"
       ? t.portal.statusNotice.noAnalysis
@@ -869,7 +988,7 @@ function DomainEmptyState({
   hasAnyDomainData: boolean;
   period: Period;
 }>) {
-  const { t, locale } = useLocale();
+  const { t } = useLocale();
   const meta = DOMAIN_META[domain];
   const domainCopy = t.portal.health.domains[domain];
   const body = hasAnyDomainData
@@ -933,33 +1052,22 @@ function SleepDashboard({
   sections,
   rangeLabel,
   period,
+  periodNavigation,
 }: Readonly<{
   points: HealthPoint[];
   sections: UnknownRecord | null;
   rangeLabel: string;
   period: Period;
+  periodNavigation: ReactNode;
 }>) {
   const { t, locale } = useLocale();
   const isOneDayRange = period === "day" || points.length <= 1;
   const sleepPoints = points.filter((point) =>
     hasAnyValue(point, [SLEEP_DURATION_KEYS]),
   );
-  const stagePoints = points.filter((point) =>
-    hasAnyValue(point, [
-      ["sleep_hours_core"],
-      ["sleep_hours_deep"],
-      ["sleep_hours_rem"],
-      ["sleep_awake_minutes"],
-    ]),
-  );
+  const stagePoints = points.filter(hasSleepStageData);
   const sleep = metricSeries(sleepPoints, SLEEP_DURATION_KEYS);
-  const core = metricSeries(stagePoints, ["sleep_hours_core"]);
-  const deep = metricSeries(stagePoints, ["sleep_hours_deep"]);
-  const rem = metricSeries(stagePoints, ["sleep_hours_rem"]);
-  const awake = stagePoints.map((point) => {
-    const minutes = valueFor(point, ["sleep_awake_minutes"]);
-    return { date: point.date, value: minutes === null ? null : minutes / 60 };
-  });
+  const sleepStageData = buildSleepStageSeries(stagePoints);
   const inBed = metricSeries(
     points.filter((point) => valueFor(point, ["sleep_inbed_hours"]) !== null),
     ["sleep_inbed_hours"],
@@ -977,16 +1085,20 @@ function SleepDashboard({
   const sleepSection = getSection(sections, "sleep_stages");
   const stageDays = toNumber(sleepSection?.n_days_with_stages);
 
-  const stageSeries = [
-    { name: t.portal.health.stageCore, color: COLORS.core, data: core.map((point) => point.value) },
-    { name: t.portal.health.stageDeep, color: COLORS.deep, data: deep.map((point) => point.value) },
-    { name: t.portal.health.stageRem, color: COLORS.rem, data: rem.map((point) => point.value) },
-    {
-      name: t.portal.health.stageAwake,
-      color: COLORS.awake,
-      data: awake.map((point) => point.value),
-    },
-  ].filter((item) => item.data.some((value) => value !== null));
+  const stageSeries = sleepStageData
+    .map((item) => ({
+      ...item,
+      name:
+        item.key === "core"
+          ? t.portal.health.stageCore
+          : item.key === "deep"
+            ? t.portal.health.stageDeep
+            : item.key === "rem"
+              ? t.portal.health.stageRem
+              : t.portal.health.stageAwake,
+      color: COLORS[item.key],
+    }))
+    .filter((item) => item.data.some((value) => value !== null));
 
   const weekly = weeklyAverage(sleepPoints, SLEEP_DURATION_KEYS);
   const currentAvg = average(sleepVals);
@@ -1049,6 +1161,8 @@ function SleepDashboard({
           </div>
         </div>
       </div>
+
+      {periodNavigation}
 
       <ChartPanel
         title={
@@ -1166,6 +1280,7 @@ function RecoveryDashboard({
   sections,
   rangeLabel,
   period,
+  periodNavigation,
 }: Readonly<{
   points: HealthPoint[];
   comparisonPoints: HealthPoint[];
@@ -1173,6 +1288,7 @@ function RecoveryDashboard({
   sections: UnknownRecord | null;
   rangeLabel: string;
   period: Period;
+  periodNavigation: ReactNode;
 }>) {
   const { t, locale } = useLocale();
   const hrv = metricSeries(points, RECOVERY_HRV_KEYS, positiveMetricValue);
@@ -1300,6 +1416,8 @@ function RecoveryDashboard({
         />
       </div>
 
+      {periodNavigation}
+
       <div className="grid gap-4 xl:grid-cols-[minmax(0,1.6fr)_minmax(260px,0.8fr)]">
         <ChartPanel
           title={t.portal.health.hrvAndHeartRate}
@@ -1425,22 +1543,20 @@ function ActivityDashboard({
   points,
   rangeLabel,
   period,
+  periodNavigation,
 }: Readonly<{
   points: HealthPoint[];
   rangeLabel: string;
   period: Period;
+  periodNavigation: ReactNode;
 }>) {
   const { t, locale } = useLocale();
-  const steps = metricSeries(points, ACTIVITY_STEPS_KEYS, plausibleDailySteps);
-  const stepDisplayCap = period === "all" ? STEP_DISPLAY_CAP : undefined;
-  const hiddenStepOutliers = points.filter((point) => {
-    const value = valueFor(point, ACTIVITY_STEPS_KEYS);
-    return (
-      value !== null &&
-      (plausibleDailySteps(value) === null ||
-        (stepDisplayCap !== undefined && value > stepDisplayCap))
-    );
-  }).length;
+  const stepsScale = buildStepsScaleModel(
+    points.map((point) => ({
+      date: point.date,
+      value: valueFor(point, ACTIVITY_STEPS_KEYS),
+    })),
+  );
   const energy = metricSeries(points, ["active_energy_cal", "total_active_energy"]);
   const distance = metricSeries(points, ["distance_km", "total_distance"]);
   const exercise = metricSeries(points, [
@@ -1448,7 +1564,9 @@ function ActivityDashboard({
     "active_minutes",
     "activity_minutes",
   ]);
-  const stepsVals = values(steps);
+  const stepsVals = stepsScale.points.flatMap((point) =>
+    point.realValue === null ? [] : [point.realValue],
+  );
   const energyVals = values(energy);
   const distanceVals = values(distance);
   const exerciseVals = values(exercise);
@@ -1458,8 +1576,8 @@ function ActivityDashboard({
     return {
       ...point,
       total_steps:
-        value === null ? point.total_steps : plausibleDailySteps(value),
-      steps: value === null ? point.steps : plausibleDailySteps(value),
+        value === null ? point.total_steps : validDailySteps(value),
+      steps: value === null ? point.steps : validDailySteps(value),
     };
   });
   const { best, lowest } = bestAndLowest(stepPoints, ACTIVITY_STEPS_KEYS);
@@ -1507,6 +1625,8 @@ function ActivityDashboard({
         />
       </div>
 
+      {periodNavigation}
+
       <ChartPanel
         title={
           isOneDayRange
@@ -1523,30 +1643,58 @@ function ActivityDashboard({
           <div className="flex flex-col gap-2">
             <EChart
               height={320}
-              option={lineChartOption(points, [
-                {
-                  name: t.portal.health.steps,
-                  color: COLORS.steps,
-                  data: steps.map((point) =>
-                    point.value !== null &&
-                    stepDisplayCap !== undefined &&
-                    point.value > stepDisplayCap
-                      ? null
-                      : point.value,
-                  ),
-                  type: "bar",
-                },
-              ], locale, false, stepDisplayCap)}
+              className="min-w-0 max-w-full overflow-hidden"
+              ariaLabel={t.portal.health.stepsChartAccessibility
+                .replace(
+                  "{mean}",
+                  new Intl.NumberFormat(locale, {
+                    maximumFractionDigits: 0,
+                  }).format(stepsScale.mean ?? 0),
+                )
+                .replace("{unit}", t.portal.health.stepsUnit)}
+              option={stepsChartOption(
+                stepsScale,
+                t.portal.health.steps,
+                t.portal.health.stepsUnit,
+                locale,
+                t.portal.health,
+              )}
             />
-            {hiddenStepOutliers > 0 && (
+            <ul
+              className="sr-only"
+              aria-label={t.portal.health.stepsAccessibleValues}
+            >
+              {stepsScale.points.flatMap((point) =>
+                point.realValue === null
+                  ? []
+                  : [
+                      <li key={point.date}>
+                        {(point.isClipped
+                          ? t.portal.health.stepsAccessiblePointClipped
+                          : t.portal.health.stepsAccessiblePoint)
+                          .replace(
+                            "{date}",
+                            formatDisplayDate(point.date, locale),
+                          )
+                          .replace(
+                            "{value}",
+                            new Intl.NumberFormat(locale, {
+                              maximumFractionDigits: 20,
+                            }).format(point.realValue),
+                          )
+                          .replace(
+                            "{ceiling}",
+                            new Intl.NumberFormat(locale, {
+                              maximumFractionDigits: 0,
+                            }).format(stepsScale.visualCeiling),
+                          )}
+                      </li>,
+                    ],
+              )}
+            </ul>
+            {stepsScale.clippedPointCount > 0 && (
               <p className="text-xs text-muted-foreground">
-                {formatHiddenStepOutliersMessage(
-                  hiddenStepOutliers,
-                  {
-                    plural: t.portal.health.hiddenStepOutliers,
-                    singular: t.portal.health.hiddenStepOutliersSingular,
-                  },
-                )}
+                {t.portal.health.stepsClippingNote}
               </p>
             )}
           </div>
@@ -1705,7 +1853,10 @@ export function HealthDashboard({
     () => normaliseSections(data?.latest_sections),
     [data?.latest_sections],
   );
-  const allPoints = useMemo(() => sortedPoints(data?.data_points ?? []), [data]);
+  const allPoints = useMemo(
+    () => sortedPoints(normaliseHealthPoints(data?.data_points ?? [])),
+    [data],
+  );
   const availablePoints = useMemo(
     () =>
       allPoints.filter((point) =>
@@ -1822,6 +1973,33 @@ export function HealthDashboard({
   const { Icon } = meta;
   const storedDaysCount = rangePoints.length;
   const headerRangeLabel = filtered.rangeLabel;
+  const selectedPeriod = healthTimeRange.selected;
+  const selectedRange = healthTimeRange.range;
+  const periodSelectionKey = `${period}-${calendarDateToKey(
+    selectedPeriod.anchor,
+  )}`;
+  const renderPeriodNavigation = (navigationDomain: HealthDomain) => (
+    <div
+      data-health-period-navigation={navigationDomain}
+      className="min-w-0"
+    >
+      <HealthPeriodNavigator
+        key={`${navigationDomain}-${periodSelectionKey}`}
+        ariaLabel={t.portal.health.periodNavigationByDomain[navigationDomain]}
+        selected={selectedPeriod}
+        bounds={dateBounds}
+        range={selectedRange}
+        canMoveBackward={healthTimeRange.canMoveBackward}
+        canMoveForward={healthTimeRange.canMoveForward}
+        isLatest={healthTimeRange.isLatest}
+        onModeChange={healthTimeRange.selectMode}
+        onPrevious={healthTimeRange.moveBackward}
+        onNext={healthTimeRange.moveForward}
+        onJumpToLatest={healthTimeRange.jumpToLatest}
+        onAnchorChange={healthTimeRange.selectAnchor}
+      />
+    </div>
+  );
 
   return (
     <div className="flex flex-col gap-6">
@@ -1854,21 +2032,6 @@ export function HealthDashboard({
               </p>
             </div>
           </div>
-          <div className="border-t border-border/50 pt-4">
-            <HealthPeriodNavigator
-              selected={healthTimeRange.selected}
-              bounds={dateBounds}
-              range={healthTimeRange.range}
-              canMoveBackward={healthTimeRange.canMoveBackward}
-              canMoveForward={healthTimeRange.canMoveForward}
-              isLatest={healthTimeRange.isLatest}
-              onModeChange={healthTimeRange.selectMode}
-              onPrevious={healthTimeRange.moveBackward}
-              onNext={healthTimeRange.moveForward}
-              onJumpToLatest={healthTimeRange.jumpToLatest}
-              onAnchorChange={healthTimeRange.selectAnchor}
-            />
-          </div>
         </div>
       </div>
 
@@ -1879,11 +2042,14 @@ export function HealthDashboard({
             return (
               <DomainSection key={item} domain={item}>
                 {!itemFiltered.hasDomainDataInRange ? (
-                  <DomainEmptyState
-                    domain={item}
-                    hasAnyDomainData={itemFiltered.hasAnyDomainData}
-                    period={period}
-                  />
+                  <div className="flex flex-col gap-5">
+                    {renderPeriodNavigation(item)}
+                    <DomainEmptyState
+                      domain={item}
+                      hasAnyDomainData={itemFiltered.hasAnyDomainData}
+                      period={period}
+                    />
+                  </div>
                 ) : (
                   <>
                     {item === "sleep" && (
@@ -1892,6 +2058,7 @@ export function HealthDashboard({
                         sections={sections}
                         rangeLabel={itemFiltered.rangeLabel}
                         period={period}
+                        periodNavigation={renderPeriodNavigation("sleep")}
                       />
                     )}
                     {item === "recovery" && (
@@ -1902,6 +2069,7 @@ export function HealthDashboard({
                         sections={sections}
                         rangeLabel={itemFiltered.rangeLabel}
                         period={period}
+                        periodNavigation={renderPeriodNavigation("recovery")}
                       />
                     )}
                     {item === "activity" && (
@@ -1909,6 +2077,7 @@ export function HealthDashboard({
                         points={itemFiltered.points}
                         rangeLabel={itemFiltered.rangeLabel}
                         period={period}
+                        periodNavigation={renderPeriodNavigation("activity")}
                       />
                     )}
                   </>
@@ -1918,11 +2087,14 @@ export function HealthDashboard({
           })}
         </div>
       ) : !filtered.hasDomainDataInRange ? (
-        <DomainEmptyState
-          domain={domain}
-          hasAnyDomainData={filtered.hasAnyDomainData}
-          period={period}
-        />
+        <div className="flex flex-col gap-5">
+          {renderPeriodNavigation(domain)}
+          <DomainEmptyState
+            domain={domain}
+            hasAnyDomainData={filtered.hasAnyDomainData}
+            period={period}
+          />
+        </div>
       ) : (
         <>
           {domain === "sleep" && (
@@ -1931,6 +2103,7 @@ export function HealthDashboard({
               sections={sections}
               rangeLabel={filtered.rangeLabel}
               period={period}
+              periodNavigation={renderPeriodNavigation("sleep")}
             />
           )}
           {domain === "recovery" && (
@@ -1941,6 +2114,7 @@ export function HealthDashboard({
               sections={sections}
               rangeLabel={filtered.rangeLabel}
               period={period}
+              periodNavigation={renderPeriodNavigation("recovery")}
             />
           )}
           {domain === "activity" && (
@@ -1948,6 +2122,7 @@ export function HealthDashboard({
               points={filtered.points}
               rangeLabel={filtered.rangeLabel}
               period={period}
+              periodNavigation={renderPeriodNavigation("activity")}
             />
           )}
         </>

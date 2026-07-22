@@ -68,6 +68,35 @@ export function parseCalendarDate(value: string): CalendarDate | null {
   return date;
 }
 
+/**
+ * Parses a Health timeline day without converting it through UTC or the
+ * browser timezone. The portal historically receives both canonical day keys
+ * and legacy timestamp/day-first representations for the same daily rows.
+ */
+export function parseHealthCalendarDate(value: string): CalendarDate | null {
+  const trimmed = value.trim();
+  const canonical = parseCalendarDate(trimmed);
+  if (canonical) return canonical;
+
+  const iso = /^(\d{4})-(\d{1,2})-(\d{1,2})(?:T.*)?$/.exec(trimmed);
+  if (iso) {
+    return parseCalendarDate(
+      `${iso[1]}-${iso[2].padStart(2, "0")}-${iso[3].padStart(2, "0")}`,
+    );
+  }
+
+  const dayFirst = /^(\d{1,2})[/-](\d{1,2})[/-](\d{4})$/.exec(trimmed);
+  if (!dayFirst) return null;
+  return parseCalendarDate(
+    `${dayFirst[3]}-${dayFirst[2].padStart(2, "0")}-${dayFirst[1].padStart(2, "0")}`,
+  );
+}
+
+export function normaliseHealthCalendarDate(value: string): string | null {
+  const date = parseHealthCalendarDate(value);
+  return date ? calendarDateToKey(date) : null;
+}
+
 export function calendarDateToKey(date: CalendarDate): string {
   return `${String(date.year).padStart(4, "0")}-${String(date.month).padStart(2, "0")}-${String(date.day).padStart(2, "0")}`;
 }
@@ -83,7 +112,7 @@ export function addCalendarDays(
   source: CalendarDate,
   amount: number,
 ): CalendarDate {
-  let result = { ...source };
+  const result = { ...source };
   const direction = Math.sign(amount);
   for (let remaining = Math.abs(amount); remaining > 0; remaining -= 1) {
     result.day += direction;

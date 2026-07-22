@@ -16,7 +16,6 @@ import type { EChartsOption } from "echarts";
 const EMERALD = "#3dbe73";
 const EMERALD_LIGHT = "rgba(61, 190, 115, 0.15)";
 const EMERALD_MID = "rgba(61, 190, 115, 0.4)";
-const GRAPHITE = "#1c1e20";
 const MUTED = "#9aa0a6";
 const LIGHT_TEXT = "#E5E7EB";
 const LIGHT_TOOLTIP_BG = "#F9FAFB";

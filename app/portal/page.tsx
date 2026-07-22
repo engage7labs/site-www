@@ -8,7 +8,7 @@ import { parsePortalDataStatus } from "@/lib/portal-data-status";
 import type { EChartsOption } from "echarts";
 import { ArrowDown, ArrowRight, ArrowUp, Clock, Crown, ExternalLink, Heart, Moon, Upload, Zap } from "lucide-react";
 import Link from "next/link";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
 // Lazy-load echarts
 async function getEcharts() {
@@ -125,25 +125,6 @@ function StatusNotice({ status, copy }: StatusNoticeProps) {
       {message}
     </div>
   );
-}
-
-function coerceHighlights(value: unknown): string[] {
-  if (Array.isArray(value)) {
-    return value.filter((item): item is string => typeof item === "string");
-  }
-
-  if (typeof value === "string") {
-    try {
-      const parsed = JSON.parse(value);
-      return Array.isArray(parsed)
-        ? parsed.filter((item): item is string => typeof item === "string")
-        : [];
-    } catch {
-      return [];
-    }
-  }
-
-  return [];
 }
 
 interface MetricCardProps {
