@@ -126,6 +126,6 @@ const healthSource = await readFile(
   new URL("../app/portal/health/health-dashboard.tsx", import.meta.url),
   "utf8",
 );
-assert.match(healthSource, /formatHiddenStepOutliersMessage\(/);
+assert.match(healthSource, /stepsClippingNote/);
 
 console.log("Sprint 52.1.0 Portal copy polish checks passed.");

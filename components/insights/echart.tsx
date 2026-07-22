@@ -14,6 +14,7 @@ interface EChartProps {
   option: EChartsOption;
   height?: number | string;
   className?: string;
+  ariaLabel?: string;
   onChartReady?: () => void;
   onInteraction?: () => void;
 }
@@ -22,6 +23,7 @@ export function EChart({
   option,
   height = 260,
   className = "",
+  ariaLabel,
   onChartReady,
   onInteraction,
 }: EChartProps) {
@@ -38,6 +40,7 @@ export function EChart({
       TooltipComponent,
       LegendComponent,
       MarkLineComponent,
+      MarkPointComponent,
     } = await import("echarts/components");
     const { CanvasRenderer } = await import("echarts/renderers");
 
@@ -48,6 +51,7 @@ export function EChart({
       TooltipComponent,
       LegendComponent,
       MarkLineComponent,
+      MarkPointComponent,
       CanvasRenderer,
     ]);
 
@@ -95,6 +99,8 @@ export function EChart({
     <div
       ref={containerRef}
       className={className}
+      role={ariaLabel ? "img" : undefined}
+      aria-label={ariaLabel}
       style={{ width: "100%", height: typeof height === "number" ? `${height}px` : height }}
     />
   );

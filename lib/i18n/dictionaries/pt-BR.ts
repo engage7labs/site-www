@@ -1520,6 +1520,16 @@ export const ptBR: Dictionary = {
         "{count} valores extremos de passos estão ocultos da escala do gráfico.",
       hiddenStepOutliersSingular:
         "{count} valor extremo de passos está oculto da escala do gráfico.",
+      stepsAverageLabel: "Média: {value} {unit}",
+      stepsAboveVisibleScale: "Acima da escala visível de {value}",
+      stepsClippingNote:
+        "Valores extremos são limitados visualmente. O valor real aparece no tooltip.",
+      stepsChartAccessibility:
+        "Gráfico de passos diários. Média de {mean} {unit}. Os valores reais aparecem a seguir.",
+      stepsAccessibleValues: "Valores diários de passos",
+      stepsAccessiblePoint: "{date}: {value} passos.",
+      stepsAccessiblePointClipped:
+        "{date}: {value} passos; a barra excede a escala visível do gráfico de {ceiling}.",
       energyAndDistance: "Energia e distância",
       energyDistanceSelectedDay: "Energia e distância no dia selecionado",
       energyCal: "Energia (Cal)",

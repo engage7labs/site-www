@@ -1,6 +1,6 @@
 {
   "name": "my-v0-project",
-  "version": "1.52.2.3",
+  "version": "1.52.3.0",
   "private": true,
   "engines": {
     "node": "24.x"
@@ -16,6 +16,7 @@
     "test:password-method-status": "node --experimental-strip-types scripts/test-password-method-status.mjs",
     "test:identity-auth-foundation": "node --experimental-strip-types scripts/test-identity-auth-foundation.mjs",
     "test:health-time-range": "node --experimental-strip-types scripts/test-health-time-range.mjs",
+    "test:steps-chart-scale": "node --experimental-strip-types scripts/test-steps-chart-scale.mjs",
     "start": "next start"
   },
   "dependencies": {

@@ -23,6 +23,11 @@ import {
 } from "@/lib/sleep-stage-data";
 import type { PortalDataStatus } from "@/lib/portal-data-status";
 import { parsePortalDataStatus } from "@/lib/portal-data-status";
+import {
+  buildStepsScaleModel,
+  type StepsScaleModel,
+  validDailySteps,
+} from "@/lib/steps-chart-scale";
 import { trackHealthDashboardViewed } from "@/lib/telemetry";
 import type { EChartsOption } from "echarts";
 import {
@@ -41,7 +46,6 @@ import {
 } from "lucide-react";
 import type { ElementType, ReactNode } from "react";
 import { useEffect, useMemo, useState } from "react";
-import { formatHiddenStepOutliersMessage } from "@/lib/portal-copy";
 
 type HealthDomain = "sleep" | "recovery" | "activity";
 type HealthDashboardDomain = HealthDomain | "all";
@@ -178,7 +182,6 @@ const DOMAIN_KEYS: Record<HealthDomain, string[][]> = {
 
 const WEEK_DAYS = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
 const WEEK_DAY_KEYS = ["mon", "tue", "wed", "thu", "fri", "sat", "sun"] as const;
-const STEP_DISPLAY_CAP = 80_000;
 
 function isRecord(value: unknown): value is UnknownRecord {
   return value !== null && typeof value === "object" && !Array.isArray(value);
@@ -228,10 +231,6 @@ function valueFor(point: HealthPoint, keys: string[]): number | null {
 
 function positiveMetricValue(value: number): number | null {
   return value > 0 ? value : null;
-}
-
-function plausibleDailySteps(value: number): number | null {
-  return value >= 0 && value <= 200_000 ? value : null;
 }
 
 function formatChartDate(value: string, locale: string): string {
@@ -685,6 +684,125 @@ function lineChartOption(
           : { color: `${item.color}18` },
     })),
   };
+}
+
+function stepsChartOption(
+  scale: StepsScaleModel,
+  seriesName: string,
+  stepsUnit: string,
+  locale: string,
+  copy: Pick<HealthCopy, "stepsAverageLabel" | "stepsAboveVisibleScale">,
+): EChartsOption {
+  const option = lineChartOption(
+    scale.points.map((point) => ({ date: point.date })),
+    [
+      {
+        name: seriesName,
+        color: COLORS.steps,
+        data: scale.points.map((point) => point.renderedValue),
+        type: "bar",
+      },
+    ],
+    locale,
+    false,
+    scale.visualCeiling,
+  );
+  const numberFormatter = new Intl.NumberFormat(locale, {
+    maximumFractionDigits: 0,
+  });
+  const realValueFormatter = new Intl.NumberFormat(locale, {
+    maximumFractionDigits: 20,
+  });
+  const firstSeries = Array.isArray(option.series)
+    ? (option.series[0] as UnknownRecord)
+    : null;
+
+  option.tooltip = {
+    ...(option.tooltip as UnknownRecord),
+    formatter: (params: unknown) => {
+      const item = (Array.isArray(params) ? params[0] : params) as
+        | {
+            axisValue?: string;
+            axisValueLabel?: string;
+            marker?: string;
+            seriesName?: string;
+            data?: { realValue?: number; isClipped?: boolean };
+          }
+        | undefined;
+      const datum = item?.data;
+      if (!item || typeof datum?.realValue !== "number") return "";
+      const rows = [
+        item.axisValueLabel ?? item.axisValue,
+        `${item.marker ?? ""}${item.seriesName ?? seriesName}: ${realValueFormatter.format(datum.realValue)} ${stepsUnit}`,
+      ];
+      if (datum.isClipped) {
+        rows.push(
+          copy.stepsAboveVisibleScale.replace(
+            "{value}",
+            numberFormatter.format(scale.visualCeiling),
+          ),
+        );
+      }
+      return rows.filter(Boolean).join("<br/>");
+    },
+  };
+
+  if (firstSeries) {
+    firstSeries.data = scale.points.map((point) =>
+      point.realValue === null
+        ? null
+        : {
+            value: point.renderedValue,
+            realValue: point.realValue,
+            isClipped: point.isClipped,
+          },
+    );
+    firstSeries.markLine =
+      scale.mean === null
+        ? undefined
+        : {
+            silent: true,
+            symbol: "none",
+            lineStyle: {
+              color: COLORS.muted,
+              type: "dashed",
+              width: 1.5,
+            },
+            label: {
+              show: true,
+              position: "insideEndTop",
+              color: COLORS.muted,
+              fontSize: 11,
+              formatter: copy.stepsAverageLabel
+                .replace("{value}", numberFormatter.format(scale.mean))
+                .replace("{unit}", stepsUnit),
+            },
+            data: [{ yAxis: scale.mean }],
+          };
+    firstSeries.markPoint =
+      scale.clippedPointCount === 0
+        ? undefined
+        : {
+            silent: true,
+            symbol: "triangle",
+            symbolSize: 10,
+            symbolOffset: [0, -5],
+            itemStyle: {
+              color: COLORS.steps,
+              borderColor: "#0f172a",
+              borderWidth: 1,
+            },
+            label: { show: false },
+            tooltip: { show: false },
+            data: scale.points.flatMap((point, index) =>
+              point.isClipped
+                ? [{ coord: [index, scale.visualCeiling] }]
+                : [],
+            ),
+          };
+  }
+
+  return option;
 }
 
 function sleepEfficiency(point: HealthPoint): number | null {
@@ -1433,16 +1551,12 @@ function ActivityDashboard({
   period: Period;
 }>) {
   const { t, locale } = useLocale();
-  const steps = metricSeries(points, ACTIVITY_STEPS_KEYS, plausibleDailySteps);
-  const stepDisplayCap = period === "all" ? STEP_DISPLAY_CAP : undefined;
-  const hiddenStepOutliers = points.filter((point) => {
-    const value = valueFor(point, ACTIVITY_STEPS_KEYS);
-    return (
-      value !== null &&
-      (plausibleDailySteps(value) === null ||
-        (stepDisplayCap !== undefined && value > stepDisplayCap))
-    );
-  }).length;
+  const stepsScale = buildStepsScaleModel(
+    points.map((point) => ({
+      date: point.date,
+      value: valueFor(point, ACTIVITY_STEPS_KEYS),
+    })),
+  );
   const energy = metricSeries(points, ["active_energy_cal", "total_active_energy"]);
   const distance = metricSeries(points, ["distance_km", "total_distance"]);
   const exercise = metricSeries(points, [
@@ -1450,7 +1564,9 @@ function ActivityDashboard({
     "active_minutes",
     "activity_minutes",
   ]);
-  const stepsVals = values(steps);
+  const stepsVals = stepsScale.points.flatMap((point) =>
+    point.realValue === null ? [] : [point.realValue],
+  );
   const energyVals = values(energy);
   const distanceVals = values(distance);
   const exerciseVals = values(exercise);
@@ -1460,8 +1576,8 @@ function ActivityDashboard({
     return {
       ...point,
       total_steps:
-        value === null ? point.total_steps : plausibleDailySteps(value),
-      steps: value === null ? point.steps : plausibleDailySteps(value),
+        value === null ? point.total_steps : validDailySteps(value),
+      steps: value === null ? point.steps : validDailySteps(value),
     };
   });
   const { best, lowest } = bestAndLowest(stepPoints, ACTIVITY_STEPS_KEYS);
@@ -1525,30 +1641,58 @@ function ActivityDashboard({
           <div className="flex flex-col gap-2">
             <EChart
               height={320}
-              option={lineChartOption(points, [
-                {
-                  name: t.portal.health.steps,
-                  color: COLORS.steps,
-                  data: steps.map((point) =>
-                    point.value !== null &&
-                    stepDisplayCap !== undefined &&
-                    point.value > stepDisplayCap
-                      ? null
-                      : point.value,
-                  ),
-                  type: "bar",
-                },
-              ], locale, false, stepDisplayCap)}
+              className="min-w-0 max-w-full overflow-hidden"
+              ariaLabel={t.portal.health.stepsChartAccessibility
+                .replace(
+                  "{mean}",
+                  new Intl.NumberFormat(locale, {
+                    maximumFractionDigits: 0,
+                  }).format(stepsScale.mean ?? 0),
+                )
+                .replace("{unit}", t.portal.health.stepsUnit)}
+              option={stepsChartOption(
+                stepsScale,
+                t.portal.health.steps,
+                t.portal.health.stepsUnit,
+                locale,
+                t.portal.health,
+              )}
             />
-            {hiddenStepOutliers > 0 && (
+            <ul
+              className="sr-only"
+              aria-label={t.portal.health.stepsAccessibleValues}
+            >
+              {stepsScale.points.flatMap((point) =>
+                point.realValue === null
+                  ? []
+                  : [
+                      <li key={point.date}>
+                        {(point.isClipped
+                          ? t.portal.health.stepsAccessiblePointClipped
+                          : t.portal.health.stepsAccessiblePoint)
+                          .replace(
+                            "{date}",
+                            formatDisplayDate(point.date, locale),
+                          )
+                          .replace(
+                            "{value}",
+                            new Intl.NumberFormat(locale, {
+                              maximumFractionDigits: 20,
+                            }).format(point.realValue),
+                          )
+                          .replace(
+                            "{ceiling}",
+                            new Intl.NumberFormat(locale, {
+                              maximumFractionDigits: 0,
+                            }).format(stepsScale.visualCeiling),
+                          )}
+                      </li>,
+                    ],
+              )}
+            </ul>
+            {stepsScale.clippedPointCount > 0 && (
               <p className="text-xs text-muted-foreground">
-                {formatHiddenStepOutliersMessage(
-                  hiddenStepOutliers,
-                  {
-                    plural: t.portal.health.hiddenStepOutliers,
-                    singular: t.portal.health.hiddenStepOutliersSingular,
-                  },
-                )}
+                {t.portal.health.stepsClippingNote}
               </p>
             )}
           </div>
