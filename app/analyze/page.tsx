@@ -106,11 +106,6 @@ export default function AnalyzePage() {
       .catch((error: unknown) => {
         console.error("Upload error:", error);
 
-        const errorMessage =
-          error instanceof ApiClientError && error.message
-            ? error.message
-            : "Upload failed";
-
         const message =
           error instanceof ApiClientError && error.message
             ? error.message

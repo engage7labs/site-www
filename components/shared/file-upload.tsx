@@ -10,7 +10,7 @@ import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { File, Upload, X } from "lucide-react";
 import * as React from "react";
-import { useCallback, useRef, useState } from "react";
+import { useCallback, useState } from "react";
 
 interface FileUploadProps {
   onFileSelect: (file: File) => void;

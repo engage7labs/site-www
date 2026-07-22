@@ -7,14 +7,12 @@ import { DevEnvironmentMarker } from "@/components/shared/dev-environment-marker
 import { config } from "@/lib/config";
 import { isDevEnvironment } from "@/lib/env";
 import type { Metadata, Viewport } from "next";
-import { Geist_Mono, Inter } from "next/font/google";
+import { Inter } from "next/font/google";
 import type React from "react";
 import { Toaster } from "sonner";
 import "./globals.css";
 
 const inter = Inter({ subsets: ["latin"] });
-const _geistMono = Geist_Mono({ subsets: ["latin"] });
-
 const titlePrefix = isDevEnvironment ? "[DEV] " : "";
 const baseUrl = config.siteUrl;
 const socialDescription =

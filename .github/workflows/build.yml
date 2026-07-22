@@ -43,7 +43,7 @@ jobs:
           pnpm run test:password-method-status
           pnpm run test:identity-auth-foundation
           pnpm run test:health-time-range
-          node scripts/test-sprint-52_1_copy_polish.mjs
+          pnpm run test:sprint-52_1-copy-polish
 
       - name: TypeScript check
         run: pnpm exec tsc --noEmit

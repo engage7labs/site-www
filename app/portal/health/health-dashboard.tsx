@@ -354,17 +354,6 @@ function latestValue(series: MetricSeries[]): number | null {
   return [...series].reverse().find((point) => point.value !== null)?.value ?? null;
 }
 
-function latestPointWith(
-  points: HealthPoint[],
-  keys: string[],
-): HealthPoint | null {
-  return (
-    [...points]
-      .reverse()
-      .find((point) => valueFor(point, keys) !== null) ?? null
-  );
-}
-
 function formatValue(
   value: number | null,
   digits = 0,
@@ -843,7 +832,7 @@ function bestAndLowest(points: HealthPoint[], keys: string[]) {
 }
 
 function TruthBadge({ status }: Readonly<{ status: string }>) {
-  const { t, locale } = useLocale();
+  const { t } = useLocale();
   const tone =
     status === "valid"
       ? "border-emerald-500/20 bg-emerald-500/10 text-emerald-300"
@@ -876,7 +865,7 @@ function SignalCard({
   status: string;
   Icon: ElementType;
 }>) {
-  const { t, locale } = useLocale();
+  const { t } = useLocale();
   return (
     <div className="portal-panel rounded-lg border border-border/70 bg-card/85 px-4 py-3">
       <div className="mb-3 flex items-start justify-between gap-3">
@@ -942,7 +931,7 @@ function MetricState({
 }
 
 function LoadingState() {
-  const { t, locale } = useLocale();
+  const { t } = useLocale();
   return (
     <div className="flex flex-col gap-6">
       <div className="portal-panel rounded-lg border border-border/70 bg-card/85 p-6">
@@ -956,7 +945,7 @@ function DatasetEmptyState({
   status,
   portalStatus,
 }: Readonly<{ status: string | undefined; portalStatus: PortalDataStatus | null }>) {
-  const { t, locale } = useLocale();
+  const { t } = useLocale();
   const message =
     !portalStatus?.hasAnalyses || portalStatus.analysisStatus === "no_analysis"
       ? t.portal.statusNotice.noAnalysis
@@ -999,7 +988,7 @@ function DomainEmptyState({
   hasAnyDomainData: boolean;
   period: Period;
 }>) {
-  const { t, locale } = useLocale();
+  const { t } = useLocale();
   const meta = DOMAIN_META[domain];
   const domainCopy = t.portal.health.domains[domain];
   const body = hasAnyDomainData

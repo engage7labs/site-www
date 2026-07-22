@@ -65,26 +65,6 @@ const COLORS = {
   activity: "#f59e0b",
 };
 
-const TECHNICAL_LABELS: Record<string, string> = {
-  last_7d: "recent week",
-  last_30d: "recent month",
-  baseline_30d: "recent personal baseline",
-  yearly_summary: "long-term summary",
-  hrv_sdnn: "HRV",
-  hrv_sdnn_mean: "HRV",
-  hr_resting: "resting heart rate",
-  resting_hr: "resting heart rate",
-  hr_mean: "average heart rate",
-  total_steps: "daily steps",
-  steps: "daily steps",
-  active_energy_cal: "active energy",
-  total_energy_cal: "daily energy",
-  sleep_hours: "sleep duration",
-  sleep_variability_cv: "sleep regularity",
-  steps_variability_cv: "activity regularity",
-  active_minutes: "active minutes",
-};
-
 // ---------------------------------------------------------------------------
 // Data types
 // ---------------------------------------------------------------------------
@@ -122,20 +102,6 @@ function formatDate(d: string, locale: string): string {
     month: "short",
     day: "numeric",
   });
-}
-
-function humanizeTechnicalLabel(value: string): string {
-  const exact = TECHNICAL_LABELS[value];
-  if (exact) return exact;
-
-  return value
-    .replaceAll("_", " ")
-    .replace(/\bcv\b/gi, "variability")
-    .replace(/\bhrv\b/gi, "HRV")
-    .replace(/\bhr\b/gi, "heart rate")
-    .replace(/\bsdnn\b/gi, "")
-    .replace(/\s+/g, " ")
-    .trim();
 }
 
 function computeTrendDirection(vals: number[]): "rising" | "falling" | "stable" {

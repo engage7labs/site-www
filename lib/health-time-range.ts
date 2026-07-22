@@ -112,7 +112,7 @@ export function addCalendarDays(
   source: CalendarDate,
   amount: number,
 ): CalendarDate {
-  let result = { ...source };
+  const result = { ...source };
   const direction = Math.sign(amount);
   for (let remaining = Math.abs(amount); remaining > 0; remaining -= 1) {
     result.day += direction;

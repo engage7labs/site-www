@@ -18,7 +18,7 @@ export async function POST(request: NextRequest) {
     const origin = resolveAuthRedirectOrigin(request.nextUrl.origin);
     const emailRedirectTo = buildAuthCallbackUrl(origin, "/portal");
     const supabase = createSupabaseAuthServerClient();
-    const { data, error } = await supabase.auth.signUp({
+    const { error } = await supabase.auth.signUp({
       email,
       password,
       options: { emailRedirectTo },

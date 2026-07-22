@@ -64,8 +64,6 @@ export function PasswordlessLoginFormFields({
   const [socialLoading, setSocialLoading] = useState<"apple" | "google" | null>(null);
   const [locale, setLocale] = useState<Locale>("en");
   const copy = getDictionary(locale).auth.login;
-  const isRegister = mode === "register";
-
   useEffect(() => {
     setLocale(detectLocale());
     const pendingEmail = window.sessionStorage.getItem("engage7.pendingSignupEmail");

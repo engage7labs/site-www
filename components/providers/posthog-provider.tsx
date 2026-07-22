@@ -38,14 +38,12 @@ export function PostHogProvider({ children }: { children: React.ReactNode }) {
     return subscribeCookieConsent((consent) => {
       if (consent === "accepted") initialiseTelemetry();
     });
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   // Capture $pageview on every subsequent route change
   useEffect(() => {
     if (!initialised.current) return;
     capturePageview(window.location.href);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [pathname]);
 
   return <>{children}</>;
