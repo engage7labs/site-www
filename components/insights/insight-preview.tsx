@@ -267,7 +267,6 @@ function resolveTeaserCopy(teaser: DarthTeaser, locale: string) {
 
 export function InsightPreview({
   result,
-  jobId,
   theme,
   onOpenModal,
   embedded,
@@ -457,13 +456,6 @@ export function InsightPreview({
     }
     return null;
   }, [monthly, weekly, isDark]);
-
-  // ---- Telemetry: fire on mount -----------------------------------------
-  const telFired = useRef(false);
-  useEffect(() => {
-    if (telFired.current) return;
-    telFired.current = true;
-  }, [jobId, durationInfo]);
 
   // ---- Progressive section reveal (Sprint 24.0) -------------------------
   const [sleepVisible, setSleepVisible] = useState(false);

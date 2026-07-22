@@ -11,6 +11,7 @@ import {
   normaliseHealthCalendarDate,
   parseCalendarDate,
   resolveHealthDateBounds,
+  selectLatestHealthPoint,
 } from "@/lib/health-time-range";
 import { trackHealthDashboardViewed } from "@/lib/telemetry";
 import { Activity, ArrowRight, HeartPulse, Moon } from "lucide-react";
@@ -190,14 +191,7 @@ export default function HealthPage() {
     [points],
   );
   const healthTimeRange = useHealthTimeRange(dateBounds);
-  const latestAnyPoint = [...points]
-    .filter((point) => parseCalendarDate(point.date))
-    .sort((a, b) =>
-      compareCalendarDates(
-        parseCalendarDate(b.date)!,
-        parseCalendarDate(a.date)!,
-      ),
-    )[0];
+  const latestAnyPoint = selectLatestHealthPoint(points);
 
   if (loading) {
     return (

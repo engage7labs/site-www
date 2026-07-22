@@ -9,6 +9,7 @@ Next.js application for Engage7 public pages, authenticated Portal, and Admin. T
 - `app/portal/layout.tsx` and `components/portal/portal-shell.tsx` — authenticated shell/navigation.
 - `components/portal/portal-sidebar.tsx` — authoritative Portal surface list.
 - `app/api/proxy/` — authenticated server-side API proxy boundary.
+- `components/portal/analytics-reupload-banner.tsx` and `app/api/proxy/users/analytics-status/` — shared server-owned legacy-v1 re-upload guidance.
 - `lib/auth-server.ts`, `lib/api/signing.ts`, `lib/server-config.ts` — session, request signing, and API origin.
 
 ## Feature-to-code map
