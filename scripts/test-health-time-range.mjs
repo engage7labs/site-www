@@ -249,6 +249,79 @@ assert.match(dashboardSource, /normaliseHealthPoints\(data\?\.data_points/);
 assert.match(dashboardSource, /hasSleepStageData/);
 assert.doesNotMatch(dashboardSource, /latestRawAndValidDays|filterByPeriod|new Date\(point\.date\)/);
 assert.doesNotMatch(dashboardSource, /headerComparisonLabel/);
+const sleepDashboardSource = dashboardSource.slice(
+  dashboardSource.indexOf("function SleepDashboard"),
+  dashboardSource.indexOf("function RecoveryDashboard"),
+);
+assert.ok(
+  sleepDashboardSource.indexOf("transparentSleepMethod") <
+    sleepDashboardSource.indexOf("{periodNavigation}"),
+);
+assert.ok(
+  sleepDashboardSource.indexOf("{periodNavigation}") <
+    sleepDashboardSource.indexOf("<ChartPanel"),
+);
+const recoveryDashboardSource = dashboardSource.slice(
+  dashboardSource.indexOf("function RecoveryDashboard"),
+  dashboardSource.indexOf("function ActivityDashboard"),
+);
+assert.ok(
+  recoveryDashboardSource.indexOf("hrvVsBaseline") <
+    recoveryDashboardSource.indexOf("{periodNavigation}"),
+);
+assert.ok(
+  recoveryDashboardSource.indexOf("{periodNavigation}") <
+    recoveryDashboardSource.indexOf("hrvAndHeartRate"),
+);
+const activityDashboardSource = dashboardSource.slice(
+  dashboardSource.indexOf("function ActivityDashboard"),
+  dashboardSource.indexOf("export function HealthDashboard"),
+);
+assert.ok(
+  activityDashboardSource.indexOf("t.portal.health.consistency") <
+    activityDashboardSource.indexOf("{periodNavigation}"),
+);
+assert.ok(
+  activityDashboardSource.indexOf("{periodNavigation}") <
+    activityDashboardSource.indexOf("stepsTrend"),
+);
+assert.equal(
+  dashboardSource.match(/useHealthTimeRange\(dateBounds\)/g)?.length,
+  1,
+);
+assert.equal(
+  dashboardSource.match(/fetch\("\/api\/proxy\/users\/portal-health-data"\)/g)
+    ?.length,
+  1,
+);
+assert.match(dashboardSource, /domain === "all"[\s\S]*?\["sleep", "recovery", "activity"\]/);
+assert.match(dashboardSource, /periodNavigation=\{renderPeriodNavigation\("sleep"\)\}/);
+assert.match(dashboardSource, /periodNavigation=\{renderPeriodNavigation\("recovery"\)\}/);
+assert.match(dashboardSource, /periodNavigation=\{renderPeriodNavigation\("activity"\)\}/);
+assert.match(dashboardSource, /key=\{`\$\{navigationDomain\}-\$\{periodSelectionKey\}`\}/);
+assert.doesNotMatch(
+  dashboardSource.slice(
+    dashboardSource.indexOf("data-health-export-content"),
+    dashboardSource.indexOf('{domain === "all"'),
+  ),
+  /HealthPeriodNavigator/,
+);
+
+const overviewSource = await readFile(
+  new URL("../app/portal/health/page.tsx", import.meta.url),
+  "utf8",
+);
+assert.equal(overviewSource.match(/<HealthPeriodNavigator/g)?.length, 1);
+assert.equal(
+  overviewSource.match(/fetch\("\/api\/proxy\/users\/portal-health-data"\)/g)
+    ?.length,
+  1,
+);
+assert.ok(
+  overviewSource.indexOf('data-health-period-navigation="overview"') <
+    overviewSource.indexOf("<DarthStatePanel"),
+);
+assert.match(overviewSource, /useHealthTimeRange\(dateBounds\)/);
 const navigatorSource = await readFile(
   new URL("../components/portal/health-period-navigator.tsx", import.meta.url),
   "utf8",
@@ -258,6 +331,7 @@ assert.match(navigatorSource, /type="month"/);
 assert.match(navigatorSource, /pickerKind === "year"/);
 assert.match(navigatorSource, /selected\.mode !== "today" && selected\.mode !== "all"/);
 assert.match(navigatorSource, /CalendarDays/);
+assert.match(navigatorSource, /ariaLabel \?\? t\.portal\.health\.periodNavigation/);
 assert.match(navigatorSource, /jumpToPeriod/);
 assert.match(navigatorSource, /aria-label=.*jumpToPeriod/);
 assert.doesNotMatch(navigatorSource, /ChevronDown/);

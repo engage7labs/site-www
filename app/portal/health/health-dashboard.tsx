@@ -6,6 +6,7 @@ import { RecoveryScoreChart } from "@/components/insights/recovery-score-chart";
 import { HealthPeriodNavigator } from "@/components/portal/health-period-navigator";
 import { useHealthTimeRange } from "@/hooks/use-health-time-range";
 import {
+  calendarDateToKey,
   calendarDateWeekday,
   compareCalendarDates,
   formatCalendarDate,
@@ -1062,11 +1063,13 @@ function SleepDashboard({
   sections,
   rangeLabel,
   period,
+  periodNavigation,
 }: Readonly<{
   points: HealthPoint[];
   sections: UnknownRecord | null;
   rangeLabel: string;
   period: Period;
+  periodNavigation: ReactNode;
 }>) {
   const { t, locale } = useLocale();
   const isOneDayRange = period === "day" || points.length <= 1;
@@ -1169,6 +1172,8 @@ function SleepDashboard({
           </div>
         </div>
       </div>
+
+      {periodNavigation}
 
       <ChartPanel
         title={
@@ -1286,6 +1291,7 @@ function RecoveryDashboard({
   sections,
   rangeLabel,
   period,
+  periodNavigation,
 }: Readonly<{
   points: HealthPoint[];
   comparisonPoints: HealthPoint[];
@@ -1293,6 +1299,7 @@ function RecoveryDashboard({
   sections: UnknownRecord | null;
   rangeLabel: string;
   period: Period;
+  periodNavigation: ReactNode;
 }>) {
   const { t, locale } = useLocale();
   const hrv = metricSeries(points, RECOVERY_HRV_KEYS, positiveMetricValue);
@@ -1420,6 +1427,8 @@ function RecoveryDashboard({
         />
       </div>
 
+      {periodNavigation}
+
       <div className="grid gap-4 xl:grid-cols-[minmax(0,1.6fr)_minmax(260px,0.8fr)]">
         <ChartPanel
           title={t.portal.health.hrvAndHeartRate}
@@ -1545,10 +1554,12 @@ function ActivityDashboard({
   points,
   rangeLabel,
   period,
+  periodNavigation,
 }: Readonly<{
   points: HealthPoint[];
   rangeLabel: string;
   period: Period;
+  periodNavigation: ReactNode;
 }>) {
   const { t, locale } = useLocale();
   const stepsScale = buildStepsScaleModel(
@@ -1624,6 +1635,8 @@ function ActivityDashboard({
           status={statusFor(stepsVals.length, stepStd !== null)}
         />
       </div>
+
+      {periodNavigation}
 
       <ChartPanel
         title={
@@ -1971,6 +1984,33 @@ export function HealthDashboard({
   const { Icon } = meta;
   const storedDaysCount = rangePoints.length;
   const headerRangeLabel = filtered.rangeLabel;
+  const selectedPeriod = healthTimeRange.selected;
+  const selectedRange = healthTimeRange.range;
+  const periodSelectionKey = `${period}-${calendarDateToKey(
+    selectedPeriod.anchor,
+  )}`;
+  const renderPeriodNavigation = (navigationDomain: HealthDomain) => (
+    <div
+      data-health-period-navigation={navigationDomain}
+      className="min-w-0"
+    >
+      <HealthPeriodNavigator
+        key={`${navigationDomain}-${periodSelectionKey}`}
+        ariaLabel={t.portal.health.periodNavigationByDomain[navigationDomain]}
+        selected={selectedPeriod}
+        bounds={dateBounds}
+        range={selectedRange}
+        canMoveBackward={healthTimeRange.canMoveBackward}
+        canMoveForward={healthTimeRange.canMoveForward}
+        isLatest={healthTimeRange.isLatest}
+        onModeChange={healthTimeRange.selectMode}
+        onPrevious={healthTimeRange.moveBackward}
+        onNext={healthTimeRange.moveForward}
+        onJumpToLatest={healthTimeRange.jumpToLatest}
+        onAnchorChange={healthTimeRange.selectAnchor}
+      />
+    </div>
+  );
 
   return (
     <div className="flex flex-col gap-6">
@@ -2003,21 +2043,6 @@ export function HealthDashboard({
               </p>
             </div>
           </div>
-          <div className="border-t border-border/50 pt-4">
-            <HealthPeriodNavigator
-              selected={healthTimeRange.selected}
-              bounds={dateBounds}
-              range={healthTimeRange.range}
-              canMoveBackward={healthTimeRange.canMoveBackward}
-              canMoveForward={healthTimeRange.canMoveForward}
-              isLatest={healthTimeRange.isLatest}
-              onModeChange={healthTimeRange.selectMode}
-              onPrevious={healthTimeRange.moveBackward}
-              onNext={healthTimeRange.moveForward}
-              onJumpToLatest={healthTimeRange.jumpToLatest}
-              onAnchorChange={healthTimeRange.selectAnchor}
-            />
-          </div>
         </div>
       </div>
 
@@ -2028,11 +2053,14 @@ export function HealthDashboard({
             return (
               <DomainSection key={item} domain={item}>
                 {!itemFiltered.hasDomainDataInRange ? (
-                  <DomainEmptyState
-                    domain={item}
-                    hasAnyDomainData={itemFiltered.hasAnyDomainData}
-                    period={period}
-                  />
+                  <div className="flex flex-col gap-5">
+                    {renderPeriodNavigation(item)}
+                    <DomainEmptyState
+                      domain={item}
+                      hasAnyDomainData={itemFiltered.hasAnyDomainData}
+                      period={period}
+                    />
+                  </div>
                 ) : (
                   <>
                     {item === "sleep" && (
@@ -2041,6 +2069,7 @@ export function HealthDashboard({
                         sections={sections}
                         rangeLabel={itemFiltered.rangeLabel}
                         period={period}
+                        periodNavigation={renderPeriodNavigation("sleep")}
                       />
                     )}
                     {item === "recovery" && (
@@ -2051,6 +2080,7 @@ export function HealthDashboard({
                         sections={sections}
                         rangeLabel={itemFiltered.rangeLabel}
                         period={period}
+                        periodNavigation={renderPeriodNavigation("recovery")}
                       />
                     )}
                     {item === "activity" && (
@@ -2058,6 +2088,7 @@ export function HealthDashboard({
                         points={itemFiltered.points}
                         rangeLabel={itemFiltered.rangeLabel}
                         period={period}
+                        periodNavigation={renderPeriodNavigation("activity")}
                       />
                     )}
                   </>
@@ -2067,11 +2098,14 @@ export function HealthDashboard({
           })}
         </div>
       ) : !filtered.hasDomainDataInRange ? (
-        <DomainEmptyState
-          domain={domain}
-          hasAnyDomainData={filtered.hasAnyDomainData}
-          period={period}
-        />
+        <div className="flex flex-col gap-5">
+          {renderPeriodNavigation(domain)}
+          <DomainEmptyState
+            domain={domain}
+            hasAnyDomainData={filtered.hasAnyDomainData}
+            period={period}
+          />
+        </div>
       ) : (
         <>
           {domain === "sleep" && (
@@ -2080,6 +2114,7 @@ export function HealthDashboard({
               sections={sections}
               rangeLabel={filtered.rangeLabel}
               period={period}
+              periodNavigation={renderPeriodNavigation("sleep")}
             />
           )}
           {domain === "recovery" && (
@@ -2090,6 +2125,7 @@ export function HealthDashboard({
               sections={sections}
               rangeLabel={filtered.rangeLabel}
               period={period}
+              periodNavigation={renderPeriodNavigation("recovery")}
             />
           )}
           {domain === "activity" && (
@@ -2097,6 +2133,7 @@ export function HealthDashboard({
               points={filtered.points}
               rangeLabel={filtered.rangeLabel}
               period={period}
+              periodNavigation={renderPeriodNavigation("activity")}
             />
           )}
         </>

@@ -28,6 +28,7 @@ export function HealthPeriodNavigator({
   canMoveBackward,
   canMoveForward,
   isLatest,
+  ariaLabel,
   onModeChange,
   onPrevious,
   onNext,
@@ -40,6 +41,7 @@ export function HealthPeriodNavigator({
   canMoveBackward: boolean;
   canMoveForward: boolean;
   isLatest: boolean;
+  ariaLabel?: string;
   onModeChange: (mode: HealthTimeRangeMode) => void;
   onPrevious: () => void;
   onNext: () => void;
@@ -81,7 +83,7 @@ export function HealthPeriodNavigator({
     <div
       className="flex flex-col gap-3"
       role="group"
-      aria-label={t.portal.health.periodNavigation}
+      aria-label={ariaLabel ?? t.portal.health.periodNavigation}
     >
       <div className="flex flex-wrap gap-1 rounded-lg bg-muted/40 p-0.5">
         {HEALTH_TIME_RANGE_MODES.map((mode) => (

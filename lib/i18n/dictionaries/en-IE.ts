@@ -1312,6 +1312,12 @@ export const enIE = {
         all: "All time",
       },
       periodNavigation: "Health period navigation",
+      periodNavigationByDomain: {
+        overview: "Health overview period navigation",
+        sleep: "Sleep period navigation",
+        recovery: "Recovery period navigation",
+        activity: "Activity period navigation",
+      },
       inclusiveRange: "Inclusive range",
       previousPeriod: "Previous period",
       nextPeriod: "Next period",

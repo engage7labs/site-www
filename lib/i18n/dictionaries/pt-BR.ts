@@ -1347,6 +1347,12 @@ export const ptBR: Dictionary = {
         all: "Todo o período",
       },
       periodNavigation: "Navegação do período de saúde",
+      periodNavigationByDomain: {
+        overview: "Navegação do período da visão geral de saúde",
+        sleep: "Navegação do período de sono",
+        recovery: "Navegação do período de recuperação",
+        activity: "Navegação do período de atividade",
+      },
       inclusiveRange: "Intervalo inclusivo",
       previousPeriod: "Período anterior",
       nextPeriod: "Próximo período",
