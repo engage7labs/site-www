@@ -1,6 +1,6 @@
 "use client";
 
-import { CompareImproveBlock } from "@/components/portal/compare-improve-block";
+import { ContextualIntelligenceCard } from "@/components/portal/contextual-intelligence-card";
 import { useLocale } from "@/components/providers/locale-provider";
 import { FeaturePreviewBadge } from "@/components/shared/feature-preview-badge";
 import {
@@ -14,7 +14,6 @@ import {
   type DarthPayload,
   type DarthStatePresentation,
 } from "@/lib/darth";
-import { generateCompareImprove } from "@/lib/insights/compare-improve";
 import {
   extractActivityInsights,
   extractActivitySignalInsights,
@@ -106,7 +105,6 @@ function coerceSections(value: unknown): Sections | null {
     : null;
 }
 
-type OverviewData = Record<string, unknown>;
 
 interface DarthDisplayBlock {
   block: DarthInsightBlock;
@@ -422,9 +420,6 @@ export default function InsightsPage() {
   const [darthClaim, setDarthClaim] = useState<string | null>(null);
   const [darthPayload, setDarthPayload] = useState<DarthPayload | null>(null);
   const [trends, setTrends] = useState<TrendsData["trends"] | null>(null);
-  const [trendsData, setTrendsData] = useState<TrendsData | null>(null);
-  const [overview, setOverview] = useState<OverviewData | null>(null);
-  const [latestSections, setLatestSections] = useState<Sections | null>(null);
   const [loading, setLoading] = useState(true);
   const [empty, setEmpty] = useState(false);
   const [usingLegacyFallback, setUsingLegacyFallback] = useState(false);
@@ -441,26 +436,19 @@ export default function InsightsPage() {
       fetch("/api/proxy/users/portal-trends")
         .then((r) => (r.ok ? r.json() : null))
         .catch(() => null),
-      fetch("/api/proxy/users/portal-overview")
-        .then((r) => (r.ok ? r.json() : null))
-        .catch(() => null),
     ])
       .then(
-        ([analysesData, trendPayload, overviewData]: [
+        ([analysesData, trendPayload]: [
           AnalysesPayload,
-          TrendsData | null,
-          OverviewData | null
+          TrendsData | null
         ]) => {
           const status = parsePortalDataStatus(
             analysesData?.portal_data_status
           );
           setPortalStatus(status);
-          setOverview(overviewData);
-
           // INSIGHTS_TRENDS_SPARKLINE_ONLY
           if (trendPayload?.trends) {
             setTrends(trendPayload.trends);
-            setTrendsData(trendPayload);
           }
 
           // Insights
@@ -476,7 +464,6 @@ export default function InsightsPage() {
             analyses.find((analysis) => getAnalysisSections(analysis)) ??
             analyses[0];
           const sections = getAnalysisSections(latest);
-          setLatestSections(sections);
           const presentation = getDarthPresentation(sections);
           const payload = getDarthPayload(sections);
           setDarthPayload(payload);
@@ -555,16 +542,6 @@ export default function InsightsPage() {
     };
   }, [trends]);
 
-  const compareImprove = useMemo(
-    () =>
-      generateCompareImprove(
-        overview,
-        trendsData,
-        latestSections,
-        t.portal.compareImprove
-      ),
-    [overview, trendsData, latestSections, t.portal.compareImprove]
-  );
   const darthStateDisplay: DarthStatePresentation | null = useMemo(
     () => selectDarthStatePresentation(darthPayload, locale),
     [darthPayload, locale]
@@ -602,7 +579,6 @@ export default function InsightsPage() {
 
     return (
       <div className="flex flex-col gap-6">
-        <CompareImproveBlock result={compareImprove} />
         <div className="flex flex-col items-center justify-center py-16 gap-4 text-center">
           <Lightbulb className="h-10 w-10 text-muted-foreground/50" />
           <p className="text-sm text-muted-foreground max-w-sm">{message}</p>
@@ -622,7 +598,10 @@ export default function InsightsPage() {
 
   return (
     <div className="flex flex-col gap-6">
-      <CompareImproveBlock result={compareImprove} />
+      <ContextualIntelligenceCard
+        artifact={darthPayload?.contextual_intelligence}
+        locale={locale}
+      />
 
       {/* ─── DARTH primary claim header — Sprint 32.0 ─── */}
       {(darthState || darthClaim) && (

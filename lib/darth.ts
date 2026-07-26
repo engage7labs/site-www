@@ -199,7 +199,7 @@ export type DarthDriftStatus =
   | "emerging_new_pattern";
 
 export interface DarthEvidencePack {
-  contract_version: "darth_evidence_pack.v1";
+  contract_version: "darth_evidence_pack.v3";
   source: "darth";
   evidence_pack_hash?: string;
   product_frame?: "fitness_performance_recovery_intelligence" | string;
@@ -244,6 +244,15 @@ export interface DarthEvidencePack {
   user_profile_type: "general" | "amateur_athlete" | "student" | "entrepreneur";
   allowed_ai_tasks: string[];
   disallowed_ai_claims: string[];
+  contextual_intelligence?: {
+    contract_version: string;
+    current_state_key: string;
+    recent_pattern_key: string;
+    longitudinal_state: string;
+    action_key: string;
+    overreaction_key: string;
+    evidence_strength: string;
+  };
 }
 
 export interface DarthStatePresentation {
@@ -269,7 +278,28 @@ export interface DarthStatePresentation {
   explanation?: string;
 }
 
+export interface DarthContextualPresentation {
+  locale: "en-IE" | "pt-BR";
+  headline: string | null;
+  recent_pattern: string | null;
+  safe_action: string | null;
+  what_not_to_overreact_to: string | null;
+  confidence: string | null;
+  longitudinal: string | null;
+}
+
+export interface DarthContextualIntelligence {
+  contract_version: "darth.v3";
+  algorithm_version: "darth_algorithm.v3.0.0" | string;
+  contextual_contract_version: "darth_contextual_intelligence.v1";
+  presentation: Partial<
+    Record<"en-IE" | "pt-BR", DarthContextualPresentation>
+  >;
+}
+
 export interface DarthPayload {
+  contract_version?: "darth.v3" | string;
+  algorithm_version?: string;
   state?:
     | "RECOVERING"
     | "STRAIN_ACCUMULATING"
@@ -301,6 +331,7 @@ export interface DarthPayload {
   explainability?: DarthInsightBlock[];
   teaser?: DarthTeaser;
   evidence_pack?: DarthEvidencePack;
+  contextual_intelligence?: DarthContextualIntelligence;
 }
 
 function isObject(value: unknown): value is Record<string, unknown> {
