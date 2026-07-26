@@ -795,19 +795,6 @@ export const ptBR: Dictionary = {
       claimEmailMismatch:
         "Esta análise foi liberada com outro e-mail. Entre com o mesmo e-mail usado para abrir o Premium Free ou inicie uma nova análise para esta conta.",
     },
-    accessCode: {
-      bannerPrefix: "Proteja seu acesso —",
-      bannerLink: "crie um código de acesso",
-      bannerSuffix: "para voltar de qualquer dispositivo.",
-      title: "Crie seu código de acesso",
-      description:
-        "Escolha um código pessoal para voltar ao seu painel de qualquer dispositivo. Use pelo menos 8 caracteres e evite códigos comuns ou fáceis de adivinhar.",
-      save: "Salvar código de acesso",
-      weakPassword:
-        "Escolha um código de acesso mais forte. Evite códigos comuns ou fáceis de adivinhar e combine diferentes tipos de caracteres.",
-      genericError: "Algo deu errado — tente novamente",
-      networkError: "Erro de rede — tente novamente",
-    },
     signInMethods: {
       title: "Métodos de entrada conectados",
       body: "Estes métodos entram na mesma conta Engage7.",

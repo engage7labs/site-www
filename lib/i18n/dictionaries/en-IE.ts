@@ -783,19 +783,6 @@ export const enIE = {
       claimEmailMismatch:
         "This analysis was unlocked with a different email. Please sign in with the same email you used to open Premium Free, or start a new analysis for this account.",
     },
-    accessCode: {
-      bannerPrefix: "Secure your access —",
-      bannerLink: "create an access code",
-      bannerSuffix: "to return from any device.",
-      title: "Create your access code",
-      description:
-        "Choose a personal code to return to your dashboard from any device. Use at least 8 characters and avoid common or easily guessed codes.",
-      save: "Save access code",
-      weakPassword:
-        "Choose a stronger access code. Avoid common or easily guessed codes and combine different character types.",
-      genericError: "Something went wrong — please try again",
-      networkError: "Network error — please try again",
-    },
     signInMethods: {
       title: "Connected sign-in methods",
       body: "These methods sign in to the same Engage7 account.",
