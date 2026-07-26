@@ -514,7 +514,8 @@ export default function InsightsPage() {
           }
 
           // INSIGHTS_LEGACY_SECTIONS_FALLBACK
-          const fallbackInsights = extractLegacyInsights(sections);
+          const fallbackInsights =
+            locale === "pt-BR" ? [] : extractLegacyInsights(sections);
           if (fallbackInsights.length > 0) {
             setEmptyMessage(t.portal.insightsPage.legacyFallback);
           }
@@ -531,7 +532,12 @@ export default function InsightsPage() {
         setEmpty(true);
         setLoading(false);
       });
-  }, [locale]);
+  }, [
+    locale,
+    t.portal.insightsPage.empty,
+    t.portal.insightsPage.legacyFallback,
+    t.portal.insightsPage.loadError,
+  ]);
 
   // Memoize sparkline data for each pillar
   const sparklines = useMemo(() => {
@@ -546,6 +552,12 @@ export default function InsightsPage() {
     () => selectDarthStatePresentation(darthPayload, locale),
     [darthPayload, locale]
   );
+  const contextualLocale = locale === "pt-BR" ? "pt-BR" : "en-IE";
+  const hasSolContextual = Boolean(
+    darthPayload?.contextual_intelligence?.presentation?.[contextualLocale]
+      ?.archetype
+  );
+  const blocksLegacyForLocale = locale === "pt-BR" && !hasSolContextual;
 
   if (loading) {
     return (
@@ -566,8 +578,10 @@ export default function InsightsPage() {
   };
 
   if (
-    empty ||
-    (insights.length === 0 && darthInsights.length === 0 && !heroBlock)
+    blocksLegacyForLocale ||
+    (!hasSolContextual &&
+      (empty ||
+        (insights.length === 0 && darthInsights.length === 0 && !heroBlock)))
   ) {
     const message =
       !portalStatus?.hasAnalyses ||
@@ -604,7 +618,7 @@ export default function InsightsPage() {
       />
 
       {/* ─── DARTH primary claim header — Sprint 32.0 ─── */}
-      {(darthState || darthClaim) && (
+      {!hasSolContextual && (darthState || darthClaim) && (
         <div className="rounded-xl border border-accent/20 bg-accent/5 px-5 py-4 flex flex-col gap-2">
           <div className="flex items-center gap-2 flex-wrap">
             {darthState && (
@@ -626,7 +640,7 @@ export default function InsightsPage() {
       )}
 
       {/* ─── DARTH hero insight ─── */}
-      {heroBlock?.copy && (
+      {!hasSolContextual && heroBlock?.copy && (
         <div className="flex flex-col gap-3 rounded-xl border border-accent/30 bg-card p-5">
           <div className="flex items-center gap-2 flex-wrap">
             <Lightbulb className="h-4 w-4 text-accent" />
@@ -659,7 +673,7 @@ export default function InsightsPage() {
       )}
 
       {/* ─── Supporting insights ─── */}
-      {darthInsights.length > 0 ? (
+      {!hasSolContextual && (darthInsights.length > 0 ? (
         <div className="grid gap-4 sm:grid-cols-2">
           {darthInsights.map(({ block, copy }) =>
             copy ? (
@@ -716,7 +730,7 @@ export default function InsightsPage() {
             ))}
           </div>
         </div>
-      )}
+      ))}
     </div>
   );
 }

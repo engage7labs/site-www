@@ -1,6 +1,6 @@
 {
   "name": "my-v0-project",
-  "version": "1.55.0.0",
+  "version": "1.55.0.1",
   "private": true,
   "engines": {
     "node": "24.x"
@@ -24,6 +24,7 @@
     "test:public-header-cta": "node --experimental-strip-types --disable-warning=MODULE_TYPELESS_PACKAGE_JSON scripts/test-public-header-cta.mjs",
     "test:darth-v3-parity": "node scripts/test-sprint-54-darth-v3-parity.mjs",
     "test:sol-parity": "node scripts/test-sprint-55-sol-parity.mjs",
+    "test:sol-live-routing": "node scripts/test-sprint-55-live-routing.mjs",
     "start": "next start"
   },
   "dependencies": {

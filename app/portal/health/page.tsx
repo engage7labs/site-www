@@ -1,6 +1,7 @@
 "use client";
 
 import { useLocale } from "@/components/providers/locale-provider";
+import { ContextualIntelligenceCard } from "@/components/portal/contextual-intelligence-card";
 import { DarthStatePanel } from "@/components/portal/darth-state-panel";
 import { HealthPeriodNavigator } from "@/components/portal/health-period-navigator";
 import { useHealthTimeRange } from "@/hooks/use-health-time-range";
@@ -14,6 +15,7 @@ import {
   selectLatestHealthPoint,
 } from "@/lib/health-time-range";
 import { trackHealthDashboardViewed } from "@/lib/telemetry";
+import type { DarthContextualIntelligence } from "@/lib/darth";
 import { Activity, ArrowRight, HeartPulse, Moon } from "lucide-react";
 import Link from "next/link";
 import type { ElementType } from "react";
@@ -31,6 +33,7 @@ interface HealthPoint {
 interface HealthDataResponse {
   analysis_count: number;
   latest_sections: unknown;
+  contextual_intelligence?: DarthContextualIntelligence | null;
   data_points: HealthPoint[];
   portal_data_status?: {
     latest_job_id?: string | null;
@@ -216,6 +219,11 @@ export default function HealthPage() {
 
   return (
     <div className="flex flex-col gap-6">
+      <ContextualIntelligenceCard
+        artifact={data.contextual_intelligence}
+        locale={locale}
+      />
+
       <section className="portal-panel rounded-lg border border-border/70 bg-card/85 p-5">
         <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
           <div className="flex flex-col gap-2">

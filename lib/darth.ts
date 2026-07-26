@@ -508,37 +508,11 @@ export function humanizeDarthTechnicalText(
   return cleaned || null;
 }
 
-function hasCopyLocale(
-  copy: Record<string, DarthCopy> | undefined,
-  locale: DarthLocale
-): boolean {
-  return Boolean(copy?.[locale]);
-}
-
-function hasCtaLocale(
-  cta: DarthPresentation["cta"] | undefined,
-  locale: DarthLocale
-): boolean {
-  return Boolean(cta?.copy?.[locale]);
-}
-
 export function resolveDarthPresentationLocale(
-  presentation: DarthPresentation | null | undefined,
+  _presentation: DarthPresentation | null | undefined,
   activeLocale: string
 ): DarthLocale {
-  const requested = resolveDarthLocale(activeLocale);
-  if (requested === "en-IE" || !presentation) return "en-IE";
-
-  const blocks = [
-    presentation.hero,
-    ...(presentation.supporting ?? []),
-    ...(presentation.evidence_blocks ?? []),
-  ].filter(Boolean);
-  const allBlocksHaveLocale = blocks.every((block) =>
-    hasCopyLocale(block.copy, requested)
-  );
-  const ctaHasLocale = !presentation.cta || hasCtaLocale(presentation.cta, requested);
-  return allBlocksHaveLocale && ctaHasLocale ? requested : "en-IE";
+  return resolveDarthLocale(activeLocale);
 }
 
 export function selectDarthCopy(
@@ -547,7 +521,7 @@ export function selectDarthCopy(
 ): DarthCopy | null {
   if (!copy) return null;
   const resolved = resolveDarthLocale(locale);
-  return copy[resolved] ?? copy["en-IE"] ?? null;
+  return copy[resolved] ?? (resolved === "en-IE" ? copy["en-IE"] : null) ?? null;
 }
 
 export function selectDarthCta(
@@ -556,7 +530,7 @@ export function selectDarthCta(
 ): string | null {
   if (!cta) return null;
   const resolved = resolveDarthLocale(locale);
-  return cta.copy[resolved] ?? cta.copy["en-IE"] ?? null;
+  return cta.copy[resolved] ?? (resolved === "en-IE" ? cta.copy["en-IE"] : null) ?? null;
 }
 
 export function selectDarthStatePresentation(
@@ -565,5 +539,7 @@ export function selectDarthStatePresentation(
 ): DarthStatePresentation | null {
   if (!payload?.state_presentation) return null;
   const resolved = resolveDarthLocale(locale);
-  return payload.state_presentation[resolved] ?? payload.state_presentation["en-IE"] ?? null;
+  return payload.state_presentation[resolved] ??
+    (resolved === "en-IE" ? payload.state_presentation["en-IE"] : null) ??
+    null;
 }
