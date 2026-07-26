@@ -21,6 +21,7 @@
     "test:sprint-52_1-copy-polish": "node --experimental-strip-types --disable-warning=MODULE_TYPELESS_PACKAGE_JSON scripts/test-sprint-52_1_copy_polish.mjs",
     "test:analytics-status-banner": "node --experimental-strip-types --disable-warning=MODULE_TYPELESS_PACKAGE_JSON scripts/test-hotfix-52_4_3-analytics-status-banner.mjs",
     "test:hotfix-53_1_1-health-all-cta": "node scripts/test-hotfix-53_1_1-health-all-cta.mjs",
+    "test:public-header-cta": "node --experimental-strip-types --disable-warning=MODULE_TYPELESS_PACKAGE_JSON scripts/test-public-header-cta.mjs",
     "start": "next start"
   },
   "dependencies": {
