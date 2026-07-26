@@ -3,7 +3,6 @@
 import { useLocale } from "@/components/providers/locale-provider";
 import { LocaleSwitcher } from "@/components/shared/locale-switcher";
 import { ThemeSwitcher } from "@/components/shared/theme-switcher";
-import { clearPublicClaimClientState } from "@/lib/public-analysis-claim";
 import { publishAuthSessionChanged } from "@/lib/auth-session-client";
 import { LogOut, Menu, Upload, UserRound } from "lucide-react";
 import Link from "next/link";
@@ -48,7 +47,6 @@ export function PortalHeader({
   }, []);
 
   const handleLogout = async () => {
-    clearPublicClaimClientState();
     await fetch("/api/auth/logout", { method: "POST" });
     publishAuthSessionChanged("logout");
     router.push("/login");

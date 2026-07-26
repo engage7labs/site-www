@@ -25,6 +25,7 @@ import {
 import { motion } from "framer-motion";
 import Image from "next/image";
 import Link from "next/link";
+import { trackPublicGetStartedClicked } from "@/lib/telemetry";
 import { useCallback, useEffect, useState } from "react";
 
 export function SiteHeader() {
@@ -95,7 +96,7 @@ export function SiteHeader() {
         >
           <ThemeSwitcher />
           <LocaleSwitcher />
-          <Link href="/analyze">
+          <Link href="/login?next=/onboarding" onClick={trackPublicGetStartedClicked}>
             <Button className="bg-lime-400 text-black font-medium rounded-md px-4 py-2 hover:bg-lime-300 transition">
               {t.nav.getStarted}
             </Button>

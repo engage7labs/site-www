@@ -17,8 +17,7 @@ import { useState } from "react";
 export function LoginForm() {
   const { t } = useLocale();
   const searchParams = useSearchParams();
-  const next = safeAuthRedirectPath(searchParams.get("next") ?? "/portal");
-  const claimJobId = searchParams.get("claim_job_id");
+  const next = safeAuthRedirectPath(searchParams.get("next") ?? "/onboarding");
   const unauth = searchParams.get("unauth") === "1";
   const isAdmin = searchParams.get("admin") === "1";
   const isSignup = searchParams.get("signup") === "1";
@@ -54,7 +53,6 @@ export function LoginForm() {
         )}
         <PasswordlessLoginFormFields
           redirectTo={isAdmin ? "/admin" : next}
-          claimJobId={claimJobId}
           enableSocialLogin={!isAdmin}
           requireAdmin={isAdmin}
           initialMode={isSignup ? "register" : "login"}

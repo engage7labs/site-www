@@ -23,6 +23,7 @@ import {
   X,
 } from "lucide-react";
 import Link from "next/link";
+import { trackPublicGetStartedClicked } from "@/lib/telemetry";
 import { useEffect, useRef, useState } from "react";
 
 const fadeInUp = {
@@ -298,7 +299,7 @@ export default function Home() {
             variants={fadeInUp}
             className="flex flex-col sm:flex-row gap-4 justify-center items-center pt-4"
           >
-            <Link href="/analyze">
+            <Link href="/login?next=/onboarding" onClick={trackPublicGetStartedClicked}>
               <Button
                 size="lg"
                 className="bg-accent hover:bg-accent/90 text-accent-foreground rounded-full px-8 transition-all duration-300"
@@ -806,7 +807,7 @@ export default function Home() {
           </h2>
           <p className="text-lg text-muted-foreground">{t.home.cta.subtitle}</p>
           <div className="flex justify-center pt-4">
-            <Link href="/analyze">
+            <Link href="/login?next=/onboarding" onClick={trackPublicGetStartedClicked}>
               <Button
                 size="lg"
                 className="bg-accent hover:bg-accent/90 text-accent-foreground rounded-full px-8 transition-all duration-300"

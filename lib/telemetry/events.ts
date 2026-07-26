@@ -11,15 +11,13 @@ import { getUserContext } from "./user-context";
 
 export const POSTHOG_EVENTS = [
   "site_visited",
-  "public_upload_started",
-  "public_upload_completed",
-  "analysis_completed",
-  "teaser_viewed",
+  "public_get_started_clicked",
+  "signup_or_login_started",
+  "authentication_completed",
+  "onboarding_started",
+  "onboarding_completed",
   "trial_unlock_started",
-  "trial_unlock_completed",
   "portal_opened",
-  "claim_import_started",
-  "claim_import_completed",
   "report_viewed",
   "health_dashboard_viewed",
   "update_data_started",
@@ -43,8 +41,6 @@ type SafeTelemetryProperties = Partial<{
   has_darth: boolean;
   has_report: boolean;
   source: "public" | "portal" | "admin";
-  job_id: string;
-  short_job_id: string;
   error_code: string;
   user_kind: "admin" | "user" | "anonymous";
   is_internal_test: true;
@@ -62,8 +58,6 @@ const SAFE_KEYS = new Set([
   "has_darth",
   "has_report",
   "source",
-  "job_id",
-  "short_job_id",
   "error_code",
   "user_kind",
   "is_internal_test",
@@ -92,69 +86,39 @@ export function trackSiteVisited(): void {
   trackEvent("site_visited", { source: "public" });
 }
 
-export function trackPublicUploadStarted(): void {
-  trackEvent("public_upload_started", { source: "public", surface: "analyze" });
+export function trackPublicGetStartedClicked(): void {
+  trackEvent("public_get_started_clicked", { source: "public", surface: "landing" });
 }
 
-export function trackPublicUploadCompleted(jobId?: string): void {
-  trackEvent("public_upload_completed", {
-    source: "public",
-    surface: "analyze",
-    job_id: jobId,
-  });
+export function trackSignupOrLoginStarted(): void {
+  trackEvent("signup_or_login_started", { source: "public", surface: "authentication" });
 }
 
-export function trackAnalysisCompleted(jobId?: string): void {
-  trackEvent("analysis_completed", { source: "public", job_id: jobId });
+export function trackAuthenticationCompleted(): void {
+  trackEvent("authentication_completed", { source: "portal", surface: "authentication" });
 }
 
-export function trackTeaserViewed(jobId?: string): void {
-  trackEvent("teaser_viewed", {
-    source: "public",
-    surface: "teaser",
-    job_id: jobId,
-  });
+export function trackOnboardingStarted(): void {
+  trackEvent("onboarding_started", { source: "portal", surface: "onboarding" });
+}
+
+export function trackOnboardingCompleted(): void {
+  trackEvent("onboarding_completed", { source: "portal", surface: "onboarding" });
 }
 
 export function trackTrialUnlockStarted(surface = "teaser"): void {
-  trackEvent("trial_unlock_started", { source: "public", surface });
-}
-
-export function trackTrialUnlockCompleted(jobId?: string): void {
-  trackEvent("trial_unlock_completed", {
-    source: "public",
-    surface: "teaser",
-    job_id: jobId,
-    plan_display: "Premium Free",
-    plan_tier: "premium",
-    plan_status: "trialing",
-  });
+  trackEvent("trial_unlock_started", { source: "portal", surface });
 }
 
 export function trackPortalOpened(): void {
   trackEvent("portal_opened", { source: "portal", surface: "portal" });
 }
 
-export function trackClaimImportStarted(jobId?: string): void {
-  trackEvent("claim_import_started", { source: "portal", job_id: jobId });
-}
-
-export function trackClaimImportCompleted(
-  jobId?: string,
-  status = "completed"
-): void {
-  trackEvent("claim_import_completed", {
-    source: "portal",
-    job_id: jobId,
-    status,
-  });
-}
-
-export function trackReportViewed(jobId?: string): void {
+export function trackReportViewed(_jobId?: string): void {
+  void _jobId;
   trackEvent("report_viewed", {
     source: "portal",
     surface: "report",
-    job_id: jobId,
   });
 }
 
@@ -173,11 +137,11 @@ export function trackUpdateDataStarted(): void {
   });
 }
 
-export function trackUpdateDataCompleted(jobId?: string): void {
+export function trackUpdateDataCompleted(_jobId?: string): void {
+  void _jobId;
   trackEvent("update_data_completed", {
     source: "portal",
     surface: "data_update",
-    job_id: jobId,
     status: "completed",
   });
 }
@@ -215,9 +179,6 @@ export function trackSubscriptionStarted(): void {
   });
 }
 
-// Backward-compatible helper names for existing imports.
-export const trackUploadStarted = trackPublicUploadStarted;
-export const trackUploadCompleted = trackPublicUploadCompleted;
+// Backward-compatible helper names for active authenticated plan events.
 export const trackPremiumCtaClicked = trackTrialUnlockStarted;
-export const trackTrialStarted = trackTrialUnlockCompleted;
 export const trackPlanUpgraded = trackSubscriptionStarted;
