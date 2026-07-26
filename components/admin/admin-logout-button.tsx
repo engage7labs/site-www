@@ -1,6 +1,5 @@
 "use client";
 
-import { clearPublicClaimClientState } from "@/lib/public-analysis-claim";
 import { publishAuthSessionChanged } from "@/lib/auth-session-client";
 import { LogOut } from "lucide-react";
 import { useRouter } from "next/navigation";
@@ -19,7 +18,6 @@ export function AdminLogoutButton({
   const router = useRouter();
 
   const handleLogout = async () => {
-    clearPublicClaimClientState();
     await fetch("/api/auth/logout", { method: "POST" });
     publishAuthSessionChanged("logout");
     onLogout?.();

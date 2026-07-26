@@ -2,7 +2,7 @@ import { SESSION_COOKIE_NAME, isValidSession } from "@/lib/auth-edge";
 import type { NextRequest } from "next/server";
 import { NextResponse } from "next/server";
 
-const PROTECTED_PREFIXES = ["/portal", "/api/portal"];
+const PROTECTED_PREFIXES = ["/portal", "/onboarding", "/api/portal"];
 
 function isProtected(pathname: string): boolean {
   return PROTECTED_PREFIXES.some((p) => pathname.startsWith(p));
@@ -37,5 +37,5 @@ export async function proxy(request: NextRequest) {
 }
 
 export const config = {
-  matcher: ["/portal/:path*", "/api/portal/:path*"],
+  matcher: ["/portal/:path*", "/onboarding/:path*", "/api/portal/:path*"],
 };

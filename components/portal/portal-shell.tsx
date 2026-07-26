@@ -1,24 +1,14 @@
 "use client";
 
 import { usePathname } from "next/navigation";
-import { useCallback, useEffect, useRef, useState } from "react";
-import { toast } from "sonner";
+import { useCallback, useEffect, useState } from "react";
 import { useLocale } from "@/components/providers/locale-provider";
 import {
   useSessionSafetyGuard,
 } from "@/lib/auth-session-client";
-import {
-  consumePendingPublicClaimForToast,
-  readPublicClaimToastCandidateJobId,
-} from "@/lib/public-analysis-claim";
-import {
-  trackClaimImportCompleted,
-  trackClaimImportStarted,
-  trackPortalOpened,
-} from "@/lib/telemetry";
+import { trackPortalOpened } from "@/lib/telemetry";
 import { AdminViewBanner } from "../admin-view-banner";
 import { AnalyticsReuploadBanner } from "./analytics-reupload-banner";
-import { PasswordSetupAlert } from "./password-setup-alert";
 import { PortalHeader } from "./portal-header";
 import { PortalSidebar } from "./portal-sidebar";
 import { TrialExpiredBanner } from "./trial-expired-banner";
@@ -32,7 +22,6 @@ export function PortalShell({
   const [collapsed, setCollapsed] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
   const [overviewSubtitle, setOverviewSubtitle] = useState<string | null>(null);
-  const publicClaimToastAttemptedRef = useRef(false);
   const { t } = useLocale();
   const sessionGuard = useSessionSafetyGuard({});
   const sectionTitles = {
@@ -58,84 +47,6 @@ export function PortalShell({
   useEffect(() => {
     trackPortalOpened();
   }, []);
-
-  useEffect(() => {
-    const candidateJobId = readPublicClaimToastCandidateJobId();
-    if (!candidateJobId || publicClaimToastAttemptedRef.current) return;
-    publicClaimToastAttemptedRef.current = true;
-
-    const run = async () => {
-      const sessionResponse = await fetch("/api/auth/session", { cache: "no-store" });
-      if (!sessionResponse.ok) return;
-      const session = (await sessionResponse.json().catch(() => null)) as {
-        role?: string;
-        mode?: string;
-        read_only?: boolean;
-      } | null;
-      if (session?.mode === "admin_view" || session?.read_only === true) return;
-      if (session?.role !== "user") return;
-
-      trackClaimImportStarted(candidateJobId);
-      try {
-        const decision = await consumePendingPublicClaimForToast();
-        if (!decision) return;
-        trackClaimImportCompleted(decision.job_id);
-        if (decision.final_status === "email_mismatch") {
-          toast.error(t.portal.shell.claimEmailMismatch);
-          return;
-        }
-        if (decision.final_status === "blocked") {
-          toast.error(t.portal.shell.protectedClaimBlocked);
-          return;
-        }
-        if (decision.final_status === "failed") {
-          toast.error(t.portal.shell.importStillFailed);
-          return;
-        }
-        toast.success(
-          decision.final_status === "already_imported"
-            ? t.portal.shell.claimAlreadyImported
-            : t.portal.shell.claimImported
-        );
-      } catch {
-        trackClaimImportCompleted(candidateJobId, "failed");
-        toast.message(t.portal.shell.claimReady, {
-          description: t.portal.shell.claimRetryDescription,
-          action: {
-            label: t.portal.shell.retry,
-            onClick: () => {
-              void consumePendingPublicClaimForToast()
-                .then((decision) => {
-                  if (!decision) return;
-                  if (decision.final_status === "email_mismatch") {
-                    toast.error(t.portal.shell.claimEmailMismatch);
-                    return;
-                  }
-                  if (decision.final_status === "blocked") {
-                    toast.error(t.portal.shell.protectedClaimBlocked);
-                    return;
-                  }
-                  if (decision.final_status === "failed") {
-                    toast.error(t.portal.shell.importStillFailed);
-                    return;
-                  }
-                  toast.success(
-                    decision.final_status === "already_imported"
-                      ? t.portal.shell.claimAlreadyImported
-                      : t.portal.shell.imported
-                  );
-                })
-                .catch(() =>
-                  toast.error(t.portal.shell.importStillFailed),
-                );
-            },
-          },
-        });
-      }
-    };
-
-    void run();
-  }, [t.portal.shell]);
 
   useEffect(() => {
     const handleOverviewSubtitle = (event: Event) => {
@@ -199,7 +110,6 @@ export function PortalShell({
         />
 
         <AnalyticsReuploadBanner />
-        <PasswordSetupAlert />
         <TrialExpiredBanner />
 
         <main className="flex-1 p-4 sm:p-6 lg:p-8">

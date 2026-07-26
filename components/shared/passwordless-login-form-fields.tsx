@@ -11,11 +11,11 @@ import {
 import { publishAuthSessionChanged } from "@/lib/auth-session-client";
 import { detectLocale, getDictionary, type Locale } from "@/lib/i18n";
 import { postLoginDestination } from "@/lib/post-login-routing";
+import { trackAuthenticationCompleted, trackSignupOrLoginStarted } from "@/lib/telemetry";
 import {
   shouldCreateUserForAuthIntent,
   type AuthIntent,
 } from "@/lib/auth-intent";
-import { rememberPendingPublicClaim } from "@/lib/public-analysis-claim";
 import { createSupabaseBrowserClient } from "@/lib/supabase-browser";
 import type { Session } from "@supabase/supabase-js";
 import { Apple, Mail } from "lucide-react";
@@ -23,7 +23,6 @@ import { useEffect, useState } from "react";
 
 interface PasswordlessLoginFormFieldsProps {
   readonly redirectTo?: string;
-  readonly claimJobId?: string | null;
   readonly enableSocialLogin?: boolean;
   readonly requireAdmin?: boolean;
   readonly onSuccess?: () => void;
@@ -42,8 +41,7 @@ function GoogleMark() {
 }
 
 export function PasswordlessLoginFormFields({
-  redirectTo = "/portal",
-  claimJobId,
+  redirectTo = "/onboarding",
   enableSocialLogin = true,
   requireAdmin = false,
   onSuccess,
@@ -100,6 +98,7 @@ export function PasswordlessLoginFormFields({
       }),
     });
     if (!response.ok) throw new Error("session_failed");
+    trackAuthenticationCompleted();
     publishAuthSessionChanged("login");
     onSuccess?.();
     window.location.assign(postLoginDestination({ requireAdmin, redirectTo }));
@@ -110,7 +109,7 @@ export function PasswordlessLoginFormFields({
     setLoading(true);
     setError("");
     setMessage("");
-    if (claimJobId) rememberPendingPublicClaim(claimJobId);
+    trackSignupOrLoginStarted();
     try {
       const { error: otpError } = await createSupabaseBrowserClient().auth.signInWithOtp({
         email: email.trim().toLowerCase(),
@@ -149,6 +148,7 @@ export function PasswordlessLoginFormFields({
     event.preventDefault();
     setLoading(true);
     setError("");
+    trackSignupOrLoginStarted();
     try {
       const response = await fetch("/api/auth/login", {
         method: "POST",
@@ -165,6 +165,7 @@ export function PasswordlessLoginFormFields({
         return;
       }
       publishAuthSessionChanged("login");
+      trackAuthenticationCompleted();
       onSuccess?.();
       window.location.assign(postLoginDestination({ requireAdmin, redirectTo }));
     } catch {
@@ -177,7 +178,7 @@ export function PasswordlessLoginFormFields({
   async function socialSignIn(provider: "apple" | "google") {
     setSocialLoading(provider);
     setError("");
-    if (claimJobId) rememberPendingPublicClaim(claimJobId);
+    trackSignupOrLoginStarted();
     try {
       const callback = new URL(
         buildAuthCallbackUrl(
@@ -186,7 +187,6 @@ export function PasswordlessLoginFormFields({
         ),
       );
       callback.searchParams.set("locale", locale);
-      if (claimJobId) callback.searchParams.set("claim_job_id", claimJobId);
       const { error: oauthError } = await createSupabaseBrowserClient().auth.signInWithOAuth({
         provider,
         options: { redirectTo: callback.toString() },

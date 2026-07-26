@@ -18,8 +18,8 @@ import {
   fetchAuthSessionSnapshot,
   publishAuthSessionChanged,
 } from "@/lib/auth-session-client";
-import { rememberPendingPublicClaim } from "@/lib/public-analysis-claim";
 import { createSupabaseBrowserClient } from "@/lib/supabase-browser";
+import { trackAuthenticationCompleted } from "@/lib/telemetry";
 
 const AUTH_SESSION_RETRY_DELAYS_MS = [0, 250, 500, 750, 1000, 1000] as const;
 const APP_SESSION_RETRY_DELAYS_MS = [0, 500, 1000, 1000, 1000] as const;
@@ -142,10 +142,7 @@ export default function AuthCallbackPage() {
       const localizedCopy = getDictionary(locale).auth.callback;
       setCopy(localizedCopy);
 
-      const claimJobId = search.get("claim_job_id");
-      if (claimJobId) rememberPendingPublicClaim(claimJobId);
-
-      const redirectTo = safeAuthRedirectPath(search.get("next") ?? "/portal");
+      const redirectTo = safeAuthRedirectPath(search.get("next") ?? "/onboarding");
       const hash = window.location.hash;
       const hashParams = hash ? new URLSearchParams(hash.slice(1)) : null;
       let accessToken = hashParams?.get("access_token") ?? null;
@@ -199,6 +196,7 @@ export default function AuthCallbackPage() {
           const finalRedirect = safeAuthRedirectPath(result.redirectTo ?? "/portal");
           logAuthCallback("redirect", { redirect_to: finalRedirect });
           publishAuthSessionChanged("login");
+          trackAuthenticationCompleted();
           router.replace(finalRedirect);
         } else {
           logAuthCallback("app_session_exchange_failed", {

@@ -7,6 +7,7 @@ Next.js application for Engage7 public pages, authenticated Portal, and Admin. T
 ## Primary entry points
 
 - `app/portal/layout.tsx` and `components/portal/portal-shell.tsx` — authenticated shell/navigation.
+- `app/onboarding/` and `app/api/auth/onboarding/` — server-backed one-time profile/tutorial gate using the canonical profile API and Supabase completion metadata.
 - `components/portal/portal-sidebar.tsx` — authoritative Portal surface list.
 - `app/api/proxy/` — authenticated server-side API proxy boundary.
 - `components/portal/analytics-reupload-banner.tsx` and `app/api/proxy/users/analytics-status/` — shared server-owned legacy-v1 re-upload guidance.
@@ -23,15 +24,15 @@ Next.js application for Engage7 public pages, authenticated Portal, and Admin. T
 
 ## Canonical flow
 
-Portal route → client component → `/api/proxy/...` → verified Portal cookie session → signed API request → API response. Do not call protected API routes directly from browser code or copy server business rules to the client.
+Public landing → Get started → Supabase provider/Email OTP or returning legacy password → `/onboarding` → canonical profile update → Supabase completion metadata → `/portal/upload`. Upload-token issuance resolves the verified Portal session and calls `/api/users/me/upload-sas` with canonical UUID identity before Blob transfer. Portal route → client component → `/api/proxy/...` → verified Portal cookie session → signed API request → API response. Retired `/analyze`, `/result/*`, public proxies, and claim continuation redirect or return 410. Do not call protected API routes directly from browser code or copy server business rules to the client.
 
 ## Authentication and protected areas
 
-- Password and Google authenticate through Supabase Auth. `app/api/auth/` exchanges the Supabase session for HttpOnly Supabase cookies plus the existing HttpOnly Portal session containing canonical `user_id`.
+- Apple, Google, Email OTP, and returning-user legacy password authenticate through Supabase Auth. `app/api/auth/` exchanges the Supabase session for HttpOnly Supabase cookies plus the existing HttpOnly Portal session containing canonical `user_id`.
 - `lib/supabase-auth-server.ts`, `lib/app-user-sync.ts`, `lib/auth-server.ts`, and `lib/auth-edge.ts` own the server session/projection boundary.
 - Settings exposes Password/Google connected state from Supabase identities; password setup uses authenticated `updateUser`, and Google connection uses authenticated `linkIdentity` with `openid email profile` only.
 - Portal proxies send signed `X-User-Id`; email remains display/contact metadata and cannot select ownership.
-- High-risk: auth, public claim/import, upload, account deletion, billing, telemetry consent, AI Reflection, Health data, API origin/signing, Admin.
+- High-risk: auth, onboarding metadata, retired public routes, authenticated upload, account deletion, billing, telemetry consent, AI Reflection, Health data, API origin/signing, Admin.
 - Admin and public marketing routes are not authenticated Portal parity scope.
 
 ## Validation and related docs

@@ -20,13 +20,21 @@ assert.match(passwordless, /provider: "apple" \| "google"/);
 assert.match(passwordless, /verifyOtp\(/);
 assert.match(passwordless, /shouldCreateUserForAuthIntent\(mode\)/);
 
-const premiumModal = await readFile(
-  new URL("../components/shared/post-analysis-modal.tsx", import.meta.url),
+const onboarding = await readFile(
+  new URL("../app/onboarding/onboarding-flow.tsx", import.meta.url),
   "utf8",
 );
-assert.match(premiumModal, /onAppleSubmit/);
-assert.match(premiumModal, /onGoogleSubmit/);
-assert.match(premiumModal, /onEmailSubmit/);
+assert.match(onboarding, /engage7_onboarding_completed|\/api\/auth\/onboarding/);
+assert.match(onboarding, /\/api\/proxy\/users\/profile/);
+assert.match(onboarding, /router\.push\("\/portal\/upload"\)/);
+
+const onboardingRoute = await readFile(
+  new URL("../app/api/auth/onboarding/route.ts", import.meta.url),
+  "utf8",
+);
+assert.match(onboardingRoute, /getUser\(\)/);
+assert.match(onboardingRoute, /updateUser\(\{/);
+assert.match(onboardingRoute, /engage7_onboarding_completed/);
 
 const appleLink = await readFile(
   new URL("../app/api/auth/link-apple/route.ts", import.meta.url),
@@ -36,4 +44,4 @@ assert.match(appleLink, /authenticated\.session\.user\.id !== appSession\.user_i
 assert.match(appleLink, /linkIdentity\(\{/);
 assert.match(appleLink, /provider: "apple"/);
 
-console.log("Canonical identity, OTP intent, Apple linking, and Premium provider checks passed.");
+console.log("Canonical identity, OTP intent, Apple linking, and authenticated onboarding checks passed.");

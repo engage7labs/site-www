@@ -8,7 +8,7 @@ export const ptBR: Dictionary = {
   // Navigation
   nav: {
     logo: "Engage7",
-    getStarted: "Executar Análise",
+    getStarted: "Começar",
     login: "Login",
     portal: "Portal",
     dashboard: "Painel",
@@ -21,10 +21,10 @@ export const ptBR: Dictionary = {
       titleHighlight: "Claramente.",
       subtitle:
         "O Engage7 transforma sinais de dispositivos vestíveis em insights determinísticos sobre desempenho pessoal, recuperação e rotina.",
-      ctaPrimary: "Executar Análise",
+      ctaPrimary: "Começar",
       ctaSecondary: "Como Funciona",
       trustBadge: "Insights determinísticos dos seus dados",
-      trustLine1: "Sem necessidade de conta",
+      trustLine1: "Análise privada vinculada à sua conta",
       trustLine2: "Seus dados permanecem seus",
       trustLine3: "Análise ~1 minuto",
     },
@@ -61,15 +61,15 @@ export const ptBR: Dictionary = {
         "Quatro etapas dos dados brutos para insights claros e explicáveis",
 
       step1: {
-        title: "Carregar conjunto de dados",
+        title: "Crie sua conta",
         description:
-          "Forneça sua exportação do Apple Health como um arquivo .zip padrão",
+          "Entre com segurança e complete seu perfil de produto",
       },
 
       step2: {
-        title: "Detectar seu padrão pessoal",
+        title: "Importe seu histórico do Apple Health",
         description:
-          "O Engage7 analisa seus padrões individuais para criar uma referência pessoal recente",
+          "Siga o guia de exportação e envie o ZIP pela sua conta privada",
       },
 
       step3: {
@@ -202,7 +202,7 @@ export const ptBR: Dictionary = {
       title: "Pronto para entender seus dados?",
       subtitle:
         "Carregue seu conjunto de dados, execute uma análise determinística e revise um resultado claro em que você pode confiar.",
-      ctaPrimary: "Executar Análise",
+      ctaPrimary: "Começar",
       ctaSecondary: "Saiba Como Funciona",
     },
 
@@ -794,19 +794,6 @@ export const ptBR: Dictionary = {
         "Esta análise está vinculada a outra linha do tempo protegida. Entre com a conta correta para continuar.",
       claimEmailMismatch:
         "Esta análise foi liberada com outro e-mail. Entre com o mesmo e-mail usado para abrir o Premium Free ou inicie uma nova análise para esta conta.",
-    },
-    accessCode: {
-      bannerPrefix: "Proteja seu acesso —",
-      bannerLink: "crie um código de acesso",
-      bannerSuffix: "para voltar de qualquer dispositivo.",
-      title: "Crie seu código de acesso",
-      description:
-        "Escolha um código pessoal para voltar ao seu painel de qualquer dispositivo. Use pelo menos 8 caracteres e evite códigos comuns ou fáceis de adivinhar.",
-      save: "Salvar código de acesso",
-      weakPassword:
-        "Escolha um código de acesso mais forte. Evite códigos comuns ou fáceis de adivinhar e combine diferentes tipos de caracteres.",
-      genericError: "Algo deu errado — tente novamente",
-      networkError: "Erro de rede — tente novamente",
     },
     signInMethods: {
       title: "Métodos de entrada conectados",

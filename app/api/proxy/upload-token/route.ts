@@ -17,12 +17,24 @@
 
 import { checkReadOnlyMode } from "@/lib/api/read-only-check";
 import { signRequest } from "@/lib/api/signing";
+import { SESSION_COOKIE_NAME, verifyJwt } from "@/lib/auth-server";
 import { INTERNAL_API_BASE_URL } from "@/lib/server-config";
+import { cookies } from "next/headers";
 import { NextRequest, NextResponse } from "next/server";
 
 export const runtime = "nodejs";
 
 export async function POST(req: NextRequest) {
+  const cookieStore = await cookies();
+  const token = cookieStore.get(SESSION_COOKIE_NAME)?.value;
+  const session = token ? verifyJwt(token) : null;
+  if (!session?.user_id) {
+    return NextResponse.json({ detail: "Unauthorized" }, { status: 401 });
+  }
+  if (session.mode === "admin_view") {
+    return NextResponse.json({ detail: "Forbidden" }, { status: 403 });
+  }
+
   const { isReadOnly, error } = await checkReadOnlyMode();
   if (isReadOnly) {
     return NextResponse.json(
@@ -36,24 +48,22 @@ export async function POST(req: NextRequest) {
   // Forward consent/locale/turnstile to the API's upload-sas endpoint
   // to get a SAS URL for direct blob upload.
   const body = await req.formData().catch(() => null);
-  const rawConsent = body?.get("consent");
   const rawLocale = body?.get("locale");
-  const rawTurnstile = body?.get("cf_turnstile_response");
-  const consent = typeof rawConsent === "string" ? rawConsent : "true";
   const locale = typeof rawLocale === "string" ? rawLocale : "en-IE";
-  const turnstile = typeof rawTurnstile === "string" ? rawTurnstile : "";
 
-  const sasPath = "/api/upload-sas";
+  const sasPath = "/api/users/me/upload-sas";
   const sigHeaders = signRequest("POST", sasPath);
 
   const formData = new FormData();
-  formData.append("consent", consent);
   formData.append("locale", locale);
-  if (turnstile) formData.append("cf_turnstile_response", turnstile);
 
   const sasRes = await fetch(`${apiBase}${sasPath}`, {
     method: "POST",
-    headers: sigHeaders,
+    headers: {
+      ...sigHeaders,
+      "X-User-Id": session.user_id,
+      "X-User-Email": session.sub,
+    },
     body: formData,
   });
 
@@ -70,20 +80,10 @@ export async function POST(req: NextRequest) {
     blob_path: string;
   };
 
-  // Build the confirm URL with signing headers
-  const confirmPath = "/api/confirm-upload";
-  const confirmSigHeaders = signRequest("POST", confirmPath);
-  const confirmUrl = `${apiBase}${confirmPath}`;
-
   return NextResponse.json({
     mode: "direct-blob",
     job_id,
     sas_url,
     blob_path,
-    confirmUrl,
-    confirmHeaders: confirmSigHeaders,
-    // Legacy fallback fields for backwards compat
-    uploadUrl: `${apiBase}/api/analyze-upload`,
-    headers: signRequest("POST", "/api/analyze-upload"),
   });
 }

@@ -6,7 +6,7 @@ export const enIE = {
   // Navigation
   nav: {
     logo: "Engage7",
-    getStarted: "Run Analysis",
+    getStarted: "Get started",
     login: "Login",
     portal: "Portal",
     dashboard: "Dashboard",
@@ -19,10 +19,10 @@ export const enIE = {
       titleHighlight: "are showing up in your body.",
       subtitle:
         "Engage7 turns your wearable data into clear insights about sleep, recovery, and movement—based on your own patterns.",
-      ctaPrimary: "Run Analysis",
+      ctaPrimary: "Get started",
       ctaSecondary: "How It Works",
       trustBadge: "Clear insights from your data",
-      trustLine1: "No account required",
+      trustLine1: "Private, account-owned analysis",
       trustLine2: "Your data stays yours",
       trustLine3: "Results in ~1 minute",
     },
@@ -58,20 +58,20 @@ export const enIE = {
         "Four simple steps from your wearable data to clear insights",
 
       step1: {
-        title: "Upload your data",
-        description: "Export from Apple Health and upload as a .zip file",
+        title: "Create your account",
+        description: "Sign in securely, then complete your product profile",
       },
 
       step2: {
-        title: "We find your baseline",
+        title: "Import your Apple Health history",
         description:
-          "We look at what's normal for you—not what's normal for everyone else",
+          "Follow the export guide and upload your ZIP through your private account",
       },
 
       step3: {
-        title: "We spot the patterns",
+        title: "We find your patterns",
         description:
-          "We identify what's changed, what's consistent, and what stands out",
+          "We identify what's changed, what's consistent, and what stands out for you",
       },
 
       step4: {
@@ -199,7 +199,7 @@ export const enIE = {
       title: "Ready to understand your patterns?",
       subtitle:
         "Upload your data and see what your body's been trying to tell you.",
-      ctaPrimary: "Run Analysis",
+      ctaPrimary: "Get started",
       ctaSecondary: "Learn How It Works",
     },
 
@@ -782,19 +782,6 @@ export const enIE = {
         "This analysis is linked to another protected timeline. Sign in with the correct account to continue.",
       claimEmailMismatch:
         "This analysis was unlocked with a different email. Please sign in with the same email you used to open Premium Free, or start a new analysis for this account.",
-    },
-    accessCode: {
-      bannerPrefix: "Secure your access —",
-      bannerLink: "create an access code",
-      bannerSuffix: "to return from any device.",
-      title: "Create your access code",
-      description:
-        "Choose a personal code to return to your dashboard from any device. Use at least 8 characters and avoid common or easily guessed codes.",
-      save: "Save access code",
-      weakPassword:
-        "Choose a stronger access code. Avoid common or easily guessed codes and combine different character types.",
-      genericError: "Something went wrong — please try again",
-      networkError: "Network error — please try again",
     },
     signInMethods: {
       title: "Connected sign-in methods",
