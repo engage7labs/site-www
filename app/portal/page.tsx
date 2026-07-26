@@ -867,6 +867,10 @@ export default function PortalOverviewPage() {
     weeklyTrend(activityPoints, activityRange, t.portal.metrics.weekTrend),
     "activity",
   );
+  const contextualLocale = locale === "pt-BR" ? "pt-BR" : "en-IE";
+  const hasSolContextual = Boolean(
+    data?.contextual_intelligence?.presentation?.[contextualLocale]?.archetype,
+  );
 
   return (
     <div className="flex flex-col gap-6">
@@ -945,9 +949,11 @@ export default function PortalOverviewPage() {
         />
       </div>
 
-      <OverviewBlock label="OVERVIEW_DAILY_BRIEFING_COMPONENT">
-        <DailyBriefing />
-      </OverviewBlock>
+      {!hasSolContextual && (
+        <OverviewBlock label="OVERVIEW_DAILY_BRIEFING_COMPONENT">
+          <DailyBriefing />
+        </OverviewBlock>
+      )}
 
       <StatusNotice status={portalStatus} copy={t.portal.statusNotice} />
 

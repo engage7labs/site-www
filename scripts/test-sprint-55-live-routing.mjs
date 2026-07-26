@@ -3,6 +3,7 @@ import { readFileSync } from "node:fs";
 
 const health = readFileSync("app/portal/health/page.tsx", "utf8");
 const insights = readFileSync("app/portal/insights/page.tsx", "utf8");
+const overview = readFileSync("app/portal/page.tsx", "utf8");
 const darth = readFileSync("lib/darth.ts", "utf8");
 
 assert.match(health, /ContextualIntelligenceCard/);
@@ -10,6 +11,8 @@ assert.match(health, /artifact=\{data\.contextual_intelligence\}/);
 assert.match(insights, /locale === "pt-BR" \? \[\] : extractLegacyInsights/);
 assert.match(insights, /!hasSolContextual && \(darthState \|\| darthClaim\)/);
 assert.match(insights, /!hasSolContextual && heroBlock\?\.copy/);
+assert.match(overview, /!hasSolContextual && \(/);
+assert.match(overview, /OVERVIEW_DAILY_BRIEFING_COMPONENT/);
 assert.match(darth, /resolved === "en-IE" \? copy\["en-IE"\] : null/);
 assert.match(darth, /resolved === "en-IE" \? cta\.copy\["en-IE"\] : null/);
 
