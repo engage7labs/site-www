@@ -8,6 +8,8 @@ const darth = readFileSync("lib/darth.ts", "utf8");
 const sidebar = readFileSync("components/portal/portal-sidebar.tsx", "utf8");
 const healthDashboard = readFileSync("app/portal/health/health-dashboard.tsx", "utf8");
 const healthPriority = readFileSync("lib/health-domain-priority.ts", "utf8");
+const enDictionary = readFileSync("lib/i18n/dictionaries/en-IE.ts", "utf8");
+const ptDictionary = readFileSync("lib/i18n/dictionaries/pt-BR.ts", "utf8");
 
 assert.match(health, /ContextualIntelligenceCard/);
 assert.match(health, /artifact=\{data\.contextual_intelligence\}/);
@@ -31,5 +33,7 @@ assert.ok(
 );
 assert.match(health, /HEALTH_DOMAIN_PRIORITY\.map/);
 assert.match(healthDashboard, /domainFilters\.activity/);
+assert.match(enDictionary, /Longitudinal Activity, Sleep & Recovery/);
+assert.match(ptDictionary, /Atividade, Sono e Recuperação ao longo do tempo/);
 
 console.log("Sprint 55 live-routing and PT-BR fail-closed checks passed.");

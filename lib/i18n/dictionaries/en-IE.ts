@@ -750,11 +750,11 @@ export const enIE = {
         },
         health: {
           title: "Health",
-          subtitle: "Longitudinal Sleep, Recovery & Activity",
+          subtitle: "Longitudinal Activity, Sleep & Recovery",
         },
         all: {
           title: "All",
-          subtitle: "Sleep, Recovery, and Activity together",
+          subtitle: "Activity, Sleep, and Recovery together",
         },
         sleep: {
           title: "Sleep",

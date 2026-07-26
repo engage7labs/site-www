@@ -761,11 +761,11 @@ export const ptBR: Dictionary = {
         },
         health: {
           title: "Saúde",
-          subtitle: "Sono, Recuperação e Atividade ao longo do tempo",
+          subtitle: "Atividade, Sono e Recuperação ao longo do tempo",
         },
         all: {
           title: "Todos",
-          subtitle: "Sono, Recuperação e Atividade juntos",
+          subtitle: "Atividade, Sono e Recuperação juntos",
         },
         sleep: {
           title: "Sono",
