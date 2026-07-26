@@ -1124,6 +1124,19 @@ export const ptBR: Dictionary = {
       },
     },
     insightsPage: {
+      solTitle: "State of Life (SOL)",
+      solSubtitle:
+        "Insights elegíveis do histórico pessoal, ordenados por evidência e relevância.",
+      primaryInsight: "Insight principal",
+      supportingInsight: "Insight de apoio",
+      archetype: "Arquétipo",
+      explanation: "Explicação",
+      evidence: "Evidência",
+      confidenceLabel: "Confiança",
+      action: "Ação",
+      limitation: "Limitação",
+      comparison: "Comparação",
+      relevantPeriod: "Período relevante",
       noInsights:
         "Nenhum insight ainda. Envie seus dados de saúde para começar a ver padrões e recomendações.",
       empty:

@@ -295,12 +295,28 @@ export interface DarthContextualPresentation {
   explore?: string | null;
 }
 
+export interface DarthSolInsightPresentation {
+  archetype: string;
+  archetype_label: string | null;
+  headline: string;
+  explanation: string;
+  comparison: string | null;
+  period: string | null;
+  evidence: string;
+  confidence: string;
+  action: string;
+  limitation: string;
+}
+
 export interface DarthContextualIntelligence {
   contract_version: "darth.v4" | "darth.v3" | string;
   algorithm_version: "darth_algorithm.v4.0.0" | "darth_algorithm.v3.0.0" | string;
   contextual_contract_version: "darth_contextual_intelligence.v2" | "darth_contextual_intelligence.v1" | string;
   presentation: Partial<
     Record<"en-IE" | "pt-BR", DarthContextualPresentation>
+  >;
+  eligible_insights?: Partial<
+    Record<"en-IE" | "pt-BR", DarthSolInsightPresentation[]>
   >;
 }
 

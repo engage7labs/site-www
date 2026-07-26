@@ -35,5 +35,10 @@ assert.match(health, /HEALTH_DOMAIN_PRIORITY\.map/);
 assert.match(healthDashboard, /domainFilters\.activity/);
 assert.match(enDictionary, /Longitudinal Activity, Sleep & Recovery/);
 assert.match(ptDictionary, /Atividade, Sono e Recuperação ao longo do tempo/);
+assert.match(insights, /eligible_insights/);
+assert.match(insights, /SolInsightCard/);
+assert.doesNotMatch(insights, /SOL · Your history in perspective/);
+assert.match(enDictionary, /solTitle: "State of Life \(SOL\)"/);
+assert.match(ptDictionary, /solTitle: "State of Life \(SOL\)"/);
 
 console.log("Sprint 55 live-routing and PT-BR fail-closed checks passed.");

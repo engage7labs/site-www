@@ -1098,6 +1098,19 @@ export const enIE = {
       },
     },
     insightsPage: {
+      solTitle: "State of Life (SOL)",
+      solSubtitle:
+        "Eligible personal-history insights, ranked by evidence and relevance.",
+      primaryInsight: "Primary insight",
+      supportingInsight: "Supporting insight",
+      archetype: "Archetype",
+      explanation: "Explanation",
+      evidence: "Evidence",
+      confidenceLabel: "Confidence",
+      action: "Action",
+      limitation: "Limitation",
+      comparison: "Comparison",
+      relevantPeriod: "Relevant period",
       noInsights:
         "No insights yet. Upload your health data to start seeing patterns and recommendations.",
       empty:
