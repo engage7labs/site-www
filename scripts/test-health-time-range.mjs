@@ -312,7 +312,18 @@ assert.equal(
     ?.length,
   1,
 );
-assert.match(dashboardSource, /domain === "all"[\s\S]*?\["sleep", "recovery", "activity"\]/);
+assert.match(
+  dashboardSource,
+  /domain === "all"\s*\?\s*HEALTH_DOMAIN_PRIORITY/,
+);
+const healthDomainPrioritySource = await readFile(
+  new URL("../lib/health-domain-priority.ts", import.meta.url),
+  "utf8",
+);
+assert.match(
+  healthDomainPrioritySource,
+  /HEALTH_DOMAIN_PRIORITY = \["activity", "sleep", "recovery"\] as const/,
+);
 assert.match(dashboardSource, /periodNavigation=\{renderPeriodNavigation\("sleep"\)\}/);
 assert.match(dashboardSource, /periodNavigation=\{renderPeriodNavigation\("recovery"\)\}/);
 assert.match(dashboardSource, /periodNavigation=\{renderPeriodNavigation\("activity"\)\}/);
