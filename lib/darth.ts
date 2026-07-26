@@ -199,7 +199,7 @@ export type DarthDriftStatus =
   | "emerging_new_pattern";
 
 export interface DarthEvidencePack {
-  contract_version: "darth_evidence_pack.v3";
+  contract_version: "darth_evidence_pack.v4" | string;
   source: "darth";
   evidence_pack_hash?: string;
   product_frame?: "fitness_performance_recovery_intelligence" | string;
@@ -252,6 +252,10 @@ export interface DarthEvidencePack {
     action_key: string;
     overreaction_key: string;
     evidence_strength: string;
+    sol_contract_version?: string;
+    sol_primary_archetype?: string;
+    sol_comparison_key?: string;
+    sol_limitation_key?: string;
   };
 }
 
@@ -280,25 +284,28 @@ export interface DarthStatePresentation {
 
 export interface DarthContextualPresentation {
   locale: "en-IE" | "pt-BR";
+  archetype?: string | null;
   headline: string | null;
   recent_pattern: string | null;
   safe_action: string | null;
   what_not_to_overreact_to: string | null;
   confidence: string | null;
   longitudinal: string | null;
+  evidence?: string | null;
+  explore?: string | null;
 }
 
 export interface DarthContextualIntelligence {
-  contract_version: "darth.v3";
-  algorithm_version: "darth_algorithm.v3.0.0" | string;
-  contextual_contract_version: "darth_contextual_intelligence.v1";
+  contract_version: "darth.v4" | "darth.v3" | string;
+  algorithm_version: "darth_algorithm.v4.0.0" | "darth_algorithm.v3.0.0" | string;
+  contextual_contract_version: "darth_contextual_intelligence.v2" | "darth_contextual_intelligence.v1" | string;
   presentation: Partial<
     Record<"en-IE" | "pt-BR", DarthContextualPresentation>
   >;
 }
 
 export interface DarthPayload {
-  contract_version?: "darth.v3" | string;
+  contract_version?: "darth.v4" | "darth.v3" | string;
   algorithm_version?: string;
   state?:
     | "RECOVERING"

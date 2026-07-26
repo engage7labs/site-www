@@ -1,6 +1,6 @@
 {
   "name": "my-v0-project",
-  "version": "1.54.0.0",
+  "version": "1.55.0.0",
   "private": true,
   "engines": {
     "node": "24.x"
@@ -23,6 +23,7 @@
     "test:hotfix-53_1_1-health-all-cta": "node scripts/test-hotfix-53_1_1-health-all-cta.mjs",
     "test:public-header-cta": "node --experimental-strip-types --disable-warning=MODULE_TYPELESS_PACKAGE_JSON scripts/test-public-header-cta.mjs",
     "test:darth-v3-parity": "node scripts/test-sprint-54-darth-v3-parity.mjs",
+    "test:sol-parity": "node scripts/test-sprint-55-sol-parity.mjs",
     "start": "next start"
   },
   "dependencies": {

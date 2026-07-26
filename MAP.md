@@ -15,7 +15,7 @@ Next.js application for Engage7 public pages, authenticated Portal, and Admin. T
 
 ## Feature-to-code map
 
-- Overview: `app/portal/page.tsx` → portal overview/trends/health-data proxies.
+- Overview: `app/portal/page.tsx` and `components/portal/contextual-intelligence-card.tsx` → portal overview/trends/health-data proxies; SOL renders the server-owned localized contextual artifact before the metric grid.
 - Insights: `app/portal/insights/page.tsx`, `components/portal/compare-improve-block.tsx` → analyses/trends/overview proxies.
 - Health: `app/portal/health/page.tsx` and `health/{sleep,recovery,activity,all}/` → health-data proxy; the compact Overview links to the consolidated `/portal/health/all` surface, while DARTH panel and AI reflection components remain server-artifact displays.
 - Data Lab: `app/portal/trends/page.tsx` → trends proxy.
