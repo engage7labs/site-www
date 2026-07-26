@@ -14,6 +14,7 @@
     "test:google-pkce-storage": "node --experimental-strip-types --disable-warning=MODULE_TYPELESS_PACKAGE_JSON scripts/test-google-pkce-storage.mjs",
     "test:password-update-error": "node --experimental-strip-types --disable-warning=MODULE_TYPELESS_PACKAGE_JSON scripts/test-password-update-error.mjs",
     "test:password-method-status": "node --experimental-strip-types --disable-warning=MODULE_TYPELESS_PACKAGE_JSON scripts/test-password-method-status.mjs",
+    "test:admin-linked-accounts": "node --experimental-strip-types --disable-warning=MODULE_TYPELESS_PACKAGE_JSON scripts/test-admin-linked-accounts.mjs",
     "test:identity-auth-foundation": "node --experimental-strip-types --disable-warning=MODULE_TYPELESS_PACKAGE_JSON scripts/test-identity-auth-foundation.mjs",
     "test:health-time-range": "node --experimental-strip-types --disable-warning=MODULE_TYPELESS_PACKAGE_JSON scripts/test-health-time-range.mjs",
     "test:steps-chart-scale": "node --experimental-strip-types --disable-warning=MODULE_TYPELESS_PACKAGE_JSON scripts/test-steps-chart-scale.mjs",

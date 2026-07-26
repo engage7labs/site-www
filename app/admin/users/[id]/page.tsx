@@ -18,6 +18,13 @@ interface AdminUserDetail {
   consent_version: string | null;
   created_at: string | null;
   last_login_at: string | null;
+  linked_accounts: Array<{
+    provider: string;
+    email: string | null;
+    created_at: string | null;
+    last_sign_in_at: string | null;
+  }>;
+  linked_accounts_status: "available" | "unavailable";
   analyses: Array<{
     job_id: string;
     created_at: string | null;
@@ -89,6 +96,15 @@ function Section({
 function label(value: string | null | undefined): string {
   if (!value) return "—";
   return value.replace(/_/g, " ").replace(/\b\w/g, (char) => char.toUpperCase());
+}
+
+function providerLabel(provider: string): string {
+  const labels: Record<string, string> = {
+    email: "Email",
+    apple: "Apple",
+    google: "Google",
+  };
+  return labels[provider] ?? label(provider);
 }
 
 export default function AdminUserDetailPage() {
@@ -261,6 +277,47 @@ export default function AdminUserDetailPage() {
           </div>
         ))}
       </div>
+
+      <Section title={`Connected accounts (${user.linked_accounts.length})`}>
+        {user.linked_accounts_status === "unavailable" ? (
+          <p className="text-sm text-muted-foreground">
+            Linked account information is temporarily unavailable.
+          </p>
+        ) : user.linked_accounts.length === 0 ? (
+          <p className="text-sm text-muted-foreground">No linked accounts found.</p>
+        ) : (
+          <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+            {user.linked_accounts.map((account, index) => (
+              <div
+                key={`${account.provider}:${account.email ?? index}`}
+                className="rounded-lg border border-border bg-background px-4 py-3"
+              >
+                <div className="flex items-center justify-between gap-3">
+                  <p className="text-sm font-semibold text-card-foreground">
+                    {providerLabel(account.provider)}
+                  </p>
+                  <span className="inline-flex rounded-full bg-emerald-500/10 px-2 py-0.5 text-[11px] font-medium text-emerald-400">
+                    Linked
+                  </span>
+                </div>
+                <p className="mt-2 break-all text-xs text-muted-foreground">
+                  {account.email ?? "Provider email not shared"}
+                </p>
+                <dl className="mt-3 grid gap-2 text-xs">
+                  <div className="flex items-center justify-between gap-3">
+                    <dt className="text-muted-foreground">Connected</dt>
+                    <dd className="text-right text-card-foreground">{fmt(account.created_at)}</dd>
+                  </div>
+                  <div className="flex items-center justify-between gap-3">
+                    <dt className="text-muted-foreground">Last used</dt>
+                    <dd className="text-right text-card-foreground">{fmt(account.last_sign_in_at)}</dd>
+                  </div>
+                </dl>
+              </div>
+            ))}
+          </div>
+        )}
+      </Section>
 
       <Section title={`Analyses (${user.analyses.length})`}>
         {user.analyses.length === 0 ? (

@@ -9,6 +9,10 @@
 
 import { createClient, type SupabaseClient } from "@supabase/supabase-js";
 import { resolveMagicLinkRedirect } from "@/lib/canonical-app-url";
+import {
+  linkedAuthAccountsFromUser,
+  type LinkedAuthAccount,
+} from "@/lib/linked-auth-accounts";
 
 const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL ?? "";
 const SUPABASE_SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY ?? "";
@@ -273,4 +277,27 @@ export async function deleteSupabaseAuthUserForAccount(
   // Canonical UUID is the only deletion key. Mutable email must never select
   // another Auth user when an identity is already absent or colliding.
   return deleteSupabaseAuthUser(userId);
+}
+
+export async function getSupabaseAuthLinkedAccounts(userId: string): Promise<{
+  ok: boolean;
+  accounts: LinkedAuthAccount[];
+}> {
+  try {
+    const { data, error } = await supabaseAdmin.auth.admin.getUserById(userId);
+    if (error || !data?.user) {
+      console.error(
+        "[getSupabaseAuthLinkedAccounts] Supabase error:",
+        error?.message ?? "user_missing",
+      );
+      return { ok: false, accounts: [] };
+    }
+    return { ok: true, accounts: linkedAuthAccountsFromUser(data.user) };
+  } catch (err) {
+    console.error(
+      "[getSupabaseAuthLinkedAccounts] Unexpected error:",
+      err instanceof Error ? err.message : "unknown",
+    );
+    return { ok: false, accounts: [] };
+  }
 }
