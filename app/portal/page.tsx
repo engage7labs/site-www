@@ -881,6 +881,19 @@ export default function PortalOverviewPage() {
 
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
         <MetricCard
+          label={t.portal.metrics.activity}
+          value={activity}
+          icon={Zap}
+          debugLabel="OVERVIEW_ACTIVITY_CARD"
+          href="/portal/health/activity"
+          subtitle={
+            stepsMedian == null
+              ? t.portal.metrics.noRecentData
+              : medianSubtitle(activityRange, t.portal.metrics, locale)
+          }
+          trend={activityTrend}
+        />
+        <MetricCard
           label={t.portal.metrics.sleepScore}
           value={sleepScore}
           icon={Moon}
@@ -905,19 +918,6 @@ export default function PortalOverviewPage() {
               : medianSubtitle(recoveryRange, t.portal.metrics, locale)
           }
           trend={recoveryWeekTrend}
-        />
-        <MetricCard
-          label={t.portal.metrics.activity}
-          value={activity}
-          icon={Zap}
-          debugLabel="OVERVIEW_ACTIVITY_CARD"
-          href="/portal/health/activity"
-          subtitle={
-            stepsMedian == null
-              ? t.portal.metrics.noRecentData
-              : medianSubtitle(activityRange, t.portal.metrics, locale)
-          }
-          trend={activityTrend}
         />
       </div>
 

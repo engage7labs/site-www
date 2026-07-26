@@ -1323,7 +1323,7 @@ export const enIE = {
         all: {
           title: "All",
           subtitle:
-            "Sleep, recovery, and activity evidence in one consolidated Health view",
+            "Activity, sleep, and recovery evidence in one consolidated Health view",
         },
         sleep: {
           title: "Sleep",
@@ -1341,7 +1341,7 @@ export const enIE = {
       },
       overviewTitle: "Health",
       overviewSubtitle:
-        "A compact view of sleep, recovery, and activity from your stored timeline.",
+        "A compact view of activity, sleep, and recovery from your stored timeline.",
       overviewHelper:
         "Each domain uses the latest valid data available for that signal.",
       overviewUpdatedThrough: "Latest stored data through {date}",

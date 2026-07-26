@@ -5,6 +5,9 @@ const health = readFileSync("app/portal/health/page.tsx", "utf8");
 const insights = readFileSync("app/portal/insights/page.tsx", "utf8");
 const overview = readFileSync("app/portal/page.tsx", "utf8");
 const darth = readFileSync("lib/darth.ts", "utf8");
+const sidebar = readFileSync("components/portal/portal-sidebar.tsx", "utf8");
+const healthDashboard = readFileSync("app/portal/health/health-dashboard.tsx", "utf8");
+const healthPriority = readFileSync("lib/health-domain-priority.ts", "utf8");
 
 assert.match(health, /ContextualIntelligenceCard/);
 assert.match(health, /artifact=\{data\.contextual_intelligence\}/);
@@ -15,5 +18,18 @@ assert.match(overview, /!hasSolContextual && \(/);
 assert.match(overview, /OVERVIEW_DAILY_BRIEFING_COMPONENT/);
 assert.match(darth, /resolved === "en-IE" \? copy\["en-IE"\] : null/);
 assert.match(darth, /resolved === "en-IE" \? cta\.copy\["en-IE"\] : null/);
+assert.match(healthPriority, /\["activity", "sleep", "recovery"\] as const/);
+assert.ok(sidebar.indexOf('key: "activity"') < sidebar.indexOf('key: "sleep"'));
+assert.ok(sidebar.indexOf('key: "sleep"') < sidebar.indexOf('key: "recovery"'));
+assert.ok(
+  overview.indexOf('debugLabel="OVERVIEW_ACTIVITY_CARD"') <
+    overview.indexOf('debugLabel="OVERVIEW_SLEEP_CARD"'),
+);
+assert.ok(
+  overview.indexOf('debugLabel="OVERVIEW_SLEEP_CARD"') <
+    overview.indexOf('debugLabel="OVERVIEW_RECOVERY_CARD"'),
+);
+assert.match(health, /HEALTH_DOMAIN_PRIORITY\.map/);
+assert.match(healthDashboard, /domainFilters\.activity/);
 
 console.log("Sprint 55 live-routing and PT-BR fail-closed checks passed.");

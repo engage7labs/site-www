@@ -16,6 +16,7 @@ import {
 } from "@/lib/health-time-range";
 import { trackHealthDashboardViewed } from "@/lib/telemetry";
 import type { DarthContextualIntelligence } from "@/lib/darth";
+import { HEALTH_DOMAIN_PRIORITY } from "@/lib/health-domain-priority";
 import { Activity, ArrowRight, HeartPulse, Moon } from "lucide-react";
 import Link from "next/link";
 import type { ElementType } from "react";
@@ -253,7 +254,7 @@ export default function HealthPage() {
       </section>
 
       <div className="grid gap-4 lg:grid-cols-3">
-        {(["sleep", "recovery", "activity"] as const).map((domain) => {
+        {HEALTH_DOMAIN_PRIORITY.map((domain) => {
           const meta = DOMAIN_META[domain];
           const copy = t.portal.health.domains[domain];
           const latest = latestDomainPoint(points, domain);

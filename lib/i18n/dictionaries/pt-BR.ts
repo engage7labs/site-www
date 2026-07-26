@@ -1358,7 +1358,7 @@ export const ptBR: Dictionary = {
         all: {
           title: "Todos",
           subtitle:
-            "Evidências de sono, recuperação e atividade em uma visão de Saúde consolidada",
+            "Evidências de atividade, sono e recuperação em uma visão de Saúde consolidada",
         },
         sleep: {
           title: "Sono",
@@ -1378,7 +1378,7 @@ export const ptBR: Dictionary = {
       },
       overviewTitle: "Saúde",
       overviewSubtitle:
-        "Uma visão compacta de sono, recuperação e atividade a partir da sua linha do tempo armazenada.",
+        "Uma visão compacta de atividade, sono e recuperação a partir da sua linha do tempo armazenada.",
       overviewHelper:
         "Cada domínio usa o dado válido mais recente disponível para aquele sinal.",
       overviewUpdatedThrough: "Dados armazenados mais recentes até {date}",

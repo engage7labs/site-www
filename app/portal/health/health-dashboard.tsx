@@ -5,6 +5,7 @@ import { EChart } from "@/components/insights/echart";
 import { RecoveryScoreChart } from "@/components/insights/recovery-score-chart";
 import { HealthPeriodNavigator } from "@/components/portal/health-period-navigator";
 import { useHealthTimeRange } from "@/hooks/use-health-time-range";
+import { HEALTH_DOMAIN_PRIORITY } from "@/lib/health-domain-priority";
 import {
   calendarDateToKey,
   calendarDateWeekday,
@@ -1860,7 +1861,7 @@ export function HealthDashboard({
   const availablePoints = useMemo(
     () =>
       allPoints.filter((point) =>
-        (["sleep", "recovery", "activity"] as const).some((item) =>
+        HEALTH_DOMAIN_PRIORITY.some((item) =>
           domainHasData(item, point),
         ),
       ),
@@ -1879,7 +1880,7 @@ export function HealthDashboard({
   const activeDomains = useMemo(
     () =>
       domain === "all"
-        ? (["sleep", "recovery", "activity"] as const)
+        ? HEALTH_DOMAIN_PRIORITY
         : ([domain] as const),
     [domain],
   );
@@ -1910,7 +1911,7 @@ export function HealthDashboard({
   const filtered = useMemo(
     () =>
       domainFilters &&
-      (domain === "all" ? domainFilters.sleep : domainFilters[domain]),
+      (domain === "all" ? domainFilters.activity : domainFilters[domain]),
     [domain, domainFilters],
   );
   const rangePoints = useMemo(() => {
