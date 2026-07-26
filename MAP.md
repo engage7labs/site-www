@@ -17,7 +17,7 @@ Next.js application for Engage7 public pages, authenticated Portal, and Admin. T
 
 - Overview: `app/portal/page.tsx` → portal overview/trends/health-data proxies.
 - Insights: `app/portal/insights/page.tsx`, `components/portal/compare-improve-block.tsx` → analyses/trends/overview proxies.
-- Health: `app/portal/health/page.tsx` and `health/{sleep,recovery,activity,all}/` → health-data proxy; DARTH panel and AI reflection components are server-artifact displays.
+- Health: `app/portal/health/page.tsx` and `health/{sleep,recovery,activity,all}/` → health-data proxy; the compact Overview links to the consolidated `/portal/health/all` surface, while DARTH panel and AI reflection components remain server-artifact displays.
 - Data Lab: `app/portal/trends/page.tsx` → trends proxy.
 - Reports: `app/portal/reports/` and `lib/api/analysis.ts` → analyses list/detail proxy and safe AI Reflection panel.
 - Settings: `app/portal/settings/page.tsx` → account, overview, profile, preference, and footprint proxies.

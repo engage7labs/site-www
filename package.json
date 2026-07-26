@@ -1,6 +1,6 @@
 {
   "name": "my-v0-project",
-  "version": "1.53.1.0",
+  "version": "1.53.1.1",
   "private": true,
   "engines": {
     "node": "24.x"
@@ -19,6 +19,7 @@
     "test:steps-chart-scale": "node --experimental-strip-types --disable-warning=MODULE_TYPELESS_PACKAGE_JSON scripts/test-steps-chart-scale.mjs",
     "test:sprint-52_1-copy-polish": "node --experimental-strip-types --disable-warning=MODULE_TYPELESS_PACKAGE_JSON scripts/test-sprint-52_1_copy_polish.mjs",
     "test:analytics-status-banner": "node --experimental-strip-types --disable-warning=MODULE_TYPELESS_PACKAGE_JSON scripts/test-hotfix-52_4_3-analytics-status-banner.mjs",
+    "test:hotfix-53_1_1-health-all-cta": "node scripts/test-hotfix-53_1_1-health-all-cta.mjs",
     "start": "next start"
   },
   "dependencies": {

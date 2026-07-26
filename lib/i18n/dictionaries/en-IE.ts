@@ -1346,6 +1346,7 @@ export const enIE = {
         "Each domain uses the latest valid data available for that signal.",
       overviewUpdatedThrough: "Latest stored data through {date}",
       overviewOpenDetail: "Open detail",
+      overviewViewAllData: "View all data",
       overviewNoData: "No stored values yet",
       overviewLatestValue: "Latest value",
       overviewLatestValidDay: {

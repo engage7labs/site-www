@@ -1383,6 +1383,7 @@ export const ptBR: Dictionary = {
         "Cada domínio usa o dado válido mais recente disponível para aquele sinal.",
       overviewUpdatedThrough: "Dados armazenados mais recentes até {date}",
       overviewOpenDetail: "Abrir detalhe",
+      overviewViewAllData: "Ver todos os dados",
       overviewNoData: "Ainda sem valores armazenados",
       overviewLatestValue: "Valor mais recente",
       overviewLatestValidDay: {

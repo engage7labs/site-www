@@ -217,21 +217,30 @@ export default function HealthPage() {
   return (
     <div className="flex flex-col gap-6">
       <section className="portal-panel rounded-lg border border-border/70 bg-card/85 p-5">
-        <div className="flex flex-col gap-2">
-          <h2 className="text-lg font-semibold text-card-foreground">
-            {t.portal.health.overviewTitle}
-          </h2>
-          <p className="max-w-3xl text-sm leading-relaxed text-muted-foreground">
-            {t.portal.health.overviewSubtitle}
-          </p>
-          {latestAnyPoint && (
-            <p className="text-xs text-muted-foreground">
-              {t.portal.health.overviewUpdatedThrough.replace(
-                "{date}",
-                formatDisplayDate(latestAnyPoint.date, locale),
-              )}
+        <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+          <div className="flex flex-col gap-2">
+            <h2 className="text-lg font-semibold text-card-foreground">
+              {t.portal.health.overviewTitle}
+            </h2>
+            <p className="max-w-3xl text-sm leading-relaxed text-muted-foreground">
+              {t.portal.health.overviewSubtitle}
             </p>
-          )}
+            {latestAnyPoint && (
+              <p className="text-xs text-muted-foreground">
+                {t.portal.health.overviewUpdatedThrough.replace(
+                  "{date}",
+                  formatDisplayDate(latestAnyPoint.date, locale),
+                )}
+              </p>
+            )}
+          </div>
+          <Link
+            href="/portal/health/all"
+            className="inline-flex shrink-0 items-center justify-center gap-2 rounded-lg border border-accent/25 bg-accent/10 px-4 py-2.5 text-sm font-semibold text-accent transition-colors hover:bg-accent/15 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+          >
+            {t.portal.health.overviewViewAllData}
+            <ArrowRight className="h-4 w-4" />
+          </Link>
         </div>
       </section>
 
