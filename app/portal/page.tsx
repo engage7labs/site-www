@@ -1,9 +1,11 @@
 "use client";
 
 import { DailyBriefing } from "@/components/portal/daily-briefing";
+import { ContextualIntelligenceCard } from "@/components/portal/contextual-intelligence-card";
 import { ChartEmptyState } from "@/components/insights/chart-empty-state";
 import { useLocale } from "@/components/providers/locale-provider";
 import type { PortalDataStatus } from "@/lib/portal-data-status";
+import type { DarthContextualIntelligence } from "@/lib/darth";
 import { parsePortalDataStatus } from "@/lib/portal-data-status";
 import type { EChartsOption } from "echarts";
 import { ArrowDown, ArrowRight, ArrowUp, Clock, Crown, ExternalLink, Heart, Moon, Upload, Zap } from "lucide-react";
@@ -93,6 +95,7 @@ interface OverviewData {
     updated_at: string | null;
   } | null;
   portal_data_status?: unknown;
+  contextual_intelligence?: DarthContextualIntelligence | null;
 }
 
 interface StatusNoticeProps {
@@ -864,10 +867,32 @@ export default function PortalOverviewPage() {
     weeklyTrend(activityPoints, activityRange, t.portal.metrics.weekTrend),
     "activity",
   );
+  const contextualLocale = locale === "pt-BR" ? "pt-BR" : "en-IE";
+  const hasSolContextual = Boolean(
+    data?.contextual_intelligence?.presentation?.[contextualLocale]?.archetype,
+  );
 
   return (
     <div className="flex flex-col gap-6">
+      <ContextualIntelligenceCard
+        artifact={data?.contextual_intelligence}
+        locale={locale}
+      />
+
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+        <MetricCard
+          label={t.portal.metrics.activity}
+          value={activity}
+          icon={Zap}
+          debugLabel="OVERVIEW_ACTIVITY_CARD"
+          href="/portal/health/activity"
+          subtitle={
+            stepsMedian == null
+              ? t.portal.metrics.noRecentData
+              : medianSubtitle(activityRange, t.portal.metrics, locale)
+          }
+          trend={activityTrend}
+        />
         <MetricCard
           label={t.portal.metrics.sleepScore}
           value={sleepScore}
@@ -893,19 +918,6 @@ export default function PortalOverviewPage() {
               : medianSubtitle(recoveryRange, t.portal.metrics, locale)
           }
           trend={recoveryWeekTrend}
-        />
-        <MetricCard
-          label={t.portal.metrics.activity}
-          value={activity}
-          icon={Zap}
-          debugLabel="OVERVIEW_ACTIVITY_CARD"
-          href="/portal/health/activity"
-          subtitle={
-            stepsMedian == null
-              ? t.portal.metrics.noRecentData
-              : medianSubtitle(activityRange, t.portal.metrics, locale)
-          }
-          trend={activityTrend}
         />
       </div>
 
@@ -937,9 +949,11 @@ export default function PortalOverviewPage() {
         />
       </div>
 
-      <OverviewBlock label="OVERVIEW_DAILY_BRIEFING_COMPONENT">
-        <DailyBriefing />
-      </OverviewBlock>
+      {!hasSolContextual && (
+        <OverviewBlock label="OVERVIEW_DAILY_BRIEFING_COMPONENT">
+          <DailyBriefing />
+        </OverviewBlock>
+      )}
 
       <StatusNotice status={portalStatus} copy={t.portal.statusNotice} />
 

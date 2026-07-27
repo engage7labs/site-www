@@ -199,7 +199,7 @@ export type DarthDriftStatus =
   | "emerging_new_pattern";
 
 export interface DarthEvidencePack {
-  contract_version: "darth_evidence_pack.v1";
+  contract_version: "darth_evidence_pack.v4" | string;
   source: "darth";
   evidence_pack_hash?: string;
   product_frame?: "fitness_performance_recovery_intelligence" | string;
@@ -244,6 +244,19 @@ export interface DarthEvidencePack {
   user_profile_type: "general" | "amateur_athlete" | "student" | "entrepreneur";
   allowed_ai_tasks: string[];
   disallowed_ai_claims: string[];
+  contextual_intelligence?: {
+    contract_version: string;
+    current_state_key: string;
+    recent_pattern_key: string;
+    longitudinal_state: string;
+    action_key: string;
+    overreaction_key: string;
+    evidence_strength: string;
+    sol_contract_version?: string;
+    sol_primary_archetype?: string;
+    sol_comparison_key?: string;
+    sol_limitation_key?: string;
+  };
 }
 
 export interface DarthStatePresentation {
@@ -269,7 +282,47 @@ export interface DarthStatePresentation {
   explanation?: string;
 }
 
+export interface DarthContextualPresentation {
+  locale: "en-IE" | "pt-BR";
+  archetype?: string | null;
+  headline: string | null;
+  recent_pattern: string | null;
+  safe_action: string | null;
+  what_not_to_overreact_to: string | null;
+  confidence: string | null;
+  longitudinal: string | null;
+  evidence?: string | null;
+  explore?: string | null;
+}
+
+export interface DarthSolInsightPresentation {
+  archetype: string;
+  archetype_label: string | null;
+  headline: string;
+  explanation: string;
+  comparison: string | null;
+  period: string | null;
+  evidence: string;
+  confidence: string;
+  action: string;
+  limitation: string;
+}
+
+export interface DarthContextualIntelligence {
+  contract_version: "darth.v4" | "darth.v3" | string;
+  algorithm_version: "darth_algorithm.v4.0.0" | "darth_algorithm.v3.0.0" | string;
+  contextual_contract_version: "darth_contextual_intelligence.v2" | "darth_contextual_intelligence.v1" | string;
+  presentation: Partial<
+    Record<"en-IE" | "pt-BR", DarthContextualPresentation>
+  >;
+  eligible_insights?: Partial<
+    Record<"en-IE" | "pt-BR", DarthSolInsightPresentation[]>
+  >;
+}
+
 export interface DarthPayload {
+  contract_version?: "darth.v4" | "darth.v3" | string;
+  algorithm_version?: string;
   state?:
     | "RECOVERING"
     | "STRAIN_ACCUMULATING"
@@ -301,6 +354,7 @@ export interface DarthPayload {
   explainability?: DarthInsightBlock[];
   teaser?: DarthTeaser;
   evidence_pack?: DarthEvidencePack;
+  contextual_intelligence?: DarthContextualIntelligence;
 }
 
 function isObject(value: unknown): value is Record<string, unknown> {
@@ -470,37 +524,11 @@ export function humanizeDarthTechnicalText(
   return cleaned || null;
 }
 
-function hasCopyLocale(
-  copy: Record<string, DarthCopy> | undefined,
-  locale: DarthLocale
-): boolean {
-  return Boolean(copy?.[locale]);
-}
-
-function hasCtaLocale(
-  cta: DarthPresentation["cta"] | undefined,
-  locale: DarthLocale
-): boolean {
-  return Boolean(cta?.copy?.[locale]);
-}
-
 export function resolveDarthPresentationLocale(
-  presentation: DarthPresentation | null | undefined,
+  _presentation: DarthPresentation | null | undefined,
   activeLocale: string
 ): DarthLocale {
-  const requested = resolveDarthLocale(activeLocale);
-  if (requested === "en-IE" || !presentation) return "en-IE";
-
-  const blocks = [
-    presentation.hero,
-    ...(presentation.supporting ?? []),
-    ...(presentation.evidence_blocks ?? []),
-  ].filter(Boolean);
-  const allBlocksHaveLocale = blocks.every((block) =>
-    hasCopyLocale(block.copy, requested)
-  );
-  const ctaHasLocale = !presentation.cta || hasCtaLocale(presentation.cta, requested);
-  return allBlocksHaveLocale && ctaHasLocale ? requested : "en-IE";
+  return resolveDarthLocale(activeLocale);
 }
 
 export function selectDarthCopy(
@@ -509,7 +537,7 @@ export function selectDarthCopy(
 ): DarthCopy | null {
   if (!copy) return null;
   const resolved = resolveDarthLocale(locale);
-  return copy[resolved] ?? copy["en-IE"] ?? null;
+  return copy[resolved] ?? (resolved === "en-IE" ? copy["en-IE"] : null) ?? null;
 }
 
 export function selectDarthCta(
@@ -518,7 +546,7 @@ export function selectDarthCta(
 ): string | null {
   if (!cta) return null;
   const resolved = resolveDarthLocale(locale);
-  return cta.copy[resolved] ?? cta.copy["en-IE"] ?? null;
+  return cta.copy[resolved] ?? (resolved === "en-IE" ? cta.copy["en-IE"] : null) ?? null;
 }
 
 export function selectDarthStatePresentation(
@@ -527,5 +555,7 @@ export function selectDarthStatePresentation(
 ): DarthStatePresentation | null {
   if (!payload?.state_presentation) return null;
   const resolved = resolveDarthLocale(locale);
-  return payload.state_presentation[resolved] ?? payload.state_presentation["en-IE"] ?? null;
+  return payload.state_presentation[resolved] ??
+    (resolved === "en-IE" ? payload.state_presentation["en-IE"] : null) ??
+    null;
 }

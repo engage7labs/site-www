@@ -1,0 +1,200 @@
+{
+  "cases": [
+    {
+      "algorithm_version": "darth_algorithm.v3.0.0",
+      "contextual": {
+        "confidence": "Strong evidence",
+        "headline": "Your recent signals are moving in different directions.",
+        "locale": "en-IE",
+        "longitudinal": "There is not enough comparable history for a reliable long-term claim yet.",
+        "recent_pattern": "The recent pattern is mixed or still forming.",
+        "safe_action": "Keep the next adjustment small and avoid changing many things at once.",
+        "what_not_to_overreact_to": "Do not turn mixed signals into one permanent conclusion."
+      },
+      "contract_version": "darth.v3",
+      "locale": "en-IE",
+      "scenario": "complete_data"
+    },
+    {
+      "algorithm_version": "darth_algorithm.v3.0.0",
+      "contextual": {
+        "confidence": "Strong evidence",
+        "headline": "Your recent pattern shows recovery support.",
+        "locale": "en-IE",
+        "longitudinal": "There is not enough comparable history for a reliable long-term claim yet.",
+        "recent_pattern": "The recent pattern is moving in a more supportive direction.",
+        "safe_action": "Keep the next adjustment small and avoid changing many things at once.",
+        "what_not_to_overreact_to": "Do not turn mixed signals into one permanent conclusion."
+      },
+      "contract_version": "darth.v3",
+      "locale": "en-IE",
+      "scenario": "missing_hrv"
+    },
+    {
+      "algorithm_version": "darth_algorithm.v3.0.0",
+      "contextual": {
+        "confidence": "Insufficient evidence",
+        "headline": "Your available signals remain close to your recent personal pattern.",
+        "locale": "en-IE",
+        "longitudinal": "There is not enough comparable history for a reliable long-term claim yet.",
+        "recent_pattern": "The recent pattern is mixed or still forming.",
+        "safe_action": "Wait for more evidence before changing your routine.",
+        "what_not_to_overreact_to": "Do not treat a missing signal as a negative physiological state."
+      },
+      "contract_version": "darth.v3",
+      "locale": "en-IE",
+      "scenario": "sparse_data"
+    },
+    {
+      "algorithm_version": "darth_algorithm.v3.0.0",
+      "contextual": {
+        "confidence": "Strong evidence",
+        "headline": "Your recent signals are moving in different directions.",
+        "locale": "en-IE",
+        "longitudinal": "There is not enough comparable history for a reliable long-term claim yet.",
+        "recent_pattern": "The recent pattern is mixed or still forming.",
+        "safe_action": "Keep the next adjustment small and avoid changing many things at once.",
+        "what_not_to_overreact_to": "Do not turn mixed signals into one permanent conclusion."
+      },
+      "contract_version": "darth.v3",
+      "locale": "en-IE",
+      "scenario": "stale_data"
+    },
+    {
+      "algorithm_version": "darth_algorithm.v3.0.0",
+      "contextual": {
+        "confidence": "Strong evidence",
+        "headline": "Your recent signals are moving in different directions.",
+        "locale": "en-IE",
+        "longitudinal": "There is not enough comparable history for a reliable long-term claim yet.",
+        "recent_pattern": "The recent pattern is mixed or still forming.",
+        "safe_action": "Keep the next adjustment small and avoid changing many things at once.",
+        "what_not_to_overreact_to": "Do not turn mixed signals into one permanent conclusion."
+      },
+      "contract_version": "darth.v3",
+      "locale": "en-IE",
+      "scenario": "long_historical_data"
+    },
+    {
+      "algorithm_version": "darth_algorithm.v3.0.0",
+      "contextual": {
+        "confidence": "Strong evidence",
+        "headline": "Your recent signals are moving in different directions.",
+        "locale": "en-IE",
+        "longitudinal": "The comparable long-term signals show a less supportive pattern.",
+        "recent_pattern": "The recent pattern is mixed or still forming.",
+        "safe_action": "Keep the next adjustment small and avoid changing many things at once.",
+        "what_not_to_overreact_to": "Do not turn mixed signals into one permanent conclusion."
+      },
+      "contract_version": "darth.v3",
+      "locale": "en-IE",
+      "scenario": "two_comparable_annual_periods"
+    },
+    {
+      "algorithm_version": "darth_algorithm.v3.0.0",
+      "contextual": {
+        "confidence": "Strong evidence",
+        "headline": "Your recent signals are moving in different directions.",
+        "locale": "en-IE",
+        "longitudinal": "There is not enough comparable history for a reliable long-term claim yet.",
+        "recent_pattern": "The recent pattern is mixed or still forming.",
+        "safe_action": "Keep the next adjustment small and avoid changing many things at once.",
+        "what_not_to_overreact_to": "Do not turn mixed signals into one permanent conclusion."
+      },
+      "contract_version": "darth.v3",
+      "locale": "en-IE",
+      "scenario": "source_transition"
+    },
+    {
+      "algorithm_version": "darth_algorithm.v3.0.0",
+      "contextual": {
+        "confidence": "Strong evidence",
+        "headline": "Your recent signals are moving in different directions.",
+        "locale": "en-IE",
+        "longitudinal": "There is not enough comparable history for a reliable long-term claim yet.",
+        "recent_pattern": "The recent pattern is mixed or still forming.",
+        "safe_action": "Keep the next adjustment small and avoid changing many things at once.",
+        "what_not_to_overreact_to": "Do not turn mixed signals into one permanent conclusion."
+      },
+      "contract_version": "darth.v3",
+      "locale": "en-IE",
+      "scenario": "epoch_boundary"
+    },
+    {
+      "algorithm_version": "darth_algorithm.v3.0.0",
+      "contextual": {
+        "confidence": "Strong evidence",
+        "headline": "Your recent signals are moving in different directions.",
+        "locale": "en-IE",
+        "longitudinal": "Long-term changes are mixed across the available signals.",
+        "recent_pattern": "The recent pattern is mixed or still forming.",
+        "safe_action": "Keep the next adjustment small and avoid changing many things at once.",
+        "what_not_to_overreact_to": "Do not turn mixed signals into one permanent conclusion."
+      },
+      "contract_version": "darth.v3",
+      "locale": "en-IE",
+      "scenario": "mixed_improvement_decline"
+    },
+    {
+      "algorithm_version": "darth_algorithm.v3.0.0",
+      "contextual": {
+        "confidence": "Insufficient evidence",
+        "headline": "Your available signals remain close to your recent personal pattern.",
+        "locale": "en-IE",
+        "longitudinal": "There is not enough comparable history for a reliable long-term claim yet.",
+        "recent_pattern": "The recent pattern is mixed or still forming.",
+        "safe_action": "Wait for more evidence before changing your routine.",
+        "what_not_to_overreact_to": "Temporary variability does not define your longer-term pattern."
+      },
+      "contract_version": "darth.v3",
+      "locale": "en-IE",
+      "scenario": "insufficient_evidence"
+    },
+    {
+      "algorithm_version": "darth_algorithm.v3.0.0",
+      "contextual": {
+        "confidence": "Strong evidence",
+        "headline": "Your recent signals are moving in different directions.",
+        "locale": "en-IE",
+        "longitudinal": "There is not enough comparable history for a reliable long-term claim yet.",
+        "recent_pattern": "The recent pattern is mixed or still forming.",
+        "safe_action": "Keep the next adjustment small and avoid changing many things at once.",
+        "what_not_to_overreact_to": "Do not turn mixed signals into one permanent conclusion."
+      },
+      "contract_version": "darth.v3",
+      "locale": "en-IE",
+      "scenario": "non_comparable_periods"
+    },
+    {
+      "algorithm_version": "darth_algorithm.v3.0.0",
+      "contextual": {
+        "confidence": "Strong evidence",
+        "headline": "Your recent signals are moving in different directions.",
+        "locale": "en-IE",
+        "longitudinal": "There is not enough comparable history for a reliable long-term claim yet.",
+        "recent_pattern": "The recent pattern is mixed or still forming.",
+        "safe_action": "Keep the next adjustment small and avoid changing many things at once.",
+        "what_not_to_overreact_to": "Do not turn mixed signals into one permanent conclusion."
+      },
+      "contract_version": "darth.v3",
+      "locale": "en-IE",
+      "scenario": "english"
+    },
+    {
+      "algorithm_version": "darth_algorithm.v3.0.0",
+      "contextual": {
+        "confidence": "Evidência forte",
+        "headline": "Seus sinais recentes estão seguindo direções diferentes.",
+        "locale": "pt-BR",
+        "longitudinal": "Ainda não há histórico comparável suficiente para uma conclusão confiável de longo prazo.",
+        "recent_pattern": "O padrão recente está misto ou ainda está se formando.",
+        "safe_action": "Mantenha o próximo ajuste pequeno e evite mudar muitas coisas de uma vez.",
+        "what_not_to_overreact_to": "Não transforme sinais mistos em uma conclusão permanente."
+      },
+      "contract_version": "darth.v3",
+      "locale": "pt-BR",
+      "scenario": "portuguese_brazil"
+    }
+  ],
+  "fixture_version": "darth_v3_parity.v1"
+}

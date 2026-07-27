@@ -1,6 +1,6 @@
 {
   "name": "my-v0-project",
-  "version": "1.53.1.0",
+  "version": "1.55.0.4",
   "private": true,
   "engines": {
     "node": "24.x"
@@ -14,11 +14,17 @@
     "test:google-pkce-storage": "node --experimental-strip-types --disable-warning=MODULE_TYPELESS_PACKAGE_JSON scripts/test-google-pkce-storage.mjs",
     "test:password-update-error": "node --experimental-strip-types --disable-warning=MODULE_TYPELESS_PACKAGE_JSON scripts/test-password-update-error.mjs",
     "test:password-method-status": "node --experimental-strip-types --disable-warning=MODULE_TYPELESS_PACKAGE_JSON scripts/test-password-method-status.mjs",
+    "test:admin-linked-accounts": "node --experimental-strip-types --disable-warning=MODULE_TYPELESS_PACKAGE_JSON scripts/test-admin-linked-accounts.mjs",
     "test:identity-auth-foundation": "node --experimental-strip-types --disable-warning=MODULE_TYPELESS_PACKAGE_JSON scripts/test-identity-auth-foundation.mjs",
     "test:health-time-range": "node --experimental-strip-types --disable-warning=MODULE_TYPELESS_PACKAGE_JSON scripts/test-health-time-range.mjs",
     "test:steps-chart-scale": "node --experimental-strip-types --disable-warning=MODULE_TYPELESS_PACKAGE_JSON scripts/test-steps-chart-scale.mjs",
     "test:sprint-52_1-copy-polish": "node --experimental-strip-types --disable-warning=MODULE_TYPELESS_PACKAGE_JSON scripts/test-sprint-52_1_copy_polish.mjs",
     "test:analytics-status-banner": "node --experimental-strip-types --disable-warning=MODULE_TYPELESS_PACKAGE_JSON scripts/test-hotfix-52_4_3-analytics-status-banner.mjs",
+    "test:hotfix-53_1_1-health-all-cta": "node scripts/test-hotfix-53_1_1-health-all-cta.mjs",
+    "test:public-header-cta": "node --experimental-strip-types --disable-warning=MODULE_TYPELESS_PACKAGE_JSON scripts/test-public-header-cta.mjs",
+    "test:darth-v3-parity": "node scripts/test-sprint-54-darth-v3-parity.mjs",
+    "test:sol-parity": "node scripts/test-sprint-55-sol-parity.mjs",
+    "test:sol-live-routing": "node scripts/test-sprint-55-live-routing.mjs",
     "start": "next start"
   },
   "dependencies": {

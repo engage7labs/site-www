@@ -750,11 +750,11 @@ export const enIE = {
         },
         health: {
           title: "Health",
-          subtitle: "Longitudinal Sleep, Recovery & Activity",
+          subtitle: "Longitudinal Activity, Sleep & Recovery",
         },
         all: {
           title: "All",
-          subtitle: "Sleep, Recovery, and Activity together",
+          subtitle: "Activity, Sleep, and Recovery together",
         },
         sleep: {
           title: "Sleep",
@@ -1098,6 +1098,19 @@ export const enIE = {
       },
     },
     insightsPage: {
+      solTitle: "State of Life (SOL)",
+      solSubtitle:
+        "Eligible personal-history insights, ranked by evidence and relevance.",
+      primaryInsight: "Primary insight",
+      supportingInsight: "Supporting insight",
+      archetype: "Archetype",
+      explanation: "Explanation",
+      evidence: "Evidence",
+      confidenceLabel: "Confidence",
+      action: "Action",
+      limitation: "Limitation",
+      comparison: "Comparison",
+      relevantPeriod: "Relevant period",
       noInsights:
         "No insights yet. Upload your health data to start seeing patterns and recommendations.",
       empty:
@@ -1323,7 +1336,7 @@ export const enIE = {
         all: {
           title: "All",
           subtitle:
-            "Sleep, recovery, and activity evidence in one consolidated Health view",
+            "Activity, sleep, and recovery evidence in one consolidated Health view",
         },
         sleep: {
           title: "Sleep",
@@ -1341,11 +1354,12 @@ export const enIE = {
       },
       overviewTitle: "Health",
       overviewSubtitle:
-        "A compact view of sleep, recovery, and activity from your stored timeline.",
+        "A compact view of activity, sleep, and recovery from your stored timeline.",
       overviewHelper:
         "Each domain uses the latest valid data available for that signal.",
       overviewUpdatedThrough: "Latest stored data through {date}",
       overviewOpenDetail: "Open detail",
+      overviewViewAllData: "View all data",
       overviewNoData: "No stored values yet",
       overviewLatestValue: "Latest value",
       overviewLatestValidDay: {

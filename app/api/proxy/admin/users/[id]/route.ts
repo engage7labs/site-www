@@ -7,7 +7,10 @@
 import { signRequest } from "@/lib/api/signing";
 import { SESSION_COOKIE_NAME, verifyJwt } from "@/lib/auth-server";
 import { INTERNAL_API_BASE_URL } from "@/lib/server-config";
-import { deleteSupabaseAuthUserForAccount } from "@/lib/supabase-admin";
+import {
+  deleteSupabaseAuthUserForAccount,
+  getSupabaseAuthLinkedAccounts,
+} from "@/lib/supabase-admin";
 import { cookies } from "next/headers";
 import { NextRequest, NextResponse } from "next/server";
 
@@ -54,6 +57,18 @@ export async function GET(
   const data = await upstreamResponse
     .json()
     .catch(() => ({ detail: `Upstream error ${upstreamResponse.status}` }));
+
+  if (upstreamResponse.ok && data && typeof data === "object" && !Array.isArray(data)) {
+    const linkedAccounts = await getSupabaseAuthLinkedAccounts(userId);
+    return NextResponse.json(
+      {
+        ...data,
+        linked_accounts: linkedAccounts.accounts,
+        linked_accounts_status: linkedAccounts.ok ? "available" : "unavailable",
+      },
+      { status: upstreamResponse.status },
+    );
+  }
 
   return NextResponse.json(data, { status: upstreamResponse.status });
 }

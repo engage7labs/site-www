@@ -1,6 +1,7 @@
 "use client";
 
 import { useLocale } from "@/components/providers/locale-provider";
+import { ContextualIntelligenceCard } from "@/components/portal/contextual-intelligence-card";
 import { DarthStatePanel } from "@/components/portal/darth-state-panel";
 import { HealthPeriodNavigator } from "@/components/portal/health-period-navigator";
 import { useHealthTimeRange } from "@/hooks/use-health-time-range";
@@ -14,6 +15,8 @@ import {
   selectLatestHealthPoint,
 } from "@/lib/health-time-range";
 import { trackHealthDashboardViewed } from "@/lib/telemetry";
+import type { DarthContextualIntelligence } from "@/lib/darth";
+import { HEALTH_DOMAIN_PRIORITY } from "@/lib/health-domain-priority";
 import { Activity, ArrowRight, HeartPulse, Moon } from "lucide-react";
 import Link from "next/link";
 import type { ElementType } from "react";
@@ -31,6 +34,7 @@ interface HealthPoint {
 interface HealthDataResponse {
   analysis_count: number;
   latest_sections: unknown;
+  contextual_intelligence?: DarthContextualIntelligence | null;
   data_points: HealthPoint[];
   portal_data_status?: {
     latest_job_id?: string | null;
@@ -216,27 +220,41 @@ export default function HealthPage() {
 
   return (
     <div className="flex flex-col gap-6">
+      <ContextualIntelligenceCard
+        artifact={data.contextual_intelligence}
+        locale={locale}
+      />
+
       <section className="portal-panel rounded-lg border border-border/70 bg-card/85 p-5">
-        <div className="flex flex-col gap-2">
-          <h2 className="text-lg font-semibold text-card-foreground">
-            {t.portal.health.overviewTitle}
-          </h2>
-          <p className="max-w-3xl text-sm leading-relaxed text-muted-foreground">
-            {t.portal.health.overviewSubtitle}
-          </p>
-          {latestAnyPoint && (
-            <p className="text-xs text-muted-foreground">
-              {t.portal.health.overviewUpdatedThrough.replace(
-                "{date}",
-                formatDisplayDate(latestAnyPoint.date, locale),
-              )}
+        <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+          <div className="flex flex-col gap-2">
+            <h2 className="text-lg font-semibold text-card-foreground">
+              {t.portal.health.overviewTitle}
+            </h2>
+            <p className="max-w-3xl text-sm leading-relaxed text-muted-foreground">
+              {t.portal.health.overviewSubtitle}
             </p>
-          )}
+            {latestAnyPoint && (
+              <p className="text-xs text-muted-foreground">
+                {t.portal.health.overviewUpdatedThrough.replace(
+                  "{date}",
+                  formatDisplayDate(latestAnyPoint.date, locale),
+                )}
+              </p>
+            )}
+          </div>
+          <Link
+            href="/portal/health/all"
+            className="inline-flex shrink-0 items-center justify-center gap-2 rounded-lg border border-accent/25 bg-accent/10 px-4 py-2.5 text-sm font-semibold text-accent transition-colors hover:bg-accent/15 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+          >
+            {t.portal.health.overviewViewAllData}
+            <ArrowRight className="h-4 w-4" />
+          </Link>
         </div>
       </section>
 
       <div className="grid gap-4 lg:grid-cols-3">
-        {(["sleep", "recovery", "activity"] as const).map((domain) => {
+        {HEALTH_DOMAIN_PRIORITY.map((domain) => {
           const meta = DOMAIN_META[domain];
           const copy = t.portal.health.domains[domain];
           const latest = latestDomainPoint(points, domain);

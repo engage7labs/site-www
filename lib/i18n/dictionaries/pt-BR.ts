@@ -761,11 +761,11 @@ export const ptBR: Dictionary = {
         },
         health: {
           title: "Saúde",
-          subtitle: "Sono, Recuperação e Atividade ao longo do tempo",
+          subtitle: "Atividade, Sono e Recuperação ao longo do tempo",
         },
         all: {
           title: "Todos",
-          subtitle: "Sono, Recuperação e Atividade juntos",
+          subtitle: "Atividade, Sono e Recuperação juntos",
         },
         sleep: {
           title: "Sono",
@@ -1124,6 +1124,19 @@ export const ptBR: Dictionary = {
       },
     },
     insightsPage: {
+      solTitle: "State of Life (SOL)",
+      solSubtitle:
+        "Insights elegíveis do histórico pessoal, ordenados por evidência e relevância.",
+      primaryInsight: "Insight principal",
+      supportingInsight: "Insight de apoio",
+      archetype: "Arquétipo",
+      explanation: "Explicação",
+      evidence: "Evidência",
+      confidenceLabel: "Confiança",
+      action: "Ação",
+      limitation: "Limitação",
+      comparison: "Comparação",
+      relevantPeriod: "Período relevante",
       noInsights:
         "Nenhum insight ainda. Envie seus dados de saúde para começar a ver padrões e recomendações.",
       empty:
@@ -1358,7 +1371,7 @@ export const ptBR: Dictionary = {
         all: {
           title: "Todos",
           subtitle:
-            "Evidências de sono, recuperação e atividade em uma visão de Saúde consolidada",
+            "Evidências de atividade, sono e recuperação em uma visão de Saúde consolidada",
         },
         sleep: {
           title: "Sono",
@@ -1378,11 +1391,12 @@ export const ptBR: Dictionary = {
       },
       overviewTitle: "Saúde",
       overviewSubtitle:
-        "Uma visão compacta de sono, recuperação e atividade a partir da sua linha do tempo armazenada.",
+        "Uma visão compacta de atividade, sono e recuperação a partir da sua linha do tempo armazenada.",
       overviewHelper:
         "Cada domínio usa o dado válido mais recente disponível para aquele sinal.",
       overviewUpdatedThrough: "Dados armazenados mais recentes até {date}",
       overviewOpenDetail: "Abrir detalhe",
+      overviewViewAllData: "Ver todos os dados",
       overviewNoData: "Ainda sem valores armazenados",
       overviewLatestValue: "Valor mais recente",
       overviewLatestValidDay: {

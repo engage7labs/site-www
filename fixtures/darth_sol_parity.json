@@ -1,0 +1,124 @@
+{
+  "fixture_version": "darth_sol_parity.v1",
+  "cases": [
+    {
+      "scenario": "recent_reversal_against_long_term_en",
+      "contract_version": "darth.v4",
+      "algorithm_version": "darth_algorithm.v4.0.0",
+      "locale": "en-IE",
+      "contextual": {
+        "archetype": "recent_reversal_against_long_term",
+        "headline": "Your recent activity dip interrupts a longer-term improvement.",
+        "explanation": "The last four weeks moved against the direction seen across reliable years of your history.",
+        "comparison": "Compared with both the previous four weeks and the multi-year direction.",
+        "evidence": "Moderate evidence based on your own comparable history.",
+        "action": "Respond to the recent shift without discarding the routine behind your longer-term progress.",
+        "restraint": "It is too early to call the recent shift a lasting reversal.",
+        "confidence": "Moderate evidence",
+        "explore": "Explore the evidence in Insights"
+      }
+    },
+    {
+      "scenario": "converging_recent_pattern_en",
+      "contract_version": "darth.v4",
+      "algorithm_version": "darth_algorithm.v4.0.0",
+      "locale": "en-IE",
+      "contextual": {
+        "archetype": "converging_recent_pattern",
+        "headline": "Several activity signals agree: your recent routine has expanded.",
+        "explanation": "Steps, distance, and energy form one consistent four-week pattern rather than an isolated metric change.",
+        "comparison": "Compared with the four weeks immediately before it.",
+        "evidence": "Strong evidence based on your own comparable history.",
+        "action": "Keep the activity expansion repeatable and protect recovery around it.",
+        "restraint": "Aligned activity signals still do not define your overall recovery.",
+        "confidence": "Strong evidence",
+        "explore": "Explore the evidence in Insights"
+      }
+    },
+    {
+      "scenario": "stable_positive_pattern_en",
+      "contract_version": "darth.v4",
+      "algorithm_version": "darth_algorithm.v4.0.0",
+      "locale": "en-IE",
+      "contextual": {
+        "archetype": "stable_positive_pattern",
+        "headline": "Your recent routine is among the most consistent periods in your history.",
+        "explanation": "The last three months show less day-to-day variation than most comparable periods, without a clear drop in the underlying level.",
+        "comparison": "Compared with rolling three-month periods across your own history.",
+        "evidence": "Strong evidence based on your own comparable history.",
+        "action": "Preserve the repeatable routine that is supporting this stable period.",
+        "restraint": "A stable period does not mean every day should look the same.",
+        "confidence": "Strong evidence",
+        "explore": "Explore the evidence in Insights"
+      }
+    },
+    {
+      "scenario": "multi_signal_relationship_en",
+      "contract_version": "darth.v4",
+      "algorithm_version": "darth_algorithm.v4.0.0",
+      "locale": "en-IE",
+      "contextual": {
+        "archetype": "multi_signal_relationship",
+        "headline": "Your recovery tends to respond to sustained sleep, not one exceptional night.",
+        "explanation": "Repeated weekly patterns show that better-supported sleep was often followed by a more supportive recovery signal.",
+        "comparison": "Seen repeatedly across weekly patterns after removing slow background drift.",
+        "evidence": "Moderate evidence based on your own comparable history.",
+        "action": "Give sleep a consistent place across the week and watch the following recovery pattern.",
+        "restraint": "This repeated association does not prove that one signal caused the other.",
+        "confidence": "Moderate evidence",
+        "explore": "Explore the evidence in Insights"
+      }
+    },
+    {
+      "scenario": "mixed_long_term_story_en",
+      "contract_version": "darth.v4",
+      "algorithm_version": "darth_algorithm.v4.0.0",
+      "locale": "en-IE",
+      "contextual": {
+        "archetype": "mixed_long_term_story",
+        "headline": "Your long-term story is mixed—and that is the useful part.",
+        "explanation": "One important signal became less supportive while another improved, so your history does not reduce to one up-or-down score.",
+        "comparison": "Compared across the earliest and latest reliable yearly periods.",
+        "evidence": "Moderate evidence based on your own comparable history.",
+        "action": "Support the weaker pattern while preserving what has improved.",
+        "restraint": "Do not collapse changes moving in different directions into one score.",
+        "confidence": "Moderate evidence",
+        "explore": "Explore the evidence in Insights"
+      }
+    },
+    {
+      "scenario": "insufficient_evidence_en",
+      "contract_version": "darth.v4",
+      "algorithm_version": "darth_algorithm.v4.0.0",
+      "locale": "en-IE",
+      "contextual": {
+        "archetype": "insufficient_evidence",
+        "headline": "Your history does not support a strong personal pattern yet.",
+        "explanation": "More comparable days are needed before one change or relationship deserves the primary position.",
+        "comparison": "There is no sufficiently reliable personal comparison yet.",
+        "evidence": "Insufficient evidence based on your own comparable history.",
+        "action": "Keep your routine steady while more comparable evidence forms.",
+        "restraint": "Do not turn missing or uneven data into a personal conclusion.",
+        "confidence": "Insufficient evidence",
+        "explore": "Explore the evidence in Insights"
+      }
+    },
+    {
+      "scenario": "multi_signal_relationship_pt",
+      "contract_version": "darth.v4",
+      "algorithm_version": "darth_algorithm.v4.0.0",
+      "locale": "pt-BR",
+      "contextual": {
+        "archetype": "multi_signal_relationship",
+        "headline": "Sua recuperação tende a responder ao sono sustentado, não a uma única noite excepcional.",
+        "explanation": "Padrões semanais repetidos mostram que um sono mais bem sustentado foi frequentemente seguido por um sinal de recuperação mais favorável.",
+        "comparison": "Observado repetidamente em padrões semanais após remover a tendência lenta de fundo.",
+        "evidence": "Evidência moderada com base no seu próprio histórico comparável.",
+        "action": "Dê ao sono um lugar consistente ao longo da semana e observe o padrão de recuperação seguinte.",
+        "restraint": "Essa associação repetida não prova que um sinal causou o outro.",
+        "confidence": "Evidência moderada",
+        "explore": "Explore as evidências em Insights"
+      }
+    }
+  ]
+}

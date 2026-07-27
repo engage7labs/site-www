@@ -1,6 +1,6 @@
 "use client";
 
-import { CompareImproveBlock } from "@/components/portal/compare-improve-block";
+import { ContextualIntelligenceCard } from "@/components/portal/contextual-intelligence-card";
 import { useLocale } from "@/components/providers/locale-provider";
 import { FeaturePreviewBadge } from "@/components/shared/feature-preview-badge";
 import {
@@ -12,9 +12,10 @@ import {
   selectDarthStatePresentation,
   type DarthInsightBlock,
   type DarthPayload,
+  type DarthContextualIntelligence,
+  type DarthSolInsightPresentation,
   type DarthStatePresentation,
 } from "@/lib/darth";
-import { generateCompareImprove } from "@/lib/insights/compare-improve";
 import {
   extractActivityInsights,
   extractActivitySignalInsights,
@@ -28,11 +29,14 @@ import type { PortalDataStatus } from "@/lib/portal-data-status";
 import { parsePortalDataStatus } from "@/lib/portal-data-status";
 import {
   Activity,
+  CalendarRange,
   Heart,
   Lightbulb,
   Loader2,
   Minus,
   Moon,
+  ShieldCheck,
+  Sparkles,
   TrendingDown,
   TrendingUp,
 } from "lucide-react";
@@ -67,6 +71,10 @@ interface TrendsData {
     activity: TrendPoint[];
   };
   analysis_count: number;
+}
+
+interface OverviewPayload {
+  contextual_intelligence?: DarthContextualIntelligence | null;
 }
 
 const CONFIDENCE_COLORS = {
@@ -106,7 +114,6 @@ function coerceSections(value: unknown): Sections | null {
     : null;
 }
 
-type OverviewData = Record<string, unknown>;
 
 interface DarthDisplayBlock {
   block: DarthInsightBlock;
@@ -413,6 +420,107 @@ function InsightCard({
   );
 }
 
+function SolInsightCard({
+  insight,
+  index,
+  strings,
+}: {
+  insight: DarthSolInsightPresentation;
+  index: number;
+  strings: {
+    primaryInsight: string;
+    supportingInsight: string;
+    archetype: string;
+    explanation: string;
+    evidence: string;
+    confidenceLabel: string;
+    action: string;
+    limitation: string;
+    comparison: string;
+    relevantPeriod: string;
+  };
+}) {
+  return (
+    <article className="flex flex-col gap-4 rounded-2xl border border-border bg-card p-5">
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <span className="inline-flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-accent">
+          <Sparkles className="h-4 w-4" aria-hidden="true" />
+          {index === 0 ? strings.primaryInsight : strings.supportingInsight}
+        </span>
+        <span className="inline-flex items-center gap-1.5 rounded-full bg-accent/10 px-2.5 py-1 text-xs font-medium text-accent">
+          <ShieldCheck className="h-3.5 w-3.5" aria-hidden="true" />
+          {strings.confidenceLabel}: {insight.confidence}
+        </span>
+      </div>
+
+      <div>
+        <p className="text-xs font-medium text-muted-foreground">
+          {strings.archetype}: {insight.archetype_label}
+        </p>
+        <h2 className="mt-1 text-base font-semibold leading-snug text-card-foreground">
+          {insight.headline}
+        </h2>
+      </div>
+
+      <div className="grid gap-3 text-sm">
+        <div>
+          <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+            {strings.explanation}
+          </p>
+          <p className="mt-1 leading-relaxed text-muted-foreground">
+            {insight.explanation}
+          </p>
+        </div>
+        {insight.comparison && (
+          <div>
+            <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+              {strings.comparison}
+            </p>
+            <p className="mt-1 leading-relaxed text-muted-foreground">
+              {insight.comparison}
+            </p>
+          </div>
+        )}
+        {insight.period && (
+          <div className="flex items-start gap-2 rounded-lg bg-muted/40 px-3 py-2 text-muted-foreground">
+            <CalendarRange className="mt-0.5 h-4 w-4 shrink-0" aria-hidden="true" />
+            <div>
+              <p className="text-xs font-semibold uppercase tracking-wider">
+                {strings.relevantPeriod}
+              </p>
+              <p className="mt-1 text-xs leading-relaxed">{insight.period}</p>
+            </div>
+          </div>
+        )}
+        <div>
+          <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+            {strings.evidence}
+          </p>
+          <p className="mt-1 border-l-2 border-accent/40 pl-3 text-sm leading-relaxed text-muted-foreground">
+            {insight.evidence}
+          </p>
+        </div>
+        <div className="rounded-lg bg-accent/5 p-3">
+          <p className="text-xs font-semibold uppercase tracking-wider text-accent">
+            {strings.action}
+          </p>
+          <p className="mt-1 leading-relaxed text-card-foreground">
+            {insight.action}
+          </p>
+        </div>
+        <div>
+          <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+            {strings.limitation}
+          </p>
+          <p className="mt-1 text-xs leading-relaxed text-muted-foreground">
+            {insight.limitation}
+          </p>
+        </div>
+      </div>
+    </article>
+  );
+}
+
 export default function InsightsPage() {
   const { t, locale } = useLocale();
   const [insights, setInsights] = useState<InsightText[]>([]);
@@ -421,10 +529,9 @@ export default function InsightsPage() {
   const [darthState, setDarthState] = useState<string | null>(null);
   const [darthClaim, setDarthClaim] = useState<string | null>(null);
   const [darthPayload, setDarthPayload] = useState<DarthPayload | null>(null);
+  const [contextualArtifact, setContextualArtifact] =
+    useState<DarthContextualIntelligence | null>(null);
   const [trends, setTrends] = useState<TrendsData["trends"] | null>(null);
-  const [trendsData, setTrendsData] = useState<TrendsData | null>(null);
-  const [overview, setOverview] = useState<OverviewData | null>(null);
-  const [latestSections, setLatestSections] = useState<Sections | null>(null);
   const [loading, setLoading] = useState(true);
   const [empty, setEmpty] = useState(false);
   const [usingLegacyFallback, setUsingLegacyFallback] = useState(false);
@@ -446,22 +553,22 @@ export default function InsightsPage() {
         .catch(() => null),
     ])
       .then(
-        ([analysesData, trendPayload, overviewData]: [
+        ([analysesData, trendPayload, overviewPayload]: [
           AnalysesPayload,
           TrendsData | null,
-          OverviewData | null
+          OverviewPayload | null,
         ]) => {
           const status = parsePortalDataStatus(
             analysesData?.portal_data_status
           );
           setPortalStatus(status);
-          setOverview(overviewData);
-
           // INSIGHTS_TRENDS_SPARKLINE_ONLY
           if (trendPayload?.trends) {
             setTrends(trendPayload.trends);
-            setTrendsData(trendPayload);
           }
+          setContextualArtifact(
+            overviewPayload?.contextual_intelligence ?? null,
+          );
 
           // Insights
           const analyses: Analysis[] = getAnalyses(analysesData);
@@ -476,7 +583,6 @@ export default function InsightsPage() {
             analyses.find((analysis) => getAnalysisSections(analysis)) ??
             analyses[0];
           const sections = getAnalysisSections(latest);
-          setLatestSections(sections);
           const presentation = getDarthPresentation(sections);
           const payload = getDarthPayload(sections);
           setDarthPayload(payload);
@@ -527,7 +633,8 @@ export default function InsightsPage() {
           }
 
           // INSIGHTS_LEGACY_SECTIONS_FALLBACK
-          const fallbackInsights = extractLegacyInsights(sections);
+          const fallbackInsights =
+            locale === "pt-BR" ? [] : extractLegacyInsights(sections);
           if (fallbackInsights.length > 0) {
             setEmptyMessage(t.portal.insightsPage.legacyFallback);
           }
@@ -544,7 +651,12 @@ export default function InsightsPage() {
         setEmpty(true);
         setLoading(false);
       });
-  }, [locale]);
+  }, [
+    locale,
+    t.portal.insightsPage.empty,
+    t.portal.insightsPage.legacyFallback,
+    t.portal.insightsPage.loadError,
+  ]);
 
   // Memoize sparkline data for each pillar
   const sparklines = useMemo(() => {
@@ -555,20 +667,19 @@ export default function InsightsPage() {
     };
   }, [trends]);
 
-  const compareImprove = useMemo(
-    () =>
-      generateCompareImprove(
-        overview,
-        trendsData,
-        latestSections,
-        t.portal.compareImprove
-      ),
-    [overview, trendsData, latestSections, t.portal.compareImprove]
-  );
   const darthStateDisplay: DarthStatePresentation | null = useMemo(
     () => selectDarthStatePresentation(darthPayload, locale),
     [darthPayload, locale]
   );
+  const contextualLocale = locale === "pt-BR" ? "pt-BR" : "en-IE";
+  const activeContextualArtifact =
+    contextualArtifact ?? darthPayload?.contextual_intelligence;
+  const hasSolContextual = Boolean(
+    activeContextualArtifact?.presentation?.[contextualLocale]?.archetype
+  );
+  const eligibleSolInsights =
+    activeContextualArtifact?.eligible_insights?.[contextualLocale] ?? [];
+  const blocksLegacyForLocale = locale === "pt-BR" && !hasSolContextual;
 
   if (loading) {
     return (
@@ -589,8 +700,10 @@ export default function InsightsPage() {
   };
 
   if (
-    empty ||
-    (insights.length === 0 && darthInsights.length === 0 && !heroBlock)
+    blocksLegacyForLocale ||
+    (!hasSolContextual &&
+      (empty ||
+        (insights.length === 0 && darthInsights.length === 0 && !heroBlock)))
   ) {
     const message =
       !portalStatus?.hasAnalyses ||
@@ -602,7 +715,6 @@ export default function InsightsPage() {
 
     return (
       <div className="flex flex-col gap-6">
-        <CompareImproveBlock result={compareImprove} />
         <div className="flex flex-col items-center justify-center py-16 gap-4 text-center">
           <Lightbulb className="h-10 w-10 text-muted-foreground/50" />
           <p className="text-sm text-muted-foreground max-w-sm">{message}</p>
@@ -622,10 +734,36 @@ export default function InsightsPage() {
 
   return (
     <div className="flex flex-col gap-6">
-      <CompareImproveBlock result={compareImprove} />
+      {hasSolContextual && eligibleSolInsights.length > 0 ? (
+        <section className="flex flex-col gap-4" aria-labelledby="sol-insights-title">
+          <div>
+            <h1 id="sol-insights-title" className="text-xl font-semibold text-card-foreground">
+              {t.portal.insightsPage.solTitle}
+            </h1>
+            <p className="mt-1 text-sm text-muted-foreground">
+              {t.portal.insightsPage.solSubtitle}
+            </p>
+          </div>
+          <div className="grid gap-4 lg:grid-cols-2">
+            {eligibleSolInsights.map((insight, index) => (
+              <SolInsightCard
+                key={`${insight.archetype}-${insight.headline}`}
+                insight={insight}
+                index={index}
+                strings={t.portal.insightsPage}
+              />
+            ))}
+          </div>
+        </section>
+      ) : (
+        <ContextualIntelligenceCard
+          artifact={activeContextualArtifact}
+          locale={locale}
+        />
+      )}
 
       {/* ─── DARTH primary claim header — Sprint 32.0 ─── */}
-      {(darthState || darthClaim) && (
+      {!hasSolContextual && (darthState || darthClaim) && (
         <div className="rounded-xl border border-accent/20 bg-accent/5 px-5 py-4 flex flex-col gap-2">
           <div className="flex items-center gap-2 flex-wrap">
             {darthState && (
@@ -647,7 +785,7 @@ export default function InsightsPage() {
       )}
 
       {/* ─── DARTH hero insight ─── */}
-      {heroBlock?.copy && (
+      {!hasSolContextual && heroBlock?.copy && (
         <div className="flex flex-col gap-3 rounded-xl border border-accent/30 bg-card p-5">
           <div className="flex items-center gap-2 flex-wrap">
             <Lightbulb className="h-4 w-4 text-accent" />
@@ -680,7 +818,7 @@ export default function InsightsPage() {
       )}
 
       {/* ─── Supporting insights ─── */}
-      {darthInsights.length > 0 ? (
+      {!hasSolContextual && (darthInsights.length > 0 ? (
         <div className="grid gap-4 sm:grid-cols-2">
           {darthInsights.map(({ block, copy }) =>
             copy ? (
@@ -737,7 +875,7 @@ export default function InsightsPage() {
             ))}
           </div>
         </div>
-      )}
+      ))}
     </div>
   );
 }
