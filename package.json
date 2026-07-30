@@ -1,6 +1,6 @@
 {
   "name": "my-v0-project",
-  "version": "1.58.0.0",
+  "version": "1.58.1.0",
   "private": true,
   "engines": {
     "node": "24.x"
@@ -27,6 +27,7 @@
     "test:sol-parity": "node scripts/test-sprint-55-sol-parity.mjs",
     "test:sol-live-routing": "node scripts/test-sprint-55-live-routing.mjs",
     "test:insights-plus": "node --experimental-strip-types --disable-warning=MODULE_TYPELESS_PACKAGE_JSON scripts/test-sprint-58-insights-plus.mjs",
+    "test:update-data": "node scripts/test-sprint-58_1-update-data.mjs",
     "start": "next start"
   },
   "dependencies": {
