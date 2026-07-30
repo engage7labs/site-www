@@ -1,11 +1,11 @@
-export type PublicHeaderCta =
-  | { href: "/login?next=/onboarding"; kind: "get-started" }
+export type PublicHeaderSecondaryCta =
+  | { href: "/login"; kind: "sign-in" }
   | { href: "/portal"; kind: "portal" };
 
-export function resolvePublicHeaderCta(
+export function resolvePublicHeaderSecondaryCta(
   hasValidSession: boolean,
-): PublicHeaderCta {
+): PublicHeaderSecondaryCta {
   return hasValidSession
     ? { href: "/portal", kind: "portal" }
-    : { href: "/login?next=/onboarding", kind: "get-started" };
+    : { href: "/login", kind: "sign-in" };
 }

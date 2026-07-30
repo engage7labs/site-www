@@ -8,6 +8,7 @@ export const enIE = {
     logo: "Engage7",
     getStarted: "Get started",
     login: "Login",
+    signIn: "Sign in",
     portal: "Portal",
     dashboard: "Dashboard",
   },

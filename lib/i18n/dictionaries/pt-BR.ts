@@ -10,6 +10,7 @@ export const ptBR: Dictionary = {
     logo: "Engage7",
     getStarted: "Começar",
     login: "Login",
+    signIn: "Entrar",
     portal: "Portal",
     dashboard: "Painel",
   },

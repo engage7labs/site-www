@@ -22,6 +22,16 @@ Next.js application for Engage7 public pages, authenticated Portal, and Admin. T
 - Reports: `app/portal/reports/` and `lib/api/analysis.ts` → analyses list/detail proxy and safe AI Reflection panel.
 - Settings: `app/portal/settings/page.tsx` → account, overview, profile, preference, and footprint proxies.
 
+## Public homepage actions
+
+The shared `SiteHeader` implements both desktop and mobile public actions. Get
+started always links to `/login?next=/onboarding` and remains the acquisition
+and onboarding action. After the canonical browser session snapshot resolves,
+the second action is Sign in (`/login`) without a valid session and Portal
+(`/portal`) with one. Portal is the authenticated state of Sign in; do not
+merge it with Get started or add a second session source, storage inference, or
+auth callback behavior.
+
 ## Canonical flow
 
 Public landing → Get started → Supabase provider/Email OTP or returning legacy password → `/onboarding` → canonical profile update → Supabase completion metadata → `/portal/upload`. Upload-token issuance resolves the verified Portal session and calls `/api/users/me/upload-sas` with canonical UUID identity before Blob transfer. Portal route → client component → `/api/proxy/...` → verified Portal cookie session → signed API request → API response. Retired `/analyze`, `/result/*`, public proxies, and claim continuation redirect or return 410. Do not call protected API routes directly from browser code or copy server business rules to the client.
