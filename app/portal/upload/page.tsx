@@ -64,6 +64,7 @@ export default function PortalUploadPage() {
   );
   const [elapsedSeconds, setElapsedSeconds] = useState(0);
   const pollRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const completionMessage = t.common.status.complete;
 
   useEffect(() => {
     if (!processingStartedAt) return;
@@ -88,7 +89,7 @@ export default function PortalUploadPage() {
           setStatus("completed");
           clearProcessingStart();
           trackUpdateDataCompleted(activeJobId);
-          toast.success(t.common.status.complete);
+          toast.success(completionMessage);
           setTimeout(() => router.push("/portal"), 1500);
         } else if (data.upload_status === "failed") {
           clearInterval(pollRef.current!);
@@ -105,7 +106,7 @@ export default function PortalUploadPage() {
     }, 5000);
 
     return () => { if (pollRef.current) clearInterval(pollRef.current); };
-  }, [activeJobId, status, router]);
+  }, [activeJobId, status, router, completionMessage]);
 
   const handleUpload = async () => {
     if (!selectedFile || (status !== "idle" && status !== "failed")) return;

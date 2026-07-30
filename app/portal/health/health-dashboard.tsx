@@ -1819,7 +1819,7 @@ export function HealthDashboard({
   const { t, locale } = useLocale();
   const [data, setData] = useState<HealthDataResponse | null>(null);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const [hasLoadError, setHasLoadError] = useState(false);
   const [exporting, setExporting] = useState(false);
   const [exportError, setExportError] = useState<string | null>(null);
 
@@ -1839,7 +1839,7 @@ export function HealthDashboard({
         const payload = (await res.json()) as HealthDataResponse;
         if (!cancelled) setData(payload);
       } catch {
-        if (!cancelled) setError(t.portal.health.loadError);
+        if (!cancelled) setHasLoadError(true);
       } finally {
         if (!cancelled) setLoading(false);
       }
@@ -1938,13 +1938,13 @@ export function HealthDashboard({
 
   if (loading) return <LoadingState />;
 
-  if (error) {
+  if (hasLoadError) {
     return (
       <div className="flex flex-col gap-6">
         <MetricState
           Icon={Info}
           title={t.portal.health.unableToLoad}
-          body={error}
+          body={t.portal.health.loadError}
         />
       </div>
     );

@@ -2,7 +2,7 @@
 
 import { Eye, RefreshCw } from "lucide-react";
 import Link from "next/link";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 interface AiArtifactSummary {
   id: number;
@@ -91,7 +91,7 @@ export default function AdminAiArtifactsPage() {
     return params.toString();
   }, [featureKey, gateMode, offset, validationStatus]);
 
-  async function load() {
+  const load = useCallback(async () => {
     setLoading(true);
     setError(null);
     try {
@@ -106,11 +106,11 @@ export default function AdminAiArtifactsPage() {
     } finally {
       setLoading(false);
     }
-  }
+  }, [query]);
 
   useEffect(() => {
     void load();
-  }, [query]);
+  }, [load]);
 
   const canPrev = offset > 0;
   const canNext = data ? offset + limit < data.total : false;

@@ -9,6 +9,7 @@ import { SiteHeader } from "@/components/shared/site-header";
 import { TechLogos } from "@/components/shared/tech-logos";
 import { Button } from "@/components/ui/button";
 import { motion } from "framer-motion";
+import Image from "next/image";
 import {
   Activity,
   ArrowRight,
@@ -24,7 +25,16 @@ import {
 } from "lucide-react";
 import Link from "next/link";
 import { trackPublicGetStartedClicked } from "@/lib/telemetry";
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
+
+const PRODUCT_PREVIEW_SOURCES = [
+  { src: "/samples/sample1.png", width: 1086, height: 1448 },
+  { src: "/samples/sample2.png", width: 1024, height: 1536 },
+  { src: "/samples/sample3.png", width: 1024, height: 1535 },
+  { src: "/samples/sample4.png", width: 1024, height: 1536 },
+  { src: "/samples/sample5.png", width: 1024, height: 1535 },
+  { src: "/samples/sample6.png", width: 1086, height: 1448 },
+] as const;
 
 const fadeInUp = {
   initial: { opacity: 0, y: 20 },
@@ -65,38 +75,19 @@ function ProductPreviewCarousel({
 }) {
   const scrollerRef = useRef<HTMLDivElement>(null);
   const [selectedIndex, setSelectedIndex] = useState<number | null>(null);
-  const previews = [
-    {
-      src: "/samples/sample1.png",
-      alt: t.labels.dailyGuidance,
-      label: t.labels.dailyGuidance,
-    },
-    {
-      src: "/samples/sample2.png",
-      alt: t.labels.compareImprove,
-      label: t.labels.compareImprove,
-    },
-    {
-      src: "/samples/sample3.png",
-      alt: t.labels.healthOverview,
-      label: t.labels.healthOverview,
-    },
-    {
-      src: "/samples/sample4.png",
-      alt: t.labels.sleepTrends,
-      label: t.labels.sleepTrends,
-    },
-    {
-      src: "/samples/sample5.png",
-      alt: t.labels.recoveryTrends,
-      label: t.labels.recoveryTrends,
-    },
-    {
-      src: "/samples/sample6.png",
-      alt: t.labels.activityTrends,
-      label: t.labels.activityTrends,
-    },
+  const previewLabels = [
+    t.labels.dailyGuidance,
+    t.labels.compareImprove,
+    t.labels.healthOverview,
+    t.labels.sleepTrends,
+    t.labels.recoveryTrends,
+    t.labels.activityTrends,
   ];
+  const previews = PRODUCT_PREVIEW_SOURCES.map((source, index) => ({
+    ...source,
+    alt: previewLabels[index],
+    label: previewLabels[index],
+  }));
 
   function scrollByCard(direction: "previous" | "next") {
     const scroller = scrollerRef.current;
@@ -109,13 +100,13 @@ function ProductPreviewCarousel({
     });
   }
 
-  function moveLightbox(direction: "previous" | "next") {
+  const moveLightbox = useCallback((direction: "previous" | "next") => {
     setSelectedIndex((current) => {
       if (current === null) return current;
       const offset = direction === "next" ? 1 : -1;
-      return (current + offset + previews.length) % previews.length;
+      return (current + offset + PRODUCT_PREVIEW_SOURCES.length) % PRODUCT_PREVIEW_SOURCES.length;
     });
-  }
+  }, []);
 
   useEffect(() => {
     if (selectedIndex === null) return;
@@ -128,7 +119,7 @@ function ProductPreviewCarousel({
 
     window.addEventListener("keydown", onKeyDown);
     return () => window.removeEventListener("keydown", onKeyDown);
-  }, [selectedIndex]);
+  }, [selectedIndex, moveLightbox]);
 
   const selectedPreview =
     selectedIndex === null ? null : previews[selectedIndex] ?? null;
@@ -161,11 +152,13 @@ function ProductPreviewCarousel({
                 onClick={() => setSelectedIndex(index)}
                 className="block w-full rounded-2xl border border-border/70 bg-card/60 p-2 shadow-2xl shadow-black/20 transition hover:border-accent/70 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
               >
-                <img
+                <Image
                   src={preview.src}
                   alt={preview.alt}
+                  width={preview.width}
+                  height={preview.height}
+                  sizes="(min-width: 768px) 280px, 78vw"
                   className="aspect-[9/16] w-full rounded-xl object-cover"
-                  loading="lazy"
                 />
               </button>
               <figcaption className="text-center text-sm font-medium text-foreground">
@@ -227,10 +220,13 @@ function ProductPreviewCarousel({
               <figcaption className="absolute left-1/2 top-2 z-10 max-w-[calc(100%-6rem)] -translate-x-1/2 rounded-full border border-white/15 bg-black/55 px-3 py-1 text-center text-xs font-semibold text-white shadow-lg backdrop-blur-sm sm:text-sm">
                 {selectedPreview.label}
               </figcaption>
-              <img
+              <Image
                 src={selectedPreview.src}
                 alt={selectedPreview.alt}
                 title={selectedPreview.label}
+                width={selectedPreview.width}
+                height={selectedPreview.height}
+                sizes="(min-width: 640px) 80vw, 100vw"
                 className="min-h-0 max-h-full w-auto max-w-full rounded-2xl border border-white/10 object-contain shadow-2xl"
               />
             </figure>

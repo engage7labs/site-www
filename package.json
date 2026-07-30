@@ -1,6 +1,6 @@
 {
   "name": "my-v0-project",
-  "version": "1.57.1.2",
+  "version": "1.57.1.3",
   "private": true,
   "engines": {
     "node": "24.x"
@@ -22,6 +22,7 @@
     "test:analytics-status-banner": "node --experimental-strip-types --disable-warning=MODULE_TYPELESS_PACKAGE_JSON scripts/test-hotfix-52_4_3-analytics-status-banner.mjs",
     "test:hotfix-53_1_1-health-all-cta": "node scripts/test-hotfix-53_1_1-health-all-cta.mjs",
     "test:public-header-cta": "node --experimental-strip-types --disable-warning=MODULE_TYPELESS_PACKAGE_JSON scripts/test-public-header-cta.mjs",
+    "test:sprint-57_1_3-web-lint-fixes": "node --experimental-strip-types --disable-warning=MODULE_TYPELESS_PACKAGE_JSON scripts/test-sprint-57_1_3_web_lint_fixes.mjs",
     "test:darth-v3-parity": "node scripts/test-sprint-54-darth-v3-parity.mjs",
     "test:sol-parity": "node scripts/test-sprint-55-sol-parity.mjs",
     "test:sol-live-routing": "node scripts/test-sprint-55-live-routing.mjs",
