@@ -1112,6 +1112,7 @@ export const enIE = {
       limitation: "Limitation",
       comparison: "Comparison",
       relevantPeriod: "Relevant period",
+      visualEvidenceSampleCount: "{n} supporting observations",
       noInsights:
         "No insights yet. Upload your health data to start seeing patterns and recommendations.",
       empty:

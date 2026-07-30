@@ -306,6 +306,7 @@ export interface DarthSolInsightPresentation {
   confidence: string;
   action: string;
   limitation: string;
+  visual_evidence?: unknown;
 }
 
 export interface DarthContextualIntelligence {

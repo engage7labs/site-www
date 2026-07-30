@@ -1138,6 +1138,7 @@ export const ptBR: Dictionary = {
       limitation: "Limitação",
       comparison: "Comparação",
       relevantPeriod: "Período relevante",
+      visualEvidenceSampleCount: "{n} observações de apoio",
       noInsights:
         "Nenhum insight ainda. Envie seus dados de saúde para começar a ver padrões e recomendações.",
       empty:
