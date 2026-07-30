@@ -1,6 +1,7 @@
 "use client";
 
 import { ContextualIntelligenceCard } from "@/components/portal/contextual-intelligence-card";
+import { InsightVisualEvidenceChart } from "@/components/portal/insight-visual-evidence-chart";
 import { useLocale } from "@/components/providers/locale-provider";
 import { FeaturePreviewBadge } from "@/components/shared/feature-preview-badge";
 import {
@@ -423,10 +424,12 @@ function InsightCard({
 function SolInsightCard({
   insight,
   index,
+  locale,
   strings,
 }: {
   insight: DarthSolInsightPresentation;
   index: number;
+  locale: string;
   strings: {
     primaryInsight: string;
     supportingInsight: string;
@@ -438,6 +441,7 @@ function SolInsightCard({
     limitation: string;
     comparison: string;
     relevantPeriod: string;
+    visualEvidenceSampleCount: string;
   };
 }) {
   return (
@@ -508,6 +512,11 @@ function SolInsightCard({
             {insight.action}
           </p>
         </div>
+        <InsightVisualEvidenceChart
+          evidence={insight.visual_evidence}
+          locale={locale}
+          sampleCountLabel={strings.visualEvidenceSampleCount}
+        />
         <div>
           <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
             {strings.limitation}
@@ -750,6 +759,7 @@ export default function InsightsPage() {
                 key={`${insight.archetype}-${insight.headline}`}
                 insight={insight}
                 index={index}
+                locale={locale}
                 strings={t.portal.insightsPage}
               />
             ))}

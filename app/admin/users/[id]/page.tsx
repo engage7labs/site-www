@@ -1,6 +1,7 @@
 "use client";
 
 import { useParams, useRouter } from "next/navigation";
+import Link from "next/link";
 import { useEffect, useState } from "react";
 
 interface AdminUserDetail {
@@ -228,9 +229,9 @@ export default function AdminUserDetailPage() {
     return (
       <div className="flex flex-col items-center justify-center py-24 gap-2">
         <p className="text-destructive text-sm">{error ?? "User not found"}</p>
-        <a href="/admin/users" className="text-xs text-accent hover:underline">
+        <Link href="/admin/users" className="text-xs text-accent hover:underline">
           ← Back to users
-        </a>
+        </Link>
       </div>
     );
   }
@@ -247,9 +248,9 @@ export default function AdminUserDetailPage() {
             {user.id}
           </p>
         </div>
-        <a href="/admin/users" className="text-xs text-accent hover:underline">
+        <Link href="/admin/users" className="text-xs text-accent hover:underline">
           ← All users
-        </a>
+        </Link>
       </div>
 
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">

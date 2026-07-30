@@ -534,6 +534,11 @@ function CorrelationHeatmapChart({
 }: Readonly<{ correlations: Record<string, unknown> | null }>) {
   const { t } = useLocale();
   const containerRef = useRef<HTMLDivElement>(null);
+  const sleepDuration = t.portal.dataLab.sleepDuration;
+  const hrv = t.common.metrics.hrv;
+  const heartRate = t.portal.dataLab.heartRate;
+  const dailySteps = t.portal.dataLab.dailySteps;
+  const activeMinutes = t.portal.dataLab.activeMinutes;
 
   useEffect(() => {
     let chart:
@@ -549,11 +554,11 @@ function CorrelationHeatmapChart({
       const axisLabelColor = isDark ? LIGHT_TEXT : "#5f6368";
 
       const metrics = [
-        t.portal.dataLab.sleepDuration,
-        t.common.metrics.hrv,
-        t.portal.dataLab.heartRate,
-        t.portal.dataLab.dailySteps,
-        t.portal.dataLab.activeMinutes,
+        sleepDuration,
+        hrv,
+        heartRate,
+        dailySteps,
+        activeMinutes,
       ];
       const corrData: number[][] = [];
       if (correlations && typeof correlations === "object") {
@@ -642,7 +647,7 @@ function CorrelationHeatmapChart({
       disposed = true;
       chart?.dispose();
     };
-  }, [correlations]);
+  }, [correlations, sleepDuration, hrv, heartRate, dailySteps, activeMinutes]);
 
   return (
     <div className="portal-panel rounded-xl border border-border/70 bg-card/85 p-4">

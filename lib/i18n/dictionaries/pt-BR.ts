@@ -10,6 +10,7 @@ export const ptBR: Dictionary = {
     logo: "Engage7",
     getStarted: "Começar",
     login: "Login",
+    signIn: "Entrar",
     portal: "Portal",
     dashboard: "Painel",
   },
@@ -476,7 +477,19 @@ export const ptBR: Dictionary = {
     unavailable: "Indisponível",
     notAvailable: "Não disponível",
     unknown: "Desconhecido",
-    updateData: "Atualizar Dados",
+    updateData: "Atualizar dados",
+    updateDataFlow: {
+      reanalyseTitle: "Reanalisar dados existentes",
+      reanalyseBody: "Use seu conjunto de dados atual do Engage7 para gerar uma nova análise.",
+      reanalyseAction: "Reanalisar",
+      uploadTitle: "Enviar nova exportação do Apple Health",
+      uploadBody: "Adicione uma exportação mais recente do Apple Health para atualizar sua linha do tempo.",
+      uploadAction: "Enviar exportação",
+      confirm: "O Engage7 reutilizará seus dados existentes. Nenhum ZIP do Apple Health é necessário, análises anteriores permanecem disponíveis e o processamento pode levar algum tempo.",
+      noData: "Não há dados existentes disponíveis. Envie uma nova exportação do Apple Health.",
+      completed: "Sua nova análise está pronta.",
+      returnToInsights: "Voltar para Insights",
+    },
     signOut: "Sair",
     readOnly: "somente leitura",
     tryAgain: "Tentar novamente",
@@ -756,7 +769,7 @@ export const ptBR: Dictionary = {
           subtitle: "Veja de onde vêm as informações de saúde mostradas no Engage7",
         },
         upload: {
-          title: "Atualizar Dados",
+          title: "Atualizar dados",
           subtitle: "Atualize sua linha do tempo do Apple Health",
         },
         health: {
@@ -1137,6 +1150,7 @@ export const ptBR: Dictionary = {
       limitation: "Limitação",
       comparison: "Comparação",
       relevantPeriod: "Período relevante",
+      visualEvidenceSampleCount: "{n} observações de apoio",
       noInsights:
         "Nenhum insight ainda. Envie seus dados de saúde para começar a ver padrões e recomendações.",
       empty:

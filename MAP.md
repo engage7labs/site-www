@@ -16,11 +16,22 @@ Next.js application for Engage7 public pages, authenticated Portal, and Admin. T
 ## Feature-to-code map
 
 - Overview: `app/portal/page.tsx` and `components/portal/contextual-intelligence-card.tsx` → portal overview/trends/health-data proxies; SOL renders the server-owned localized contextual artifact before the metric grid.
-- Insights: `app/portal/insights/page.tsx`, `components/portal/compare-improve-block.tsx` → analyses/trends/overview proxies.
+- Insights: `app/portal/insights/page.tsx` and `components/portal/insight-visual-evidence-chart.tsx` → analyses/trends/overview proxies; eligible SOL cards render only validated backend-supplied optional visual evidence, while missing or malformed evidence leaves the card unchanged.
 - Health: `app/portal/health/page.tsx` and `health/{sleep,recovery,activity,all}/` → health-data proxy; the compact Overview links to the consolidated `/portal/health/all` surface, while DARTH panel and AI reflection components remain server-artifact displays.
 - Data Lab: `app/portal/trends/page.tsx` → trends proxy.
 - Reports: `app/portal/reports/` and `lib/api/analysis.ts` → analyses list/detail proxy and safe AI Reflection panel.
+- Update Data: `app/portal/upload/page.tsx` exposes reanalysis from the active feature store beside the unchanged authenticated ZIP upload path.
 - Settings: `app/portal/settings/page.tsx` → account, overview, profile, preference, and footprint proxies.
+
+## Public homepage actions
+
+The shared `SiteHeader` implements both desktop and mobile public actions. Get
+started always links to `/login?next=/onboarding` and remains the acquisition
+and onboarding action. After the canonical browser session snapshot resolves,
+the second action is Sign in (`/login`) without a valid session and Portal
+(`/portal`) with one. Portal is the authenticated state of Sign in; do not
+merge it with Get started or add a second session source, storage inference, or
+auth callback behavior.
 
 ## Canonical flow
 

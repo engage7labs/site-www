@@ -12,7 +12,7 @@ import {
   fetchAuthSessionSnapshot,
   subscribeAuthSessionChanges,
 } from "@/lib/auth-session-client";
-import { resolvePublicHeaderCta } from "@/lib/public-header-cta";
+import { resolvePublicHeaderSecondaryCta } from "@/lib/public-header-cta";
 import { motion } from "framer-motion";
 import Image from "next/image";
 import Link from "next/link";
@@ -22,6 +22,7 @@ import { useEffect, useState } from "react";
 export function SiteHeader() {
   const { t } = useLocale();
   const [hasValidSession, setHasValidSession] = useState(false);
+  const [sessionChecked, setSessionChecked] = useState(false);
 
   useEffect(() => {
     let active = true;
@@ -29,20 +30,11 @@ export function SiteHeader() {
       const session = await fetchAuthSessionSnapshot().catch(() => null);
       if (active) {
         setHasValidSession(Boolean(session));
+        setSessionChecked(true);
       }
     };
 
-    void fetchAuthSessionSnapshot()
-      .then((session) => {
-        if (active) {
-          setHasValidSession(Boolean(session));
-        }
-      })
-      .catch(() => {
-        if (active) {
-          setHasValidSession(false);
-        }
-      });
+    void refreshSession();
     const unsubscribe = subscribeAuthSessionChanges(() => {
       void refreshSession();
     });
@@ -58,7 +50,7 @@ export function SiteHeader() {
     };
   }, []);
 
-  const primaryCta = resolvePublicHeaderCta(hasValidSession);
+  const secondaryCta = resolvePublicHeaderSecondaryCta(hasValidSession);
 
   return (
     <nav className="fixed top-0 w-full bg-white dark:bg-background border-b border-border z-50 backdrop-blur-sm bg-opacity-90 dark:bg-opacity-90">
@@ -89,24 +81,31 @@ export function SiteHeader() {
           <LocaleSwitcher />
           <Button
             asChild
-            className={
-              primaryCta.kind === "portal"
-                ? "bg-black text-white font-medium rounded-md px-4 py-2 hover:bg-zinc-800 transition"
-                : "bg-lime-400 text-black font-medium rounded-md px-4 py-2 hover:bg-lime-300 transition"
-            }
+            className="bg-lime-400 text-black font-medium rounded-md px-4 py-2 hover:bg-lime-300 transition"
           >
             <Link
-              data-testid="site-header-primary-cta"
-              href={primaryCta.href}
-              onClick={
-                primaryCta.kind === "get-started"
-                  ? trackPublicGetStartedClicked
-                  : undefined
-              }
+              data-testid="site-header-get-started"
+              href="/login?next=/onboarding"
+              onClick={trackPublicGetStartedClicked}
             >
-              {primaryCta.kind === "portal" ? t.nav.portal : t.nav.getStarted}
+              {t.nav.getStarted}
             </Link>
           </Button>
+          {sessionChecked ? (
+            <Button
+              asChild
+              className={
+                secondaryCta.kind === "portal"
+                  ? "bg-black text-white font-medium rounded-md px-4 py-2 hover:bg-zinc-800 transition"
+                  : "border border-lime-400 bg-transparent px-4 py-2 font-medium text-lime-500 transition hover:bg-lime-400/10"
+              }
+              variant="outline"
+            >
+              <Link data-testid="site-header-secondary-cta" href={secondaryCta.href}>
+                {secondaryCta.kind === "portal" ? t.nav.portal : t.nav.signIn}
+              </Link>
+            </Button>
+          ) : null}
         </motion.div>
       </div>
     </nav>

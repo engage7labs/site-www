@@ -57,7 +57,7 @@ export function BriefingFeedback({
         setSending(false);
       }
     },
-    [feedbackType, context, submitted, sending]
+    [feedbackType, context, submitted, sending, surface]
   );
 
   if (submitted) {
